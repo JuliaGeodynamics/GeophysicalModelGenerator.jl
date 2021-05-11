@@ -1,5 +1,9 @@
 module GeophysicalModelGenerator
 
-# Write your package code here.
+using CSV, WriteVTK
+
+# add files for specific tasks
+include("data_import.jl")
+include("coord_conversion.jl")
 
 end
