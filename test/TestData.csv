@@ -1,0 +1,19 @@
+# Test data to be used to test data import in GeophysicalModelGenerator.jl
+# taken from the  Joint Pamir-Hindu Kush earthquake catalog for events 
+# deeper than 50 km from Kufner et al., 2016
+# 
+# this data is only used for testing csv import
+# 
+# See  also Kufner et. al. 2016 for more information and the original data 
+
+longitude(deg),latitude(deg),depth(km),local_magnitude,absError(km)
+68.740,36.424,52.04,5.5,9.7
+71.111,36.194,60.51,5.6,10.0
+70.757,36.144,60.74,5.1,10.7
+70.380,35.486,61.00,5.5,20.4
+71.051,36.106,75.50,5.1,6.5
+70.550,35.767,81.52,5.9,10.1
+68.950,36.240,82.55,5.2,5.5
+71.303,36.301,84.36,5.1,3.2
+71.567,36.401,90.90,5.3,3.6
+70.829,36.321,110.41,5.3,3.6
