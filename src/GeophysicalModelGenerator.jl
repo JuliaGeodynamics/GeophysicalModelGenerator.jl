@@ -1,4 +1,5 @@
 module GeophysicalModelGenerator
+export ReadCSV_LatLon
 
 # julia standard library packages
 using DelimitedFiles

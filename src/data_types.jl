@@ -3,7 +3,7 @@
 
 
 # 1D data structure
-struct ScatteredPoints
+mutable struct ScatteredPoints
     name::String
     unit::String
     values::Vector{Float64}
