@@ -22,20 +22,34 @@ function ReadCSV_LatLon(filename::String)
     ndata   = size(data,1) # number of entries
     nfields = size(data,2) # number of fields
 
-    importdata = Vector{ScatteredPoints}(undef, ndata)
-     for ifield = 1:nfields
-        varname = GetVariableName(hdr[ifield])# get variable name
-        varunit = GetVariableUnit(hdr[ifield])# get variable unit
-        # make sure that lon, lat and depth are used, not longitude,latitude,depth
-        v[i] = ScatteredPoints(varname, varunit,data[1:end,1])
+    # get the fields for lon/lat/depth
+    for ifield = ifield = 1:nfields
+        if occursin("lon",hdr[ifield])
+            lon_ind = ifield;
+            varname = GetVariableName(hdr[ifield])# get variable name
+            varunit = GetVariableUnit(hdr[ifield])# get variable unit
+            LonData = ValueList(varname,varunit,data[1:end,ifield])
+        elseif occursin("lat",hdr[ifield])
+            lat_ind = ifield;
+            varname = GetVariableName(hdr[ifield])# get variable name
+            varunit = GetVariableUnit(hdr[ifield])# get variable unit
+            LatData = ValueList(varname,varunit,data[1:end,ifield])
+        elseif occursin("depth",hdr[ifield])
+            depth_ind = ifield;
+            varname = GetVariableName(hdr[ifield])# get variable name
+            varunit = GetVariableUnit(hdr[ifield])# get variable unit
+            DepthData = ValueList(varname,varunit,data[1:end,ifield])
+        end
     end
 
-    # ISSUE: we may have additional data that we want to extract from the csv, but how to do that?
-    # We could define a structure with three fields: variable name, unit and values
-    # using this structure, we could treat all possible variables
+    # assign rest of the data to the values tuple
+    tmp = (varnames = hdr[3:end],vals = data[1:end,3:end])
 
-    # assign data to output tuple
-    return v
+    # initialize data structure
+    importdata = GeoData(LonData,LatData,DepthData,tmp)
+
+    # assign data to output
+    return importdata 
 
 end
 
