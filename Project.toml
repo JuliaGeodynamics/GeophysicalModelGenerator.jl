@@ -3,6 +3,10 @@ uuid = "3700c31b-fa53-48a6-808a-ef22d5a84742"
 authors = ["Marcel Thielmann", "Boris Kaus"]
 version = "0.1.0"
 
+[deps]
+DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
+WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
+
 [compat]
 julia = "1.4"
 

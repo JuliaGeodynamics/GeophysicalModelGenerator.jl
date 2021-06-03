@@ -29,4 +29,6 @@ function ConvertGeo2Cart(inputdata::GeoData)
     # assign all data to the respective struct
     convdata = CartData(X,Y,Z,inputdata.values) 
 
-return convdata
+   return convdata
+
+end

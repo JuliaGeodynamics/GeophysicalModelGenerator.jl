@@ -11,15 +11,15 @@ end
 
 # data structure for lan/lot/depth data together with assigned values
 mutable struct GeoData
-    lat::ValueList
     lon::ValueList
+    lat::ValueList
     depth::ValueList
-    values::tuple
+    values::NamedTuple
 end
 
 mutable struct CartData
     x::ValueList
     y::ValueList
     z::ValueList
-    values::tuple
+    values::NamedTuple
 end
