@@ -18,10 +18,13 @@ function ReadCSV_LatLon(filename::AbstractString,DepthCon::AbstractString)
     ndata   = size(data,1) # number of entries
     nfields = size(data,2) # number of fields
 
+    # declare some variables as local, otherwise they are not known outside of the following for loop
     local LonData
     local LatData
     local DepthData
-
+    local vals_range
+    vals_range = zeros(Int64,nfields-3)
+    ivals = 1;
     # get the fields for lon/lat/depth
     for ifield = 1:nfields
         if occursin("lon",hdr[ifield])
@@ -49,11 +52,14 @@ function ReadCSV_LatLon(filename::AbstractString,DepthCon::AbstractString)
             else # default behaviour assumes that dpeth is negative
                 DepthData = ValueList("depth",varunit,data[1:end,ifield])
             end
+        else
+            vals_range[ivals] = ifield
+            ivals = ivals+1
         end
     end
 
     # assign rest of the data to the values tuple --> this assumes that lon,lat and depth are saved in the first three columns!!!
-    tmp = (varnames = hdr[3:end],vals = data[1:end,3:end])
+    tmp = (varnames = hdr[vals_range],vals = data[1:end,vals_range])
 
     # initialize data structure
     importdata = GeoData(LonData,LatData,DepthData,tmp)
