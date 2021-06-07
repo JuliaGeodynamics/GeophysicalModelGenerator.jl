@@ -2,5 +2,5 @@ using GeophysicalModelGenerator
 using Test
 
 @testset "GeophysicalModelGenerator.jl" begin
-    # Write your tests here.
+    test_data_import;
 end
