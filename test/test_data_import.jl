@@ -13,7 +13,7 @@ LoadedData   =   ReadCSV_LatLon("TestData.csv", "positive");
 
 @test LoadedData.lon.name  ==  "lon"
 @test LoadedData.lon.unit  ==  "deg"
-@test LoadedData.lat.values  ==  [68.74, 71.111, 70.757, 70.38, 71.051, 70.55, 68.95, 71.303, 71.567, 70.829]
+@test LoadedData.lon.values  ==  [68.74, 71.111, 70.757, 70.38, 71.051, 70.55, 68.95, 71.303, 71.567, 70.829]
 
 @test LoadedData.depth.name  ==  "depth"
 @test LoadedData.depth.unit  ==  "km"
