@@ -41,6 +41,11 @@ julia> Write_Paraview(Data_set, "test")
 """
 function Write_Paraview(DataSet::CartData, filename="test")
 
+    # Error checking
+    if !(length(size(DataSet.x))==length(size(DataSet.y))==length(size(DataSet.z)))
+        error("The X/Y/Z or Lon/Lat/Depth arrays should be 3 dimensional")
+    end
+
     # Create VT* file 
     vtkfile     =   vtk_grid(filename, ustrip(DataSet.x.val), ustrip(DataSet.y.val), ustrip(DataSet.z.val)) 
 
