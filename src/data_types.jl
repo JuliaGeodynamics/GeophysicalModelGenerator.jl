@@ -3,6 +3,7 @@
 
 import Base: show
 
+export GeoData, CartData, LonLatDepthGrid
 
 # data structure for a list of values - TO BE REMOVED
 mutable struct ValueList
@@ -115,4 +116,77 @@ function Base.convert(::Type{CartData}, d::GeoData)
 end
 
 
+"""
+    LonLatDepthGrid(Lon::Any, Lat::Any, Depth:Any)
+
+Creates 3D arrays of `Lon`, `Lat`, `Depth` from 1D vectors or numbers
+
+# Example 1: Create 3D grid
+```julia-repl
+julia> Lon,Lat,Depth =  LonLatDepthGrid(10:20,30:40,(-10:-1)km);
+julia> size(Lon)
+(11, 11, 10)
+```
+
+# Example 2: Create 2D lon/lat grid @ a given depth
+```julia-repl
+julia> Lon,Lat,Depth =  LonLatDepthGrid(10:20,30:40,-50km);
+julia> size(Lon)
+(11, 11)
+```
+
+# Example 3: Create 2D lon/depth grid @ a given lat
+```julia-repl
+julia> Lon,Lat,Depth =  LonLatDepthGrid(10:20,30,(-10:-1)km);
+julia> size(Lon)
+(11, 11)
+```
+# Example 4: Create 1D vertical line @ a given lon/lat point
+```julia-repl
+julia> Lon,Lat,Depth =  LonLatDepthGrid(10,30,(-10:-1)km);
+julia> size(Lon)
+(10, )
+```
+
+"""
+function LonLatDepthGrid(Lon::Any, Lat::Any, Depth::Any)
+
+    nLon    = length(Lon)
+    nLat    = length(Lat)
+    nDepth  = length(Depth)
+
+    if nLon==nLat==nDepth==1
+        error("Cannot use this routine for a 3D point (no need to create a grid in that case")
+    end 
+    if maximum([length(size(Lon)), length(size(Lat)), length(size(Depth))])>1
+        error("You can only give 1D vectors or numbers as input")
+    end
+
+    Lon3D   =   zeros(nLon,nLat,nDepth);
+    Lat3D   =   zeros(nLon,nLat,nDepth);
+    Depth3D =   zeros(nLon,nLat,nDepth);
+
+    for i=1:nLon
+        for j=1:nLat
+            for k=1:nDepth
+                Lon3D[i,j,k]    =   ustrip(Lon[i]);
+                Lat3D[i,j,k]    =   ustrip(Lat[j]);
+                Depth3D[i,j,k]  =   ustrip(Depth[k]);
+            end
+        end
+    end
+
+    # drop dimensions that are of length one. Ofcourse, this implies that we cannot have
+    Lon3D   = dropdims(Lon3D,   dims = (findall(size(Lon3D  ) .== 1)...,))
+    Lat3D   = dropdims(Lat3D,   dims = (findall(size(Lat3D  ) .== 1)...,))
+    Depth3D = dropdims(Depth3D, dims = (findall(size(Depth3D) .== 1)...,))
+    
+
+    # Add dimensions back
+    Lon3D   = Lon3D*unit(Lon[1])
+    Lat3D   = Lat3D*unit(Lat[1])
+    Depth3D = Depth3D*unit(Depth[1])
+
+    return Lon3D, Lat3D, Depth3D
+end
 

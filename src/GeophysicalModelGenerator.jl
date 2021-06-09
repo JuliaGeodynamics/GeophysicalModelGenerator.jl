@@ -15,7 +15,6 @@ export
 
 export ReadCSV_LatLon
 
-export GeoData, CartData
 
 # julia standard library packages
 using DelimitedFiles

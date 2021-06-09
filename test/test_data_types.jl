@@ -40,5 +40,43 @@ Data_cart = convert(CartData,Data_set)
 @test Data_cart.y[3] ≈ 323.9686243936937
 @test Data_cart.z[3] ≈ 1429.1140482465744
 
-# Create 2D/3D arrays & convert them  (to be added)
+# Create Lon/Lat/Depth grids from given numbers or 1D vectors
+Lon,Lat,Depth =  LonLatDepthGrid(10:20,30:40,(-10:-1)km);
+@test size(Lon)==(11, 11, 10)
+@test Lat[2,2,2]==31.0
 
+Lon,Lat,Depth =  LonLatDepthGrid(10:20,30:40,-50km);
+@test Lon[2,2]==11.0
+
+Lon,Lat,Depth =  LonLatDepthGrid(10,30,(-10:-1)km); # 1D line @ given lon/lat
+@test size(Lon)==(10,)
+@test Lat[2]==30.0
+
+# throw an error if a 2D array is passed as input
+@test_throws ErrorException LonLatDepthGrid(10:20,30:40,[20 30; 40 50]);
+
+
+
+# Create 3D arrays & convert them 
+Lon,Lat,Depth   =  LonLatDepthGrid(10:20,30:40,(-10:-1)km); # 3D grid
+Data            =   ustrip(Depth);
+
+Data_set1       =   GeoData(Lat,Lon,Depth,(FakeData=Data,Data2=Data.+1.))  
+@test size(Data_set1.depth)==(11, 11, 10)
+@test Data_set1.depth[1,2,3]==-8.0km
+
+# Create 2D arrays & convert them 
+Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,-50km);
+Data            =   ustrip(Depth);
+Data_set2       =   GeoData(Lat,Lon,Depth,(FakeData=Data,Data2=Data.+1.))  
+@test Data_set2.depth[2,2]== -50.0km
+
+
+# Convert the 2D and 3D arrays to their cartesian counterparts
+Data_cart1      = convert(CartData,Data_set1)
+@test size(Data_cart1.z)==(11, 11, 10)
+@test Data_cart1.z[2,2,2] ≈ 1213.926828585578
+
+Data_cart2      = convert(CartData,Data_set2)
+@test size(Data_cart2.z)==(11, 11)
+@test Data_cart2.z[2,2] ≈ 1206.1036597751397
