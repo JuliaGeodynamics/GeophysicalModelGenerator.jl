@@ -29,3 +29,6 @@ julia> using GeophysicalModelGenerator
 
 ## Contributing
 You are very welcome to request new features and point out bugs by opening an issue. You can also help by adding features and creating a pull request
+
+## Funding
+Develoment of this software package was funded by the German Research Foundation (DFG grant TH2076/7-1) and the European Research Council (ERC CoG #771143).
