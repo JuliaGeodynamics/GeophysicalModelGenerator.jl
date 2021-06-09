@@ -98,7 +98,7 @@ mutable struct CartData
     x       ::  GeoUnit
     y       ::  GeoUnit
     z       ::  GeoUnit
-    values  ::  NamedTuple
+    fields  ::  NamedTuple
 end
 
 # conversion function from GeoData -> CartData
