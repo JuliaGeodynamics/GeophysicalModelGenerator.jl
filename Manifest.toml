@@ -41,11 +41,11 @@ version = "0.11.7"
 
 [[GeoParams]]
 deps = ["LaTeXStrings", "Parameters", "Unitful"]
-git-tree-sha1 = "85a7bdd71ec2730faac2452a6a9e30414625ff03"
+git-tree-sha1 = "4f2179758c36428940e1255f53b8c4ddd11f2c9f"
 repo-rev = "main"
 repo-url = "https://github.com/JuliaGeodynamics/GeoParams.jl"
 uuid = "e018b62d-d9de-4a26-8697-af89c310ae38"
-version = "0.1.0"
+version = "0.1.1"
 
 [[InteractiveUtils]]
 deps = ["Markdown"]
