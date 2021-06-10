@@ -1,6 +1,7 @@
 using Test
 using GeophysicalModelGenerator
 using VectorizedRoutines
+include("../src/voxel_gravity.jl")
 
 function main()
 ############# Input #############
