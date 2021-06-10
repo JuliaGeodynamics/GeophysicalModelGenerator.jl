@@ -6,6 +6,7 @@ version = "0.1.1"
 [deps]
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 GeoParams = "e018b62d-d9de-4a26-8697-af89c310ae38"
+NetCDF = "30363a11-5582-574a-97bb-aa9a979735b9"
 WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
 
 [compat]
