@@ -17,18 +17,30 @@ Currently, this package is under development. We plan to add the following featu
   
 
 ## Installation 
-You can install this and required dependencies within the julia package manager
-```
+You can install this and required dependencies within the julia package manager.
+Note that we first install the [GeoParams.jl](https://github.com/JuliaGeodynamics/GeoParams.jl) package after which we install GeophysicalModelGenerator.
+```julia
 julia> ]
+(@v1.6) pkg> add https://github.com/JuliaGeodynamics/GeoParams.jl
 (@v1.6) pkg> add https://github.com/JuliaGeodynamics/GeophysicalModelGenerator
 ```
-and you can use it with
+You can test whether it works on your system with
+```julia
+julia> ]
+(@v1.6) pkg> test GeophysicalModelGenerator
 ```
+and use it with
+```julia
 julia> using GeophysicalModelGenerator
 ```
+
+## Dependencies
+We rely on a number of additional packages. All of them are automatically installed, except `GeoParams.jl`, which you currenty have to add yourself
+- [GeoParams.jl](https://github.com/JuliaGeodynamics/GeoParams.jl) Defines dimensional units, and makes it easy to convert for km/s to m/s, etc.
+- [WriteVTK.jl](https://github.com/jipolanco/WriteVTK.jl) writes VTK files (to be openened with Paraview)
 
 ## Contributing
 You are very welcome to request new features and point out bugs by opening an issue. You can also help by adding features and creating a pull request
 
 ## Funding
-Develoment of this software package was funded by the German Research Foundation (DFG grant TH2076/7-1) and the European Research Council (ERC CoG #771143).
+Develoment of this software package was funded by the German Research Foundation (DFG grant TH2076/7-1 KA3367/10-1), which is part of of the [SPP 2017 4DMB project](http://www.spp-mountainbuilding.de) project as well as by the European Research Council (ERC CoG #771143 - [MAGMA](https://magma.uni-mainz.de)).
