@@ -176,12 +176,6 @@ function LonLatDepthGrid(Lon::Any, Lat::Any, Depth::Any)
         end
     end
 
-    # drop dimensions that are of length one. Ofcourse, this implies that we cannot have
-    Lon3D   = dropdims(Lon3D,   dims = (findall(size(Lon3D  ) .== 1)...,))
-    Lat3D   = dropdims(Lat3D,   dims = (findall(size(Lat3D  ) .== 1)...,))
-    Depth3D = dropdims(Depth3D, dims = (findall(size(Depth3D) .== 1)...,))
-    
-
     # Add dimensions back
     Lon3D   = Lon3D*unit(Lon[1])
     Lat3D   = Lat3D*unit(Lat[1])

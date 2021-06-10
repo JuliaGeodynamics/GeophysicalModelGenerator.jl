@@ -49,7 +49,7 @@ Lon,Lat,Depth =  LonLatDepthGrid(10:20,30:40,-50km);
 @test Lon[2,2]==11.0
 
 Lon,Lat,Depth =  LonLatDepthGrid(10,30,(-10:-1)km); # 1D line @ given lon/lat
-@test size(Lon)==(10,)
+@test size(Lon)==(1,1,10)
 @test Lat[2]==30.0
 
 # throw an error if a 2D array is passed as input
@@ -71,12 +71,11 @@ Data            =   ustrip(Depth);
 Data_set2       =   GeoData(Lat,Lon,Depth,(FakeData=Data,Data2=Data.+1.))  
 @test Data_set2.depth[2,2]== -50.0km
 
-
 # Convert the 2D and 3D arrays to their cartesian counterparts
 Data_cart1      = convert(CartData,Data_set1)
 @test size(Data_cart1.z)==(11, 11, 10)
 @test Data_cart1.z[2,2,2] ≈ 1213.926828585578
 
 Data_cart2      = convert(CartData,Data_set2)
-@test size(Data_cart2.z)==(11, 11)
+@test size(Data_cart2.z)==(11, 11, 1)
 @test Data_cart2.z[2,2] ≈ 1206.1036597751397

@@ -11,16 +11,40 @@ Writes a structure with Geodata to a paraview (or VTK) file
 
 # Example 1: Write a 3D volume 
 ```julia-repl
-julia> 
+julia> Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
+julia> Data_set        =   GeoData(Lat,Lon,Depth,(Depthdata=Depth,LonData=Lon))  
+julia> Write_Paraview(Data_set, "test_depth3D")
 ```
 
-# Example 2: horizontal slice @ given depth
+# Example 2: Horizontal slice @ given depth
+```julia-repl
+julia> Lon,Lat,Depth  =   LonLatDepthGrid(10:20,30:40,10km);
+julia> Data_set       =   GeoData(Lat,Lon,Depth,(Topography=Depth,))  
+julia> Write_Paraview(Data_set, "test")
+```
 
-# Example 3: profile
+# Example 3: Case with topography
+```julia-repl
+julia> Lon,Lat,Depth    =   LonLatDepthGrid(10:20,30:40,10km);
+julia> Depth[2:4,2:4,1] .=  25km     
+julia> Data_set         =   GeoData(Lat,Lon,Depth,(Topography=Depth,))  
+julia> Write_Paraview(Data_set, "test2")
+```
 
+# Example 4: Profile
+```julia-repl
+julia> Lon,Lat,Depth  =   LonLatDepthGrid(10:20,35,(-300:25:0)km);
+julia> Data_set       =   GeoData(Lat,Lon,Depth,(DataSet=Depth,Depth=Depth))  
+julia> Write_Paraview(Data_set, "test")
+```
 
 """
 function Write_Paraview(DataSet::CartData, filename="test")
+
+    # Error checking
+    if !(length(size(DataSet.x))==length(size(DataSet.y))==length(size(DataSet.z)))
+        error("The X/Y/Z or Lon/Lat/Depth arrays should be 3 dimensional")
+    end
 
     # Create VT* file 
     vtkfile     =   vtk_grid(filename, ustrip(DataSet.x.val), ustrip(DataSet.y.val), ustrip(DataSet.z.val)) 
