@@ -43,4 +43,4 @@ We rely on a number of additional packages. All of them are automatically instal
 You are very welcome to request new features and point out bugs by opening an issue. You can also help by adding features and creating a pull request
 
 ## Funding
-Develoment of this software package was funded by the German Research Foundation (DFG grant TH2076/7-1 KA3367/10-1), which is part of of the [SPP 2017 4DMB project](http://www.spp-mountainbuilding.de) project as well as by the European Research Council (ERC CoG #771143 - [MAGMA](https://magma.uni-mainz.de)).
+Development of this software package was funded by the German Research Foundation (DFG grants TH2076/7-1 and KA3367/10-1), which are part of the [SPP 2017 4DMB project](http://www.spp-mountainbuilding.de) project as well as by the European Research Council under grant ERC CoG #771143 - [MAGMA](https://magma.uni-mainz.de).
