@@ -102,7 +102,12 @@ function DLM2Geo(hdr::Array{AbstractString, 2},data::Array{Float64, 2},DepthCon:
 end
 
 
-########### CONVERT NETCDF DATA TO GEO DATA
+########### CONVERT NETCDF DATA TO GEO DATA ########
+"""
+Converting netCDF data to GeoData is fairly easy. One can read in Data from a netCDF file using ncread("filename","variable") 
+(the contents of the netcdf file can be queried beforehand using ncinfo("filename")). Via *ncread*, one then reads in all the 
+desired variables. NetCDF2Geo then takes care of converting this data to GeoData.
+"""
 function NetCDF2Geo()
 
 end
