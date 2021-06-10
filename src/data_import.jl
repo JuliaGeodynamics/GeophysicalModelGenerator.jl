@@ -31,12 +31,12 @@ function ReadCSV_LatLon(filename::AbstractString,DepthCon::AbstractString)
             lon_ind = ifield;
             varname = GetVariableName(hdr[ifield])# get variable name
             varunit = GetVariableUnit(hdr[ifield])# get variable unit
-            LonData = ValueList("lon",varunit,data[1:end,ifield])
+            LonData = data[1:end,ifield]
         elseif occursin("lat",hdr[ifield])
             lat_ind = ifield;
             varname = GetVariableName(hdr[ifield])# get variable name
             varunit = GetVariableUnit(hdr[ifield])# get variable unit
-            LatData = ValueList("lat",varunit,data[1:end,ifield])
+            LatData = data[1:end,ifield]
         elseif occursin("depth",hdr[ifield])
             # ISSUE: WE DEFINE DEPTH AS NEGATIVE, BUT HOW DO WE SET THAT?
             # WE COULD ADD A FLAG THAT INDICATES THE DEPTH CONVENTION AND 
@@ -45,21 +45,54 @@ function ReadCSV_LatLon(filename::AbstractString,DepthCon::AbstractString)
             varname = GetVariableName(hdr[ifield])# get variable name
             varunit = GetVariableUnit(hdr[ifield])# get variable unit
 
+            # take care of positive or negative convection for depth (here we use negative)
             if cmp(DepthCon,"positive")==0 # if depth is given as positive values, convert to negative
-                DepthData = ValueList("depth",varunit,-1*data[1:end,ifield])
+                DepthData = -1*data[1:end,ifield]
             elseif cmp(DepthCon,"negative")==0
-                DepthData = ValueList("depth",varunit,data[1:end,ifield])
+                DepthData = data[1:end,ifield]
             else # default behaviour assumes that dpeth is negative
-                DepthData = ValueList("depth",varunit,data[1:end,ifield])
+                DepthData = data[1:end,ifield]
             end
+
+            # if depth is given in m, convert to km
+            if cmp(varunit,"m")==0
+                DepthData = DepthData./1e3;
+            end
+
         else
             vals_range[ivals] = ifield
             ivals = ivals+1
         end
     end
 
-    # assign rest of the data to the values tuple --> this assumes that lon,lat and depth are saved in the first three columns!!!
-    tmp = (varnames = hdr[vals_range],vals = data[1:end,vals_range])
+
+    # create named tuple for additional data
+    tmp_hdr  = hdr[vals_range];
+    tmp_data = data[1:end,vals_range];
+
+    nhdr = size(tmp_hdr,1)
+    tmp_vec = Vector{Vector{Float64}}(undef, nhdr) # this is used for later tuple creation, I haven't found a better way around
+
+    for ihdr = 1:nhdr
+
+        # take care of the header strings
+        varname = GetVariableName(tmp_hdr[ihdr])# get variable name
+        varunit = GetVariableUnit(tmp_hdr[ihdr])# get variable unit   
+        if cmp(varunit,"%")==0
+            tmp_hdr[ihdr] = string(varname,"_percentage")
+        else
+            tmp_hdr[ihdr] = string(varname,"_",varunit)
+        end
+
+        # take care of the matrix columns
+        tmp_vec[ihdr] = tmp_data[1:end,ihdr];
+    end
+
+    hdr_tpl  = Tuple(Symbol(x) for x in tmp_hdr) # convert header to tuple
+    data_tpl = Tuple.(tmp_vec for i in size(tmp_vec,1)) # convert data to tuple
+    tmp = NamedTuple{hdr_tpl}(data_tpl)
+ 
+    println(typeof(tmp))
 
     # initialize data structure
     importdata = GeoData(LonData,LatData,DepthData,tmp)
