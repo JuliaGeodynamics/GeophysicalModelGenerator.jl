@@ -5,7 +5,6 @@
 # Author: Arne Spang 06/2021
 
 using Printf
-using Zeros
 using Statistics
 using Interpolations
 using WriteVTK
