@@ -1,17 +1,17 @@
-# This is data_import.jl
-#
-# This file contains functions to import different data types. 
-#
-# Author: Marcel Thielmann, 05/2021
+"""
+**data_conversion.jl** contains functions to convert imported data from e.g. CSV or netCDF files to the GeoData format 
+that is used internally to store all data related to a certain data set. For importing files, use standard methods, such 
+as CSV import using *readdlm* (see the [DelimitedFiles.jl](https://docs.julialang.org/en/v1/stdlib/DelimitedFiles/) package) 
+or netCDF import (see the [NetCDF.jl](https://github.com/JuliaGeo/NetCDF.jl) package). 
+
+Using *readdlm* on CSV files will provide two output arguments, one containing the header as a Array{AbstractString, 2} and 
+the other one containing the data as Array{Float64, 2}.
+"""
 
 
-# import CSV data using standard library functions
-# here we assume that the data is indeed comma separated and that comments are preceded with a "#"
 
-function ReadCSV_LatLon(filename::AbstractString,DepthCon::AbstractString)
-    # import data from file with coordinates given in lat/lon/depth format and additional data given in additional columns
-    # the idea here is to assign the data to a structure of the type GeoData which will then be used for further processing
-    data,hdr = readdlm(filename,',', Float64,'\n'; header=true, skipblanks=true, comments=true, comment_char='#')
+############ CONVERT DLM DATA TO GEO DATA
+function DLM2Geo(hdr::Array{AbstractString, 2},data::Array{Float64, 2},DepthCon::AbstractString)
     
     # initialize array of structures to store the data
     # while doing so, separate the unit from the variable name 
@@ -65,7 +65,6 @@ function ReadCSV_LatLon(filename::AbstractString,DepthCon::AbstractString)
         end
     end
 
-
     # create named tuple for additional data
     tmp_hdr  = hdr[vals_range];
     tmp_data = data[1:end,vals_range];
@@ -102,6 +101,20 @@ function ReadCSV_LatLon(filename::AbstractString,DepthCon::AbstractString)
 
 end
 
+
+########### CONVERT NETCDF DATA TO GEO DATA ########
+"""
+Converting netCDF data to GeoData is fairly easy. One can read in Data from a netCDF file using ncread("filename","variable") 
+(the contents of the netcdf file can be queried beforehand using ncinfo("filename")). Via *ncread*, one then reads in all the 
+desired variables. NetCDF2Geo then takes care of converting this data to GeoData.
+"""
+function NetCDF2Geo()
+
+end
+
+
+#############################################################################################
+############################ SOME USEFUL FUNCTIONS FOR STRING MANIPULATION ##################
 function GetVariableName(inputstring::SubString{String})
     # convert input to normal String
     inputstring = String(inputstring)
@@ -153,3 +166,12 @@ function GetVariableUnit(inputstring::SubString{String})
     end
 
 end
+
+
+
+end
+
+
+
+
+
