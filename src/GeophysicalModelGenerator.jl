@@ -1,6 +1,6 @@
 module GeophysicalModelGenerator
 
-using Base: String
+using Base: String, show_index, Tuple
 
 
 # Load & export some useful commands/functions from GeoParams:
@@ -11,7 +11,7 @@ export
         GeoUnit, GEO_units, SI_units, NO_units, AbstractGeoUnits, 
         Nondimensionalize, Nondimensionalize!, Dimensionalize, Dimensionalize!,
         superscript, upreferred, GEO, SI, NONE, isDimensional, 
-        km, m, cm, Myrs, yr, s, MPa, Pa, Pas, K, C, kg, mol
+        km, m, cm, mm, Myrs, yr, s, MPa, Pa, Pas, K, C, kg, mol
 
 export ReadCSV_LatLon
 

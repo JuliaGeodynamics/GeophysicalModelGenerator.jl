@@ -5,7 +5,7 @@ export Write_Paraview
 
 
 """
-    Write_Paraview(DataSet::CartData, filename="test")
+    Write_Paraview(DataSet::CartData, filename="test"; PointsData=false)
 
 Writes a structure with Geodata to a paraview (or VTK) file
 
@@ -38,8 +38,33 @@ julia> Data_set       =   GeoData(Lat,Lon,Depth,(DataSet=Depth,Depth=Depth))
 julia> Write_Paraview(Data_set, "test")
 ```
 
+# Example 5: Velocity vectors
+```julia-repl
+julia> Lon,Lat,Depth  =   LonLatDepthGrid(10:20,30:40,10km);
+julia> Ve, Vn, Vz     =   ones(size(Depth)), ones(size(Depth))*0.5, zeros(size(Depth));
+julia> Data_set       =   GeoData(Lat,Lon,Depth,(DataSet=Depth, Velocity=(Ve,Vn,Vz)))
+GeoData 
+  size  : (11, 11, 1)
+  lon   ϵ [ 30.0 - 40.0]
+  lat   ϵ [ 10.0 - 20.0]
+  depth ϵ [ 10.0 km - 10.0 km]
+  fields: (:DataSet, :Velocity)  
+julia> Write_Paraview(Data_set, "test_Velocity")
+```
+
+# Example 6: Unconnected points (e.g., earthquake locations)
+Note that these points should be 1D vectors.
+```julia-repl
+julia> Lon,Lat,Depth  =   LonLatDepthGrid(10:5:20,35:2:40,(-300:50:0)km);
+julia> Lon=Lon[:]; Lat=Lat[:]; Depth=Depth[:];
+julia> Data_set       =   GeoData(Lat,Lon,Depth,(DataSet=Depth[:],Depth=Depth*10));  
+julia> Write_Paraview(Data_set, "test_Points")
+```
+
+
+
 """
-function Write_Paraview(DataSet::CartData, filename="test")
+function Write_Paraview(DataSet::CartData, filename="test"; PointsData=false)
 
     # Error checking
     if !(length(size(DataSet.x))==length(size(DataSet.y))==length(size(DataSet.z)))
@@ -47,13 +72,44 @@ function Write_Paraview(DataSet::CartData, filename="test")
     end
 
     # Create VT* file 
-    vtkfile     =   vtk_grid(filename, ustrip(DataSet.x.val), ustrip(DataSet.y.val), ustrip(DataSet.z.val)) 
+    if PointsData    
+        # in case we write a dataset with uncinnected points (e.g., GPS data, EQ locations etc.)
+        npoints =   length(DataSet.x)
+        cells   =   [MeshCell(VTKCellTypes.VTK_VERTEX, (i, )) for i = 1:npoints]
+        x       =   ustrip(DataSet.x.val);  x = x[:];
+        y       =   ustrip(DataSet.y.val);  y = y[:];
+        z       =   ustrip(DataSet.z.val);  z = z[:]; 
+
+        vtkfile =   vtk_grid(filename, x,y,z, cells)
+
+    else
+        # for connected 3D grids, 2D planes or 1D lines
+        vtkfile =   vtk_grid(filename, ustrip(DataSet.x.val), ustrip(DataSet.y.val), ustrip(DataSet.z.val)) 
+    end
 
     # Add data fields to VT* file
     names       =   String.(collect(keys(DataSet.fields))); # this is how to retrieve the names of the data fields
     for (index, name) in enumerate(names)
-        name_with_units             = join([name,"  [$(unit(DataSet.fields[index][1]))]"]); # add units to the name of the field
-        vtkfile[name_with_units]    = ustrip(DataSet.fields[index]);                        
+      
+        if typeof(DataSet.fields[index])<: Tuple
+            # if we do a tuple of velocities, it appears difficult to deal with units
+            # This will require some more work
+            unit_name = ""
+            Data       =    DataSet.fields[index]  
+            if unit(Data[1][1])!=NoUnits
+                error("potential error as data fields have  units")
+            end
+        else
+            unit_name = unit(DataSet.fields[index][1])
+            Data      = ustrip(DataSet.fields[index])
+        end
+      
+        name_with_units             = join([name,"  [$(unit_name)]"]); # add units to the name of the field
+        if PointsData    
+            vtkfile[name_with_units, VTKPointData()]    = Data[:];                        
+        else
+            vtkfile[name_with_units]    = Data;                        
+        end
     end
     outfiles = vtk_save(vtkfile);
 
@@ -61,5 +117,5 @@ function Write_Paraview(DataSet::CartData, filename="test")
 end
 
 # Multiple dispatch such that we can also call the routine with GeoData input:
-Write_Paraview(DataSet::GeoData, filename::Any) = Write_Paraview(convert(CartData,DataSet), filename);
+Write_Paraview(DataSet::GeoData, filename::Any; PointsData=false) = Write_Paraview(convert(CartData,DataSet), filename, PointsData=PointsData);
 
