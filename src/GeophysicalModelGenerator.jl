@@ -13,7 +13,7 @@ export
         superscript, upreferred, GEO, SI, NONE, isDimensional, 
         km, m, cm, mm, Myrs, yr, s, MPa, Pa, Pas, K, C, kg, mol
 
-export ReadCSV_LatLon
+export ReadCSV_LatLon, meshgrid, voxGrav
 
 
 # julia standard library packages
@@ -27,6 +27,8 @@ using WriteVTK
 include("data_types.jl")
 include("data_import.jl")
 include("coord_conversion.jl")
+include("utils.jl")
 include("Paraview_output.jl")
+include("voxel_gravity.jl")
 
 end

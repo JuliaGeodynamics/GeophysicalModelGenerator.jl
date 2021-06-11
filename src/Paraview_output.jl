@@ -76,15 +76,15 @@ function Write_Paraview(DataSet::CartData, filename="test"; PointsData=false)
         # in case we write a dataset with uncinnected points (e.g., GPS data, EQ locations etc.)
         npoints =   length(DataSet.x)
         cells   =   [MeshCell(VTKCellTypes.VTK_VERTEX, (i, )) for i = 1:npoints]
-        x       =   ustrip(DataSet.x.val);  x = x[:];
-        y       =   ustrip(DataSet.y.val);  y = y[:];
-        z       =   ustrip(DataSet.z.val);  z = z[:]; 
+        x       =   ustrip.(DataSet.x.val);  x = x[:];
+        y       =   ustrip.(DataSet.y.val);  y = y[:];
+        z       =   ustrip.(DataSet.z.val);  z = z[:]; 
 
         vtkfile =   vtk_grid(filename, x,y,z, cells)
 
     else
         # for connected 3D grids, 2D planes or 1D lines
-        vtkfile =   vtk_grid(filename, ustrip(DataSet.x.val), ustrip(DataSet.y.val), ustrip(DataSet.z.val)) 
+        vtkfile =   vtk_grid(filename, ustrip.(DataSet.x.val), ustrip.(DataSet.y.val), ustrip.(DataSet.z.val)) 
     end
 
     # Add data fields to VT* file
@@ -101,7 +101,7 @@ function Write_Paraview(DataSet::CartData, filename="test"; PointsData=false)
             end
         else
             unit_name = unit(DataSet.fields[index][1])
-            Data      = ustrip(DataSet.fields[index])
+            Data      = ustrip.(DataSet.fields[index])
         end
       
         name_with_units             = join([name,"  [$(unit_name)]"]); # add units to the name of the field

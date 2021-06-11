@@ -1,7 +1,5 @@
 using Test
 using GeophysicalModelGenerator
-using VectorizedRoutines
-include("../src/voxel_gravity.jl")
 
 function main()
 ############# Input #############
@@ -33,7 +31,7 @@ mGal     = 1e5
 x_vec    = LinRange(x[1],x[2],nx)
 y_vec    = LinRange(y[1],y[2],ny)
 z_vec    = LinRange(z[1],z[2],nz)
-X,Y,Z    = Matlab.meshgrid(x_vec,y_vec,z_vec)
+X,Y,Z    = meshgrid(x_vec,y_vec,z_vec)
 
 # reference model
 RefMod   = zeros(nz)

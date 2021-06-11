@@ -113,9 +113,9 @@ end
 # conversion function from GeoData -> CartData
 function Base.convert(::Type{CartData}, d::GeoData)  
   
-    R   =   Array(ustrip(d.depth.val)) .+ 6371.0;
-    lon =   Array(ustrip(d.lon.val));
-    lat =   Array(ustrip(d.lat.val));
+    R   =   Array(ustrip.(d.depth.val)) .+ 6371.0;
+    lon =   Array(ustrip.(d.lon.val));
+    lat =   Array(ustrip.(d.lat.val));
     
     X = R .* cosd.( lon ) .* cosd.( lat );
     Y = R .* sind.( lon ) .* cosd.( lat );
@@ -188,9 +188,9 @@ function LonLatDepthGrid(Lon::Any, Lat::Any, Depth::Any)
     for i=1:nLon
         for j=1:nLat
             for k=1:nDepth
-                Lon3D[i,j,k]    =   ustrip(Lon[i]);
-                Lat3D[i,j,k]    =   ustrip(Lat[j]);
-                Depth3D[i,j,k]  =   ustrip(Depth[k]);
+                Lon3D[i,j,k]    =   ustrip.(Lon[i]);
+                Lat3D[i,j,k]    =   ustrip.(Lat[j]);
+                Depth3D[i,j,k]  =   ustrip.(Depth[k]);
             end
         end
     end
