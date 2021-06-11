@@ -37,5 +37,24 @@ outfile5        =   Write_Paraview(Data_set5, "test5")
 @test outfile5[1]    ==  "test5.vts"
 
 
-# To be done: cases with vectors (as we will need to do vector transformation from lat/lon)
+# Test saving vectors 
+Lon,Lat,Depth           =   LonLatDepthGrid(10:20,30:40,50km);
+Ve                      =   zeros(size(Depth)) .+ 1.0;
+Vn                      =   zeros(size(Depth));
+Vz                      =   zeros(size(Depth));
+Velocity                =   (copy(Ve),copy(Vn),copy(Vz))              # tuple with 3 values, which 
+Data_set_vel            =   GeoData(Lat,Lon,Depth,(Velocity=Velocity, Veast=Velocity[1]*cm/yr, Vnorth=Velocity[2]*cm/yr, Vup=Velocity[3]*cm/yr))  
+outfile_vel             =   Write_Paraview(Data_set_vel, "test_Vel")
+
+# Manually test the in-place conversion from spherical -> cartesian (done automatically when converting GeoData->CartData  )
+Vel_Cart                =   (copy(Ve),copy(Vn),copy(Vz)) 
+Velocity_SphericalToCartesian!(Data_set_vel, Vel_Cart);
+@test Vel_Cart[2][15]   ≈   0.8571673007021123
+@test Vel_Cart[1][15]   ≈   -0.5150380749100543
+@test Vel_Cart[3][15]   ≈   0.0
+
+# Test saving unstructured point data (EQ, or GPS points)
+Data_set_VelPoints          =       GeoData(Lat[:],Lon[:],ustrip.(Depth[:]),(Velocity=(copy(Ve[:]),copy(Vn[:]),copy(Vz[:])), Veast=Ve[:]*mm/yr, Vnorth=Vn[:]*cm/yr, Vup=Vz[:]*cm/yr))  
+outfile_vel_pts             =       Write_Paraview(Data_set_VelPoints, "test_Vel_points", PointsData=true)
+@test outfile_vel_pts[1]    ==      "test_Vel_points.vtu"
 

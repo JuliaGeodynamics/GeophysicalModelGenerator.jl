@@ -3,7 +3,7 @@
 
 import Base: show
 
-export GeoData, CartData, LonLatDepthGrid
+export GeoData, CartData, LonLatDepthGrid, Velocity_SphericalToCartesian!
 
 # data structure for a list of values - TO BE REMOVED
 mutable struct ValueList
@@ -21,8 +21,12 @@ end
     `fields` should ideally be a NamedTuple which allows you to specify the names of each of the fields. 
         If case you only pass one array we will convert it to a NamedTuple with default name
         Note that this is added as `(DataFieldName=Data,)` (don't forget the comma at the end)
+        In case you want to display a vector field in paraview, add it as a tuple: 
+        `(Velocity=(Veast,Vnorth,Vup), Veas=Veast, Vnorth=Vnorth, Vup=Vup)`. You should add the magnitude as 
+        separate fields, in case you want to color this in paraview
 
     `lon`,`lat`,`depth` should all have the same size as each of the `fields`
+
 
 
 # Example     
@@ -69,7 +73,12 @@ struct GeoData
             end
         end
 
-        if !(size(lon)==size(lat)==size(depth)==size(fields[1]))    
+        DataField = fields[1];
+        if typeof(DataField)<: Tuple
+            DataField = DataField[1];           # in case we have velocity vectors as input
+        end
+
+        if !(size(lon)==size(lat)==size(depth)==size(DataField))    
             error("The size of Lon/Lat/Depth and the Fields should all be the same!")
         end
 
@@ -104,13 +113,23 @@ end
 # conversion function from GeoData -> CartData
 function Base.convert(::Type{CartData}, d::GeoData)  
   
-    R   =   Array(ustrip(d.depth.val)) .+ 6371.0;
-    lon =   Array(ustrip(d.lon.val));
-    lat =   Array(ustrip(d.lat.val));
+    R   =   Array(ustrip.(d.depth.val)) .+ 6371.0;
+    lon =   Array(ustrip.(d.lon.val));
+    lat =   Array(ustrip.(d.lat.val));
     
     X = R .* cosd.( lon ) .* cosd.( lat );
     Y = R .* sind.( lon ) .* cosd.( lat );
     Z = R .* sind.( lat );
+
+    # In case any of the fields in the tuple has length 3, it is assumed to be a vector, so transfer it
+    for i=1:length(d.fields)
+        if typeof(d.fields[i]) <: Tuple
+            if length(d.fields[i]) == 3
+                # the tuple has length 3, which is therefore assumed to be a velocity vector
+                Velocity_SphericalToCartesian!(d, d.fields[i])  # Transfer it to x/y/z format
+            end
+        end
+    end
 
     return CartData(GeoUnit(X,km),GeoUnit(Y,km),GeoUnit(Z,km),d.fields)
 end
@@ -169,9 +188,9 @@ function LonLatDepthGrid(Lon::Any, Lat::Any, Depth::Any)
     for i=1:nLon
         for j=1:nLat
             for k=1:nDepth
-                Lon3D[i,j,k]    =   ustrip(Lon[i]);
-                Lat3D[i,j,k]    =   ustrip(Lat[j]);
-                Depth3D[i,j,k]  =   ustrip(Depth[k]);
+                Lon3D[i,j,k]    =   ustrip.(Lon[i]);
+                Lat3D[i,j,k]    =   ustrip.(Lat[j]);
+                Depth3D[i,j,k]  =   ustrip.(Depth[k]);
             end
         end
     end
@@ -184,3 +203,40 @@ function LonLatDepthGrid(Lon::Any, Lat::Any, Depth::Any)
     return Lon3D, Lat3D, Depth3D
 end
 
+
+
+"""
+    Velocity_SphericalToCartesian!(Data::GeoData, Velocity::Tuple)
+
+In-place conversion of velocities in spherical velocities `[Veast, Vnorth, Vup]` to cartesian coordinates (for use in paraview).
+
+NOTE: the magnitude of the vector will be the same, but the individual `[Veast, Vnorth, Vup]` components
+will not be retained correctly (as a different `[x,y,z]` coordinate system is used in paraview). 
+Therefore, if you want to display or color that correctly in Paraview, you need to store these magnitudes as separate fields
+
+"""
+function Velocity_SphericalToCartesian!(Data::GeoData, Velocity::Tuple)
+
+    for i in eachindex(Data.lat.val)
+        az  =   Data.lon.val[i];
+        el  =   Data.lat.val[i];
+
+        R           = [-sind(az) -sind(el)*cosd(az) cosd(el)*cosd(az);
+                        cosd(az) -sind(el)*sind(az) cosd(el)*sind(az); 
+                        0.0       cosd(el)          sind(el)            ];
+        
+        V_sph       =   [Velocity[1][i]; Velocity[2][i]; Velocity[3][i] ];
+       
+        # Normalize spherical velocity
+        V_mag       =  sum(sqrt.(V_sph.^2));        # magnitude
+        V_norm      =  V_sph/V_mag                  
+
+        V_xyz_norm  =  R*V_norm;
+        V_xyz       =  V_xyz_norm.*V_mag;          # scale with magnitude
+
+        # in-place saving of rotated velocity    
+        Velocity[1][i] = V_xyz[1];  
+        Velocity[2][i] = V_xyz[2];
+        Velocity[3][i] = V_xyz[3];
+    end
+end

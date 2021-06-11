@@ -1,6 +1,6 @@
 module GeophysicalModelGenerator
 
-using Base: String
+using Base: String, show_index, Tuple
 
 
 # Load & export some useful commands/functions from GeoParams:
@@ -11,9 +11,9 @@ export
         GeoUnit, GEO_units, SI_units, NO_units, AbstractGeoUnits, 
         Nondimensionalize, Nondimensionalize!, Dimensionalize, Dimensionalize!,
         superscript, upreferred, GEO, SI, NONE, isDimensional, 
-        km, m, cm, Myrs, yr, s, MPa, Pa, Pas, K, C, kg, mol
+        km, m, cm, mm, Myrs, yr, s, MPa, Pa, Pas, K, C, kg, mol
 
-export ReadCSV_LatLon
+export ReadCSV_LatLon, meshgrid, voxGrav
 
 
 # julia standard library packages
@@ -27,6 +27,8 @@ using WriteVTK
 include("data_types.jl")
 include("data_import.jl")
 include("coord_conversion.jl")
+include("utils.jl")
 include("Paraview_output.jl")
+include("voxel_gravity.jl")
 
 end
