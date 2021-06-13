@@ -1,7 +1,7 @@
 # Geophysical Model Generator
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/stable)
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/dev)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/stable)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev/)
 [![Coverage](https://codecov.io/gh/JuliaGeodynamics/GeophysicalModelGenerator.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaGeodynamics/GeophysicalModelGenerator.jl)
 [![Build Status](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/workflows/CI/badge.svg)](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/actions)
 
