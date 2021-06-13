@@ -28,4 +28,5 @@ makedocs(;
 
 deploydocs(;
     repo="github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl",
+    devbranch = "main"
 )
