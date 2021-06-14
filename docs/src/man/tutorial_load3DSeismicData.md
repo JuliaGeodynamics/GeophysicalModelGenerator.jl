@@ -51,7 +51,7 @@ julia> scatter(lon[ind],lat[ind],marker_z=Vs[ind], ylabel="latitude",xlabel="lon
 ```
 The result looks like this:
 
-![DataPoints](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/tree/main/docs/src/assets/img/Tutorial_ElSharkawy_MeRe_DataPoints.png)
+![DataPoints](../assets/img/Tutorial_ElSharkawy_MeRe_DataPoints.png)
 
 So this is somewhat regular but not entirely and in some areas data points are missing. It is possible to create a VTK mesh that exactly respects this data, but for that we need knowledge on how the points are connected in 3D. The comments in the file do not provide this information, which is why we interpolate it on a regular lon/lat grid here which uses the same depth levels as in the data.
 
@@ -89,7 +89,7 @@ We can plot our new Lon/Lat grid on top of the previous data:
 ```julia
 julia> scatter!(Lon[:,:,1],Lat[:,:,1],color=:white, markersize=1.5, markertype="+",legend=:none)
 ```
-![DataPoints_2](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/tree/main/docs/src/assets/img/Tutorial_ElSharkawy_MeRe_DataPoints_2.png)
+![DataPoints_2](../assets/img/Tutorial_ElSharkawy_MeRe_DataPoints_2.png)
 
 #### 3.2 Interpolate to a regular grid
 
@@ -142,7 +142,7 @@ julia>  sol_Vs = values(sol).Vs
 julia>  Vs_2D  = reshape(sol_Vs, size(domain(sol)))
 julia>  heatmap(Lon[:,1,1],Lat[1,:,1],Vs_2D', clims=(3.9, 4.8))
 ```
-![DataPoints_interpolated](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/tree/main/docs/src/assets/img/Tutorial_ElSharkawy_MeRe_DataPoints_interpolated.png)
+![DataPoints_interpolated](../assets/img/Tutorial_ElSharkawy_MeRe_DataPoints_interpolated.png)
 
 The final step is to repeat this procedure for all depth levels:
 ```julia
@@ -181,7 +181,7 @@ julia> Write_Paraview(Data_set, "MeRe_ElSharkawy")
 #### 5. Plotting data in Paraview
 In paraview you can open the file and visualize it:
 
-![DataPoints_Paraview](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/tree/main/docs/src/assets/img/Tutorial_ElSharkawy_MeRe_DataPoints_Paraview_1.png)
+![DataPoints_Paraview](../assets/img/Tutorial_ElSharkawy_MeRe_DataPoints_Paraview_1.png)
 
 Note that we employ the perceptually uniform color map Barlow, which you can download [here](https://www.fabiocrameri.ch/colourmaps/).
 
