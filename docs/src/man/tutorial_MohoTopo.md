@@ -107,7 +107,7 @@ julia> Write_Paraview(data_Moho, "Spada_Moho_combined")
 The result is shown here, where the previous points are colored white and are a bit smaller. Obviously, the datasets coincide well.
 ![DataPoints_Moho_surface](../assets/img/Tutorial_MohoSpada_Surface_Paraview.png)
 
-#### 5. Julia script
+#### 4. Julia script
 
 The full julia script that does it all is given [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/main/tutorial/MohoTopo_Spada.jl). You need to be in the same directory as in the data file, after which you can run it in julia with
 ```julia
