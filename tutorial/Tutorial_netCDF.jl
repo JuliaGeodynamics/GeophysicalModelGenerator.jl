@@ -4,12 +4,15 @@ to convert it to the GeoData format and to export it to a Paraview format. The f
 1. Read data from this file.
 2. Put the data in a GeoData format (this is the format that is used internally in the GMG).
 3. Export that data to a format readable by Paraview.
+
+The data file used in this example can be downloaded here:  
+[https://ds.iris.edu/files/products/emc/emc-files/El-Sharkawy-etal-G3.2020-MeRE2020-Mediterranean-0.0.nc](https://ds.iris.edu/files/products/emc/emc-files/El-Sharkawy-etal-G3.2020-MeRE2020-Mediterranean-0.0.nc)
 """
 
 using NetCDF, GeophysicalModelGenerator
 
 # 1. define where the file is located on your computer
-filename = "/Users/mthiel/PROJECTS/CURRENT/SPP2017/GeophysicalModelGenerator/InputData/El-Sharkawy-etal-G3.2020-MeRE2020-Mediterranean-0.0.nc"
+filename = "./El-Sharkawy-etal-G3.2020-MeRE2020-Mediterranean-0.0.nc" # this only works if you are in the directory where the data is located
 
 # 2. load desired data
 

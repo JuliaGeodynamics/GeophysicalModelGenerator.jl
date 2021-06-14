@@ -32,7 +32,6 @@ Topo:        2D matrix with the topography of the surface (only relevant for the
 outName:     name of the paraview output (do not include file type)
 printing:    activate printing of additional information [true or false]
 """
-
 function voxGrav(X::Array{Float64, 3}, Y::Array{Float64, 3}, Z::Array{Float64, 3}, RHO::Array{Float64, 3}; 
                  refMod="AVG", lengthUnit="m", rhoTol=1e-9, Topo=[], outName="Bouguer", printing=true)
 
