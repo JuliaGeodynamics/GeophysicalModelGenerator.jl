@@ -17,7 +17,8 @@ makedocs(;
         "Home" => "index.md",
         "Tutorials" => Any[
             "Overview" =>  "man/tutorials.md",
-            "Interpolate irregular 3D seismic tomography" =>  "man/tutorial_load3DSeismicData.md",
+            "Visualize 3D seismic tomography" =>  "man/tutorial_load3DSeismicData.md",
+            "Interpolate irregular 3D seismic tomography" =>  "man/tutorial_loadirregular3DSeismicData.md",
         ],
         "User Guide" => Any[
             "Data Structures" =>  "man/datastructures.md",
