@@ -6,18 +6,32 @@ DocMeta.setdocmeta!(GeophysicalModelGenerator, :DocTestSetup, :(using Geophysica
 makedocs(;
     modules=[GeophysicalModelGenerator],
     authors="Marcel Thielmann, Boris Kaus",
-    repo="https://github.com/mthielma/GeophysicalModelGenerator.jl/blob/{commit}{path}#{line}",
+    repo="https://github.com/JuliaGeodynamics/GeophysicalModelGenerator/{commit}{path}#{line}",
     sitename="GeophysicalModelGenerator.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
-        canonical="https://mthielma.github.io/GeophysicalModelGenerator.jl",
+        canonical="https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl",
         assets=String[],
     ),
     pages=[
         "Home" => "index.md",
+        "Tutorials" => Any[
+            "Overview" =>  "man/tutorials.md",
+            "Interpolate irregular 3D seismic tomography" =>  "man/tutorial_load3DSeismicData.md",
+        ],
+        "User Guide" => Any[
+            "Data Structures" =>  "man/datastructures.md",
+            "Paraview output" => "man/paraview_output.md"
+        ],
+        "List of functions"  => "man/listfunctions.md"
     ],
 )
 
 deploydocs(;
-    repo="github.com/mthielma/GeophysicalModelGenerator.jl",
+    repo="github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl.git",
+    branch = "gh-pages",
+    target = "build",
+    devbranch = "main",
+    devurl = "dev",
 )
+

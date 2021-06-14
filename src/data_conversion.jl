@@ -3,12 +3,12 @@
 that is used internally to store all data related to a certain data set. For importing files, use standard methods, such 
 as CSV import using *readdlm* (see the [DelimitedFiles.jl](https://docs.julialang.org/en/v1/stdlib/DelimitedFiles/) package) 
 or netCDF import (see the [NetCDF.jl](https://github.com/JuliaGeo/NetCDF.jl) package). 
+"""
 
+"""
 Using *readdlm* on CSV files will provide two output arguments, one containing the header as a Array{AbstractString, 2} and 
 the other one containing the data as Array{Float64, 2}.
 """
-
-
 
 ############ CONVERT DLM DATA TO GEO DATA
 function DLM2Geo(hdr::Array{AbstractString, 2},data::Array{Float64, 2},DepthCon::AbstractString)
@@ -100,6 +100,10 @@ function DLM2Geo(hdr::Array{AbstractString, 2},data::Array{Float64, 2},DepthCon:
     return importdata 
 
 end
+
+
+########### REARRANGE DATA TO OBTAIN A 3D MATIX IF NECESSARY ##########
+
 
 
 ########### CONVERT NETCDF DATA TO GEO DATA ########
