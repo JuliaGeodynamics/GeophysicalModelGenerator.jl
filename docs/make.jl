@@ -21,7 +21,8 @@ makedocs(;
         ],
         "User Guide" => Any[
             "Data Structures" =>  "man/datastructures.md",
-            "Paraview output" => "man/paraview_output.md"
+            "Paraview output" => "man/paraview_output.md",
+            "Gravity code" => "man/gravity_code.md"
         ],
         "List of functions"  => "man/listfunctions.md"
     ],
