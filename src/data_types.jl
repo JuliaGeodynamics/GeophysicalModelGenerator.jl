@@ -35,7 +35,7 @@ julia> Lat         =   1.0:10.0;
 julia> Lon         =   11.0:20.0;
 julia> Depth       =   (-20:-11)*km;
 julia> Data        =   zeros(size(Lon));
-julia> Data_set    =   GeoData(Lat,Lon,Depth,(DataFieldName=Data,))   
+julia> Data_set    =   GeophysicalModelGenerator.GeoData(Lon,Lat,Depth,(DataFieldName=Data,))   
 GeoData 
   size  : (10,)
   lon   ϵ [ 1.0 - 10.0]
