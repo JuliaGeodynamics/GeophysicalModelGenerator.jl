@@ -31,7 +31,7 @@ mGal     = 1e5
 x_vec    = LinRange(x[1],x[2],nx)
 y_vec    = LinRange(y[1],y[2],ny)
 z_vec    = LinRange(z[1],z[2],nz)
-X,Y,Z    = meshgrid(x_vec,y_vec,z_vec)
+Y,X,Z    = meshgrid(y_vec,x_vec,z_vec)
 
 # reference model
 RefMod   = zeros(nz)
@@ -39,7 +39,7 @@ RefMod[findall(x->x>=0, z_vec)] .= background[1]
 RefMod[findall(x->x<0,  z_vec)] .= background[2]
 
 # densities
-RHO      = zeros(ny,nx,nz)
+RHO      = zeros(nx,ny,nz)
 RHO[findall(x->x>=0, Z)] .= background[1]
 RHO[findall(x->x<0,  Z)] .= background[2]
 
@@ -58,13 +58,13 @@ end
 
 ############ Compute ############
 # Analytical Solution
-ana = zeros(ny,nx)
+ana = zeros(nx,ny)
 for iS = 1 : numSpheres
     for iX = 1 : nx
         for iY = 1 : ny
             d          = ((x_vec[iX] - centerX[iS])^2 + (y_vec[iY] - centerY[iS])^2 + (centerZ[iS])^2)^0.5
             depth      = -centerZ[iS]
-            ana[iY,iX] = ana[iY,iX] + (4 * π * G * (radius[iS]^3) * (rho[iS] - background[2]) * depth) / (3 * (d^3)) * mGal
+            ana[iX,iY] = ana[iX,iY] + (4 * π * G * (radius[iS]^3) * (rho[iS] - background[2]) * depth) / (3 * (d^3)) * mGal
         end
     end
 end

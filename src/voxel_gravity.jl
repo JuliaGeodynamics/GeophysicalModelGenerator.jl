@@ -11,15 +11,15 @@ using WriteVTK
 
 function voxGrav(X, Y, Z, RHO; refMod="AVG", lengthUnit="m", rhoTol=1e-9, Topo=[], outName="Bouguer", printing=true)
     ## check input
-    rhoTol, X, Y, Z, RefMod, Topo = checkInput(X, Y, Z, RHO, refMod, lengthUnit, rhoTol, Topo, outName, printing)
+    X, Y, Z, RHO, RefMod, rhoTol, Topo, orient = checkInput(X, Y, Z, RHO, refMod, lengthUnit, rhoTol, Topo, outName, printing)
 
     ################ precompute things ################
     # define constants
     G      = 6.67408e-11
 
     # get coordinate vectors
-    x_vec  = X[1,:,1]
-    y_vec  = Y[:,1,1]
+    x_vec  = X[:,1,1]
+    y_vec  = Y[1,:,1]
     z_vec  = Z[1,1,:]
 
     # cut everything above sea level
@@ -31,8 +31,8 @@ function voxGrav(X, Y, Z, RHO; refMod="AVG", lengthUnit="m", rhoTol=1e-9, Topo=[
     RefMod = RefMod[ind]
 
     # check dimensions
-    nx     = size(X,2);
-    ny     = size(X,1);
+    nx     = size(X,1);
+    ny     = size(X,2);
     nz     = size(X,3);
 
     # substract reference model
@@ -46,8 +46,8 @@ function voxGrav(X, Y, Z, RHO; refMod="AVG", lengthUnit="m", rhoTol=1e-9, Topo=[
     DRHO = DRHO ./ 8
 
     # voxel volume
-    dx     = X[1,2,1] - X[1,1,1]
-    dy     = Y[2,1,1] - Y[1,1,1]
+    dx     = X[2,1,1] - X[1,1,1]
+    dy     = Y[1,2,1] - Y[1,1,1]
     dz     = Z[1,1,2] - Z[1,1,1]
     dV     = abs(dx*dy*dz)
 
@@ -112,7 +112,11 @@ function voxGrav(X, Y, Z, RHO; refMod="AVG", lengthUnit="m", rhoTol=1e-9, Topo=[
     end
     ###################################################
 
-    return dg, gradX, gradY
+    if orient == 1
+        return dg, gradX, gradY
+    else 
+        return permutedims(dg, [2,1]), permutedims(gradX, [2,1]), permutedims(gradY, [2,1])
+    end
 end
 
 
@@ -121,12 +125,14 @@ end
 
 function checkInput(X, Y, Z, RHO, refMod, lengthUnit, rhoTol, Topo, outName, printing)
     # orientation
-    if X[1,1,1] == X[2,1,1] && X[1,1,1] ≠ X[1,2,1]
+    if X[1,1,1] ≠ X[2,1,1] && X[1,1,1] == X[1,2,1] && X[1,1,1] == X[1,1,2]
         orientation = 1
-    elseif X[1,1,1] ≠ X[2,1,1] && X[1,1,1] == X[1,2,1]
+    elseif X[1,1,1] == X[2,1,1] && X[1,1,1] ≠ X[1,2,1] && X[1,1,1] == X[1,1,2]
         orientation = 2
-        X = X'
-        Y = Y'
+        X   = permutedims(X,   [2,1,3])
+        Y   = permutedims(Y,   [2,1,3])
+        Z   = permutedims(Z,   [2,1,3])
+        RHO = permutedims(RHO, [2,1,3])
     else
         error("Coordinate orientation looks wrong!")
     end
@@ -138,8 +144,8 @@ function checkInput(X, Y, Z, RHO, refMod, lengthUnit, rhoTol, Topo, outName, pri
     nz = size(X,3)
 
     # check if grid is regular
-    dx = diff(X,dims=2)[:]
-    dy = diff(Y,dims=1)[:]
+    dx = diff(X,dims=1)[:]
+    dy = diff(Y,dims=2)[:]
     dz = diff(Z,dims=3)[:]
     tol = 1e-12
     if !(all(a->a<dx[1]+tol && a > dx[1]-tol,dx) && all(a->a<dy[1]+tol && a > dy[1]-tol,dy) && all(a->a<dz[1]+tol && a > dz[1]-tol,dz))
@@ -191,11 +197,11 @@ function checkInput(X, Y, Z, RHO, refMod, lengthUnit, rhoTol, Topo, outName, pri
         if refMod == "NE"
             RefMod = RHO[end,end,:]
         elseif refMod == "SE"
-            RefMod = RHO[1,end,:]
+            RefMod = RHO[end,1,:]
         elseif refMod == "SW"
             RefMod = RHO[1,1,:]
         elseif refMod == "NW"
-            RefMod = RHO[end,1,:]
+            RefMod = RHO[1,end,:]
         elseif refMode == "AVG"
             RefMod = !mean([1.,1.,1.],RHO)
         else
@@ -208,17 +214,17 @@ function checkInput(X, Y, Z, RHO, refMod, lengthUnit, rhoTol, Topo, outName, pri
         error("outName must be a string.")
     end
 
-    return rhoTol, X, Y, Z, RefMod, Topo
+    return X, Y, Z, RHO, RefMod, rhoTol, Topo, orientation
 
 end
 
 function precompDist(x_vec, y_vec, xCells, yCells, zCells, nx, ny, nz)
-    d_square = zeros(ny-1,nx-1,nz-1)
+    d_square = zeros(nx-1,ny-1,nz-1)
 
     for iX = 1 : nx - 1
         for iY = 1 : ny - 1
             for iZ = 1 : nz - 1
-                d_square[iY,iX,iZ] = (xCells[iX]-x_vec[1])^2 + (yCells[iY]-y_vec[1])^2 + zCells[iZ]^2
+                d_square[iX,iY,iZ] = (xCells[iX]-x_vec[1])^2 + (yCells[iY]-y_vec[1])^2 + zCells[iZ]^2
             end
         end
     end
@@ -231,20 +237,20 @@ end
 function computeBoug(nx,ny,nz,DRHO,d_cube,VG_vox,zCells,rhoTol)
     mGal   = 1e5
 
-    dg     = zeros(ny,nx)
+    dg     = zeros(nx,ny)
 
     for jX = 1 : nx-1
         for jY = 1 : ny-1
             for jZ = 1 : nz-1
-                if (DRHO[jY,jX,jZ] > rhoTol || DRHO[jY,jX,jZ] < -rhoTol)
+                if (DRHO[jX,jY,jZ] > rhoTol || DRHO[jX,jY,jZ] < -rhoTol)
                     for iX = 1 : nx
                         for iY = 1 : ny
                             d_indX = jX-iX
                             if d_indX < 0; d_indX = abs(d_indX); else d_indX = d_indX + 1; end
                             d_indY = jY-iY;
                             if d_indY < 0; d_indY = abs(d_indY); else d_indY = d_indY + 1; end
-                            d_c       = d_cube[d_indY,d_indX,jZ];
-                            dg[iY,iX] = dg[iY,iX] + VG_vox * DRHO[jY,jX,jZ] * -zCells[jZ]/d_c;
+                            d_c       = d_cube[d_indX,d_indY,jZ];
+                            dg[iX,iY] = dg[iX,iY] + VG_vox * DRHO[jX,jY,jZ] * -zCells[jZ]/d_c;
                         end
                     end
                 end
@@ -258,22 +264,22 @@ function computeBoug(nx,ny,nz,DRHO,d_cube,VG_vox,zCells,rhoTol)
 end
 
 function computeBougGrads(nx,ny,dg)
-    gradX  = zeros(ny,nx)
-    gradY  = zeros(ny,nx)
+    gradX  = zeros(nx,ny)
+    gradY  = zeros(nx,ny)
 
     for iY = 1 : ny
-        itp  = interpolate(dg[iY,:], BSpline(Quadratic(Reflect(OnCell()))))
+        itp  = interpolate(dg[:,iY], BSpline(Quadratic(Reflect(OnCell()))))
         for iX = 1 : nx
             grad         = Interpolations.gradient(itp,iX)
-            gradX[iY,iX] = grad[1]
+            gradX[iX,iY] = grad[1]
         end
     end
 
     for iX = 1 : nx
-        itp  = interpolate(dg[:,iX], BSpline(Quadratic(Reflect(OnCell()))))
+        itp  = interpolate(dg[iX,:], BSpline(Quadratic(Reflect(OnCell()))))
         for iY = 1 : ny
             grad         = Interpolations.gradient(itp,iY)
-            gradY[iY,iX] = grad[1]
+            gradY[iX,iY] = grad[1]
         end
     end
 
