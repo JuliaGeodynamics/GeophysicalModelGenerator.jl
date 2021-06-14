@@ -187,12 +187,14 @@ Note that we employ the perceptually uniform color map Barlow, which you can dow
 
 If you want to clip the data set @ 200 km depth, you need to select the `Clip` tool, select `Sphere` as a clip type, set the center to `[0,0,0]` and set the radius to `6171` (=radius earth - 200 km).
 
-![DataPoints_Paraview](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/tree/main/docs/src/)assets/img/Tutorial_ElSharkawy_MeRe_DataPoints_Paraview_2.png)
+![DataPoints_Paraview](./assets/img/Tutorial_ElSharkawy_MeRe_DataPoints_Paraview_2.png)
 
 #### 6. Julia script
 
-The full julia script that does it all is given here. You need to be in the same directory as in the data file, after which you can run it in julia with
+The full julia script that does it all is given [here]. You need to be in the same directory as in the data file, after which you can run it in julia with
 ```julia
-julia> include()
+julia> include("MeRe_ElSharkawy.jl")
+```
+
 
 
