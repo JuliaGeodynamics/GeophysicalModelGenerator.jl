@@ -191,7 +191,7 @@ If you want to clip the data set @ 200 km depth, you need to select the `Clip` t
 
 #### 6. Julia script
 
-The full julia script that does it all is given [here]. You need to be in the same directory as in the data file, after which you can run it in julia with
+The full julia script that does it all is given [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/main/tutorial/MeRe_ElSharkawy.jl). You need to be in the same directory as in the data file, after which you can run it in julia with
 ```julia
 julia> include("MeRe_ElSharkawy.jl")
 ```
