@@ -6,11 +6,12 @@ to convert it to the GeoData format and to export it to a Paraview format. The f
 3. Export that data to a format readable by Paraview.
 """
 
+using NetCDF, GeophysicalModelGenerator
+
 # 1. define where the file is located on your computer
 filename = "/Users/mthiel/PROJECTS/CURRENT/SPP2017/GeophysicalModelGenerator/InputData/El-Sharkawy-etal-G3.2020-MeRE2020-Mediterranean-0.0.nc"
 
 # 2. load desired data
-using NetCDF # add the NetCDF package
 
 # Now check with ncinfo(filename), what the variables are called exactly and what the contents of your netCDF file are 
 
