@@ -6,9 +6,12 @@ CurrentModule = GeophysicalModelGenerator
 
 Documentation for [GeophysicalModelGenerator](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl).
 
-The main purpose of this package is to simplify the process of going from 1D/2D/3D geophysical data to a 3D consistent models. By simplifying the process of plotting the data, it becomes easier to 
+The main purpose of this package is to simplify the process of going from 1D/2D/3D geophysical data to a 3D consistent model of the region. By simplifying the process of plotting the data, it becomes easier to compare different data sets, and generate a 3D models that can be used for other computations such as geodynamic simulations, or forward modelling of gravity anomalies.
 
-For this we provide the following functionality:
-- A consistent GeoData data structure, that holds the data sets along with lat/lon/depth information. 
-- Routines to generate VTK files from the GeoData structure in order to visualie results in Paraview.
-- The ability to deal with points, 3D volumes, 2D profiles for both scalar and vector values.
+For this, GeophysicalModelGenerator provides the following functionality:
+- A consistent GeoData structure, that holds the data along with lon/lat/depth information. 
+- Routines to generate VTK files from the GeoData structure in order to visualize results in Paraview.
+- The ability to deal with points, 2D profiles and 3D volumes, for both scalar and vector values.
+- Rapidly import screenshots of published papers compare them with other data sets in 3D using paraview. 
+
+The best way to get started is to look at the tutorials.

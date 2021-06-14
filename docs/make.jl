@@ -15,8 +15,9 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
-        "Tutorial" => Any[
-            "Load 3D seismic tomography from CSV" =>  "man/tutorial_load3DSeismicData.md",
+        "Tutorials" => Any[
+            "Overview" =>  "man/tutorials.md",
+            "Interpolate irregular 3D seismic tomography" =>  "man/tutorial_load3DSeismicData.md",
         ],
         "User Guide" => Any[
             "Data Structures" =>  "man/datastructures.md",
