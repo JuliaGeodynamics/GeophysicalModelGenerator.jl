@@ -3,7 +3,7 @@
 ## Goal
 This explains how to load a 3D P-wave model and plot it in paraview as a 3D volumetric data set. The example is the P-wave velocity model of the alps as described in 
 
-Zhao, L., Paul, A., Malusà, M.G., Xu, X., Zheng, T., Solarino, S., Guillot, S., Schwartz, S., Dumont, T., Salimbeni, S., Aubert, C., Pondrelli, S., Wang, Q., Zhu, R., 2016. *Continuity of the Alpine slab unraveled by high-resolution P wave tomography*. Journal of Geophysical Research: Solid Earth 121, 8720–8737. https://doi.org/10.1002/2016JB013310
+Zhao, L., Paul, A., Malusà, M.G., Xu, X., Zheng, T., Solarino, S., Guillot, S., Schwartz, S., Dumont, T., Salimbeni, S., Aubert, C., Pondrelli, S., Wang, Q., Zhu, R., 2016. *Continuity of the Alpine slab unraveled by high-resolution P wave tomography*. Journal of Geophysical Research: Solid Earth 121, 8720–8737. [doi:10.1002/2016JB013310](https://doi.org/10.1002/2016JB013310)
 
 
 The data is given in ASCII format with longitude/latitude/depth/velocity anomaly (percentage) format.
@@ -73,7 +73,8 @@ julia> scatter(lon[ind],lat[ind],marker_z=dVp_perc[ind], ylabel="latitude",xlabe
 
 Note that we employ the scientific colormap `roma` here. [This](https://docs.juliaplots.org/latest/generated/colorschemes/) gives an overview of available colormaps. You can download the colormaps for Paraview [here](https://www.fabiocrameri.ch/visualisation/).  
 
-Clearly, the data is given as regular Lat/Lon points
+Clearly, the data is given as regular Lat/Lon points:
+
 ```julia
 julia> unique(lon[ind])
 121-element Vector{Float64}:
@@ -90,7 +91,7 @@ julia> unique(lon[ind])
  17.7
  17.85
  18.0
- julia> unique(lat[ind])
+julia> unique(lat[ind])
 94-element Vector{Float64}:
  38.0
  38.15
@@ -105,7 +106,7 @@ julia> unique(lon[ind])
  51.65
  51.8
  51.95
- ```
+```
 
 #### 3.1 Reshape data and save to paraview
 Next, we reshape the vectors with lon/lat/depth data into 3D matrixes:
@@ -143,7 +144,7 @@ GeoData
 julia> Write_Paraview(Data_set, "Zhao_etal_2016_dVp_percentage")
 1-element Vector{String}:
  "Zhao_etal_2016_dVp_percentage.vts"
- ```
+```
 
 #### 4. Plotting data in Paraview
 In paraview you can open the file and visualize it. 
