@@ -28,11 +28,10 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl",
+    repo="github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl.git",
     branch = "gh-pages",
     target = "build",
     devbranch = "main",
     devurl = "dev",
-    branch_previews = branch,
 )
 
