@@ -7,13 +7,12 @@ to convert it to the GeoData format and to export it to a Paraview format. The f
 
 You will need to download the data from:
 [https://www.seismologie.ifg.uni-kiel.de/en/research/research-data/mere2020model](https://www.seismologie.ifg.uni-kiel.de/en/research/research-data/mere2020model).
-
 """
 
 using DelimitedFiles, GeophysicalModelGenerator, GeoStats
 
-# 1. define where the file is located on your computer
-filename = "/Users/mthiel/PROJECTS/CURRENT/SPP2017/GeophysicalModelGenerator/InputData/El-Sharkawy-etal-G3.2020-MeRE2020-Mediterranean-0.0.nc"
+# 1. define the filename and path
+filename = "./El-Sharkawy-etal-G3.2020_MeRE2020_Mediterranean.csv" # this only works if you are in the directory where the data is located
 
 # 2. load desired data
 data        =   readdlm(filename,'|',Float64,'\n', skipstart=23,header=false)
@@ -43,5 +42,5 @@ for iz=1:size(Depth,3)
 end
 
 # Save data to paraview:
-Data_set    =   GeoData(Lon,Lat,Depth,(Vs_km_s=Vs_3D,))   
+Data_set    =   GeophysicalModelGenerator.GeoData(Lon,Lat,Depth,(Vs_km_s=Vs_3D,))   # the GeoStats package defines its own GeoData structure, so you have to choose the correct one here
 Write_Paraview(Data_set, "MeRe_ElSharkawy")
