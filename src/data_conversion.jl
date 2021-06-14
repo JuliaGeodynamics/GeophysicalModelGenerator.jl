@@ -65,6 +65,16 @@ function DLM2Geo(hdr::Array{AbstractString, 2},data::Array{Float64, 2},DepthCon:
         end
     end
 
+    # check if the CSV data is actually given on a regular lon/lat/depth grid and rearrange to create a 3D matrix
+    lat_unique = unique(LatData)
+    lon_unique = unique(LonData)
+    depth_unique = unique(DepthData)
+
+    if size(lat_unique,1)*size(lon_unique,1)*size(depth_unique,1) == size(data,1)
+            println("Data has to be converted to 3D matrix")
+    end
+
+
     # create named tuple for additional data
     tmp_hdr  = hdr[vals_range];
     tmp_data = data[1:end,vals_range];
@@ -103,7 +113,7 @@ end
 
 
 ########### REARRANGE DATA TO OBTAIN A 3D MATIX IF NECESSARY ##########
-
+function RearrangeToMatrix()
 
 
 ########### CONVERT NETCDF DATA TO GEO DATA ########
