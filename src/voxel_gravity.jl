@@ -12,8 +12,7 @@ using WriteVTK
 export voxGrav
 
 """
-    voxGrav(X::Array{Float64, 3}, Y::Array{Float64, 3}, Z::Array{Float64, 3}, RHO::Array{Float64, 3};
-    refMod="AVG", lengthUnit="m", rhoTol=1e-9, Topo=[], outName="Bouguer", printing=true)
+    voxGrav(X::Array{Float64, 3}, Y::Array{Float64, 3}, Z::Array{Float64, 3}, RHO::Array{Float64, 3}; refMod="AVG", lengthUnit="m", rhoTol=1e-9, Topo=[], outName="Bouguer", printing=true)
 
 Computes Bouguer anomalies and gradients  
 
