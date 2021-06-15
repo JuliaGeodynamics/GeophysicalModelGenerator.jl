@@ -112,7 +112,8 @@ end
 
 # conversion function from GeoData -> CartData
 function Base.convert(::Type{CartData}, d::GeoData)  
-  
+    # Note: This is based on scripts originally written by Tobias Baumann, Uni Mainz 
+
     R   =   Array(ustrip.(d.depth.val)) .+ 6371.0;
     lon =   Array(ustrip.(d.lon.val));
     lat =   Array(ustrip.(d.lat.val));
@@ -216,6 +217,7 @@ Therefore, if you want to display or color that correctly in Paraview, you need 
 
 """
 function Velocity_SphericalToCartesian!(Data::GeoData, Velocity::Tuple)
+    # Note: This is partly based on scripts originally written by Tobias Baumann, Uni Mainz 
 
     for i in eachindex(Data.lat.val)
         az  =   Data.lon.val[i];
