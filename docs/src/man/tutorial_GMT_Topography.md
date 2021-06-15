@@ -33,3 +33,5 @@ julia> Write_Paraview(data_Topo, "Topography_Alps")
 The result is shown here, together with Moho data
 
 ![Tutorial_GMT_topography](../assets/img/Tutorial_GMT_topography.png)
+
+In case you are interested: we are employing the `oleron` scientific colormap here.
