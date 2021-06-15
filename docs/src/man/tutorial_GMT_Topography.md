@@ -16,7 +16,7 @@ The nice thing about GMT is that it automatically downloads data for you, from a
 
 ```julia
 julia> using GMT
-julia> G = gmtread("@earth_relief_01m.grd", limits=[0,20,30,50]);
+julia> G = gmtread("@earth_relief_01m.grd", limits=[4,20,37,49]);
 ```
 The data is available in different resolutions; see [here](http://gmt.soest.hawaii.edu/doc/latest/grdimage.html) for an overview. Generally, it is advisable to not use the largest 
 
