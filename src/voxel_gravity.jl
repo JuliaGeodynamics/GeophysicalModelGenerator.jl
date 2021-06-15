@@ -4,10 +4,8 @@
 #
 # Author: Arne Spang 06/2021
 
-using Printf
-using Statistics
-using Interpolations
-using WriteVTK
+using Printf            # do we need this?
+using Statistics        # do we need that?
 
 export voxGrav
 

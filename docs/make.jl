@@ -25,6 +25,7 @@ makedocs(;
         ],
         "User Guide" => Any[
             "Data Structures" =>  "man/datastructures.md",
+            "Data Import" =>  "man/dataimport.md",
             "Paraview output" => "man/paraview_output.md",
             "Gravity code" => "man/gravity_code.md"
         ],

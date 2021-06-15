@@ -13,15 +13,14 @@ export
         superscript, upreferred, GEO, SI, NONE, isDimensional, 
         km, m, cm, mm, Myrs, yr, s, MPa, Pa, Pas, K, C, kg, mol
 
-export ReadCSV_LatLon, meshgrid, voxGrav
+export ReadCSV_LatLon, meshgrid, voxGrav, Screenshot_To_GeoData
 
 
 # julia standard library packages
-using DelimitedFiles
+using DelimitedFiles            
 
 # other packages
-using WriteVTK
-
+using   WriteVTK, Colors, FileIO, Interpolations
 
 # add files for specific tasks
 include("data_types.jl")

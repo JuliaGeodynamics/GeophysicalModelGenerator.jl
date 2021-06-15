@@ -153,3 +153,85 @@ function GetVariableUnit(inputstring::SubString{String})
     end
 
 end
+
+
+
+"""
+    Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing)
+
+Take a screenshot of Georeferenced image (either a `lat/lon` map at a given depth or a profile) and converts it to a GeoData struct, which can be saved to Paraview
+
+The lower left and upper right coordinates of the image need to be specified in tuples of `(lon,lat,depth)`, where `depth` is negative in the Earth.
+
+The lower right and upper left corners can be specified optionally (to take non-orthogonal images into account). If they are not specified, the image is considered orthogonal and the corners are computed from the other two.
+
+"""
+function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing)
+
+    img         =   load(filename)      # load image
+
+    # Define lon/lat/depth of lower left corner
+    
+    # try to determine if this is a horizontal profile or not
+    #if abs(Corner_UpperRight[3]-Corner_LowerLeft[3])>0.0
+    #    DepthProfile = true
+    #else
+    #    DepthProfile = false
+    #end
+
+    # We should be able to either define 4 corners or only 2 and reconstruct the other two from the 
+    if isnothing(Corner_LowerRight) || isnothing(Corner_UpperLeft)
+        Corner_LowerRight  = (Corner_UpperRight[1], Corner_UpperRight[2], Corner_LowerLeft[3])
+        Corner_UpperLeft   = (Corner_LowerLeft[1],  Corner_LowerLeft[2], Corner_UpperRight[3])
+    end
+
+    # Print overview of the 4 corners here:
+    println("Extracting GeoData from: $(filename)")
+    println("           └ Corners:         lon       lat       depth")
+    println("              └ lower left  = [$(rpad( Corner_LowerLeft[1],7)); $(rpad( Corner_LowerLeft[2],7));  $(rpad( Corner_LowerLeft[3],7))]")
+    println("              └ lower right = [$(rpad(Corner_LowerRight[1],7)); $(rpad(Corner_LowerRight[2],7));  $(rpad(Corner_LowerRight[3],7))]")
+    println("              └ upper left  = [$(rpad( Corner_UpperLeft[1],7)); $(rpad( Corner_UpperLeft[2],7));  $(rpad( Corner_UpperLeft[3],7))]")
+    println("              └ upper right = [$(rpad(Corner_UpperRight[1],7)); $(rpad(Corner_UpperRight[2],7));  $(rpad(Corner_UpperRight[3],7))]")
+
+    # Reconstruct the 4 corners into a matrix
+    i = 1; Corners_lon     = [Corner_UpperLeft[i] Corner_UpperRight[i]; Corner_LowerLeft[i] Corner_LowerRight[i]; ]
+    i = 2; Corners_lat     = [Corner_UpperLeft[i] Corner_UpperRight[i]; Corner_LowerLeft[i] Corner_LowerRight[i]; ]
+    i = 3; Corners_depth   = [Corner_UpperLeft[i] Corner_UpperRight[i]; Corner_LowerLeft[i] Corner_LowerRight[i]; ]
+
+    # Extract the colors from the grid
+    img_RGB     =   convert.(RGB, img)     # convert to  RGB data
+
+    # extract the red-green-blue values from the image
+    r           =   zeros(size(img_RGB))
+    g           =   zeros(size(img_RGB))
+    b           =   zeros(size(img_RGB))
+    for i in eachindex(g)
+        r[i] = Float64(img_RGB[i].r)
+        g[i] = Float64(img_RGB[i].g)
+        b[i] = Float64(img_RGB[i].b)
+    end
+
+    # Construct depth, lon and lat 2D grids from the corner points through linear interpolation
+    grid_size               =   size(r)
+    xs                      =   [1,grid_size[1]];
+    zs                      =   [1,grid_size[2]];
+    interp_linear_lon       =   LinearInterpolation((xs, zs), Corners_lon)      # create interpolation object
+    interp_linear_lat       =   LinearInterpolation((xs, zs), Corners_lat)      # create interpolation object
+    interp_linear_depth     =   LinearInterpolation((xs, zs), Corners_depth)    # create interpolation object
+
+    # Interpolate
+    Lon_int,Lat_int,Depth   =   LonLatDepthGrid(1:grid_size[1],1:grid_size[2],0)
+    Lon                     =   interp_linear_lon.(Lon_int,Lat_int);
+    Lat                     =   interp_linear_lat.(Lon_int,Lat_int);
+    Depth                   =   interp_linear_depth.(Lon_int,Lat_int);
+
+    # Transfer to 3D arrays (check if needed or not; if yes, redo error message in struct routin)
+    red                     =   zeros(size(Depth)); red[:,:,1]   = r;
+    green                   =   zeros(size(Depth)); green[:,:,1] = g;
+    blue                    =   zeros(size(Depth)); blue[:,:,1]  = b;
+
+    # Create GeoData structure - NOTE: RGB data must be 2D matrixes, not 3D!
+    data_Image              =   GeoData(Lon, Lat, Depth, (colors=(red,green,blue),))
+
+    return data_Image
+end

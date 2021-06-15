@@ -75,11 +75,7 @@ struct GeoData
         end
 
         if !(size(lon)==size(lat)==size(depth)==size(DataField))    
-            if length(size(DataField)) == 2 || length(size(DataField)) == 3
-               # in this case we may be storing color informnation which needs to be in the form of 2D arrays
-            else   
-                error("The size of Lon/Lat/Depth and the Fields should all be the same!")
-            end
+            error("The size of Lon/Lat/Depth and the Fields should all be the same!")
         end
 
         return new(lon,lat,depth,fields)

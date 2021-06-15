@@ -27,7 +27,7 @@ Transforming this to Paraview is piece of cake:
 ```julia
 julia> Lon,Lat,Depth    =   LonLatDepthGrid(G.x[1:end-1],G.y[1:end-1],0);
 julia> Depth[:,:,1]     =   1e-3*G.z';
-julia> data_Topo        =   GeoData(Lon, Lat, Depth, (Topography=Depth*km,))
+julia> data_Topo        =   GeoData(Lon, Lat, Depth, (Topography=Depth*km,))vt
 julia> Write_Paraview(data_Topo, "Topography_Alps") 
 ```
 The result is shown here, together with Moho data
