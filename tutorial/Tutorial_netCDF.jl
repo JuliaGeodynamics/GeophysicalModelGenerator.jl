@@ -33,3 +33,4 @@ Data_set1       =   GeoData(Lat3D,Lon3D,Depth3D,(VS=vs,))
 
 # Export the data structure to Paraview format
 Write_Paraview(Data_set, "test_netcdf_3D")
+
