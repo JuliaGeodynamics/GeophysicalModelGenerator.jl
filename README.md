@@ -20,13 +20,14 @@ All data is transformed ibto a `GeoData` structure which contains info about the
 ## Usage 
 The best way to learn how to use this is to install the package (see below) and look at the tutorials in the [manual](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev/).
 
+
 ## Development roadmap
-Whereas the package is operational, we have plans to add the following features in approximately the following order:
-- Add new tutorials.
-- Compute gravity anomalies for lon/lat datasets.
+In the pipeline: 
+- More tutorials
+- New routines to create horizontal/vertical cross-sections through 3D data volumes (e.g. seismic tomography)
 - Add more import tools.
-- Add export tools (create cross-sections at a given depth, etc.).
-- Provide an interface to [geomIO](https://bitbucket.org/geomio/geomio/wiki/Home) (currently being translated from MATLAB to python) in order to allow creating a 3D geometric model setups by drawing in Inkscape. 
+- Compute gravity anomalies for lon/lat datasets.
+- Provide an interface to [geomIO](https://bitbucket.org/geomio/geomio/wiki/Home) (currently being translated from MATLAB to python) in order to allow creating 3D geometric model setups by drawing in Inkscape. 
 - Provide tools to create and export 3D geodynamic model setups. 
  
   
@@ -56,6 +57,13 @@ We rely on a number of additional packages. All of them are automatically instal
 - [ImageIO.jl](https://github.com/JuliaIO/ImageIO.jl), [FileIO.jl](https://github.com/JuliaIO/FileIO.jl), [Colors.jl](https://github.com/JuliaGraphics/Colors.jl) to import screenshots from papers.
 - [Interpolations.jl](https://github.com/JuliaMath/Interpolations.jl) for interpolations (for example related to importing screenshots).
 
+
+## Visualising data about the Alps
+We have used this package to interpret various data sets of the Alps (mostly openly available, sometimes derived from published of papers). You can download the resulting vtk files here, where we also included the julia scripts to do the work (some of which are also described in more detail in the tutorials). Just unzip the files and open the corresponding `*.vts` in Paraview. 
+
+[https://seafile.rlp.net/d/22b0fb85550240758552/](https://seafile.rlp.net/d/22b0fb85550240758552/)
+
+If you want your data be included here as well, give us an email (or even better: send the files with julia scripts).
 ## Contributing
 You are very welcome to request new features and point out bugs by opening an issue. You can also help by adding features and creating a pull request.
 
