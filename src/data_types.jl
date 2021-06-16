@@ -15,19 +15,15 @@ end
 """ 
     GeoData(lon::Any, lat:Any, depth::GeoUnit, fields::NamedTuple)
     
-    Data structure that holds one or several fields with longitude, latitude and depth information.
+Data structure that holds one or several fields with longitude, latitude and depth information.
 
-    `depth` can have units of meter, kilometer or be unitless; it will be converted to km.
-    `fields` should ideally be a NamedTuple which allows you to specify the names of each of the fields. 
-        If case you only pass one array we will convert it to a NamedTuple with default name
-        Note that this is added as `(DataFieldName=Data,)` (don't forget the comma at the end)
-        In case you want to display a vector field in paraview, add it as a tuple: 
-        `(Velocity=(Veast,Vnorth,Vup), Veas=Veast, Vnorth=Vnorth, Vup=Vup)`. You should add the magnitude as 
-        separate fields, in case you want to color this in paraview
-
-    `lon`,`lat`,`depth` should all have the same size as each of the `fields`
-
-
+- `depth` can have units of meter, kilometer or be unitless; it will be converted to km.
+- `fields` should ideally be a NamedTuple which allows you to specify the names of each of the fields. 
+- In case you only pass one array we will convert it to a NamedTuple with default name.
+- A single field should be added as `(DataFieldName=Data,)` (don't forget the comma at the end).
+- Multiple fields  can be added as well. `lon`,`lat`,`depth` should all have the same size as each of the `fields`.
+- In case you want to display a vector field in paraview, add it as a tuple: `(Velocity=(Veast,Vnorth,Vup), Veast=Veast, Vnorth=Vnorth, Vup=Vup)`; we automatically apply a vector transformation when transforming this to a `CartData` structure from which we generate Paraview output. As this changes the magnitude of the arrows, you will no longer see the `[Veast,Vnorth,Vup]` components in Paraview which is why it is a good ideas to store them as separate Fields.
+- Yet, there is one exception: if the name of the 3-component field is `colors`, we do not apply this vector transformation as this field is regarded to contain RGB colors. 
 
 # Example     
 ```julia-repl
@@ -38,9 +34,9 @@ julia> Data        =   zeros(size(Lon));
 julia> Data_set    =   GeophysicalModelGenerator.GeoData(Lon,Lat,Depth,(DataFieldName=Data,))   
 GeoData 
   size  : (10,)
-  lon   ϵ [ 1.0 - 10.0]
-  lat   ϵ [ 11.0 - 20.0]
-  depth ϵ [ -20 km - -11 km]
+  lon   ϵ [ 1.0 : 10.0]
+  lat   ϵ [ 11.0 : 20.0]
+  depth ϵ [ -20 km : -11 km]
   fields: (:DataFieldName,)
 ```
 """
@@ -91,17 +87,22 @@ end
 function Base.show(io::IO, d::GeoData)
     println(io,"GeoData ")
     println(io,"  size  : $(size(d.lon))")
-    println(io,"  lon   ϵ [ $(minimum(d.lon.val)) - $(maximum(d.lon.val))]")
-    println(io,"  lat   ϵ [ $(minimum(d.lat.val)) - $(maximum(d.lat.val))]")
-    println(io,"  depth ϵ [ $(minimum(d.depth.val)) - $(maximum(d.depth.val))]")
+    println(io,"  lon   ϵ [ $(minimum(d.lon.val)) : $(maximum(d.lon.val))]")
+    println(io,"  lat   ϵ [ $(minimum(d.lat.val)) : $(maximum(d.lat.val))]")
+    println(io,"  depth ϵ [ $(minimum(d.depth.val)) : $(maximum(d.depth.val))]")
     println(io,"  fields: $(keys(d.fields))")
 end
 
 """
     CartData(x::GeoUnit, y::GeoUnit, z::GeoUnit, values::NamedTuple)
 
-Cartesian data in x/y/z coordinates to be used with Paraview
-This is usually generated automatically 
+Cartesian data in `x/y/z` coordinates to be used with Paraview
+This is usually generated automatically from the `GeoData` structure, but you can also invoke do this manually:
+
+```julia-repl
+julia> Data_set    =   GeophysicalModelGenerator.GeoData(1.0:10.0,11.0:20.0,(-20:-11)*km,(DataFieldName=(-20:-11),))   
+julia> Data_cart = convert(CartData, Data_set)
+```
 """
 mutable struct CartData
     x       ::  GeoUnit
@@ -112,7 +113,8 @@ end
 
 # conversion function from GeoData -> CartData
 function Base.convert(::Type{CartData}, d::GeoData)  
-  
+    # Note: This is based on scripts originally written by Tobias Baumann, Uni Mainz 
+
     R   =   Array(ustrip.(d.depth.val)) .+ 6371.0;
     lon =   Array(ustrip.(d.lon.val));
     lat =   Array(ustrip.(d.lat.val));
@@ -122,11 +124,17 @@ function Base.convert(::Type{CartData}, d::GeoData)
     Z = R .* sind.( lat );
 
     # In case any of the fields in the tuple has length 3, it is assumed to be a vector, so transfer it
+    field_names = keys(d.fields)
     for i=1:length(d.fields)
         if typeof(d.fields[i]) <: Tuple
             if length(d.fields[i]) == 3
                 # the tuple has length 3, which is therefore assumed to be a velocity vector
-                Velocity_SphericalToCartesian!(d, d.fields[i])  # Transfer it to x/y/z format
+                
+                # If the name of the field is ":colors" we do not apply a vector transformation as it is supposed to contain RGB colors
+               if field_names[i]!=:colors
+                    println("Applying a vector transformation to field: $(field_names[i])")
+                    Velocity_SphericalToCartesian!(d, d.fields[i])  # Transfer it to x/y/z format
+                end
             end
         end
     end
@@ -216,6 +224,7 @@ Therefore, if you want to display or color that correctly in Paraview, you need 
 
 """
 function Velocity_SphericalToCartesian!(Data::GeoData, Velocity::Tuple)
+    # Note: This is partly based on scripts originally written by Tobias Baumann, Uni Mainz 
 
     for i in eachindex(Data.lat.val)
         az  =   Data.lon.val[i];
