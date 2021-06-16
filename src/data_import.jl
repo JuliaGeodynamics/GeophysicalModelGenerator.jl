@@ -173,25 +173,30 @@ function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperR
     # Define lon/lat/depth of lower left corner
     
     # try to determine if this is a horizontal profile or not
-    #if abs(Corner_UpperRight[3]-Corner_LowerLeft[3])>0.0
-    #    DepthProfile = true
-    #else
-    #    DepthProfile = false
-    #end
+    if abs(Corner_UpperRight[3]-Corner_LowerLeft[3])>0.0
+        DepthProfile = true
+    else
+        DepthProfile = false
+    end
 
     # We should be able to either define 4 corners or only 2 and reconstruct the other two from the 
     if isnothing(Corner_LowerRight) || isnothing(Corner_UpperLeft)
-        Corner_LowerRight  = (Corner_UpperRight[1], Corner_UpperRight[2], Corner_LowerLeft[3])
-        Corner_UpperLeft   = (Corner_LowerLeft[1],  Corner_LowerLeft[2], Corner_UpperRight[3])
+        if DepthProfile
+            Corner_LowerRight  = (Corner_UpperRight[1], Corner_UpperRight[2], Corner_LowerLeft[3])
+            Corner_UpperLeft   = (Corner_LowerLeft[1],  Corner_LowerLeft[2], Corner_UpperRight[3])
+        else
+            Corner_LowerRight  = (Corner_UpperRight[1], Corner_LowerLeft[2],  Corner_LowerLeft[3])
+            Corner_UpperLeft   = (Corner_LowerLeft[1],  Corner_UpperRight[2], Corner_UpperRight[3])
+        end
     end
 
     # Print overview of the 4 corners here:
     println("Extracting GeoData from: $(filename)")
     println("           └ Corners:         lon       lat       depth")
-    println("              └ lower left  = [$(rpad( Corner_LowerLeft[1],7)); $(rpad( Corner_LowerLeft[2],7));  $(rpad( Corner_LowerLeft[3],7))]")
-    println("              └ lower right = [$(rpad(Corner_LowerRight[1],7)); $(rpad(Corner_LowerRight[2],7));  $(rpad(Corner_LowerRight[3],7))]")
-    println("              └ upper left  = [$(rpad( Corner_UpperLeft[1],7)); $(rpad( Corner_UpperLeft[2],7));  $(rpad( Corner_UpperLeft[3],7))]")
-    println("              └ upper right = [$(rpad(Corner_UpperRight[1],7)); $(rpad(Corner_UpperRight[2],7));  $(rpad(Corner_UpperRight[3],7))]")
+    println("              └ lower left  = ($(rpad( Corner_LowerLeft[1],7)), $(rpad( Corner_LowerLeft[2],7)),  $(rpad( Corner_LowerLeft[3],7)))")
+    println("              └ lower right = ($(rpad(Corner_LowerRight[1],7)), $(rpad(Corner_LowerRight[2],7)),  $(rpad(Corner_LowerRight[3],7)))")
+    println("              └ upper left  = ($(rpad( Corner_UpperLeft[1],7)), $(rpad( Corner_UpperLeft[2],7)),  $(rpad( Corner_UpperLeft[3],7)))")
+    println("              └ upper right = ($(rpad(Corner_UpperRight[1],7)), $(rpad(Corner_UpperRight[2],7)),  $(rpad(Corner_UpperRight[3],7)))")
 
     # Reconstruct the 4 corners into a matrix
     i = 1; Corners_lon     = [Corner_UpperLeft[i] Corner_UpperRight[i]; Corner_LowerLeft[i] Corner_LowerRight[i]; ]
