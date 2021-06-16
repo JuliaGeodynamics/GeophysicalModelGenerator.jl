@@ -58,8 +58,8 @@ We rely on a number of additional packages. All of them are automatically instal
 - [Interpolations.jl](https://github.com/JuliaMath/Interpolations.jl) for interpolations (for example related to importing screenshots).
 
 
-## Visualising data about the Alps
-We have used this package to interpret various data sets of the Alps (mostly openly available, sometimes derived from published of papers). You can download the resulting vtk files here, where we also included the julia scripts to do the work (some of which are also described in more detail in the tutorials). Just unzip the files and open the corresponding `*.vts` in Paraview. 
+## Visualising alpine data
+We have used this package to interpret various data sets of the Alps (mostly openly available, sometimes derived from published papers). You can download the resulting paraview files here (using the `*.vts` format), where we also included the julia scripts to do the work (some of which are also described in more detail in the tutorials). Just unzip the files and open the corresponding `*.vts` in Paraview. 
 
 [https://seafile.rlp.net/d/22b0fb85550240758552/](https://seafile.rlp.net/d/22b0fb85550240758552/)
 
