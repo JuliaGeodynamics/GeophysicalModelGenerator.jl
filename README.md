@@ -2,21 +2,37 @@
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev/)
-[![Coverage](https://codecov.io/gh/JuliaGeodynamics/GeophysicalModelGenerator.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaGeodynamics/GeophysicalModelGenerator.jl)
 [![Build Status](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/workflows/CI/badge.svg)](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/actions)
 
-Creating consistent 3D images of various geophysical datasets is often challenging. The aim of this package is to help with this, by providing a number of routines to import and export data in various formats, for example to visualize them in [Paraview](https://www.paraview.org).
+Creating consistent 3D images of geophysical and geological datasets is often challenging. The aim of this package is to help with this, by providing a number of routines to easily import data and create a consistent 3D visualisation from it in the VTK-toolkit format, which can for example be viewed with [Paraview](https://www.paraview.org).
+
+## Main features
+Some of the key features are:
+- Create 3D volumes of seismic tomography models.
+- Handle 2D data (e.g., along a cross-section), including surfaces such as the Moho depth.
+- Plot data along lines (e.g., drillholes) or at points (e.g., earthquake locations, GPS velocities).
+- Handle both scalar and vector data sets.
+- Grab screenshots of cross-sections or maps in published papers and view them in 3D (together with other data).
+- Create a consistent overview that includes all available data of a certain region.
+
+All data is transformed ibto a `GeoData` structure which contains info about the longitude, latitude and depth  along with an arbitrary number of scalar/vector datasets.
+  
+## Usage 
+The best way to learn how to use this is to install the package (see below) and look at the tutorials in the [manual](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev/).
 
 ## Development roadmap
-Currently, this package is under development. We plan to add the following features in approximately the following order:
--   Create VT* files from 3D volumes with lon/lat/depth and data (e.g., seismic tomography)
--   Create VT* files with horizontal or vertical cross-sections from lon/lat/depth and data
--   Create 1D lines with seismic reflection data below a station (amplitude)
--   Optionally interface with `GMT.jl` to allow importing  
+Whereas the package is operational, we have plans to add the following features in approximately the following order:
+- Add new tutorials.
+- Compute gravity anomalies for lon/lat datasets.
+- Add more import tools.
+- Add export tools (create cross-sections at a given depth, etc.).
+- Provide an interface to [geomIO](https://bitbucket.org/geomio/geomio/wiki/Home) (currently being translated from MATLAB to python) in order to allow creating a 3D geometric model setups by drawing in Inkscape. 
+- Provide tools to create and export 3D geodynamic model setups. 
+ 
   
-
 ## Installation 
-You can install this and required dependencies within the julia package manager.
+First, you need to install julia on your machine. We recommend to use the binaries from [https://julialang.org](https://julialang.org).
+Next, start julia and install this and required dependencies within the julia package manager.
 Note that we first install the [GeoParams.jl](https://github.com/JuliaGeodynamics/GeoParams.jl) package after which we install GeophysicalModelGenerator.
 ```julia
 julia> ]
@@ -36,10 +52,12 @@ julia> using GeophysicalModelGenerator
 ## Dependencies
 We rely on a number of additional packages. All of them are automatically installed, except `GeoParams.jl`, which you currenty have to add yourself
 - [GeoParams.jl](https://github.com/JuliaGeodynamics/GeoParams.jl) Defines dimensional units, and makes it easy to convert for km/s to m/s, etc.
-- [WriteVTK.jl](https://github.com/jipolanco/WriteVTK.jl) writes VTK files (to be openened with Paraview)
+- [WriteVTK.jl](https://github.com/jipolanco/WriteVTK.jl) writes VTK files (to be opened with Paraview).
+- [ImageIO.jl](https://github.com/JuliaIO/ImageIO.jl), [FileIO.jl](https://github.com/JuliaIO/FileIO.jl), [Colors.jl](https://github.com/JuliaGraphics/Colors.jl) to import screenshots from papers.
+- [Interpolations.jl](https://github.com/JuliaMath/Interpolations.jl) for interpolations (for example related to importing screenshots).
 
 ## Contributing
-You are very welcome to request new features and point out bugs by opening an issue. You can also help by adding features and creating a pull request
+You are very welcome to request new features and point out bugs by opening an issue. You can also help by adding features and creating a pull request.
 
 ## Funding
 Development of this software package was funded by the German Research Foundation (DFG grants TH2076/7-1 and KA3367/10-1), which are part of the [SPP 2017 4DMB project](http://www.spp-mountainbuilding.de) project as well as by the European Research Council under grant ERC CoG #771143 - [MAGMA](https://magma.uni-mainz.de).
