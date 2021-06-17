@@ -21,6 +21,7 @@ makedocs(;
             "Visualize Moho topography" =>  "man/tutorial_MohoTopo.md",
             "Create GMT-based topography" =>  "man/tutorial_GMT_Topography.md",
             "Coastlines" =>  "man/tutorial_Coastlines.md",
+            "Import screenshots" =>  "man/tutorial_Screenshot_To_Paraview.md",
             "Interpolate irregular 3D seismic tomography" =>  "man/tutorial_loadirregular3DSeismicData.md",
         ],
         "User Guide" => Any[
