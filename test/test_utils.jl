@@ -29,7 +29,7 @@ test_cross      =   CrossSection(Data_set3D, Depth_level=-100km)
 
 test_cross      =   CrossSection(Data_set3D, Lon_level=15)
 @test test_cross.fields[1][41]==-450km
-@test test_cross.fields[2][31]==10
+@test test_cross.fields[2][31]==15
 @test test_cross.fields[3][1][30]==-1500
 @test test_cross.fields[3][2][30]==-2000
 @test test_cross.fields[3][3][30]==-2500
