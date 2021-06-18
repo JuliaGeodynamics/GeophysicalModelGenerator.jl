@@ -28,6 +28,7 @@ makedocs(;
             "Data Structures" =>  "man/datastructures.md",
             "Data Import" =>  "man/dataimport.md",
             "Paraview output" => "man/paraview_output.md",
+            "Tools" => "man/tools.md",
             "Gravity code" => "man/gravity_code.md"
         ],
         "List of functions"  => "man/listfunctions.md"

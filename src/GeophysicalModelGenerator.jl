@@ -1,6 +1,6 @@
 module GeophysicalModelGenerator
 
-using Base: String, show_index, Tuple
+using Base: String, show_index, Tuple, FieldDescStorage
 
 
 # Load & export some useful commands/functions from GeoParams:

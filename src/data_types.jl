@@ -204,8 +204,8 @@ function LonLatDepthGrid(Lon::Any, Lat::Any, Depth::Any)
     end
 
     # Add dimensions back
-    Lon3D   = Lon3D*unit(Lon[1])
-    Lat3D   = Lat3D*unit(Lat[1])
+    Lon3D   =   Lon3D*unit(  Lon[1])
+    Lat3D   =   Lat3D*unit(  Lat[1])
     Depth3D = Depth3D*unit(Depth[1])
 
     return Lon3D, Lat3D, Depth3D

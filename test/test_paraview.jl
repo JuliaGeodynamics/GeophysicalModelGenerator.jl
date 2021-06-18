@@ -2,7 +2,7 @@
 using Test
 using GeophysicalModelGenerator
 
-
+@testset "Paraview" begin
 
 # Generate a 3D grid
 Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
@@ -58,3 +58,4 @@ Data_set_VelPoints          =       GeoData(Lat[:],Lon[:],ustrip.(Depth[:]),(Vel
 outfile_vel_pts             =       Write_Paraview(Data_set_VelPoints, "test_Vel_points", PointsData=true)
 @test outfile_vel_pts[1]    ==      "test_Vel_points.vtu"
 
+end

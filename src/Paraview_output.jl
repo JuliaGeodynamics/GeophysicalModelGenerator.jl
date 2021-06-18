@@ -97,7 +97,7 @@ function Write_Paraview(DataSet::CartData, filename="test"; PointsData=false)
             unit_name = ""
             Data       =    DataSet.fields[index]  
             if unit(Data[1][1])!=NoUnits
-                error("potential error as data fields have  units")
+                error("potential error as vector data fields have units; please save them with no units!")
             end
         else
             unit_name = unit(DataSet.fields[index][1])
