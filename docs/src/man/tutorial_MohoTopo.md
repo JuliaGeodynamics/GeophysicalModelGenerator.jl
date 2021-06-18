@@ -58,7 +58,7 @@ And we can do the same with the other two Moho's:
 ```julia
 julia> data =readdlm("Moho_Map_Data-WesternAlps-SpadaETAL2013_Moho2.txt",' ',Float64,'\n', skipstart=38,header=false);
 julia> lon, lat, depth        = data[:,1], data[:,2], -data[:,3];
-julia> Tutorial_MohoSpada_LonLat_Paraview = GeoData(lon,lat,depth,(MohoDepth=depth*km,))
+julia> data_Moho2 = GeoData(lon,lat,depth,(MohoDepth=depth*km,))
 julia> Write_Paraview(data_Moho2, "Spada_Moho_Adria", PointsData=true) 
 julia> data =readdlm("Moho_Map_Data-WesternAlps-SpadaETAL2013_Moho3.txt",' ',Float64,'\n', skipstart=38,header=false);
 julia> lon, lat, depth        = data[:,1], data[:,2], -data[:,3];
