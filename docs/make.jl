@@ -17,7 +17,8 @@ makedocs(;
         "Home" => "index.md",
         "Tutorials" => Any[
             "Overview" =>  "man/tutorials.md",
-            "Visualize 3D seismic tomography" =>  "man/tutorial_load3DSeismicData.md",
+            "3D seismic tomography from ASCII" =>  "man/tutorial_load3DSeismicData.md",
+            "3D seismic tomography from netCDF" =>  "man/tutorial_loadregular3DSeismicData_netCDF.md",
             "Visualize Moho topography" =>  "man/tutorial_MohoTopo.md",
             "Create GMT-based topography" =>  "man/tutorial_GMT_Topography.md",
             "Coastlines" =>  "man/tutorial_Coastlines.md",
