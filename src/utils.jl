@@ -183,8 +183,11 @@ function ExtractSubvolume(V::GeoData; Interpolate=false, Lon_level=nothing, Lat_
         iLat        =   i_s:i_e;
         
         i_s, i_e    =   argmin(abs.(V.depth.val[1,1,:] .- Depth_level[1])), argmin(abs.(V.depth.val[1,1,:] .- Depth_level[2]))
-        iDepth      =   i_s:i_e;
-        
+        step        =   1;
+        if i_e<i_s
+            step=-1
+        end
+        iDepth      =   i_s:step:i_e;
         Data_extract =  ExtractDataSets(V, iLon, iLat, iDepth);
     end
 
