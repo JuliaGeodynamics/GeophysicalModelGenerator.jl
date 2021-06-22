@@ -17,7 +17,8 @@ makedocs(;
         "Home" => "index.md",
         "Tutorials" => Any[
             "Overview" =>  "man/tutorials.md",
-            "Visualize 3D seismic tomography" =>  "man/tutorial_load3DSeismicData.md",
+            "3D seismic tomography from ASCII" =>  "man/tutorial_load3DSeismicData.md",
+            "3D seismic tomography from netCDF" =>  "man/tutorial_loadregular3DSeismicData_netCDF.md",
             "Visualize Moho topography" =>  "man/tutorial_MohoTopo.md",
             "Create GMT-based topography" =>  "man/tutorial_GMT_Topography.md",
             "Coastlines" =>  "man/tutorial_Coastlines.md",
@@ -28,6 +29,7 @@ makedocs(;
             "Data Structures" =>  "man/datastructures.md",
             "Data Import" =>  "man/dataimport.md",
             "Paraview output" => "man/paraview_output.md",
+            "Tools" => "man/tools.md",
             "Gravity code" => "man/gravity_code.md"
         ],
         "List of functions"  => "man/listfunctions.md"
