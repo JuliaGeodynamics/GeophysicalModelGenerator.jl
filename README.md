@@ -24,9 +24,8 @@ The best way to learn how to use this is to install the package (see below) and 
 ## Development roadmap
 In the pipeline: 
 - More tutorials
-- New routines to create horizontal/vertical cross-sections through 3D data volumes (e.g. seismic tomography)
 - Add more import tools.
-- Compute gravity anomalies for lon/lat datasets.
+- Compute gravity anomalies for lon/lat datasets, rather than just x/y/z.
 - Provide an interface to [geomIO](https://bitbucket.org/geomio/geomio/wiki/Home) (currently being translated from MATLAB to python) in order to allow creating 3D geometric model setups by drawing in Inkscape. 
 - Provide tools to create and export 3D geodynamic model setups. 
  
