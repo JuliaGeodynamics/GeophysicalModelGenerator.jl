@@ -15,7 +15,7 @@ Some of the key features are:
 - Grab screenshots of cross-sections or maps in published papers and view them in 3D (together with other data).
 - Create a consistent overview that includes all available data of a certain region.
 
-All data is transformed ibto a `GeoData` structure which contains info about the longitude, latitude and depth  along with an arbitrary number of scalar/vector datasets.
+All data is transformed into a `GeoData` structure which contains info about the longitude, latitude and depth  along with an arbitrary number of scalar/vector datasets.
   
 ## Usage 
 The best way to learn how to use this is to install the package (see below) and look at the tutorials in the [manual](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev/).
