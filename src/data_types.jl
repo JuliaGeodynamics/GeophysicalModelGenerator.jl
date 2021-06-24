@@ -130,8 +130,8 @@ function Base.convert(::Type{CartData}, d::GeoData)
             if length(d.fields[i]) == 3
                 # the tuple has length 3, which is therefore assumed to be a velocity vector
                 
-                # If the name of the field is ":colors" we do not apply a vector transformation as it is supposed to contain RGB colors
-               if field_names[i]!=:colors
+                # If the field name contains the string "color" we do not apply a vector transformation as it is supposed to contain RGB colors
+                if !occursin("color", string(field_names[2]))
                     println("Applying a vector transformation to field: $(field_names[i])")
                     Velocity_SphericalToCartesian!(d, d.fields[i])  # Transfer it to x/y/z format
                 end
