@@ -1,5 +1,4 @@
-# Extract ETOPO1 topographic data using GMT.jl 
-# drape a geological map on top of the topography, which is given as raster graphics
+# Extract ETOPO1 topographic data using GMT.jl and drape a geological map on top of the topography, which is given as raster graphics
 
 ## Goal
 
@@ -25,7 +24,9 @@ julia> using GMT
 julia> filename_gmt = "./tectonic_maps_4dmb_2020_09_17/GMT_example/alcapadi_polygons.gmt"
 julia> plot(filename_gmt,region="4/20/37/49",show=true)
 ```
-This opens a window with the plotted map. Save this image in your current working folder. Open it with a image manipulation of your choice (e.g. GIMP) and crop it to the map itself. Save the cropped image in your current working directory. For this tutorial, we have named the cropped png file *tectonicmap_SPP.png*.  
+This opens a window with the plotted map. Save this image in your current working folder. Open it with a image manipulation of your choice (e.g. GIMP) and crop it to the map itself. Save the cropped image in your current working directory. For this tutorial, we have named the cropped png file *tectonicmap_SPP.png*. It looks like this:
+
+![Tutorial_GMT_topography_GeologicalMap_PNG](../assets/img/Tutorial_GMT_topography_GeologicalMap_PNG.png)
 
 #### 3. Import data to paraview  
 Now, to import the ETOPO1 topography data and to drape the geologic map over it, open julia again. Load the following packages:
