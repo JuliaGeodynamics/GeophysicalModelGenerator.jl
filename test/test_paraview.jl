@@ -47,12 +47,11 @@ Data_set_vel            =   GeoData(Lat,Lon,Depth,(Velocity=Velocity, Veast=Velo
 outfile_vel             =   Write_Paraview(Data_set_vel, "test_Vel")
 
 # Test saving colors
-Lon,Lat,Depth           =   LonLatDepthGrid(10:20,30:40,50km);
 red                     = zeros(size(Lon)); 
 green                   = zeros(size(Lon)); 
 blue                    = zeros(size(Lon)); 
-Data_set_color          =   GeoData(Lon, Lat, Depth, (colors=(red,green,blue),))
-julia> Write_Paraview(Data_set_color, "test_Color")
+Data_set_color          =   GeoData(Lon, Lat, Depth, (Velocity=Velocity,colors=(red,green,blue),color2=(red,green,blue)))
+Write_Paraview(Data_set_color, "test_Color")
 
 # Manually test the in-place conversion from spherical -> cartesian (done automatically when converting GeoData->CartData  )
 Vel_Cart                =   (copy(Ve),copy(Vn),copy(Vz)) 
