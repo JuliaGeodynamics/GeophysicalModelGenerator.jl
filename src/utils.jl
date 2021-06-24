@@ -1,6 +1,6 @@
 # few utils that are useful 
 
-export meshgrid, CrossSection, ExtractSubvolume, SubtractHorizontalMean
+export meshgrid, CrossSection, ExtractSubvolume, SubtractHorizontalMean, export Flatten3DData
 
 """
     meshgrid(vx,vy,vz)
@@ -310,4 +310,30 @@ function SubtractHorizontalMean(V)
     end
 
     return V_sub
+end
+
+
+# "flatten" a GeoData input to obtain x/y/z values
+function Flatten3DData(Data::GeoData)
+
+    ndepth = size(Data.lat.val,3)
+    lat = Data.lat.val[:,:,1]
+    lon = Data.lon.val[:,:,1]
+
+    # origin
+    xo_lla = LLA.(ones(size(lat)).*minimum(vec(lat)), ones(size(lon)).*minimum(vec(lon)), zeros(size(lat))); # convert to LLA format
+
+    # compute x-coordinates by computing the eucledian distance between longitudes, but setting the latitudes to the same value
+    x_lla = LLA.(ones(size(lat)).*minimum(vec(lat)), lon, zeros(size(lat))); # convert to LLA format
+    x_coord = euclidean_distance.(x_lla, xo_lla);
+    x_lla = LLA.(lat, ones(size(lon)).*minimum(vec(lon)), zeros(size(lat))); # convert to LLA format
+    y_coord = euclidean_distance.(x_lla, xo_lla);
+
+    # now create matrices from that (convert m to km as this is the internal standard)
+    X = repeat(x_coord./1e3,1,1,ndepth);
+    Y = repeat(y_coord./1e3,1,1,ndepth);
+    Z = ustrip(Data.depth.val);
+
+    DataFlat = CartData(X, Y, Z, Data.fields)
+    return DataFlat
 end

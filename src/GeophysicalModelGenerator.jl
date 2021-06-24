@@ -20,7 +20,7 @@ export ReadCSV_LatLon, meshgrid, voxGrav, Screenshot_To_GeoData
 using DelimitedFiles            
 
 # other packages
-using   WriteVTK, Colors, FileIO, Interpolations
+using   WriteVTK, Colors, FileIO, Interpolations, Geodesy
 
 # add files for specific tasks
 include("data_types.jl")
