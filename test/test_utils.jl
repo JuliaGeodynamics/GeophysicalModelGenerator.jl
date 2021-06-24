@@ -79,6 +79,17 @@ Data_sub_cross  =   ExtractSubvolume(test_cross, Depth_level=(-100km,0km), Inter
 @test size(Data_sub_cross.lat)==(50,1,34)
 
 # compute the mean velocity per depth in a 3D dataset and subtract the mean from the given velocities
-Data_pert = SubtractHorizontalMean(ustrip(Data))
-Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon,Pertdata=Data_pert ,Velocity=(Vx,Vy,Vz)))  
+Data_pert   =   SubtractHorizontalMean(ustrip(Data))    # 3D, no units
+@test Data_pert[10] == 0.0
+
+Data_pert   =   SubtractHorizontalMean(Data)            # 3D with units
+@test Data_pert[10] == 0.0km
+
+Data_pert   =   SubtractHorizontalMean(Data, Percentage=true)            # 3D with units
+@test Data_pert[10] == 0.0
+
+Data2D = Data[:,1,:];
+Data_pert   =   SubtractHorizontalMean(Data2D, Percentage=true)         # 2D version with units [dp the same along a vertical profile]    
+
+Data_set3D  =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon,Pertdata=Data_pert ,Velocity=(Vx,Vy,Vz)))  
 @test Data_set3D.fields[3][10,8,3] == 0

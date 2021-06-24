@@ -137,11 +137,11 @@ Extract or "cuts-out" a piece of a 2D or 3D GeoData set, defined by `Lon`, `Lat`
 
 This is useful if you are only interested in a part of a much bigger larger data set.
 
-- `Lon_level`,`Lat_level` and `Depth_level` should be tuples that indicate `(minimum_value, maximum_value)` along the respective direction. If not specified 
-- By default, `Interpolate=false` and we find the closest indices within the data set
+- `Lon_level`,`Lat_level` and `Depth_level` should be tuples that indicate `(minimum_value, maximum_value)` along the respective direction. If not specified we use the full range. 
+- By default, `Interpolate=false` and we find the closest indices within the data set (so your new data set will not go exactly from minimum to maximum).
 - Alternatively, if `Interpolate=true` we interpolate the data onto a new grid that has dimensions `dims`. This can be useful to compare data sets that are originally given in different resolutions.
 
-# Example:
+# 3D Example with no interpolation:
 ```julia-repl
 julia> Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
 julia> Data            =   Depth*2;                # some data
@@ -297,16 +297,68 @@ function ExtractDataSets(V::GeoData, iLon, iLat, iDepth)
 
 end
 
-# compute the mean velocity per depth in a 3D dataset and subtract the mean from the given velocities
-function SubtractHorizontalMean(V)
+"""
+    V_sub = SubtractHorizontalMean(V::AbstractArray{T, 3}; Percentage=false)
+
+Subtracts the horizontal average of the 3D data array V.
+
+If `Percentage=true`, the result is given as percentage; otherwise absolute values are returned
+
+"""
+function SubtractHorizontalMean(V::AbstractArray{T, 3}; Percentage=false) where T
+
     nx        = size(V,1);
     ny        = size(V,2);
     NumLayers = size(V,3); # get the number of depth levels
 
-    V_sub = zeros(size(V))
+    if Percentage
+        V_sub     = zeros(size(V));                 # no units
+    else
+        V_sub     = zeros(typeof(V[1]), size(V));   
+    end
 
     for iLayer = 1:NumLayers
-        V_sub[:,:,iLayer] = V[:,:,iLayer] .- mean(filter(!isnan, vec(V[:,:,iLayer])));
+        average             =   mean(filter(!isnan, vec(V[:,:,iLayer])));
+        
+        if Percentage
+            V_sub[:,:,iLayer]   =   ustrip(V[:,:,iLayer]) .- ustrip(average);
+            V_sub[:,:,iLayer]   =   V_sub[:,:,iLayer]./ustrip(average)*100.0;     # the result is normalized 
+        else
+            V_sub[:,:,iLayer]   =   V[:,:,iLayer] .- average;
+        end
+    end
+
+    return V_sub
+end
+
+"""
+    V_sub = SubtractHorizontalMean(V::AbstractArray{T, 2}; Percentage=false)
+
+Subtracts the horizontal average of the 2D data array V.
+
+If `Percentage=true`, the result is given as percentage; otherwise absolute values are returned
+
+"""
+function SubtractHorizontalMean(V::AbstractArray{T, 2}; Percentage=false) where T
+
+    nx        = size(V,1);
+    NumLayers = size(V,2); # get the number of depth levels
+
+    if Percentage
+        V_sub     = zeros(size(V));                 # no units
+    else
+        V_sub     = zeros(typeof(V[1]), size(V));   
+    end
+
+    for iLayer = 1:NumLayers
+        average             =   mean(filter(!isnan, vec(V[:,iLayer])));
+        
+        if Percentage
+            V_sub[:,iLayer]   =   ustrip(V[:,iLayer]) .- ustrip(average);
+            V_sub[:,iLayer]   =   V_sub[:,iLayer]./ustrip(average)*100.0;     # the result is normalized 
+        else
+            V_sub[:,iLayer]   =   V[:,iLayer] .- average;
+        end
     end
 
     return V_sub
