@@ -59,18 +59,19 @@ julia> Corner_UpperRight   =   (lon_max, lat_max , 0.0)
 ```
 and import the png file with the GMG function *Screenshot_To_GeoData*:  
 
-``julia
+```julia
 julia> DataPNG = Screenshot_To_GeoData(filename_geo, Corner_LowerLeft, Corner_UpperRight)
 ```
+
 The tricky part is then to interpolate the colors from the geological map to the topography. Here, we simply use nearesat neighbor interpolation ([NearestNeighbors.jl](https://github.com/KristofferC/NearestNeighbors.jl)) to do so. First, we have to set up the KDTree and determine the nearest neighbors of the points in our Lat/Lon grid
-``julia
+```julia
 julia> coord = [vec(DataPNG.lon.val)';vec(DataPNG.lat.val)'];
 julia> kdtree = KDTree(coord; leafsize = 10);
 julia> points = [vec(Lon)';vec(Lat)'];
 julia> dx,dist = nn(kdtree, points);
 ```
 Once this is done, the respective colors have to be assigned to a field in the *DataTopo* structure:
-``julia
+```julia
 julia> red   = zeros(size(Depth));
 julia> green = zeros(size(Depth));
 julia> blue  = zeros(size(Depth));
@@ -82,7 +83,7 @@ julia> tmp                = DataPNG.fields.colors[3];
 julia> blue[1:numel_topo] = tmp[idx];
 ```
 Finally, to avoid artefacts, all colors outside the region described by the tectonic map are set to white:
-``julia
+```julia
 julia> ind_tmp = Lat .<  Corner_LowerLeft[2];
 julia> red[ind_tmp] .= 1;
 julia> green[ind_tmp] .= 1;
