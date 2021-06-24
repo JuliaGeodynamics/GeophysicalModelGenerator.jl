@@ -79,8 +79,6 @@ red[ind_tmp] .= 1;
 green[ind_tmp] .= 1;
 blue[ind_tmp] .= 1;
 
-
-
 # Set up the Data structure
 Data_set        =   GeoData(Lon, Lat, Depth, (Topography=Depth*km,colors=(red,green,blue)))
 
