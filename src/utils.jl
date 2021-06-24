@@ -1,6 +1,6 @@
 # few utils that are useful 
 
-export meshgrid, CrossSection, ExtractSubvolume, SubtractHorizontalMean, export Flatten3DData
+export meshgrid, CrossSection, ExtractSubvolume, SubtractHorizontalMean, Flatten3DData
 
 """
     meshgrid(vx,vy,vz)

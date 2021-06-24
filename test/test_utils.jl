@@ -92,4 +92,4 @@ Data2D = Data[:,1,:];
 Data_pert   =   SubtractHorizontalMean(Data2D, Percentage=true)         # 2D version with units [dp the same along a vertical profile]    
 
 Data_set3D  =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon,Pertdata=Data_pert ,Velocity=(Vx,Vy,Vz)))  
-@test Data_set3D.fields[3][10,8,3] == 0
+@test Data_set3D.fields[3][10,8,1] == 0
