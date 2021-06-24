@@ -24,6 +24,7 @@ makedocs(;
             "Coastlines" =>  "man/tutorial_Coastlines.md",
             "Import screenshots" =>  "man/tutorial_Screenshot_To_Paraview.md",
             "Interpolate irregular 3D seismic tomography" =>  "man/tutorial_loadirregular3DSeismicData.md",
+            "ETOPO1 Topography and geological maps" =>  "man/tutorial_GMT_Topography_GeologicalMap.md",
         ],
         "User Guide" => Any[
             "Data Structures" =>  "man/datastructures.md",

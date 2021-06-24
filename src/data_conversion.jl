@@ -115,7 +115,7 @@ end
 ########### REARRANGE DATA TO OBTAIN A 3D MATIX IF NECESSARY ##########
 function RearrangeToMatrix()
 
-
+end
 ########### CONVERT NETCDF DATA TO GEO DATA ########
 """
 Converting netCDF data to GeoData is fairly easy. One can read in Data from a netCDF file using ncread("filename","variable") 

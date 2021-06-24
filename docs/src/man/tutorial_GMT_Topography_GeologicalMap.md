@@ -3,7 +3,7 @@
 
 ## Goal
 
-In many cases, we want to add topographic data as well to our visualization. This tutorial shows how to use [GMT.jl](https://github.com/GenericMappingTools/GMT.jl) to import data from an ETOPO1 file for a certain region, load a geological map from a raster graphics file (here: PNG), drape it over the topography and transfer that.
+In many cases, we want to add topographic data as well a information about tectonic units to our visualization. This tutorial shows how to use [GMT.jl](https://github.com/GenericMappingTools/GMT.jl) to import data from an ETOPO1 file for a certain region, load a geological map from a raster graphics file (here: PNG), drape it over the topography and transfer that.
 
 !!! note
     It may be tricky to get GMT.jl installed and working correctly on your system (at least until someone prevides a BinaryBuilder package for julia, that is). You first need to have a working version of GMT on your system and only after that, you can install `GMT.jl`. See the installation instructions on their webpage for details.  
@@ -14,7 +14,7 @@ In many cases, we want to add topographic data as well to our visualization. Thi
 
 #### 1. Download topographic data and tectonic maps of the Alpine region
 The ETOPO1 data file used in this example can be downloaded here:  
-[https://ngdc.noaa.gov/mgg/global/global.html](https://ngdc.noaa.gov/mgg/global/global.html). For this example we downloaded *ETOPO1_Ice_g_gmt4.grd* and stored it directly in the folder where we will be working. For the geological map, we downlaod the data from the [SPP 4DMB repository](http://www.spp-mountainbuilding.de/data/Maps.zip) and extract the zip file (also in the current folder). In this data set, a *gmt* file with the data for different tectonic units is given in *./
+[https://ngdc.noaa.gov/mgg/global/global.html](https://ngdc.noaa.gov/mgg/global/global.html). For this example we downloaded *ETOPO1_Ice_g_gmt4.grd* and stored it directly in the folder where we will be working. For the geological map, we download the data from the [SPP 4DMB repository](http://www.spp-mountainbuilding.de/data/Maps.zip) and extract the zip file (also in the current folder). In this data set, a *gmt* file with the data for different tectonic units is given in *./
 tectonic_maps_4dmb_2020_09_17/GMT_example/alcapadi_polygons.gmt* . 
 
 #### 2. Create a tectonic map with orthogonal projection 
