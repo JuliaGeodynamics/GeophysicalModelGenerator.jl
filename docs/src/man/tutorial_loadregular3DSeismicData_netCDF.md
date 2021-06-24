@@ -123,8 +123,6 @@ julia> Write_Paraview(Data_set, "MeRe_ElSharkawy")
  "MeRe_ElSharkawy.vts"
 ```
 
-**BELOW STILL NEEDS TO BE ADAPTED!** 
-
 #### 5. Plotting data in Paraview
 In paraview you can open the file and visualize it:
 
