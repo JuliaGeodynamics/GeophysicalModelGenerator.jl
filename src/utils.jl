@@ -1,6 +1,6 @@
 # few utils that are useful 
 
-export meshgrid, CrossSection, ExtractSubvolume
+export meshgrid, CrossSection, ExtractSubvolume, SubtractMeanVelocity
 
 """
     meshgrid(vx,vy,vz)
@@ -295,4 +295,19 @@ function ExtractDataSets(V::GeoData, iLon, iLat, iDepth)
     # Create a GeoData struct with the newly interpolated fields
     Data_profile = GeoData(Lon, Lat, Depth, fields_new);
 
+end
+
+# compute the mean velocity per depth in a 3D dataset and subtract the mean from the given velocities
+function SubtractHorizontalMean(V)
+    nx        = size(V,1);
+    ny        = size(V,2);
+    NumLayers = size(V,3); # get the number of depth levels
+
+    V_mean = zeros(size(V))
+
+    for iLayer = 1:NumLayers
+        V_sub = tmp[:,:,iLayer] .- mean(filter(!isnan, vec(tmp[:,:,iLayer])));
+    end
+
+    return V_sub
 end
