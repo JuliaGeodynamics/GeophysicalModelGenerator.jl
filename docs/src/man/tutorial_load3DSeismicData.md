@@ -146,12 +146,12 @@ julia> Write_Paraview(Data_set, "Zhao_etal_2016_dVp_percentage")
 ```
 
 #### 4. Plotting data in Paraview
+In paraview you should open the `*.vts` file, and press `Apply` (left menu) after doing that. Once you did that you can select `dVp_Percentage` and `Surface` (see red ellipses below)/.
 In paraview you can open the file and visualize it. 
 
 ![Paraview_1](../assets/img/Tutorial_Zhao_Paraview_1.png)
 
-The red ellipses show some of the properties you have to select. 
-This employs the default colormap, which is not particularly good.
+This visualisation employs the default colormap, which is not particularly good.
 
 You can change that by importing the roma colormap (using the link described earlier). For this, open the colormap editor and click the one with the heart on the right hand side. Next, import roma and select it.
 
