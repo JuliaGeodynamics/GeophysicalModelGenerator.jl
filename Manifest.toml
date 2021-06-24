@@ -78,6 +78,12 @@ git-tree-sha1 = "1dc43957fb9a1574fa1b7a449e101bd1fd3a9fb7"
 uuid = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
 version = "1.2.1"
 
+[[CoordinateTransformations]]
+deps = ["LinearAlgebra", "StaticArrays"]
+git-tree-sha1 = "6d1c23e740a586955645500bbec662476204a52c"
+uuid = "150eb455-5306-5404-9cee-2592286d6298"
+version = "0.6.1"
+
 [[Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -125,6 +131,12 @@ repo-rev = "main"
 repo-url = "https://github.com/JuliaGeodynamics/GeoParams.jl"
 uuid = "e018b62d-d9de-4a26-8697-af89c310ae38"
 version = "0.1.3"
+
+[[Geodesy]]
+deps = ["CoordinateTransformations", "Dates", "LinearAlgebra", "StaticArrays"]
+git-tree-sha1 = "2341a0d40d1f96db72275d7ae97ad5600778f137"
+uuid = "0ef565a4-170c-5f04-8de2-149903a85f3d"
+version = "1.0.1"
 
 [[Graphics]]
 deps = ["Colors", "LinearAlgebra", "NaNMath"]
