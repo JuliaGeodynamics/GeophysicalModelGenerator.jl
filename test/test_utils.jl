@@ -16,6 +16,11 @@ Data            =   Depth*2;                # some data
 Vx,Vy,Vz        =   ustrip(Data*3),ustrip(Data*4),ustrip(Data*5);
 Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)))  
 
+# subtract the horizontal mean from the data
+Data_pert = SubtractHorizontalMean(ustrip(Data))
+Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon,Pertdata=Data_pert ,Velocity=(Vx,Vy,Vz)))  
+@test Data_set3D.fields[3][10,8,3] == 0
+
 # Create cross-sections in various directions (no interpolation which is default)
 test_cross      =   CrossSection(Data_set3D, Depth_level=-100km)
 @test test_cross.fields[1][41]==-200km
@@ -77,4 +82,6 @@ test_cross      =   CrossSection(Data_set3D, Lat_level=35, dims=(50,100), Interp
 Data_sub_cross  =   ExtractSubvolume(test_cross, Depth_level=(-100km,0km), Interpolate=false)
 @test Data_sub_cross.fields[1][11]==-200.00000000000003km
 @test size(Data_sub_cross.lat)==(50,1,34)
+
+# compute the mean velocity per depth in a 3D dataset and subtract the mean from the given velocities
 

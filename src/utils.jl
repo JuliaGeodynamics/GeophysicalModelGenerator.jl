@@ -1,6 +1,6 @@
 # few utils that are useful 
 
-export meshgrid, CrossSection, ExtractSubvolume, SubtractMeanVelocity
+export meshgrid, CrossSection, ExtractSubvolume, SubtractHorizontalMean
 
 """
     meshgrid(vx,vy,vz)
@@ -303,10 +303,10 @@ function SubtractHorizontalMean(V)
     ny        = size(V,2);
     NumLayers = size(V,3); # get the number of depth levels
 
-    V_mean = zeros(size(V))
+    V_sub = zeros(size(V))
 
     for iLayer = 1:NumLayers
-        V_sub = tmp[:,:,iLayer] .- mean(filter(!isnan, vec(tmp[:,:,iLayer])));
+        V_sub[:,:,iLayer] = V[:,:,iLayer] .- mean(filter(!isnan, vec(V[:,:,iLayer])));
     end
 
     return V_sub

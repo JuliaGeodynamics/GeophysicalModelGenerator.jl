@@ -18,10 +18,10 @@ filename = "./El-Sharkawy-etal-G3.2020-MeRE2020-Mediterranean-0.0.nc" # this onl
 
 # Now check with ncinfo(filename), what the variables are called exactly and what the contents of your netCDF file are 
 
-lat = ncread(filename,"latitude")
-lon = ncread(filename,"longitude")
-depth = ncread(filename,"depth")
-vs    = ncread(filename,"Vs")
+lat = ncread(filename,"latitude");
+lon = ncread(filename,"longitude");
+depth = ncread(filename,"depth");
+vs    = ncread(filename,"Vs");
 depth = -1 .* depth # CAREFUL: MAKE SURE DEPTH IS NEGATIVE, AS THIS IS THE ASSUMTPION IN GeoData
 
 # For netCDF data, 3D coordinates of a regular grid are only given as 1D vectors. As we need to compute Cartesian coordinates for
@@ -29,7 +29,7 @@ depth = -1 .* depth # CAREFUL: MAKE SURE DEPTH IS NEGATIVE, AS THIS IS THE ASSUM
 Lon3D,Lat3D,Depth3D = LonLatDepthGrid(lon, lat, depth);
 
 # Set up the Data structure
-Data_set1       =   GeoData(Lat3D,Lon3D,Depth3D,(VS=vs,))
+Data_set       =   GeoData(Lon3D,Lat3D,Depth3D,(VS=vs,))
 
 # Export the data structure to Paraview format
 Write_Paraview(Data_set, "test_netcdf_3D")
