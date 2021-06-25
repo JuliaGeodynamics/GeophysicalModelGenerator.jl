@@ -1,6 +1,7 @@
 # few utils that are useful 
 
 export meshgrid, CrossSection, ExtractSubvolume, SubtractHorizontalMean, Flatten3DData
+export ParseColumns_CSV_File
 
 """
     meshgrid(vx,vy,vz)
@@ -210,6 +211,11 @@ function CheckIsVolume(Volume::GeoData)
     end
 end
 
+"""
+    InterpolateDataFields(V::GeoData, Lon, Lat, Depth)
+
+Interpolates a data field `V` on a grid defined by `Lon,Lat,Depth`
+"""
 function InterpolateDataFields(V::GeoData, Lon, Lat, Depth)
 
     Lon_vec     =  V.lon.val[:,1,1];
@@ -388,4 +394,36 @@ function Flatten3DData(Data::GeoData)
 
     DataFlat = CartData(X, Y, Z, Data.fields)
     return DataFlat
+end
+
+
+""" 
+    ParseColumns_CSV_File(data_file, num_columns)
+
+This parses numbers from CSV file that is read in with `CSV.File`.
+That is useful in case the CSV files has tables that contain both strings (e.g., station names) and numbers (lat/lon/height) and you are only intested in the numbers
+
+
+# Example
+This example assumes that the data starts at line 18, that the colums are seperated by a space, and that it contains at most 4 columns with data
+```julia-repl
+julia> using CSV
+julia> data_file        =   CSV.File("FileName.txt",datarow=18,header=false,delim=' ')
+julia> data = ParseColumns_CSV_File(data_file, 4)
+```
+
+"""
+function ParseColumns_CSV_File(data_file, num_columns)
+    data                =   zeros(size(data_file,1), num_columns);    
+    for (row_num,row) in enumerate(data_file)
+        num         =   0;
+        for i=1:length(row)
+            try parse(Float64,row[i])
+                num          +=  1;
+                data[row_num,num] = parse(Float64,row[i])
+            catch
+            end
+        end
+    end
+    return data
 end
