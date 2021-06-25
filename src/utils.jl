@@ -405,7 +405,7 @@ That is useful in case the CSV files has tables that contain both strings (e.g.,
 
 
 # Example
-This example assumes that the data starts at line 18, that the colums are seperated by a space, and that it contains at most 4 columns with data
+This example assumes that the data starts at line 18, that the colums are separated by spaces, and that it contains at most 4 columns with data:
 ```julia-repl
 julia> using CSV
 julia> data_file        =   CSV.File("FileName.txt",datarow=18,header=false,delim=' ')
