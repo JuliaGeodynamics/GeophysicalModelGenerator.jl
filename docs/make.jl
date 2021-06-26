@@ -25,6 +25,7 @@ makedocs(;
             "Import screenshots" =>  "man/tutorial_Screenshot_To_Paraview.md",
             "Interpolate irregular 3D seismic tomography" =>  "man/tutorial_loadirregular3DSeismicData.md",
             "ETOPO1 Topography and geological maps" =>  "man/tutorial_GMT_Topography_GeologicalMap.md",
+            "Plots GPS vectors" =>  "man/tutorial_GPS.md",
         ],
         "User Guide" => Any[
             "Data Structures" =>  "man/datastructures.md",
