@@ -3,8 +3,7 @@
 ## Goal
 
 The aim of this tutorial is to show you how you can download and plot GPS data, which are vector data. 
-The example is based on a paper by Sanchez et al. (2018) https://essd.copernicus.org/articles/10/1503/2018/#section7
-
+The example is based on a paper by Sanchez et al. (2018) [https://essd.copernicus.org/articles/10/1503/2018/#section7](https://essd.copernicus.org/articles/10/1503/2018/#section7)
 
 
 ## Steps
