@@ -49,6 +49,7 @@ julia> using Plots
 julia> Plots.scatter(lon_Vz,lat_Vz)
 ```
 ![Tutorial_GPS_1](../assets/img/Tutorial_GPS_1.png)
+
 So clearly, this is a fully regular grid.
 We can determine the size of the grid with 
 ```julia
@@ -98,7 +99,7 @@ julia> Vz[:,:,1]               =   reshape(Vz_vec,(41,31))
 
 
 #### 3. Load horizontal velocities
-Next, we load the horizontal velocities from the file ``
+Next, we load the horizontal velocities from the file `ALPS2017_DEF_HZ.GRD`
 
 ```julia
 julia> data_file                       =   CSV.File("ALPS2017_DEF_HZ.GRD",datarow=18,header=false,delim=' ');
@@ -111,6 +112,7 @@ Let's plot the data as well:
 julia> Plots.scatter(lon_Hz,lat_Hz)
 ```
 ![Tutorial_GPS_2](../assets/img/Tutorial_GPS_2.png)
+
 So it appears that the horizontal velocities are given on the same regular grid as well, but not in the water. 
 This thus requires a bit more work. The strategy we take is to first define 2D matrixes with horizontal velocities with the same size as Vz which are initialized with `NaN` (not a number), which is treated specially by Paraview.
 
