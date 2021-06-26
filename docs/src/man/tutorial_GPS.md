@@ -182,3 +182,4 @@ In order to plot the velocities as arrows, you need to select the `Glyph` tool (
 ![Tutorial_GPS_4](../assets/img/Tutorial_GPS_4.png)
 
 The arrows can now be colored by the individual velocity components or its magnitude.
+
