@@ -418,11 +418,18 @@ function ParseColumns_CSV_File(data_file, num_columns)
     for (row_num,row) in enumerate(data_file)
         num         =   0;
         for i=1:length(row)
-            try parse(Float64,row[i])
+            if typeof(row[i])==Float64
                 num          +=  1;
-                data[row_num,num] = parse(Float64,row[i])
-            catch
+                data[row_num,num] = row[i]
+            else
+            
+                try parse(Float64,row[i])
+                    num          +=  1;
+                    data[row_num,num] = parse(Float64,row[i])
+                catch
+                end
             end
+
         end
     end
     return data
