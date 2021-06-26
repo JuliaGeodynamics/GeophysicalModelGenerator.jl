@@ -14,10 +14,10 @@ The example is based on a paper by Sanchez et al. (2018) https://essd.copernicus
 The data related to the paper can be downloaded from: https://doi.pangaea.de/10.1594/PANGAEA.886889
 There you will find links to several data sets. Some are the data on the actual stations and some are interpolated data on a grid. Here, we will use the gridded data as an example (which interpolates the ), and will therefore download the following data sets:
 
-- ALPS2017_DEF_HZ	Surface deformation model of the Alpine Region	GRD	60.413	https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_DEF_HZ.GRD
-- ALPS2017_DEF_VT	Vertical deformation model of the Alpine Region	GRD	47.840	https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_DEF_VT.GRD
+- ALPS2017_DEF_HZ	Surface deformation model of the Alpine Region	[https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_DEF_HZ.GRD](https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_DEF_HZ.GRD)
+- ALPS2017_DEF_VT	Vertical deformation model of the Alpine Region	[https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_DEF_VT.GRD](https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_DEF_VT.GRD)
 
-Next we have a look at the data themselves. We will use the package `CSV.jl` to load the comma-separated data.
+Next, we have a look at the data themselves. We will use the package `CSV.jl` to load the comma-separated data.
 Let's have a look at the file `ALPS2017_DEF_VT.GRD`. If we open it with a text editor, we see that the data starts at line 18, and has the following format:
 ```
 Column 1: Longitude [degrees]
