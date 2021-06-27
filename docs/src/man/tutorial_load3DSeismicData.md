@@ -265,9 +265,21 @@ GeoData
   fields: (:dVp_Percentage,)
 julia> Write_Paraview(Data_subset, "Zhao_Subset_interp")
 ```
+#### 7. Load and save data to disk
+It would be useful to save the 3D data set we just created to disk, such that we can easily load it again at a later stage and create cross-sections etc, or compare it with other models. 
+It is quite easy to do so with the [JLD2.hl](https://github.com/JuliaIO/JLD2.jl) package:
+```julia
+julia> jldsave("Zhao_Pwave.jld2"; Data_set)
+```
+
+If you, at a later stage, want to load this file again do it as follows:
+```julia
+julia> using JLD2, GeophysicalModelGenerator
+julia> Data_set_Zhao2016_Vp = load_object("Zhao_Pwave.jld2")
+```
 
 
-#### 7. Julia script
+#### 8. Julia script
 
 The full julia script that does it all is given [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/main/tutorial/Alps_VpModel_Zhao_etal_JGR2016.jl). You need to be in the same directory as in the data file, after which you can run it in julia with
 ```julia
