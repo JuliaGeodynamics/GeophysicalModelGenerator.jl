@@ -238,7 +238,7 @@ function InterpolateDataFields(V::GeoData, Lon, Lat, Depth)
 
             for j=1:length(data_tuple)
                 if ReverseData
-                    ndim        =   length(size(V.fields[i]))
+                    ndim        =   length(size(data_tuple[j]))
                     interpol    =   LinearInterpolation((Lon_vec, Lat_vec, reverse(Depth_vec)), reverse(ustrip(data_tuple[j]), dims=ndim));      # create interpolation object
                 else
                     interpol    =   LinearInterpolation((Lon_vec, Lat_vec, Depth_vec), ustrip(data_tuple[j]));      # create interpolation object

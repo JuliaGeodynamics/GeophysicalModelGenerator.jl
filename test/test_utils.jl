@@ -16,6 +16,13 @@ Data            =   Depth*2;                # some data
 Vx,Vy,Vz        =   ustrip(Data*3),ustrip(Data*4),ustrip(Data*5);
 Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)))  
 
+
+# Create 3D volume with some fake data
+Lon,Lat,Depth           =   LonLatDepthGrid(10:20,30:40,(0:-25:-300)km);
+Data                    =   Depth*2;                # some data
+Vx,Vy,Vz                =   ustrip(Data*3),ustrip(Data*4),ustrip(Data*5);
+Data_set3D_reverse      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)))  
+
 # Create cross-sections in various directions (no interpolation which is default)
 test_cross      =   CrossSection(Data_set3D, Depth_level=-100km)
 @test test_cross.fields[1][41]==-200km
@@ -58,7 +65,9 @@ test_cross      =   CrossSection(Data_set3D, Start=(10,30), End=(20,40), dims=(5
 @test size(test_cross.fields[3][2])==(50,100,1)
 @test Write_Paraview(test_cross, "profile_test")[1]=="profile_test.vts"
 
-
+test_cross_rev  =   CrossSection(Data_set3D_reverse, Start=(10,30), End=(20,40), dims=(50,100), Interpolate=true)
+@test size(test_cross_rev.fields[3][2])==(50,100,1)
+@test Write_Paraview(test_cross_rev, "profile_test_rev")[1]=="profile_test_rev.vts"
 
 # Extract sub-volume
 
