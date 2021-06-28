@@ -22,6 +22,8 @@ using DelimitedFiles
 # other packages
 using   WriteVTK, Colors, FileIO, Interpolations, Geodesy
 
+export vtk_multiblock, vtk_save         # Simplifies writing multiblock files
+
 # add files for specific tasks
 include("data_types.jl")
 include("data_import.jl")

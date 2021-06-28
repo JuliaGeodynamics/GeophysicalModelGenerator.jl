@@ -73,7 +73,7 @@ function Write_Paraview(DataSet::CartData, filename="test"; PointsData=false)
 
     # Create VT* file 
     if PointsData    
-        # in case we write a dataset with uncinnected points (e.g., GPS data, EQ locations etc.)
+        # in case we write a dataset with unconnected points (e.g., GPS data, EQ locations etc.)
         npoints =   length(DataSet.x)
         cells   =   [MeshCell(VTKCellTypes.VTK_VERTEX, (i, )) for i = 1:npoints]
         x       =   ustrip.(DataSet.x.val);  x = x[:];
