@@ -221,6 +221,11 @@ function InterpolateDataFields(V::GeoData, Lon, Lat, Depth)
     Lon_vec     =  V.lon.val[:,1,1];
     Lat_vec     =  V.lat.val[1,:,1];
     Depth_vec   =  V.depth.val[1,1,:];
+    if Depth_vec[1]>Depth_vec[end]
+        ReverseData = true
+    else
+        ReverseData = false
+    end
 
     fields_new  = V.fields;
     field_names = keys(fields_new);
@@ -232,14 +237,24 @@ function InterpolateDataFields(V::GeoData, Lon, Lat, Depth)
             unit_array = zeros(size(data_array));
 
             for j=1:length(data_tuple)
-                interpol            =   LinearInterpolation((Lon_vec, Lat_vec, Depth_vec), ustrip(data_tuple[j]));      # create interpolation object
+                if ReverseData
+                    ndim        =   length(size(V.fields[i]))
+                    interpol    =   LinearInterpolation((Lon_vec, Lat_vec, reverse(Depth_vec)), reverse(ustrip(data_tuple[j]), dims=ndim));      # create interpolation object
+                else
+                    interpol    =   LinearInterpolation((Lon_vec, Lat_vec, Depth_vec), ustrip(data_tuple[j]));      # create interpolation object
+                end
                 data_array[:,:,:,j] =   interpol.(Lon, Lat, Depth);          
             end
             data_new    = tuple([data_array[:,:,:,c] for c in 1:size(data_array,4)]...)     # transform 3D matrix to tuple
 
         else
             # scalar field
-            interpol    =   LinearInterpolation((Lon_vec, Lat_vec, Depth_vec), V.fields[i]);            # create interpolation object
+            if ReverseData
+                ndim        =   length(size(V.fields[i]))
+                interpol    =   LinearInterpolation((Lon_vec, Lat_vec, reverse(Depth_vec)), reverse(V.fields[i], dims=ndim));            # create interpolation object
+            else
+                interpol    =   LinearInterpolation((Lon_vec, Lat_vec, Depth_vec), V.fields[i]);            # create interpolation object
+            end
             data_new    =   interpol.(Lon, Lat, Depth);                                                 # interpolate data field
         end
         
