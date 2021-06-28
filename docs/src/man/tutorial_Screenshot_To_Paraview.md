@@ -59,7 +59,7 @@ You can open this in paraview. Here, it is shown along with topographic data (ma
 Note that if you want to see the image with the original colors, you should *unselect* the `Map Scalars` option in the `Properties` tab (red ellipse).
 
 
-#### 3. Read data of a mapview & create VTS file
+#### 3. Read data of a mapview & create *.vts file
 
 Creating a map follows the same procedure. The only difference is that maps are sometimes distorted which means that the axis are not necessarily orthogonal in `lon/lat` space. In that case, you need to specify all 4 corners. Internally, we linearly interpolate between those values.
 
@@ -78,8 +78,23 @@ Write_Paraview(data_Fig13_map, "Lippitsch_Fig13_mapview")
 Once added to paraview (together with a few additional map views from the same paper):  
 ![Tutorial_ScreenShots_Lippitsch_4](../assets/img/Tutorial_ScreenShots_Lippitsch_4.png)
 
+#### 4. Creating a multiblock Paraview/*.vtm file
 
-#### 3. Julia script
+If you are importing a lot of cross-sections at the same time in Paraview, you end up having a lot of open profiles.
+For that reason it is possible to save a "multi-block" *.vtm file, which combines several files into one.
+The general approach is simple: open a multiblock file, and pass the filename to `Write_Paraview`. Once you are done, save it.
+An example showing you how this works is:
+```julia
+julia> vtmfile = vtk_multiblock("Lippitsch_CrossSections")
+julia> Write_Paraview(data_Fig12_90km, vtmfile) 
+julia> Write_Paraview(data_Fig12_180km, vtmfile) 
+julia> Write_Paraview(data_Fig12_300km, vtmfile) 
+julia> Write_Paraview(data_Fig12_400km, vtmfile) 
+julia> vtk_save(vtmfile)
+```
+Note that you have to create the cross-sections first (see the julia script below).
+
+#### 5. Julia script
 For convenience we collected a few screenshots and uploaded it from [https://seafile.rlp.net/d/a50881f45aa34cdeb3c0/](https://seafile.rlp.net/d/a50881f45aa34cdeb3c0/).
 
 The full julia script that interprets all the figures is given [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/tree/main/tutorial/Lippitsch_Screenshots.jl).

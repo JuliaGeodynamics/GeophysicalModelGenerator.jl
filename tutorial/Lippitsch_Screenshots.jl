@@ -59,3 +59,13 @@ Corner_LowerRight       =   (Corner_LowerRight[1],  Corner_LowerRight[2],   Dept
 Corner_UpperLeft        =   (Corner_UpperLeft[1],   Corner_UpperLeft[2],    Depth)
 data_Fig12_400km   =   Screenshot_To_GeoData("Fig12_400km.png",Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight,Corner_UpperLeft=Corner_UpperLeft)
 Write_Paraview(data_Fig12_400km, "Lippitsch_Fig12_400km") 
+
+
+# Example of how we can save this to a multibock *.VTM file (which allows you to open all files @ once in paraview)
+vtmfile = vtk_multiblock("Lippitsch_CrossSections")
+Write_Paraview(data_Fig12_90km, vtmfile) 
+Write_Paraview(data_Fig12_180km, vtmfile) 
+Write_Paraview(data_Fig12_300km, vtmfile) 
+Write_Paraview(data_Fig12_400km, vtmfile) 
+vtk_save(vtmfile)
+
