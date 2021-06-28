@@ -102,3 +102,23 @@ Data_pert   =   SubtractHorizontalMean(Data2D, Percentage=true)         # 2D ver
 
 Data_set3D  =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon,Pertdata=Data_pert ,Velocity=(Vx,Vy,Vz)))  
 @test Data_set3D.fields[3][10,8,1] == 0
+
+
+# Create surface ("Moho")
+Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,-40km);
+Depth           =   Depth + Lon*km;     # some fake topography on Moho
+Data_Moho       =   GeoData(Lon,Lat,Depth,(MohoDepth=Depth,LonData=Lon))  
+
+
+# Test intersecting a surface with 2D or 3D data sets
+Above       =   AboveSurface(Data_set3D, Data_Moho);            # 3D regular ordering
+@test Above[214]==true
+@test Above[215]==false
+
+Above       =   AboveSurface(Data_set3D_reverse, Data_Moho);    #  3D reverse depth ordering
+@test Above[214]==true
+@test Above[215]==false
+
+Above       =   AboveSurface(Data_sub_cross, Data_Moho);        # 2D cross-section
+@test Above[end]==true
+@test Above[1]==false

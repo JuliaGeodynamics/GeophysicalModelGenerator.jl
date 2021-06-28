@@ -7,5 +7,6 @@ GeophysicalModelGenerator.CrossSection
 GeophysicalModelGenerator.ExtractSubvolume
 GeophysicalModelGenerator.InterpolateDataFields
 GeophysicalModelGenerator.SubtractHorizontalMean
+GeophysicalModelGenerator.AboveSurface
 GeophysicalModelGenerator.ParseColumns_CSV_File
 ```
