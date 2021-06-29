@@ -1,7 +1,7 @@
 # few utils that are useful 
 
 export meshgrid, CrossSection, ExtractSubvolume, SubtractHorizontalMean, Flatten3DData
-export ParseColumns_CSV_File, AboveSurface
+export ParseColumns_CSV_File, AboveSurface, VoteMap
 
 """
     meshgrid(vx,vy,vz)
@@ -111,7 +111,7 @@ function CrossSection(V::GeoData; dims=(100,100), Interpolate=false, Depth_level
         Lat             =   zeros(dims[1],dims[2],1)
         Depth           =   zeros(dims[1],dims[2],1)*Depth_p[1]
         
-        # we need 3D m[axtrixes for the paraview writing routine to know we are in 3D
+        # We need 3D matrixes for the paraview writing routine to know we are in 3D
         Lon[:,:,1]      =   Lon_p[:,1,:]
         Lat[:,:,1]      =   Lat_p[1,:,:]
         Depth[:,:,1]    =   Depth_p[1,:,:]
@@ -122,7 +122,7 @@ function CrossSection(V::GeoData; dims=(100,100), Interpolate=false, Depth_level
         # Interpolate data on profile
         DataProfile = InterpolateDataFields(V, Lon, Lat, Depth);    
     else
-        # extract data (no interplation)
+        # extract data (no interpolation)
         DataProfile = ExtractDataSets(V, iLon, iLat, iDepth);
     end
 
@@ -147,11 +147,31 @@ This is useful if you are only interested in a part of a much bigger larger data
 julia> Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
 julia> Data            =   Depth*2;                # some data
 julia> Vx,Vy,Vz        =   ustrip(Data*3),ustrip(Data*4),ustrip(Data*5);
-julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz))); 
+julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)))
 GeoData 
-  size  : (6, 3, 13)
-  lon   ϵ [ 10.0 : 15.0]
-  lat   ϵ [ 30.0 : 32.0]
+  size  : (11, 11, 13)
+  lon   ϵ [ 10.0 : 20.0]
+  lat   ϵ [ 30.0 : 40.0]
+  depth ϵ [ -300.0 km : 0.0 km]
+  fields: (:Depthdata, :LonData, :Velocity)
+julia> Data_extracted = ExtractSubvolume(Data_set3D,Lon_level=(10,12),Lat_level=(35,40))
+GeoData 
+  size  : (3, 6, 13)
+  lon   ϵ [ 10.0 : 12.0]
+  lat   ϵ [ 35.0 : 40.0]
+  depth ϵ [ -300.0 km : 0.0 km]
+  fields: (:Depthdata, :LonData, :Velocity)
+```
+By default it extracts the data points closest to the area defined by Lon_level/Lat_level/Depth_level.
+
+# 3D Example with interpolation:
+Alternatively, you can also interpolate the data onto a new grid:
+```julia
+julia> Data_extracted = ExtractSubvolume(Data_set3D,Lon_level=(10,12),Lat_level=(35,40), Interpolate=true, dims=(50,51,52))
+GeoData 
+  size  : (50, 51, 52)
+  lon   ϵ [ 10.0 : 12.0]
+  lat   ϵ [ 35.0 : 40.0]
   depth ϵ [ -300.0 km : 0.0 km]
   fields: (:Depthdata, :LonData, :Velocity)
 ```
@@ -171,8 +191,7 @@ function ExtractSubvolume(V::GeoData; Interpolate=false, Lon_level=nothing, Lat_
     if Interpolate
         Lon,Lat,Depth   = LonLatDepthGrid(  LinRange(Lon_level[1],      Lon_level[2],   dims[1]),
                                             LinRange(Lat_level[1],      Lat_level[2],   dims[2]),
-                                            LinRange(Depth_level[1],    Depth_level[2], dims[3]));
-
+                                            LinRange(Depth_level[1],    Depth_level[2], dims[3]) );
         Data_extract    =   InterpolateDataFields(V, Lon, Lat, Depth)
 
     else
@@ -503,4 +522,127 @@ function AboveSurface(Data::GeoData, DataSurface::GeoData)
     Above       =   Data.depth.val .> DepthSurface;
 
     return Above
+end
+
+"""
+    VoteMap(DataSets::Vector{GeoData}, criteria::Vector{String}, dims=(50,50,50))
+
+Creates a Vote map which shows consistent features in different 2D/3D tomographic datasets.
+
+The way it works is:
+    - Find a common region between the different GeoData sets (overlapping lon/lat/depth regions)
+    - Interpolate the fields of all DataSets to common coordinates
+    - Filter data points in one model (e.g., areas with a velocity anomaly > 2 percent). Set everything that satisfies this criteria to 1 and everything else to 0.
+    - Sum the results of the different datasets
+
+If a feature is consistent between different datasets, it will have larger values. 
+
+# Example
+We assume that we have 2 seismic velocity datasets `Data_Zhao_Pwave` and `DataKoulakov_Alps`:
+```julia
+julia> Data_Zhao_Pwave
+GeoData 
+  size  : (121, 94, 101)
+  lon   ϵ [ 0.0 : 18.0]
+  lat   ϵ [ 38.0 : 51.95]
+  depth ϵ [ -1001.0 km : -1.0 km]
+  fields: (:dVp_Percentage,)
+julia> DataKoulakov_Alps
+  GeoData 
+    size  : (108, 81, 35)
+    lon   ϵ [ 4.0 : 20.049999999999997]
+    lat   ϵ [ 37.035928143712574 : 49.01197604790419]
+    depth ϵ [ -700.0 km : -10.0 km]
+    fields: (:dVp_percentage, :dVs_percentage)
+```
+You can create a VoteMap which combines the two data sets with:
+```julia 
+julia> Data_VoteMap = VoteMap([Data_Zhao_Pwave,DataKoulakov_Alps],["dVp_Percentage>2.5","dVp_percentage>3.0"])
+GeoData 
+  size  : (50, 50, 50)
+  lon   ϵ [ 4.0 : 18.0]
+  lat   ϵ [ 38.0 : 49.01197604790419]
+  depth ϵ [ -700.0 km : -10.0 km]
+  fields: (:VoteMap,)
+```
+
+You can also create a VoteMap of a single dataset:
+```julia 
+julia> Data_VoteMap = VoteMap(Data_Zhao_Pwave,"dVp_Percentage>2.5", dims=(50,51,52))
+GeoData 
+  size  : (50, 51, 52)
+  lon   ϵ [ 0.0 : 18.0]
+  lat   ϵ [ 38.0 : 51.95]
+  depth ϵ [ -1001.0 km : -1.0 km]
+  fields: (:VoteMap,)
+```
+
+"""
+function VoteMap(DataSets::Vector{GeoData}, criteria::Vector{String}; dims=(50,50,50))
+
+    numDataSets = length(DataSets)
+
+    if length(criteria) != numDataSets
+        error("Need the same number of criteria as the number of data sets")
+    end
+    
+    # Determine the overlapping lon/lat/depth regions of all datasets
+    lon_limits  = [minimum(DataSets[1].lon.val);        maximum(DataSets[1].lon.val)];
+    lat_limits  = [minimum(DataSets[1].lat.val);        maximum(DataSets[1].lat.val)];
+    z_limits    = [minimum(DataSets[1].depth.val);      maximum(DataSets[1].depth.val)];
+    for i=1:numDataSets
+        lon_limits[1]   =   maximum([lon_limits[1]  minimum(DataSets[i].lon.val)]);
+        lon_limits[2]   =   minimum([lon_limits[2]  maximum(DataSets[i].lon.val)]);
+
+        lat_limits[1]   =   maximum([lat_limits[1]  minimum(DataSets[i].lat.val)]);
+        lat_limits[2]   =   minimum([lat_limits[2]  maximum(DataSets[i].lat.val)]);
+ 
+        z_limits[1]     =   maximum([z_limits[1]    minimum(DataSets[i].depth.val)]);
+        z_limits[2]     =   minimum([z_limits[2]    maximum(DataSets[i].depth.val)]);
+    end
+
+    # Loop over all datasets, and interpolate the data set to the new (usually smaller) domain
+    VoteMap             =   zeros(Int64,dims)
+    for i=1:numDataSets
+        VoteMap_Local   =   zeros(Int64,dims)
+        
+        # Interpolate data set to smaller domain
+        DataSet         =   ExtractSubvolume(DataSets[i]; Interpolate=true, Lon_level=lon_limits, Lat_level=lat_limits, Depth_level=z_limits, dims=dims);
+
+        # Extract the criteria to evaluate
+        expr            =   Meta.parse(criteria[i]);     # the expression, such as Vs>1.0
+
+        # Extract data field
+        if !haskey(DataSet.fields,expr.args[2])
+            error("The GeoData set does not have the field: $(expr.args[2])")
+        end
+
+        Array3D         =   ustrip(DataSet.fields[expr.args[2]]);                  # strip units, just in case
+        
+        # Modify the value, to be Array3D 
+        expr_mod        =   Expr(:call, expr.args[1], :($Array3D), expr.args[3]);      # modify the original expression to use Array3D as variable name
+        
+        # The expression should have a ".", such as Array .> 1.0. If not, it will not apply this in a pointwise manner
+        #   Here, we add this dot if it is not there yet
+        if cmp(String(expr_mod.args[1])[1],Char('.'))==1
+            expr_mod.args[1] = Symbol(".",expr_mod.args[1]);
+        end
+
+        ind                 = eval(expr_mod);    # evaluate the modified expression
+        VoteMap_Local[ind] .= 1;                 # assign vote-map
+
+        VoteMap = VoteMap + VoteMap_Local;       # Sum 
+    end
+
+    DataSet     =   ExtractSubvolume(DataSets[1], Interpolate=true, Lon_level=lon_limits, Lat_level=lat_limits, Depth_level=z_limits, dims=dims);
+
+    # Construct GeoData set that holds the VoteMap (makes it easier to write paraview files)
+    VoteData    =   GeoData(DataSet.lon.val,DataSet.lat.val,DataSet.depth.val, (VoteMap=VoteMap,));
+
+    return VoteData
+end
+
+# Make this work for single data sets as well
+function VoteMap(DataSets::GeoData, criteria::String; dims=(50,50,50))
+    VoteMap([DataSets], [criteria]; dims=dims)
 end

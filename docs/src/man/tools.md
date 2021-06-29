@@ -6,6 +6,7 @@ We have a number of functions with which we can extract sub-data from a 2D or 3D
 GeophysicalModelGenerator.CrossSection
 GeophysicalModelGenerator.ExtractSubvolume
 GeophysicalModelGenerator.InterpolateDataFields
+GeophysicalModelGenerator.VoteMap
 GeophysicalModelGenerator.SubtractHorizontalMean
 GeophysicalModelGenerator.AboveSurface
 GeophysicalModelGenerator.ParseColumns_CSV_File
