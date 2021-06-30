@@ -29,6 +29,7 @@ makedocs(;
             "Plots GPS vectors" =>  "man/tutorial_GPS.md",
         ],
         "User Guide" => Any[
+            "Installation" =>  "man/installation.md",
             "Data Structures" =>  "man/datastructures.md",
             "Data Import" =>  "man/dataimport.md",
             "Paraview output" => "man/paraview_output.md",
