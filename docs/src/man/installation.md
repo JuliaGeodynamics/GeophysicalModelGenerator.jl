@@ -8,7 +8,7 @@ In order to use then package you obviously need to install julia. We recommend d
 
 
 ### 2. Install Visual Studio Code
-The julia files itself are text files (just like matlab scripts). You may want to edit or modify them at some stage, You can, ofcourse, use any text editor for that. We prefer to use the freely available [Visual Studio Code](https://code.visualstudio.com) as it has a build-in terminal and is the comes with the (official) julia debugger (install the Julia extension for that).
+The julia files itself are text files (just like matlab scripts). You may want to edit or modify them at some stage, for which you can use any text editor for that. We prefer to use the freely available [Visual Studio Code](https://code.visualstudio.com) as it has a build-in terminal and is the comes with the (official) julia debugger (install the Julia extension for that).
 
 ### 3. Getting started with julia
 You start julia on the command line with:
@@ -29,7 +29,7 @@ This will start the command-line interface of julia:
 julia> 
 ```
 
-From the julia prompt, you start tha package manager by typing `]`:
+From the julia prompt, you start the package manager by typing `]`:
 ```julia
 (@v1.6) pkg> 
 ```
@@ -37,6 +37,7 @@ And you return to the command line with a backspace.
 
 Also useful is that julia has a build-in terminal, which you can reach by typing `;` on the command line:
 ```julia
+julia>;
 shell> 
 ```
 In the shell, you can use the normal commands like listing the content of a directory, or the current path:
@@ -46,8 +47,9 @@ LICENSE         Manifest.toml   Project.toml    README.md       docs            
 shell> pwd
 /Users/kausb/.julia/dev/GeophysicalModelGenerator
 ```
+As before, return to the main command line (called `REPL`) with a backspace.
 
-If you want to see the help information for any julia function, you type `?` to go to the help, after which you can type the command.
+If you want to see help information for any julia function, type `?` followed by the command. 
 An example for `tan` is:
 ```julia
 help?> tan
@@ -78,7 +80,7 @@ If you are in a directory that has a julia file (which have the extension `*.jl`
 ```julia
 shell> code runtests.jl
 ```
-You can execute the file with
+Execute the file with:
 ```julia
 julia> include("runtests")
 ```
@@ -92,14 +94,16 @@ julia> ]
 (@v1.6) pkg> add https://github.com/JuliaGeodynamics/GeoParams.jl
 (@v1.6) pkg> add https://github.com/JuliaGeodynamics/GeophysicalModelGenerator
 ```
-Note that we first install a package called `GeoParams.jl`, after which we install `GeophysicalModelGenerator.jl`. It will automatically install various other packages it relies on (using the correct version).
+You first need to install a package called `GeoParams.jl`, after which you install `GeophysicalModelGenerator.jl`. It will automatically install various other packages it relies on (using the correct version).
 
 If you want, you can test if it works on your machine by running the test suite in the package manager:
 ```julia
 julia> ]
 (@v1.6) pkg> test GeophysicalModelGenerator
 ```
-This installation of only needs to be done once. It will precompile `GMG` and all other dependencies.
+Note that we run these tests automatically on Windows, Linux and Mac every time we add a new feature to GeophysicalModelGenerator (using different julia versions). This Continuous Integration (CI) ensures that new features do not break others in the package. The results can be seen [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/actions).
+
+The installation of `GMG` only needs to be done once, and will precompile the package and all other dependencies.
 
 If you, at a later stage, want to upgrade to the latest version of `GMG`, you can type:
 ```julia
