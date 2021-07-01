@@ -1,7 +1,6 @@
 # Installation instructions
 
-GeophysicalModelGenerator.jl is written in the [julia](https://julialang.org) programming language, which is an extremely powerful, modern, scientific computing language. Julia works on all major operating systems, is free, fast and has a very active user basis (with many useful packages). 
-
+GeophysicalModelGenerator.jl is written in the [julia](https://julialang.org) programming language, which is an extremely powerful, modern, scientific computing language. Julia works on all major operating systems, is free, fast, and has a very active user basis (with many useful packages). In case you haven't heard about julia yet, you are not alone. Yet, perhaps a look at [this](https://www.nature.com/articles/d41586-019-02310-3) or [this](https://thenextweb.com/news/watch-out-python-julia-programming-coding-language-coming-for-crown-syndication) article, which explains nicely why it has an enormous potential for computational geosciences as well.
 
 ### 1. Install julia
 In order to use then package you obviously need to install julia. We recommend downloading and installing binaries from the [julia](https://julialang.org) webpage.
