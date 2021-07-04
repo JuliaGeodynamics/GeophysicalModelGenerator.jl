@@ -6,7 +6,6 @@ DocMeta.setdocmeta!(GeophysicalModelGenerator, :DocTestSetup, :(using Geophysica
 makedocs(;
     modules=[GeophysicalModelGenerator],
     authors="Marcel Thielmann, Boris Kaus",
-    repo="https://github.com/JuliaGeodynamics/GeophysicalModelGenerator/{commit}{path}#{line}",
     sitename="GeophysicalModelGenerator.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
@@ -41,7 +40,8 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl.git",
+    #repo="github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl.git",
+    repo="github.com/JuliaGeodynamics/GeophysicalModelGenerator/",
     branch = "gh-pages",
     target = "build",
     devbranch = "main",
