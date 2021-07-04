@@ -1,7 +1,7 @@
 using GeophysicalModelGenerator
 using Documenter
 
-DocMeta.setdocmeta!(GeophysicalModelGenerator, :DocTestSetup, :(using GeophysicalModelGenerator); recursive=true)
+#DocMeta.setdocmeta!(GeophysicalModelGenerator, :DocTestSetup, :(using GeophysicalModelGenerator); recursive=true)
 
 makedocs(;
     modules=[GeophysicalModelGenerator],
@@ -9,8 +9,6 @@ makedocs(;
     sitename="GeophysicalModelGenerator.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
-        canonical="https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl",
-        assets=String[],
     ),
     pages=[
         "Home" => "index.md",
