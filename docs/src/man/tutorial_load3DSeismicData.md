@@ -267,7 +267,7 @@ julia> Write_Paraview(Data_subset, "Zhao_Subset_interp")
 ```
 #### 7. Load and save data to disk
 It would be useful to save the 3D data set we just created to disk, such that we can easily load it again at a later stage and create cross-sections etc, or compare it with other models. 
-It is quite easy to do so with the [JLD2.hl](https://github.com/JuliaIO/JLD2.jl) package:
+It is quite easy to do so with the [JLD2.jl](https://github.com/JuliaIO/JLD2.jl) package:
 ```julia
 julia> using JLD2
 julia> jldsave("Zhao_Pwave.jld2"; Data_set)
