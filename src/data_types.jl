@@ -113,15 +113,26 @@ end
 
 # conversion function from GeoData -> CartData
 function Base.convert(::Type{CartData}, d::GeoData)  
-    # Note: This is based on scripts originally written by Tobias Baumann, Uni Mainz 
-
-    R   =   Array(ustrip.(d.depth.val)) .+ 6371.0;
-    lon =   Array(ustrip.(d.lon.val));
-    lat =   Array(ustrip.(d.lat.val));
     
-    X = R .* cosd.( lon ) .* cosd.( lat );
-    Y = R .* sind.( lon ) .* cosd.( lat );
-    Z = R .* sind.( lat );
+    # Utilize the Geodesy.jl package & use the Cartesian Earth-Centered-Earth-Fixed (ECEF) coordinate system
+    lon         =   Array(ustrip.(d.lon.val));
+    lat         =   Array(ustrip.(d.lat.val));
+    LLA_Data    =   LLA.(lat,lon, Array(ustrip.(d.depth.val))*1000);            # convert to LLA from Geodesy package
+    X,Y,Z       =   zeros(size(lon)), zeros(size(lon)), zeros(size(lon));
+    
+    # convert to cartesian ECEF reference frame. Note that we use kilometers and the wgs84
+    for i in eachindex(X)
+        data_xyz = ECEF(LLA_Data[i], wgs84)        
+        X[i] = data_xyz.x/1e3;
+        Y[i] = data_xyz.y/1e3;
+        Z[i] = data_xyz.z/1e3;
+    end
+    
+
+    # This is the 'old' implementation, which does not employ a reference ellipsoid 
+    # X = R .* cosd.( lon ) .* cosd.( lat );
+    # Y = R .* sind.( lon ) .* cosd.( lat );
+    # Z = R .* sind.( lat );
 
     # In case any of the fields in the tuple has length 3, it is assumed to be a vector, so transfer it
     field_names = keys(d.fields)

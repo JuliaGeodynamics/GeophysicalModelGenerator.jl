@@ -36,9 +36,9 @@ Depth2      =   (-100:10:1.0)               # no units
 # Convert 1D vector to cartesian structure
 Data_cart = convert(CartData,Data_set)
 
-@test Data_cart.x[3] ≈ 6181.689604591349
-@test Data_cart.y[3] ≈ 323.9686243936937
-@test Data_cart.z[3] ≈ 1429.1140482465744
+@test Data_cart.x[3] ≈ 6189.685604255086
+@test Data_cart.y[3] ≈ 324.3876769792181
+@test Data_cart.z[3] ≈ 1421.35608984477 
 
 # Create Lon/Lat/Depth grids from given numbers or 1D vectors
 Lon,Lat,Depth =  LonLatDepthGrid(10:20,30:40,(-10:-1)km);
@@ -74,8 +74,8 @@ Data_set2       =   GeoData(Lat,Lon,Depth,(FakeData=Data,Data2=Data.+1.))
 # Convert the 2D and 3D arrays to their cartesian counterparts
 Data_cart1      = convert(CartData,Data_set1)
 @test size(Data_cart1.z)==(11, 11, 10)
-@test Data_cart1.z[2,2,2] ≈ 1213.926828585578
+@test Data_cart1.z[2,2,2] ≈ 1207.2888765470825
 
 Data_cart2      = convert(CartData,Data_set2)
 @test size(Data_cart2.z)==(11, 11, 1)
-@test Data_cart2.z[2,2] ≈ 1206.1036597751397
+@test Data_cart2.z[2,2] ≈ 1199.4657077366442
