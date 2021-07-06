@@ -6,6 +6,7 @@
 
 Creating consistent 3D images of geophysical and geological datasets is often challenging. The aim of this package is to help with this, by providing a number of routines to easily import data and create a consistent 3D visualisation from it in the VTK-toolkit format, which can for example be viewed with [Paraview](https://www.paraview.org).
 
+![README_img](./docs/src/assets/img/Readme_pic.png)
 ### Contents
 * [Main features](#main-features) 
 * [Usage](#usage)
