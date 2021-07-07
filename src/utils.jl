@@ -258,9 +258,9 @@ function InterpolateDataFields(V::GeoData, Lon, Lat, Depth)
             for j=1:length(data_tuple)
                 if ReverseData
                     ndim        =   length(size(data_tuple[j]))
-                    interpol    =   LinearInterpolation((Lon_vec, Lat_vec, reverse(Depth_vec)), reverse(ustrip(data_tuple[j]), dims=ndim));      # create interpolation object
+                    interpol    =   LinearInterpolation((Lon_vec, Lat_vec, reverse(Depth_vec)), reverse(ustrip.(data_tuple[j]), dims=ndim));      # create interpolation object
                 else
-                    interpol    =   LinearInterpolation((Lon_vec, Lat_vec, Depth_vec), ustrip(data_tuple[j]));      # create interpolation object
+                    interpol    =   LinearInterpolation((Lon_vec, Lat_vec, Depth_vec), ustrip.(data_tuple[j]));      # create interpolation object
                 end
                 data_array[:,:,:,j] =   interpol.(Lon, Lat, Depth);          
             end
@@ -617,7 +617,7 @@ function VoteMap(DataSets::Vector{GeoData}, criteria::Vector{String}; dims=(50,5
             error("The GeoData set does not have the field: $(expr.args[2])")
         end
 
-        Array3D         =   ustrip(DataSet.fields[expr.args[2]]);                  # strip units, just in case
+        Array3D         =   ustrip.(DataSet.fields[expr.args[2]]);                  # strip units, just in case
         
         # Modify the value, to be Array3D 
         expr_mod        =   Expr(:call, expr.args[1], :($Array3D), expr.args[3]);      # modify the original expression to use Array3D as variable name

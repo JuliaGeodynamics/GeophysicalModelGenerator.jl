@@ -55,9 +55,9 @@ So in general you will have to interpolate all fields from `data_Cart` to a regu
 function GeoData_To_Cartesian(data::GeoData; Flatten=true, lonlatDepth=empty, referencePoint="Center")
 
     # compute min/max/average lon/lat/z
-    lon_data    = [minimum(ustrip(data.lon.val))   maximum(ustrip(data.lon.val)) 0]
-    lat_data    = [minimum(ustrip(data.lat.val))   maximum(ustrip(data.lat.val)) 0]
-    z_data      = [minimum(ustrip(data.depth.val)) maximum(ustrip(data.depth.val)) 0]
+    lon_data    = [minimum(ustrip.(data.lon.val))   maximum(ustrip.(data.lon.val)) 0]
+    lat_data    = [minimum(ustrip.(data.lat.val))   maximum(ustrip.(data.lat.val)) 0]
+    z_data      = [minimum(ustrip.(data.depth.val)) maximum(ustrip.(data.depth.val)) 0]
     lon_data[3] = (lon_data[1] + lon_data[2])/2
     lat_data[3] = (lat_data[1] + lat_data[2])/2
     z_data[3]   = (z_data[1]   +   z_data[2])/2
