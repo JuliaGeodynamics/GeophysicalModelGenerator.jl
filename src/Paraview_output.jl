@@ -58,7 +58,7 @@ Note that these points should be 1D vectors.
 julia> Lon,Lat,Depth  =   LonLatDepthGrid(10:5:20,35:2:40,(-300:50:0)km);
 julia> Lon=Lon[:]; Lat=Lat[:]; Depth=Depth[:];
 julia> Data_set       =   GeoData(Lat,Lon,Depth,(DataSet=Depth[:],Depth=Depth*10));  
-julia> Write_Paraview(Data_set, "test_Points")
+julia> Write_Paraview(Data_set, "test_Points", PointsData=true)
 ```
 
 
