@@ -1,7 +1,7 @@
 using Test
 using GeophysicalModelGenerator
 
-function main()
+function main_gravity()
 ############# Input #############
 # survey
 x        = [-20.,   100.]
@@ -95,4 +95,4 @@ diff3 = broadcast(abs, ana-dg3)
 #################################
 end
 
-main()
+main_gravity()

@@ -16,3 +16,7 @@ end
 @testset "Utils" begin
     include("test_utils.jl")
 end
+
+@testset "Transformations" begin
+    include("test_transformation.jl")
+end

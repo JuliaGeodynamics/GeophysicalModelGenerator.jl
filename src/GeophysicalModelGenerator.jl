@@ -23,6 +23,7 @@ using DelimitedFiles
 using   WriteVTK, Colors, FileIO, Interpolations, Geodesy
 
 export vtk_multiblock, vtk_save         # Simplifies writing multiblock files
+export LLA
 
 # add files for specific tasks
 include("data_types.jl")

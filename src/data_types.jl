@@ -93,6 +93,7 @@ function Base.show(io::IO, d::GeoData)
     println(io,"  fields: $(keys(d.fields))")
 end
 
+
 """
     CartData(x::GeoUnit, y::GeoUnit, z::GeoUnit, values::NamedTuple)
 
@@ -109,6 +110,16 @@ mutable struct CartData
     y       ::  GeoUnit
     z       ::  GeoUnit
     fields  ::  NamedTuple
+end
+
+# Print an overview of the Geodata struct:
+function Base.show(io::IO, d::CartData)
+    println(io,"CartData ")
+    println(io,"  size  : $(size(d.x))")
+    println(io,"  lon   ϵ [ $(minimum(d.x.val)) : $(maximum(d.x.val))]")
+    println(io,"  lat   ϵ [ $(minimum(d.y.val)) : $(maximum(d.y.val))]")
+    println(io,"  depth ϵ [ $(minimum(d.z.val)) : $(maximum(d.z.val))]")
+    println(io,"  fields: $(keys(d.fields))")
 end
 
 # conversion function from GeoData -> CartData
