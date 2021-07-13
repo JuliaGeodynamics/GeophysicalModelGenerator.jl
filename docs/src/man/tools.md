@@ -9,5 +9,6 @@ GeophysicalModelGenerator.InterpolateDataFields
 GeophysicalModelGenerator.VoteMap
 GeophysicalModelGenerator.SubtractHorizontalMean
 GeophysicalModelGenerator.AboveSurface
+GeophysicalModelGenerator.BelowSurface
 GeophysicalModelGenerator.ParseColumns_CSV_File
 ```

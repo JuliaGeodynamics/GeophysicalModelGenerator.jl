@@ -1,7 +1,7 @@
 # few utils that are useful 
 
 export meshgrid, CrossSection, ExtractSubvolume, SubtractHorizontalMean, Flatten3DData
-export ParseColumns_CSV_File, AboveSurface, VoteMap
+export ParseColumns_CSV_File, AboveSurface, BelowSurface, VoteMap
 
 """
     meshgrid(vx,vy,vz)
@@ -471,9 +471,9 @@ end
 
 
 """ 
-    AboveSurface(Data::GeoData, DataSurface::GeoData)
+    AboveSurface(Data::GeoData, DataSurface::GeoData; above=true)
 
-Returns a boolean array of size(Data.Lon), which is true for points that are above the surface DataSurface.
+Returns a boolean array of size(Data.Lon), which is true for points that are above the surface DataSurface (or for points below if above=false).
 
 This can be used, for example, to mask points above/below the Moho in a volumetric dataset or in a profile.
 
@@ -505,7 +505,7 @@ julia> Above       =   AboveSurface(Data_set3D, Data_Moho);
 Now, `Above` is a boolean array that is true for points above the surface and false for points below and at the surface.
 
 """
-function AboveSurface(Data::GeoData, DataSurface::GeoData)
+function AboveSurface(Data::GeoData, DataSurface::GeoData; above=true)
     
     if size(DataSurface.lon)[3]!=1
         error("It seems that DataSurface is not a surface")
@@ -519,10 +519,46 @@ function AboveSurface(Data::GeoData, DataSurface::GeoData)
     DepthSurface = interpol.(Data.lon.val,Data.lat.val);
     DepthSurface = DepthSurface*unit(DataSurface.depth.val[1])
 
-    Above       =   Data.depth.val .> DepthSurface;
+    if above
+        Above       =   Data.depth.val .> DepthSurface;
+    else
+        Above       =   Data.depth.val .< DepthSurface;
+    end
 
     return Above
 end
+
+"""
+    Below = BelowSurface(Data::GeoData, DataSurface::GeoData)
+
+Determines if points within the 3D GeoData structure are below the GeoData surface DataSurface
+"""
+function BelowSurface(Data::GeoData, DataSurface::GeoData)
+    return AboveSurface(Data::GeoData, DataSurface::GeoData; above=false)
+end
+
+"""
+    Above = AboveSurface(Data_Cart::CartData, DataSurface_Cart::CartData; above=true)
+
+Determines if points within the 3D Data_Cart structure are above the Cartesian surface DataSurface_Cart
+"""
+function AboveSurface(Data_Cart::CartData, DataSurface_Cart::CartData; above=true)
+
+    Data            =   GeoData(ustrip.(Data_Cart.x.val),       ustrip.(Data_Cart.y.val),        ustrip.(Data_Cart.z.val), Data_Cart.fields)
+    DataSurface     =   GeoData(ustrip.(DataSurface_Cart.x.val),ustrip.(DataSurface_Cart.y.val), ustrip.(DataSurface_Cart.z.val), DataSurface_Cart.fields )
+
+    return Above    =   AboveSurface(Data, DataSurface; above=above)
+end
+
+"""
+    Below = BelowSurface(Data_Cart::CartData, DataSurface_Cart::CartData)
+
+Determines if points within the 3D Data_Cart structure are below the Cartesian surface DataSurface_Cart
+"""
+function BelowSurface(Data_Cart::CartData, DataSurface_Cart::CartData)
+    return AboveSurface(Data_Cart::CartData, DataSurface_Cart::CartData; above=false)
+end
+
 
 """
     VoteMap(DataSets::Vector{GeoData}, criteria::Vector{String}, dims=(50,50,50))
