@@ -531,7 +531,7 @@ end
 """
     Below = BelowSurface(Data::GeoData, DataSurface::GeoData)
 
-Determines if points within the 3D GeoData structure are below the GeoData surface DataSurface
+Determines if points within the 3D `Data` structure are below the GeoData surface `DataSurface`
 """
 function BelowSurface(Data::GeoData, DataSurface::GeoData)
     return AboveSurface(Data::GeoData, DataSurface::GeoData; above=false)
@@ -540,7 +540,7 @@ end
 """
     Above = AboveSurface(Data_Cart::CartData, DataSurface_Cart::CartData; above=true)
 
-Determines if points within the 3D Data_Cart structure are above the Cartesian surface DataSurface_Cart
+Determines if points within the 3D `Data_Cart` structure are above the Cartesian surface `DataSurface_Cart`
 """
 function AboveSurface(Data_Cart::CartData, DataSurface_Cart::CartData; above=true)
 
