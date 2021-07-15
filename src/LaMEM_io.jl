@@ -1,14 +1,15 @@
 using Base: Int64, Float64
 using Printf
+
 # LaMEM I/O
 # 
 # These are routines that help to create a LaMEM model setup from a CartData structure
 
 export ParseValue_LaMEM_InputFile, LaMEM_grid, ReadLaMEM_InputFile
-export Save_LaMEMMarkersParallel
+export Save_LaMEMMarkersParallel, GetProcessorPartitioning
 
 """
-    Structure that holds information about the LaMEM grid
+    Structure that holds information about the LaMEM grid (usually read from an input file)
 """
 struct LaMEM_grid
     nmark_x :: Int64
@@ -88,6 +89,17 @@ end
     Grid::LaMEM_grid = ReadLaMEM_InputFile(file) 
 
 Parses a LaMEM input file and stores grid information in the `Grid` structure
+
+#Example
+```julia
+julia> Grid = ReadLaMEM_InputFile("SaltModels.dat") 
+LaMEM Grid: 
+nel         : (32, 32, 32)
+marker/cell : (3, 3, 3)
+markers     : (96, 96, 96)
+x           ϵ [-3.0 : 3.0]
+y           ϵ [-2.0 : 2.0]
+z           ϵ [-2.0 : 0.0]
 """
 function ReadLaMEM_InputFile(file)
 
@@ -148,9 +160,29 @@ function Base.show(io::IO, d::LaMEM_grid)
     println(io,"  z           ϵ [$(d.coord_z[1]) : $(d.coord_z[2])]")
 end
 
+"""
+    Save_LaMEMMarkersParallel(Grid::LaMEM_grid, Phases, Temp; PartitioningFile=empty, directory="./markers")
 
+Saves a LaMEM marker file on the grid `Grid` having phase information `Phases` and temperature infomation `Temp`. 
+Optionally, it is possible to provide a LaMEM partitioning file `PartitioningFile`. If this is not provided, output is assumed to be for one processor.
+
+`Grid` can be retrieved from a LaMEM input file using `ReadLaMEM_InputFile`.
+
+# Example 
+
+```
+julia> Grid   = ReadLaMEM_InputFile("LaMEM_input_file.dat")
+julia> Phases = zeros(Int32,size(Grid.X));
+julia> Temp   = ones(Float64,size(Grid.X));
+julia> Save_LaMEMMarkersParallel(Grid, Phases, Temp)
+```    
+If you want to create a LaMEM input file for multiple processors:
+```
+julia> Save_LaMEMMarkersParallel(Grid, Phases, Temp,PartitioningFile="ProcessorPartitioning_4cpu_1.2.2.bin")
+```    
+
+"""
 function Save_LaMEMMarkersParallel(Grid::LaMEM_grid, Phases, Temp; PartitioningFile=empty, directory="./markers")
-
 
     if PartitioningFile==empty
         # in case we run this on 1 processor only
@@ -164,6 +196,12 @@ function Save_LaMEMMarkersParallel(Grid::LaMEM_grid, Phases, Temp; PartitioningF
         y       =   yc;
         z       =   zc;
         
+    else
+        Nprocx,Nprocy,Nprocz, 
+        xc,yc,zc, 
+        nNodeX,nNodeY,nNodeZ = GetProcessorPartitioning(PartitioningFile)
+
+        x,y,z   =   Grid.x1D_c, Grid.y1D_c, Grid.z1D_c;
     end
 
     Nproc                       =   Nprocx*Nprocy*Nprocz;
@@ -173,24 +211,22 @@ function Save_LaMEMMarkersParallel(Grid::LaMEM_grid, Phases, Temp; PartitioningF
     yi,iy_start,iy_end          =   get_ind(y,yc,Nprocy);
     zi,iz_start,iz_end          =   get_ind(z,zc,Nprocz);
 
-#    x_start,y_start,z_start     =   num,num,num;
-#    x_end,y_end,z_end           =   num,num,num;
-#   x_start[num[:]]             =   ix_start[num_i[:]];
-#    y_start[num[:]]             =   iy_start[num_j[:]];
-#    z_start[num[:]]             =   iz_start[num_k[:]];
-##    x_end[num[:]]               =   ix_end[num_i[:]];
-#    y_end[num[:]]               =   iy_end[num_j[:]];
-#    z_end[num[:]]               =   iz_end[num_k[:]];
+    x_start                     =   ix_start[num_i[:]];
+    y_start                     =   iy_start[num_j[:]];
+    z_start                     =   iz_start[num_k[:]];
+    x_end                       =   ix_end[num_i[:]];
+    y_end                       =   iy_end[num_j[:]];
+    z_end                       =   iz_end[num_k[:]];
 
     # Loop over all processors partition
     for n=1:Nproc
         # Extract coordinates for current processor
-        part_x   = Grid.X[ix_start[n]:ix_end[n],iy_start[n]:iy_end[n],iz_start[n]:iz_end[n]];
-        part_y   = Grid.Y[ix_start[n]:ix_end[n],iy_start[n]:iy_end[n],iz_start[n]:iz_end[n]];
-        part_z   = Grid.Z[ix_start[n]:ix_end[n],iy_start[n]:iy_end[n],iz_start[n]:iz_end[n]];
-        part_phs = Phases[ix_start[n]:ix_end[n],iy_start[n]:iy_end[n],iz_start[n]:iz_end[n]];
-        part_T   =   Temp[ix_start[n]:ix_end[n],iy_start[n]:iy_end[n],iz_start[n]:iz_end[n]];
-    
+        
+        part_x   = Grid.X[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]];
+        part_y   = Grid.Y[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]];
+        part_z   = Grid.Z[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]];
+        part_phs = Phases[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]];
+        part_T   =   Temp[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]];
         num_particles = size(part_x,1)* size(part_x,2) * size(part_x,3);
 
         # Information vector per processor
@@ -205,21 +241,19 @@ function Save_LaMEMMarkersParallel(Grid::LaMEM_grid, Phases, Temp; PartitioningF
         lvec_prtcls[4:num_prop:end] = part_phs[:];
         lvec_prtcls[5:num_prop:end] = part_T[:];
 
-        # Write Output files
+        # Write output files
         if ~isdir(directory); mkdir(directory); end         # Create dir if not existent
         fname = @sprintf "%s/mdb.%1.8d.dat"  directory (n-1);   # Name
-        println("Writing file -> $fname")                   # print info
+        println("Writing LaMEM marker file -> $fname")                   # print info
         lvec_output    = [lvec_info; lvec_prtcls];          # one vec with info about length
 
         PetscBinaryWrite_Vec(fname, lvec_output)            # Write PETSc vector as binary file
 
     end
-
-    return 
 end
 
 
-# Internal routine
+# Internal routine to retrieve indices of local portion of the grid
 function get_ind(x,xc,Nprocx)
     if Nprocx == 1
         xi       = length(x);
@@ -227,22 +261,23 @@ function get_ind(x,xc,Nprocx)
         ix_end   = [length(x)];
     else
 
+        xi = zeros(Int64,Nprocx)
         for k= 1:Nprocx
             if k==1
-                xi[k] = length(x(x>=xc[k]& x<=xc[k+1]));
+                xi[k] = length(x[ (x .>=xc[k]) .& (x .<=xc[k+1]) ]);
             else
-                xi[k] = length(x(x>xc[k] & x<=xc[k+1]));
+                xi[k] = length(x[ (x.>xc[k]) .& (x.<=xc[k+1])]);
             end
         end
-#        ix_start = cumsum([0,xi[1:end-1])+1;
-#        ix_end   = cumsum(xi[1:end]);
+        ix_start = cumsum( [0; xi[1:end-1]] ) .+ 1;
+        ix_end   = cumsum(xi[1:end]);
     end
 
 
     return xi,ix_start,ix_end
 end
 
-
+# Internal routine
 function get_numscheme(Nprocx,Nprocy,Nprocz)
     n   = zeros(Int64, Nprocx*Nprocy*Nprocz)
     nix = zeros(Int64, Nprocx*Nprocy*Nprocz)
@@ -267,6 +302,12 @@ end
 
 
 # Internal routine, to write a PETSc vector (as Float64)
+"""
+    PetscBinaryWrite_Vec(filename, A)
+
+Writes a vector `A` to disk, such that it can be read with `PetscBinaryRead` (which assumes a Big Endian type)
+
+"""
 function PetscBinaryWrite_Vec(filename, A)
 
     # Note: use "hton" to transfer to Big Endian type, which is what PETScBinaryRead expects
@@ -284,4 +325,43 @@ function PetscBinaryWrite_Vec(filename, A)
     end
 
 
+end
+
+"""
+    nProcX,nProcY,nProcZ, xc,yc,zc, nNodeX,nNodeY,nNodeZ = GetProcessorPartitioning(filename)
+
+Reads a LaMEM processor partitioning file, used to create marker files, and returns the parallel layout 
+
+"""
+function GetProcessorPartitioning(filename)
+
+    io = open(filename, "r")
+    
+    nProcX = ntoh(read(io,Int32))
+    nProcY = ntoh(read(io,Int32))
+    nProcZ = ntoh(read(io,Int32))
+
+    nNodeX = ntoh(read(io,Int32))
+    nNodeY = ntoh(read(io,Int32))
+    nNodeZ = ntoh(read(io,Int32))
+
+    iX = [ntoh(read(io,Int32)) for i=1:nProcX+1];
+    iY = [ntoh(read(io,Int32)) for i=1:nProcY+1];
+    iZ = [ntoh(read(io,Int32)) for i=1:nProcZ+1];
+
+    CharLength = ntoh(read(io,Float64))
+    xcoor = [ntoh(read(io,Float64)) for i=1:nNodeX].*CharLength;
+    ycoor = [ntoh(read(io,Float64)) for i=1:nNodeY].*CharLength;
+    zcoor = [ntoh(read(io,Float64)) for i=1:nNodeZ].*CharLength;
+    
+    xc = xcoor[iX .+ 1]
+    yc = ycoor[iY .+ 1]
+    zc = zcoor[iZ .+ 1]
+
+    close(io)
+
+    return  nProcX,nProcY,nProcZ, 
+            xc,yc,zc, 
+            nNodeX,nNodeY,nNodeZ
+           
 end
