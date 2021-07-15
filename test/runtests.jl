@@ -16,7 +16,16 @@ end
 @testset "Utils" begin
     include("test_utils.jl")
 end
-
 @testset "Transformations" begin
     include("test_transformation.jl")
 end
+
+@testset "LaMEM I/O" begin
+    include("test_lamem.jl")
+end
+
+# Cleanup 
+foreach(rm, filter(endswith(".vts"), readdir()))
+foreach(rm, filter(endswith(".vtu"), readdir()))
+rm("./markers/",recursive=true)
+

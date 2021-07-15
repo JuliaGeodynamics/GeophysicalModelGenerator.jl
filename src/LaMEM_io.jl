@@ -3,13 +3,13 @@ using Printf
 
 # LaMEM I/O
 # 
-# These are routines that help to create a LaMEM model setup from a CartData structure
+# These are routines that help to create a LaMEM marker files from a CartData structure, which can be used to perform geodynamic simulations
 
-export ParseValue_LaMEM_InputFile, LaMEM_grid, ReadLaMEM_InputFile
+export LaMEM_grid, ReadLaMEM_InputFile
 export Save_LaMEMMarkersParallel, GetProcessorPartitioning
 
 """
-    Structure that holds information about the LaMEM grid (usually read from an input file)
+Structure that holds information about the LaMEM grid (usually read from an input file).
 """
 struct LaMEM_grid
     nmark_x :: Int64
@@ -55,7 +55,7 @@ CartData(Grid::LaMEM_grid, fields::NamedTuple) = CartData(Grid.X, Grid.Y, Grid.Z
 
 Extracts a certain `keyword` from a LaMEM input `file` and convert it to a certain type 
 
-#Example
+# Example
 ```julia
 julia> nmark_z = ParseValue_LaMEM_InputFile("SaltModels.dat","nmark_z",Int64)
 ```
@@ -95,9 +95,9 @@ end
 """
     Grid::LaMEM_grid = ReadLaMEM_InputFile(file) 
 
-Parses a LaMEM input file and stores grid information in the `Grid` structure
+Parses a LaMEM input file and stores grid information in the `Grid` structure.
 
-#Example
+# Example
 ```julia
 julia> Grid = ReadLaMEM_InputFile("SaltModels.dat") 
 LaMEM Grid: 
@@ -107,6 +107,7 @@ markers     : (96, 96, 96)
 x           ϵ [-3.0 : 3.0]
 y           ϵ [-2.0 : 2.0]
 z           ϵ [-2.0 : 0.0]
+```
 """
 function ReadLaMEM_InputFile(file)
 
@@ -168,7 +169,7 @@ function Base.show(io::IO, d::LaMEM_grid)
 end
 
 """
-    Save_LaMEMMarkersParallel(Grid::CartData; PartitioningFile=empty, directory="./markers")
+    Save_LaMEMMarkersParallel(Grid::CartData; PartitioningFile=empty, directory="./markers", verbose=true)
 
 Saves a LaMEM marker file from the CartData structure `Grid`. It must have a field called `Phases`, holding phase information (as integers) and optionally a field `Temp` with temperature info. 
 It is possible to provide a LaMEM partitioning file `PartitioningFile`. If not, output is assumed to be for one processor.
@@ -195,7 +196,7 @@ Writing LaMEM marker file -> ./markers/mdb.00000003.dat
 ```
 
 """
-function Save_LaMEMMarkersParallel(Grid::CartData; PartitioningFile=empty, directory="./markers")
+function Save_LaMEMMarkersParallel(Grid::CartData; PartitioningFile=empty, directory="./markers", verbose=true)
 
     x = ustrip(Grid.x.val[:,1,1]);
     y = ustrip(Grid.y.val[1,:,1]);
@@ -210,7 +211,9 @@ function Save_LaMEMMarkersParallel(Grid::CartData; PartitioningFile=empty, direc
     if haskey(Grid.fields,:Temp)
         Temp = Grid.fields[:Temp];
     else
-        println("Field :Temp is not provided; setting it to zero")
+        if verbose
+            println("Field :Temp is not provided; setting it to zero")
+        end
         Temp = zeros(size(Phases));
     end
     
@@ -266,7 +269,9 @@ function Save_LaMEMMarkersParallel(Grid::CartData; PartitioningFile=empty, direc
         # Write output files
         if ~isdir(directory); mkdir(directory); end         # Create dir if not existent
         fname = @sprintf "%s/mdb.%1.8d.dat"  directory (n-1);   # Name
-        println("Writing LaMEM marker file -> $fname")                   # print info
+        if verbose
+            println("Writing LaMEM marker file -> $fname")                   # print info
+        end
         lvec_output    = [lvec_info; lvec_prtcls];          # one vec with info about length
 
         PetscBinaryWrite_Vec(fname, lvec_output)            # Write PETSc vector as binary file
