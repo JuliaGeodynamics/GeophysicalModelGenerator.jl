@@ -1,4 +1,4 @@
-using Base: Int64, Float64
+using Base: Int64, Float64, NamedTuple
 using Printf
 
 # LaMEM I/O
@@ -41,6 +41,13 @@ struct LaMEM_grid
 
    
 end
+
+""" 
+    CartData(Grid::LaMEM_grid, fields::NamedTuple)
+
+Creates a `CartData` struct from a LaMEM grid and from fields stored on that grid. Note that one needs to have a field `Phases` and optionally a field `Temp` to create LaMEM marker files.
+"""
+CartData(Grid::LaMEM_grid, fields::NamedTuple) = CartData(Grid.X, Grid.Y, Grid.Z, fields)
 
 
 """
@@ -161,47 +168,62 @@ function Base.show(io::IO, d::LaMEM_grid)
 end
 
 """
-    Save_LaMEMMarkersParallel(Grid::LaMEM_grid, Phases, Temp; PartitioningFile=empty, directory="./markers")
+    Save_LaMEMMarkersParallel(Grid::CartData; PartitioningFile=empty, directory="./markers")
 
-Saves a LaMEM marker file on the grid `Grid` having phase information `Phases` and temperature infomation `Temp`. 
-Optionally, it is possible to provide a LaMEM partitioning file `PartitioningFile`. If this is not provided, output is assumed to be for one processor.
+Saves a LaMEM marker file from the CartData structure `Grid`. It must have a field called `Phases`, holding phase information (as integers) and optionally a field `Temp` with temperature info. 
+It is possible to provide a LaMEM partitioning file `PartitioningFile`. If not, output is assumed to be for one processor.
 
-`Grid` can be retrieved from a LaMEM input file using `ReadLaMEM_InputFile`.
+The size of `Grid` should be consistent with what is provided in the LaMEM input file. In practice, the size of the mesh can be retrieved from a LaMEM input file using `ReadLaMEM_InputFile`.
 
 # Example 
 
 ```
-julia> Grid   = ReadLaMEM_InputFile("LaMEM_input_file.dat")
-julia> Phases = zeros(Int32,size(Grid.X));
-julia> Temp   = ones(Float64,size(Grid.X));
-julia> Save_LaMEMMarkersParallel(Grid, Phases, Temp)
+julia> Grid    = ReadLaMEM_InputFile("LaMEM_input_file.dat")
+julia> Phases  = zeros(Int32,size(Grid.X));
+julia> Temp    = ones(Float64,size(Grid.X));
+julia> Model3D = CartData(Grid, (Phases=Phases,Temp=Temp))
+julia> Save_LaMEMMarkersParallel(Model3D)
+Writing LaMEM marker file -> ./markers/mdb.00000000.dat
 ```    
 If you want to create a LaMEM input file for multiple processors:
 ```
-julia> Save_LaMEMMarkersParallel(Grid, Phases, Temp,PartitioningFile="ProcessorPartitioning_4cpu_1.2.2.bin")
-```    
+julia> Save_LaMEMMarkersParallel(Model3D, PartitioningFile="ProcessorPartitioning_4cpu_1.2.2.bin")
+Writing LaMEM marker file -> ./markers/mdb.00000000.dat
+Writing LaMEM marker file -> ./markers/mdb.00000001.dat
+Writing LaMEM marker file -> ./markers/mdb.00000002.dat
+Writing LaMEM marker file -> ./markers/mdb.00000003.dat
+```
 
 """
-function Save_LaMEMMarkersParallel(Grid::LaMEM_grid, Phases, Temp; PartitioningFile=empty, directory="./markers")
+function Save_LaMEMMarkersParallel(Grid::CartData; PartitioningFile=empty, directory="./markers")
 
+    x = ustrip(Grid.x.val[:,1,1]);
+    y = ustrip(Grid.y.val[1,:,1]);
+    z = ustrip(Grid.z.val[1,1,:]);
+    
+    if haskey(Grid.fields,:Phases)
+        Phases = Grid.fields[:Phases];
+    else
+        error("You must provide the field :Phases in the structure")
+    end
+    
+    if haskey(Grid.fields,:Temp)
+        Temp = Grid.fields[:Temp];
+    else
+        println("Field :Temp is not provided; setting it to zero")
+        Temp = zeros(size(Phases));
+    end
+    
     if PartitioningFile==empty
         # in case we run this on 1 processor only
         Nprocx  =   1;
         Nprocy  =   1;
         Nprocz  =   1;
-        xc      =   Grid.x1D_c;
-        yc      =   Grid.y1D_c;
-        zc      =   Grid.z1D_c;    
-        x       =   xc;
-        y       =   yc;
-        z       =   zc;
-        
+        xc,yc,zc = x,y,z;
     else
         Nprocx,Nprocy,Nprocz, 
         xc,yc,zc, 
         nNodeX,nNodeY,nNodeZ = GetProcessorPartitioning(PartitioningFile)
-
-        x,y,z   =   Grid.x1D_c, Grid.y1D_c, Grid.z1D_c;
     end
 
     Nproc                       =   Nprocx*Nprocy*Nprocz;
@@ -222,9 +244,9 @@ function Save_LaMEMMarkersParallel(Grid::LaMEM_grid, Phases, Temp; PartitioningF
     for n=1:Nproc
         # Extract coordinates for current processor
         
-        part_x   = Grid.X[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]];
-        part_y   = Grid.Y[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]];
-        part_z   = Grid.Z[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]];
+        part_x   = Grid.x.val[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]];
+        part_y   = Grid.y.val[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]];
+        part_z   = Grid.z.val[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]];
         part_phs = Phases[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]];
         part_T   =   Temp[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]];
         num_particles = size(part_x,1)* size(part_x,2) * size(part_x,3);
