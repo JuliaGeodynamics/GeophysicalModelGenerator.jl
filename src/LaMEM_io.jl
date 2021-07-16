@@ -6,7 +6,7 @@ using Printf
 # These are routines that help to create a LaMEM marker files from a CartData structure, which can be used to perform geodynamic simulations
 
 export LaMEM_grid, ReadLaMEM_InputFile
-export Save_LaMEMMarkersParallel, GetProcessorPartitioning
+export Save_LaMEMMarkersParallel, GetProcessorPartitioning, ReadData_VTR
 
 """
 Structure that holds information about the LaMEM grid (usually read from an input file).
@@ -91,6 +91,8 @@ function ParseValue_LaMEM_InputFile(file,keyword,type)
 
     return value
 end
+
+
 
 """
     Grid::LaMEM_grid = ReadLaMEM_InputFile(file) 
@@ -391,4 +393,186 @@ function GetProcessorPartitioning(filename)
             xc,yc,zc, 
             nNodeX,nNodeY,nNodeZ
            
+end
+
+
+
+
+"""
+    coord, Data_3D_Arrays, Name_Vec = ReadData_VTR(fname)
+
+Reads a VTR (structured grid) VTK file `fname` and extracts the coordinates, data arrays and names of the data.
+In general, this only contains a piece of the data, and one should open a `*.pvtr` file to retrieve the full data 
+"""
+function ReadData_VTR(fname, FullSize)
+    file = open(fname, "r")
+
+    header = true
+    num = 1;
+    CoordOffset = zeros(Int64,3);
+    Offset_Vec  =   [];
+    Name_Vec    =   [];
+    NumComp_Vec =   [];    PieceExtent=[]; WholeExtent=[];
+    while header==true
+
+        line        = readline(file)
+        line_strip  = lstrip(line)     
+        if startswith(line_strip, "<RectilinearGrid WholeExtent")
+            id_start    = findfirst("\"", line_strip)[1]+1
+            id_end      = findlast("\"", line_strip)[1]-1
+            WholeExtent = parse.(Int64,split(line_strip[id_start:id_end]))
+        end
+        if startswith(line_strip, "<Piece Extent=")
+            id_start    = findfirst("\"", line_strip)[1]+1
+            id_end      =  findlast("\"", line_strip)[1]-1
+            PieceExtent =  parse.(Int64,split(line_strip[id_start:id_end]))
+        end
+        if startswith(line_strip, "<Coordinates>")
+            # Read info where the coordinates are stored
+            Type, Name, NumberOfComponents, CoordOffset[1]  = Parse_VTR_Line(readline(file)); num += 1
+            Type, Name, NumberOfComponents, CoordOffset[2]  = Parse_VTR_Line(readline(file)); num += 1
+            Type, Name, NumberOfComponents, CoordOffset[3]  = Parse_VTR_Line(readline(file)); num += 1
+        end
+        if startswith(line_strip, "<PointData>")
+        line_strip  = lstrip(readline(file))   
+        while ~startswith(line_strip, "</PointData>")
+            Type, Name, NumberOfComponents, Offset  = Parse_VTR_Line(line_strip);  num += 1
+
+            Offset_Vec  = [Offset_Vec;  Offset];
+            Name_Vec    = [Name_Vec;    Name];  
+            NumComp_Vec = [NumComp_Vec; NumberOfComponents];
+            line_strip  = lstrip(readline(file))   
+        end  
+            
+        end
+        if startswith(line_strip, "<AppendedData ")
+            header=false
+        end
+
+        num += 1
+    end
+
+    # Skip to beginning of raw data (linebreak)
+    skip(file, 5)   
+    start_bin = position(file);     # start of binary data
+    
+    # Determine the end of the raw data
+    seekend(file);    
+    skip(file, -29)   
+    @show read(file, Char)
+
+    end_bin = position(file); 
+    @show end_bin, Offset_Vec[end] end_bin-Offset_Vec[end] Offset_Vec[2]-Offset_Vec[1]
+
+    # Start with reading the coordinate arrays:
+    coord_x     =   ReadBinaryData(file, start_bin, CoordOffset[1],   (PieceExtent[2]-PieceExtent[1]+1)*sizeof(Float32))
+    coord_y     =   ReadBinaryData(file, start_bin, CoordOffset[2],   (PieceExtent[4]-PieceExtent[3]+1)*sizeof(Float32))
+    coord_z     =   ReadBinaryData(file, start_bin, CoordOffset[3],   (PieceExtent[6]-PieceExtent[5]+1)*sizeof(Float32))
+
+    
+    # Read data arrays:
+    Data_3D_Arrays  = [];
+    ix = PieceExtent[1]:PieceExtent[2];
+    iy = PieceExtent[3]:PieceExtent[4];
+    iz = PieceExtent[5]:PieceExtent[6];
+    numPoints       = length(ix)*length(iy)*length(iz);
+    @show numPoints
+    
+    coord_x_full = zeros(Float64, FullSize[1]);
+    coord_y_full = zeros(Float64, FullSize[2]);
+    coord_z_full = zeros(Float64, FullSize[3]);
+    @show ix coord_x coord_x_full PieceExtent
+    coord_x_full[ix] = coord_x;
+    coord_y_full[iy] = coord_y;
+    coord_z_full[iz] = coord_z;
+    
+    for i=1:length(Name_Vec)-1
+      
+        data3D      =   ReadBinaryData(file, start_bin, Offset_Vec[i],    numPoints*NumComp_Vec[i]*sizeof(Float32) )
+        data3D      =   getArray(data3D, PieceExtent, NumComp_Vec[i]);
+
+        data3D_full =   zeros(Float64,NumComp_Vec[i],FullSize[1],FullSize[2],FullSize[3])  # Generate full d
+        data3D_full[1:NumComp_Vec[i], ix, iy, iz]        = data3D;
+        Data_3D_Arrays = [Data_3D_Arrays; data3D_full]
+    end
+    i=length(Name_Vec);
+  
+    data3D   =   ReadBinaryData(file, start_bin, Offset_Vec[i],    numPoints*NumComp_Vec[i]*sizeof(Float32) )
+    data3D   =   getArray(data3D, PieceExtent, NumComp_Vec[i]);
+    data3D_full =   zeros(Float64,NumComp_Vec[i],FullSize[1],FullSize[2],FullSize[3])  # Generate full d
+    data3D_full[1:NumComp_Vec[i], ix, iy, iz]        = data3D;
+    
+    Data_3D_Arrays = [Data_3D_Arrays; data3D_full]
+
+    return coord_x_full, coord_y_full, coord_z_full, Data_3D_Arrays, Name_Vec, NumComp_Vec, ix, iy, iz
+end
+
+ # Parses a line of a *.vtr file & retrieve Type/Name/NumberOfComponents/Offset
+ function Parse_VTR_Line(line)
+    line_strip  = lstrip(line)  
+    
+    # Retrieve Type
+    if findfirst("type", line_strip) != nothing
+        id_start    = findfirst("type", line_strip)[1]+6
+
+        line_strip  = line_strip[id_start:end]
+        id_end      = findfirst("\"", line_strip)[1]-1
+        Type        = line_strip[1:id_end]
+        line_strip  = line_strip[id_end:end]
+    else
+        Type=nothing;
+    end
+
+    # Retrieve Name
+    if findfirst("Name", line_strip) != nothing
+        id_start    = findfirst("Name", line_strip)[1]+6
+        line_strip  = line_strip[id_start:end]
+        id_end      = findfirst("\"", line_strip)[1]-1
+        Name        = line_strip[1:id_end]
+        line_strip  = line_strip[id_end:end]
+    else
+        Name=nothing
+    end
+
+    # Retrieve number of components
+    if findfirst("NumberOfComponents", line_strip) != nothing
+        id_start    = findfirst("NumberOfComponents", line_strip)[1]+20
+        line_strip  = line_strip[id_start:end]
+        id_end      = findfirst("\"", line_strip)[1]-1
+        NumberOfComponents     = parse(Int64,line_strip[1:id_end])
+        line_strip  = line_strip[id_end:end]
+    else
+        NumberOfComponents=nothing
+    end
+
+    # Offset  
+    if findfirst("offset", line_strip) != nothing
+        id_start    = findfirst("offset", line_strip)[1]+8
+        line_strip  = line_strip[id_start:end]
+        id_end      = findfirst("\"", line_strip)[1]-1
+        Offset     = parse(Int64,line_strip[1:id_end])
+    else
+        Offset=nothing;
+    end
+    return Type, Name, NumberOfComponents, Offset
+end
+
+
+function getArray(data, PieceExtent, NumComp)
+    data        =   reshape(data, (NumComp, PieceExtent[2]-PieceExtent[1]+1,  PieceExtent[4]-PieceExtent[3]+1,  PieceExtent[6]-PieceExtent[5]+1))
+    #data_arrays =   [data[i,:,:,:] for i=1:size(data,1)]
+
+    #data_tuple  =   tuple(data_arrays...)
+    return data
+end
+
+function ReadBinaryData(file::IOStream, start_bin::Int64, Offset::Int64, BytesToRead; DataType=Float32)
+    
+    seekstart(file);                                # go to start
+    skip(file, start_bin+Offset)                    # move to beginning of raw binary data
+    buffer      =   read(file,BytesToRead)          # Read necesaary bytes
+    data        =   reinterpret(DataType,buffer)    # Transfer to buffer    
+
+    data        =   Float64.(data[1:end]);        # Transfer to Float64
+    return data
 end
