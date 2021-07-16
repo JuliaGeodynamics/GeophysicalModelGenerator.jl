@@ -6,7 +6,7 @@ using Printf
 # These are routines that help to create a LaMEM marker files from a CartData structure, which can be used to perform geodynamic simulations
 
 export LaMEM_grid, ReadLaMEM_InputFile
-export Save_LaMEMMarkersParallel, GetProcessorPartitioning, ReadData_VTR
+export Save_LaMEMMarkersParallel, GetProcessorPartitioning, ReadData_VTR, ReadData_PVTR
 
 """
 Structure that holds information about the LaMEM grid (usually read from an input file).
