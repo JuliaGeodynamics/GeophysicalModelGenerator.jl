@@ -576,3 +576,69 @@ function ReadBinaryData(file::IOStream, start_bin::Int64, Offset::Int64, BytesTo
     data        =   Float64.(data[1:end]);        # Transfer to Float64
     return data
 end
+
+"""
+    ReadData_PVTR(fname, dir)
+
+Reads a parallel, rectilinear, `*.vts` file with the name `fname` and located in `dir`.
+"""
+function  ReadData_PVTR(fname, dir)
+    file = open(joinpath(dir,fname), "r")
+
+    header = true
+    num = 1;
+    FullSize= (1,1,1);
+    num_data_sets = 1;
+    Data_3D=[]; coord_x=[]; coord_y=[]; coord_z=[]; NumComp=[]; Names=[]
+    while header==true
+
+        line        = readline(file)
+        line_strip  = lstrip(line)     
+        if startswith(line_strip, "<PRectilinearGrid")
+            id_start    = findfirst("WholeExtent=", line_strip)[1]+13
+            id_end      = findfirst(">", line_strip)[1]-2
+            line_piece = line_strip[id_start:id_end];
+            WholeExtent = parse.(Int64,split(line_piece))
+            
+            FullSize = (WholeExtent[2],WholeExtent[4],WholeExtent[6])
+        end
+
+
+        if startswith(line_strip, "<Piece")
+            id_start    = findfirst("Source=", line_strip)[1]+8
+            id_end      = findfirst("/>", line_strip)[1]-2
+            fname_piece = line_strip[id_start:id_end];
+
+            @show FullSize joinpath(dir,fname)
+            if num_data_sets==1
+                coord_x, coord_y, coord_z, Data_3D, Names, NumComp, ix,iy,iz = ReadData_VTR(joinpath(dir,fname_piece), FullSize);
+            else
+                coord_x1, coord_y1, coord_z1, Data_3D1, Names, NumComp, ix,iy,iz  = ReadData_VTR(joinpath(dir,fname_piece), FullSize);
+                coord_x[ix]   = coord_x1[ix];
+                coord_y[iy]   = coord_y1[iy];
+                coord_z[iz]   = coord_z1[iz];
+                
+                Data_3D = Data_3D+Data_3D1;
+                
+            end
+            num_data_sets += 1 
+        end
+
+
+        if startswith(line_strip, "</PRectilinearGrid")
+            header=false;
+        end
+    end
+
+
+    Data_Array = [];
+    num=1;
+    for i=1:length(NumComp)
+        data        =   Data_3D[num:num+NumComp[i]-1,:,:,:];
+        data_arrays =   [data[i,:,:,:] for i=1:size(data,1)]
+        data_tuple  =   tuple(data_arrays...)
+        Data_Array =    [Data_Array; data_tuple];
+    end
+
+    return coord_x, coord_y, coord_z, Data_Array, 2   
+end
