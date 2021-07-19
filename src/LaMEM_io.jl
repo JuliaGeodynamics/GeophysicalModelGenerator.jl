@@ -4,6 +4,7 @@ using Printf
 # LaMEM I/O
 # 
 # These are routines that help to create a LaMEM marker files from a CartData structure, which can be used to perform geodynamic simulations
+# We also include routines with which we can read LaMEM *.pvtr files into julia 
 
 export LaMEM_grid, ReadLaMEM_InputFile
 export Save_LaMEMMarkersParallel, GetProcessorPartitioning, ReadData_VTR, ReadData_PVTR
@@ -459,10 +460,8 @@ function ReadData_VTR(fname, FullSize)
     # Determine the end of the raw data
     seekend(file);    
     skip(file, -29)   
-    @show read(file, Char)
 
     end_bin = position(file); 
-    @show end_bin, Offset_Vec[end] end_bin-Offset_Vec[end] Offset_Vec[2]-Offset_Vec[1]
 
     # Start with reading the coordinate arrays:
     coord_x     =   ReadBinaryData(file, start_bin, CoordOffset[1],   (PieceExtent[2]-PieceExtent[1]+1)*sizeof(Float32))
@@ -476,12 +475,11 @@ function ReadData_VTR(fname, FullSize)
     iy = PieceExtent[3]:PieceExtent[4];
     iz = PieceExtent[5]:PieceExtent[6];
     numPoints       = length(ix)*length(iy)*length(iz);
-    @show numPoints
     
     coord_x_full = zeros(Float64, FullSize[1]);
     coord_y_full = zeros(Float64, FullSize[2]);
     coord_z_full = zeros(Float64, FullSize[3]);
-    @show ix coord_x coord_x_full PieceExtent
+   
     coord_x_full[ix] = coord_x;
     coord_y_full[iy] = coord_y;
     coord_z_full[iz] = coord_z;
@@ -560,9 +558,6 @@ end
 
 function getArray(data, PieceExtent, NumComp)
     data        =   reshape(data, (NumComp, PieceExtent[2]-PieceExtent[1]+1,  PieceExtent[4]-PieceExtent[3]+1,  PieceExtent[6]-PieceExtent[5]+1))
-    #data_arrays =   [data[i,:,:,:] for i=1:size(data,1)]
-
-    #data_tuple  =   tuple(data_arrays...)
     return data
 end
 
@@ -578,9 +573,9 @@ function ReadBinaryData(file::IOStream, start_bin::Int64, Offset::Int64, BytesTo
 end
 
 """
-    ReadData_PVTR(fname, dir)
+    Data::CartData = ReadData_PVTR(fname, dir)
 
-Reads a parallel, rectilinear, `*.vts` file with the name `fname` and located in `dir`.
+Reads a parallel, rectilinear, `*.vts` file with the name `fname` and located in `dir` and create a 3D `Data` struct from it.
 """
 function  ReadData_PVTR(fname, dir)
     file = open(joinpath(dir,fname), "r")
@@ -609,7 +604,6 @@ function  ReadData_PVTR(fname, dir)
             id_end      = findfirst("/>", line_strip)[1]-2
             fname_piece = line_strip[id_start:id_end];
 
-            @show FullSize joinpath(dir,fname)
             if num_data_sets==1
                 coord_x, coord_y, coord_z, Data_3D, Names, NumComp, ix,iy,iz = ReadData_VTR(joinpath(dir,fname_piece), FullSize);
             else
@@ -630,15 +624,36 @@ function  ReadData_PVTR(fname, dir)
         end
     end
 
+    # Create a named-Tuple out of the fields
+    NamesSymbol =   [Names[i][1:findfirst(" ", Names[i])[1]-1] for i=1:length(Names)]
+    Names1      =   Symbol.(NamesSymbol)
 
     Data_Array = [];
-    num=1;
+    num     =   1;
     for i=1:length(NumComp)
         data        =   Data_3D[num:num+NumComp[i]-1,:,:,:];
         data_arrays =   [data[i,:,:,:] for i=1:size(data,1)]
         data_tuple  =   tuple(data_arrays...)
-        Data_Array =    [Data_Array; data_tuple];
+
+        if size(data,1)>1
+            Data_NamedTuple = NamedTuple{(Names1[i],)}((data_tuple,))
+        else
+            Data_NamedTuple = NamedTuple{(Names1[i],)}((data_tuple[1],))
+        end
+        Data_Array = [Data_Array; Data_NamedTuple]
+
+        num = num+NumComp[i];
+    end
+    
+    # Merge vector with tuples into a NamedTuple
+    fields = Data_Array[1];
+    for i=2:length(Data_Array)
+        fields = merge(fields, Data_Array[i])
     end
 
-    return coord_x, coord_y, coord_z, Data_Array, 2   
+    # Create a CartData struct from it.
+    X,Y,Z       =   LonLatDepthGrid(coord_x, coord_y, coord_z)
+    DataC       =   CartData(X,Y,Z, fields);
+
+    return DataC
 end
