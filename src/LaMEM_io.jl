@@ -412,8 +412,8 @@ function ReadData_VTR(fname, FullSize)
     num = 1;
     CoordOffset = zeros(Int64,3);
     Offset_Vec  =   [];
-    Name_Vec    =   [];
-    NumComp_Vec =   [];    PieceExtent=[]; WholeExtent=[];
+    Name_Vec    =   [];     Type_Vec = [];
+    NumComp_Vec =   [];     PieceExtent=[]; WholeExtent=[];
     while header==true
 
         line        = readline(file)
@@ -427,6 +427,8 @@ function ReadData_VTR(fname, FullSize)
             id_start    = findfirst("\"", line_strip)[1]+1
             id_end      =  findlast("\"", line_strip)[1]-1
             PieceExtent =  parse.(Int64,split(line_strip[id_start:id_end]))
+           
+
         end
         if startswith(line_strip, "<Coordinates>")
             # Read info where the coordinates are stored
@@ -434,18 +436,36 @@ function ReadData_VTR(fname, FullSize)
             Type, Name, NumberOfComponents, CoordOffset[2]  = Parse_VTR_Line(readline(file)); num += 1
             Type, Name, NumberOfComponents, CoordOffset[3]  = Parse_VTR_Line(readline(file)); num += 1
         end
-        if startswith(line_strip, "<PointData>")
-        line_strip  = lstrip(readline(file))   
-        while ~startswith(line_strip, "</PointData>")
-            Type, Name, NumberOfComponents, Offset  = Parse_VTR_Line(line_strip);  num += 1
 
-            Offset_Vec  = [Offset_Vec;  Offset];
-            Name_Vec    = [Name_Vec;    Name];  
-            NumComp_Vec = [NumComp_Vec; NumberOfComponents];
+        if startswith(line_strip, "<PointData>")
             line_strip  = lstrip(readline(file))   
-        end  
-            
+            while ~startswith(line_strip, "</PointData>")
+                Type, Name, NumberOfComponents, Offset  = Parse_VTR_Line(line_strip);  num += 1
+
+                Offset_Vec  = [Offset_Vec;  Offset];
+                Name_Vec    = [Name_Vec;    Name];  
+                Type_Vec    = [Type_Vec;   Type]; 
+                NumComp_Vec = [NumComp_Vec; NumberOfComponents];
+                line_strip  = lstrip(readline(file))   
+            end  
         end
+
+        if startswith(line_strip, "<CellData>")
+            line_strip  = lstrip(readline(file))   
+            while ~startswith(line_strip, "</CellData>")
+                Type, Name, NumberOfComponents, Offset  = Parse_VTR_Line(line_strip);  num += 1
+    
+                Offset_Vec  = [Offset_Vec;  Offset];
+                Name_Vec    = [Name_Vec;    Name];  
+                Type_Vec    = [Type_Vec;   Type]; 
+                NumComp_Vec = [NumComp_Vec; NumberOfComponents];
+                line_strip  = lstrip(readline(file))   
+                 # if we have cell Data, for some reason we need to increment this by one.
+                PieceExtent[1:2:end] .+= 1
+            end  
+  
+        end
+
         if startswith(line_strip, "<AppendedData ")
             header=false
         end
@@ -494,8 +514,13 @@ function ReadData_VTR(fname, FullSize)
         Data_3D_Arrays = [Data_3D_Arrays; data3D_full]
     end
     i=length(Name_Vec);
-  
-    data3D   =   ReadBinaryData(file, start_bin, Offset_Vec[i],    numPoints*NumComp_Vec[i]*sizeof(Float32) )
+    
+    if Type_Vec[i]=="UInt8"
+        data3D   =   ReadBinaryData(file, start_bin, Offset_Vec[i],    numPoints*NumComp_Vec[i]*sizeof(UInt8), DataType=UInt8)
+    else
+        data3D   =   ReadBinaryData(file, start_bin, Offset_Vec[i],    numPoints*NumComp_Vec[i]*sizeof(Float32) )
+    end
+
     data3D   =   getArray(data3D, PieceExtent, NumComp_Vec[i]);
     data3D_full =   zeros(Float64,NumComp_Vec[i],FullSize[1],FullSize[2],FullSize[3])  # Generate full d
     data3D_full[1:NumComp_Vec[i], ix, iy, iz]        = data3D;
@@ -591,19 +616,21 @@ function  ReadData_PVTR(fname, dir)
         line_strip  = lstrip(line)     
         if startswith(line_strip, "<PRectilinearGrid")
             id_start    = findfirst("WholeExtent=", line_strip)[1]+13
-            id_end      = findfirst(">", line_strip)[1]-2
-            line_piece = line_strip[id_start:id_end];
+            line_strip  = line_strip[id_start:end]
+            id_end      = findfirst("\"", line_strip)[1]-1
+            line_piece  = line_strip[1:id_end]
+        
             WholeExtent = parse.(Int64,split(line_piece))
-            
-            FullSize = (WholeExtent[2],WholeExtent[4],WholeExtent[6])
+            FullSize    = (WholeExtent[2],WholeExtent[4],WholeExtent[6])
         end
 
 
         if startswith(line_strip, "<Piece")
             id_start    = findfirst("Source=", line_strip)[1]+8
-            id_end      = findfirst("/>", line_strip)[1]-2
-            fname_piece = line_strip[id_start:id_end];
-
+            line_strip  = line_strip[id_start:end]
+            id_end      = findfirst("\"", line_strip)[1]-1
+            fname_piece = line_strip[1:id_end]
+            
             if num_data_sets==1
                 coord_x, coord_y, coord_z, Data_3D, Names, NumComp, ix,iy,iz = ReadData_VTR(joinpath(dir,fname_piece), FullSize);
             else
@@ -625,7 +652,18 @@ function  ReadData_PVTR(fname, dir)
     end
 
     # Create a named-Tuple out of the fields
-    NamesSymbol =   [Names[i][1:findfirst(" ", Names[i])[1]-1] for i=1:length(Names)]
+    NamesSymbol = [];
+    for i=1:length(Names)
+        id = findfirst(" ", Names[i])
+        if id == nothing
+            Names_Strip = Names[i]  
+        else
+            Names_Strip = Names[i][1:findfirst(" ", Names[i])[1]-1];
+        end 
+        NamesSymbol = [NamesSymbol; Names_Strip]
+    end
+
+  #  NamesSymbol =   [Names[i][1:findfirst(" ", Names[i])[1]-1] for i=1:length(Names)]
     Names1      =   Symbol.(NamesSymbol)
 
     Data_Array = [];
