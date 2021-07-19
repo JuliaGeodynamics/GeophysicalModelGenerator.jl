@@ -500,17 +500,28 @@ function ReadData_VTR(fname, FullSize)
     coord_y_full = zeros(Float64, FullSize[2]);
     coord_z_full = zeros(Float64, FullSize[3]);
    
-    coord_x_full[ix] = coord_x;
-    coord_y_full[iy] = coord_y;
-    coord_z_full[iz] = coord_z;
+    coord_x_full[ix] = coord_x[1:length(ix)];
+    coord_y_full[iy] = coord_y[1:length(iy)];
+    coord_z_full[iz] = coord_z[1:length(iz)];
     
     for i=1:length(Name_Vec)-1
       
         data3D      =   ReadBinaryData(file, start_bin, Offset_Vec[i],    numPoints*NumComp_Vec[i]*sizeof(Float32) )
         data3D      =   getArray(data3D, PieceExtent, NumComp_Vec[i]);
 
-        data3D_full =   zeros(Float64,NumComp_Vec[i],FullSize[1],FullSize[2],FullSize[3])  # Generate full d
-        data3D_full[1:NumComp_Vec[i], ix, iy, iz]        = data3D;
+        data3D_full =   zeros(Float64,NumComp_Vec[i],FullSize[1],FullSize[2],FullSize[3])  # Generate full data
+
+        # uggly hack to make it work with parallel files    
+        ix_left = ix; ix_right = 1:length(ix_left);
+        iy_left = iy; iy_right = 1:length(iy_left);
+        iz_left = iz; iz_right = 1:length(iz_left);
+        if ix_left[1]>1; ix_left = ix_left[2:end]; ix_right=ix_right[2:end];    end
+        if iy_left[1]>1; iy_left = iy_left[2:end]; iy_right=iy_right[2:end];    end
+        if iz_left[1]>1; iz_left = iz_left[2:end]; iz_right=iz_right[2:end];    end
+
+        data3D_full[1:NumComp_Vec[i], ix_left, iy_left, iz_left]        = data3D[1:NumComp_Vec[i],ix_right, iy_right, iz_right];
+        #data3D_full[1:NumComp_Vec[i], ix, iy, iz]        = data3D;
+        
         Data_3D_Arrays = [Data_3D_Arrays; data3D_full]
     end
     i=length(Name_Vec);
@@ -523,7 +534,7 @@ function ReadData_VTR(fname, FullSize)
 
     data3D   =   getArray(data3D, PieceExtent, NumComp_Vec[i]);
     data3D_full =   zeros(Float64,NumComp_Vec[i],FullSize[1],FullSize[2],FullSize[3])  # Generate full d
-    data3D_full[1:NumComp_Vec[i], ix, iy, iz]        = data3D;
+    data3D_full[1:NumComp_Vec[i], ix, iy, iz]        = data3D[1:NumComp_Vec[i],1:length(ix),1:length(iy),1:length(iz)];
     
     Data_3D_Arrays = [Data_3D_Arrays; data3D_full]
 
