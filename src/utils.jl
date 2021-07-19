@@ -1,7 +1,7 @@
 # few utils that are useful 
 
 export meshgrid, CrossSection, ExtractSubvolume, SubtractHorizontalMean, Flatten3DData
-export ParseColumns_CSV_File, AboveSurface, BelowSurface, VoteMap
+export ParseColumns_CSV_File, AboveSurface, BelowSurface, VoteMap, InterpolateDataOnSurface
 
 """
     meshgrid(vx,vy,vz)
@@ -258,9 +258,9 @@ function InterpolateDataFields(V::GeoData, Lon, Lat, Depth)
             for j=1:length(data_tuple)
                 if ReverseData
                     ndim        =   length(size(data_tuple[j]))
-                    interpol    =   LinearInterpolation((Lon_vec, Lat_vec, reverse(Depth_vec)), reverse(ustrip.(data_tuple[j]), dims=ndim));      # create interpolation object
+                    interpol    =   LinearInterpolation((Lon_vec, Lat_vec, reverse(Depth_vec)), reverse(ustrip.(data_tuple[j]), dims=ndim) ,extrapolation_bc = Flat());      # create interpolation object
                 else
-                    interpol    =   LinearInterpolation((Lon_vec, Lat_vec, Depth_vec), ustrip.(data_tuple[j]));      # create interpolation object
+                    interpol    =   LinearInterpolation((Lon_vec, Lat_vec, Depth_vec), ustrip.(data_tuple[j]),extrapolation_bc = Flat());      # create interpolation object
                 end
                 data_array[:,:,:,j] =   interpol.(Lon, Lat, Depth);          
             end
@@ -270,9 +270,9 @@ function InterpolateDataFields(V::GeoData, Lon, Lat, Depth)
             # scalar field
             if ReverseData
                 ndim        =   length(size(V.fields[i]))
-                interpol    =   LinearInterpolation((Lon_vec, Lat_vec, reverse(Depth_vec)), reverse(V.fields[i], dims=ndim));            # create interpolation object
+                interpol    =   LinearInterpolation((Lon_vec, Lat_vec, reverse(Depth_vec)), reverse(V.fields[i], dims=ndim), extrapolation_bc = Flat(),);            # create interpolation object
             else
-                interpol    =   LinearInterpolation((Lon_vec, Lat_vec, Depth_vec), V.fields[i]);            # create interpolation object
+                interpol    =   LinearInterpolation((Lon_vec, Lat_vec, Depth_vec), V.fields[i], extrapolation_bc = Flat());            # create interpolation object
             end
             data_new    =   interpol.(Lon, Lat, Depth);                                                 # interpolate data field
         end
@@ -289,6 +289,43 @@ function InterpolateDataFields(V::GeoData, Lon, Lat, Depth)
 
     return Data_profile
 end
+
+
+"""
+    Surf_interp = InterpolateDataOnSurface(V::CartData, Surf::CartData)
+
+Interpolates a 3D data set `V` on a surface defined by `Surf`
+"""
+function InterpolateDataOnSurface(V::CartData, Surf::CartData)
+    
+    # Create GeoData structure:
+    V_geo               =   GeoData(V.x.val, V.y.val, V.z.val, V.fields)
+    V_geo.depth.val     =   ustrip(V_geo.depth.val);
+
+    Surf_geo            =   GeoData(Surf.x.val, Surf.y.val, Surf.z.val, Surf.fields)
+    Surf_geo.depth.val  =   ustrip(Surf_geo.depth.val);
+
+    Surf_interp_geo     =   InterpolateDataOnSurface(V_geo, Surf_geo)
+    Surf_interp         =   CartData(Surf_interp_geo.lon.val, Surf_interp_geo.lat.val, ustrip.(Surf_interp_geo.depth.val), Surf_interp_geo.fields)
+
+    return Surf_interp
+
+end
+
+
+"""
+    Surf_interp = InterpolateDataOnSurface(V::GeoData, Surf::GeoData)
+
+Interpolates a 3D data set `V` on a surface defined by `Surf`
+"""
+function InterpolateDataOnSurface(V::GeoData, Surf::GeoData)
+    
+    Surf_interp = InterpolateDataFields(V, Surf.lon.val, Surf.lat.val, Surf.depth.val)
+
+    return Surf_interp
+end
+
+
 
 # Extracts a sub-data set using indices
 function ExtractDataSets(V::GeoData, iLon, iLat, iDepth)
