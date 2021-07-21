@@ -13,11 +13,10 @@ export
         superscript, upreferred, GEO, SI, NONE, isDimensional, 
         km, m, cm, mm, Myrs, yr, s, MPa, Pa, Pas, K, C, kg, mol
 
-export ReadCSV_LatLon, meshgrid, voxGrav, Screenshot_To_GeoData
-
+export ReadCSV_LatLon, meshgrid, voxGrav
 
 # julia standard library packages
-using DelimitedFiles            
+using DelimitedFiles, Statistics            
 
 # other packages
 using   WriteVTK, Colors, FileIO, Interpolations, Geodesy
@@ -34,5 +33,6 @@ include("Paraview_output.jl")
 include("transformation.jl")
 include("voxel_gravity.jl")
 include("LaMEM_io.jl")
+#include("stl.jl")
 
 end

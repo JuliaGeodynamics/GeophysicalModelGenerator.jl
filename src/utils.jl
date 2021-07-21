@@ -2,6 +2,7 @@
 
 export meshgrid, CrossSection, ExtractSubvolume, SubtractHorizontalMean, Flatten3DData
 export ParseColumns_CSV_File, AboveSurface, BelowSurface, VoteMap, InterpolateDataOnSurface
+export RotateTranslateScale!
 
 """
     meshgrid(vx,vy,vz)
@@ -743,3 +744,72 @@ end
 function VoteMap(DataSets::GeoData, criteria::String; dims=(50,50,50))
     VoteMap([DataSets], [criteria]; dims=dims)
 end
+
+"""
+    RotateTranslateScale!(Data::CartData; Rotate=0, Translate=(0,0,0), Scale=(1.0,1.0,1.0))
+
+Does an in-place rotation, translation and scaling of the Cartesian dataset `Data`. 
+
+# Parameters
+Note that we apply the transformations in exactly this order:
+-   `Scale`:        scaling applied to the `x,y,z` coordinates of the data set
+-   `Rotate`:       rotation around the `x/y` axis (around the center of the box)
+-   `Translate`:    translation
+
+# Example
+```julia
+julia> X,Y,Z   =   LonLatDepthGrid(10:20,30:40,-50:-10);
+julia> Data_C  =   CartData(X,Y,Z,(Depth=Z,))
+CartData 
+  size  : (11, 11, 41)
+  x     ϵ [ 10.0 : 20.0]
+  y     ϵ [ 30.0 : 40.0]
+  z     ϵ [ -50.0 : -10.0]
+  fields: (:Depth,)
+julia> RotateTranslateScale!(Data_C, Rotate=30);
+julia> Data_C
+CartData 
+  size  : (11, 11, 41)
+  x     ϵ [ 8.169872981077807 : 21.83012701892219]
+  y     ϵ [ 28.16987298107781 : 41.83012701892219]
+  z     ϵ [ -50.0 : -10.0]
+  fields: (:Depth,)
+```
+"""
+function RotateTranslateScale!(Data::CartData; Rotate=0, Translate=(0,0,0), Scale=(1.0,1.0,1.0))
+
+    X,Y,Z       = Data.x.val,   Data.y.val,     Data.z.val;         # Extract coordinates
+    Xr,Yr,Zr    = X,Y,Z;                                            # Rotated coordinates 
+
+    # 1) Scaling
+    if length(Scale)==1
+        Scale = [Scale Scale Scale];
+    end
+    Xr .*= Scale[1];
+    Yr .*= Scale[2];
+    Zr .*= Scale[3];
+
+
+    # 2) 2D rotation around X/Y axis, around center of box
+    Xm,Ym = mean(X), mean(Y);  
+    R = [cosd(Rotate[1]) -sind(Rotate[1]); sind(Rotate[1]) cosd(Rotate[1])]; # 2D rotation matrix
+
+    for i in eachindex(X)
+        Rot_XY = R*[X[i]-Xm; Y[i]-Ym];
+        Xr[i]  = Rot_XY[1] + Xm;
+        Yr[i]  = Rot_XY[2] + Ym;
+    end 
+  
+    # 3) Add translation
+    Xr .+= Translate[1];
+    Yr .+= Translate[2];
+    Zr .+= Translate[3];
+    
+    # Modify original structure
+    Data.x.val = Xr;
+    Data.y.val = Yr;
+    Data.z.val = Zr;
+    
+end
+
+
