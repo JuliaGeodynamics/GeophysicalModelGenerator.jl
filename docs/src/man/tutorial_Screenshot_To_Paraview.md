@@ -93,7 +93,7 @@ A great online tool to do exactly that can be found here:
 [https://automeris.io/WebPlotDigitizer/](https://automeris.io/WebPlotDigitizer/)
 
 For this, you need to create a screenshot that is slightly larger and includes the axis (or a scale bar).
-As an example, you can use the image [Digitizer_1.png](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/tree/main/docs/src/assets/img).
+As an example, you can use the image `Digitizer_1.png` which you can download here [https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/main/docs/src/assets/img/Digitizer_1.png](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/main/docs/src/assets/img/Digitizer_1.png).
 
 If import this in the online tool and indicate this to be a `2D (X-Y) Plot`, it will ask us to pick 2 points on the `X` axis and 2 points on the `Y` axis:
 ![Digitizer_2](../assets/img/Digitizer_2.png)
