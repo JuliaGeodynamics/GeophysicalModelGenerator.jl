@@ -4,4 +4,5 @@ We have a number of ways to import data, besides using any of the additional pac
 
 ```@docs
 GeophysicalModelGenerator.Screenshot_To_GeoData
+GeophysicalModelGenerator.Screenshot_To_CartData
 ```

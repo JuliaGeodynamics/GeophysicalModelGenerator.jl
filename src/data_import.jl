@@ -4,6 +4,7 @@
 #
 # Author: Marcel Thielmann, 05/2021
 
+export Screenshot_To_GeoData, Screenshot_To_CartData
 
 # import CSV data using standard library functions
 # here we assume that the data is indeed comma separated and that comments are preceded with a "#"
@@ -166,7 +167,7 @@ The lower left and upper right coordinates of the image need to be specified in 
 The lower right and upper left corners can be specified optionally (to take non-orthogonal images into account). If they are not specified, the image is considered orthogonal and the corners are computed from the other two.
 
 """
-function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing)
+function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, Cart_Data_Type=false)
 
     img         =   load(filename)      # load image
 
@@ -191,12 +192,21 @@ function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperR
     end
 
     # Print overview of the 4 corners here:
-    println("Extracting GeoData from: $(filename)")
-    println("           └ Corners:         lon       lat       depth")
-    println("              └ lower left  = ($(rpad( Corner_LowerLeft[1],7)), $(rpad( Corner_LowerLeft[2],7)),  $(rpad( Corner_LowerLeft[3],7)))")
-    println("              └ lower right = ($(rpad(Corner_LowerRight[1],7)), $(rpad(Corner_LowerRight[2],7)),  $(rpad(Corner_LowerRight[3],7)))")
-    println("              └ upper left  = ($(rpad( Corner_UpperLeft[1],7)), $(rpad( Corner_UpperLeft[2],7)),  $(rpad( Corner_UpperLeft[3],7)))")
-    println("              └ upper right = ($(rpad(Corner_UpperRight[1],7)), $(rpad(Corner_UpperRight[2],7)),  $(rpad(Corner_UpperRight[3],7)))")
+    if Cart_Data_Type
+        println("Extracting CartData from: $(filename)")
+        println("           └ Corners:         x         y         z")
+        println("              └ lower left  = ($(rpad( Corner_LowerLeft[1],7)), $(rpad( Corner_LowerLeft[2],7)),  $(rpad( Corner_LowerLeft[3],7)))")
+        println("              └ lower right = ($(rpad(Corner_LowerRight[1],7)), $(rpad(Corner_LowerRight[2],7)),  $(rpad(Corner_LowerRight[3],7)))")
+        println("              └ upper left  = ($(rpad( Corner_UpperLeft[1],7)), $(rpad( Corner_UpperLeft[2],7)),  $(rpad( Corner_UpperLeft[3],7)))")
+        println("              └ upper right = ($(rpad(Corner_UpperRight[1],7)), $(rpad(Corner_UpperRight[2],7)),  $(rpad(Corner_UpperRight[3],7)))")
+    else
+        println("Extracting GeoData from: $(filename)")
+        println("           └ Corners:         lon       lat       depth")
+        println("              └ lower left  = ($(rpad( Corner_LowerLeft[1],7)), $(rpad( Corner_LowerLeft[2],7)),  $(rpad( Corner_LowerLeft[3],7)))")
+        println("              └ lower right = ($(rpad(Corner_LowerRight[1],7)), $(rpad(Corner_LowerRight[2],7)),  $(rpad(Corner_LowerRight[3],7)))")
+        println("              └ upper left  = ($(rpad( Corner_UpperLeft[1],7)), $(rpad( Corner_UpperLeft[2],7)),  $(rpad( Corner_UpperLeft[3],7)))")
+        println("              └ upper right = ($(rpad(Corner_UpperRight[1],7)), $(rpad(Corner_UpperRight[2],7)),  $(rpad(Corner_UpperRight[3],7)))")
+    end
 
     # Reconstruct the 4 corners into a matrix
     i = 1; Corners_lon     = [Corner_UpperLeft[i] Corner_UpperRight[i]; Corner_LowerLeft[i] Corner_LowerRight[i]; ]
@@ -236,7 +246,26 @@ function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperR
     blue                    =   zeros(size(Depth)); blue[:,:,1]  = b;
 
     # Create GeoData structure - NOTE: RGB data must be 2D matrixes, not 3D!
-    data_Image              =   GeoData(Lon, Lat, Depth, (colors=(red,green,blue),))
-
+    if Cart_Data_Type==true
+        data_Image              =   CartData(Lon, Lat, Depth, (depth=Depth,))
+    else
+        data_Image              =   GeoData(Lon, Lat, Depth, (colors=(red,green,blue),))
+    end
     return data_Image
+end
+
+
+"""
+    Data = Screenshot_To_CartData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing)
+
+Does the same as `Screenshot_To_GeoData`, but returns a Cartesian data structure
+"""
+function Screenshot_To_CartData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing)
+    
+
+    # first create a GeoData struct
+    Data_Cart = Screenshot_To_GeoData(filename, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, Cart_Data_Type=true)
+
+    return Data_Cart
+
 end
