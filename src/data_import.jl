@@ -247,7 +247,7 @@ function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperR
 
     # Create GeoData structure - NOTE: RGB data must be 2D matrixes, not 3D!
     if Cart_Data_Type==true
-        data_Image              =   CartData(Lon, Lat, Depth, (depth=Depth,))
+        data_Image              =   CartData(Lon, Lat, Depth,(colors=(red,green,blue),))
     else
         data_Image              =   GeoData(Lon, Lat, Depth, (colors=(red,green,blue),))
     end
