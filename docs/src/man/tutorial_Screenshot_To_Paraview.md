@@ -7,7 +7,15 @@ Yet, the reality is different and often data is not (yet) available, or papers a
 For that reason, `GeophysicalModelGenerator` has tools that allow you to transfer a screenshot from any published paper into `GeoData/Paraview` and see it in 3D at the correct geographic location. This can be done for vertical profiles and for mapviews, which gives you a quick and easy way to see those papers in a new (3D) light.
 
 Here, we explain how. 
-
+- [Import profiles/maps from published papers](#import-profilesmaps-from-published-papers)
+  - [Goal](#goal)
+  - [General procedure](#general-procedure)
+      - [1. Download data and crop images](#1-download-data-and-crop-images)
+      - [2. Read data of a cross-section & create VTS file](#2-read-data-of-a-cross-section--create-vts-file)
+      - [3. Read data of a mapview & create *.vts file](#3-read-data-of-a-mapview--create-vts-file)
+      - [4. Using an automatic digitizer to pick points on map](#4-using-an-automatic-digitizer-to-pick-points-on-map)
+      - [5. Creating a multiblock Paraview/*.vtm file](#5-creating-a-multiblock-paraviewvtm-file)
+      - [6. Julia script](#6-julia-script)
 ## General procedure
 #### 1. Download data and crop images
 For this example, we use a well-known paper about the Alps which is now openly available:
@@ -78,7 +86,24 @@ Write_Paraview(data_Fig13_map, "Lippitsch_Fig13_mapview")
 Once added to paraview (together with a few additional map views from the same paper):  
 ![Tutorial_ScreenShots_Lippitsch_4](../assets/img/Tutorial_ScreenShots_Lippitsch_4.png)
 
-#### 4. Creating a multiblock Paraview/*.vtm file
+#### 4. Using an automatic digitizer to pick points on map
+Often, it is not straightforward to determine the begin/end points of a profile and have to guess that by looking at the mapview (which is inprecise). To help with that, you can digitize the map and use an automatic digitizer to pick points on the map.
+
+A great online tool to do exactly that can be found here:
+[https://automeris.io/WebPlotDigitizer/](https://automeris.io/WebPlotDigitizer/)
+
+For this, you need to create a screenshot that is slightly larger and includes the axis (or a scale bar).
+As an example, you can use the image [Digitizer_1.png](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/tree/main/docs/src/assets/img).
+
+If import this in the online tool and indicate this to be a `2D (X-Y) Plot`, it will ask us to pick 2 points on the `X` axis and 2 points on the `Y` axis:
+![Digitizer_2](../assets/img/Digitizer_2.png)
+
+Once the map is referenced accordingly, we can pick points (here for `C' - C`) and show the corresponding data values:
+![Digitizer_3](../assets/img/Digitizer_3.png)
+
+Which can again be used to set your profile.
+
+#### 5. Creating a multiblock Paraview/*.vtm file
 
 If you are importing a lot of cross-sections at the same time in Paraview, you end up having a lot of open profiles.
 For that reason it is possible to save a "multi-block" *.vtm file, which combines several files into one.
@@ -94,7 +119,7 @@ julia> vtk_save(vtmfile)
 ```
 Note that you have to create the cross-sections first (see the julia script below).
 
-#### 5. Julia script
+#### 6. Julia script
 For convenience we collected a few screenshots and uploaded it from [https://seafile.rlp.net/d/a50881f45aa34cdeb3c0/](https://seafile.rlp.net/d/a50881f45aa34cdeb3c0/).
 
 The full julia script that interprets all the figures is given [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/tree/main/tutorial/Lippitsch_Screenshots.jl).
