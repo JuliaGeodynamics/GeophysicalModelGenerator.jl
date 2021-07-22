@@ -168,7 +168,7 @@ function InterpolateToRectilinear(data_Cart::CartData; x_lims=empty, y_lims=empt
         dims = size(data_Cart.x)
     end
 
-    x,y,z = LonLatDepthGrid(LinRange(x_lims[1],x_lims[2],dims[1]),
+    x,y,z = XYZGrid(LinRange(x_lims[1],x_lims[2],dims[1]),
                             LinRange(y_lims[1],y_lims[2],dims[2]),
                             LinRange(z_lims[1],z_lims[2],dims[3]))
 

@@ -147,7 +147,7 @@ function ReadLaMEM_InputFile(file)
     y       =   coord_y[1]+dy/2: dy : coord_y[end]-dy/2;
     z       =   coord_z[1]+dz/2: dz : coord_z[end]-dz/2;
 
-    X,Y,Z   =   LonLatDepthGrid(x,y,z); # create 3D grid using regular spacng
+    X,Y,Z   =   XYZGrid(x,y,z); # create 3D grid using regular spacing
     
     Grid    =  LaMEM_grid(  nmark_x,    nmark_y,    nmark_z,
                             nump_x,     nump_y,     nump_z,
@@ -712,7 +712,7 @@ function  ReadData_PVTR(fname, dir)
     end
 
     # Create a CartData struct from it.
-    X,Y,Z       =   LonLatDepthGrid(coord_x, coord_y, coord_z)
+    X,Y,Z       =   XYZGrid(coord_x, coord_y, coord_z)
     DataC       =   CartData(X,Y,Z, fields);
 
     return DataC

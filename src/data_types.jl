@@ -3,7 +3,7 @@
 
 import Base: show
 
-export GeoData, CartData, LonLatDepthGrid, Velocity_SphericalToCartesian!
+export GeoData, CartData, LonLatDepthGrid, XYZGrid, Velocity_SphericalToCartesian!
 
 # data structure for a list of values - TO BE REMOVED
 mutable struct ValueList
@@ -167,7 +167,7 @@ end
 
 
 """
-    LonLatDepthGrid(Lon::Any, Lat::Any, Depth:Any)
+    Lon, Lat, Depth = LonLatDepthGrid(Lon::Any, Lat::Any, Depth:Any)
 
 Creates 3D arrays of `Lon`, `Lat`, `Depth` from 1D vectors or numbers
 
@@ -234,6 +234,23 @@ function LonLatDepthGrid(Lon::Any, Lat::Any, Depth::Any)
     return Lon3D, Lat3D, Depth3D
 end
 
+"""
+    X,Y,Z = XYZGrid(X_vec::Any, Y_vec::Any, Z_vec::Any)
+
+Creates a `X,Y,Z` grid. It works just as `LonLatDepthGrid` apart from the better suited name.
+
+# Example 1: Create 3D grid
+```julia-repl
+julia> X,Y,Z =  XYZGrid(10:20,30:40,(-10:-1)km);
+julia> size(X)
+(11, 11, 10)
+```
+
+See `LonLatDepthGrid` for more examples.
+"""
+function XYZGrid(X_vec::Any, Y_vec::Any, Z_vec::Any)
+    return X,Y,Z = LonLatDepthGrid(X_vec,Y_vec,Z_vec)
+end
 
 
 """

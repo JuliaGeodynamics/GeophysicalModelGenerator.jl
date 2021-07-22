@@ -40,21 +40,29 @@ Data_cart = convert(CartData,Data_set)
 @test Data_cart.y[3] ≈ 324.3876769792181
 @test Data_cart.z[3] ≈ 1421.35608984477 
 
-# Create Lon/Lat/Depth grids from given numbers or 1D vectors
+# Create Lon/Lat/Depth and X/Y/Z grids from given numbers or 1D vectors
 Lon,Lat,Depth =  LonLatDepthGrid(10:20,30:40,(-10:-1)km);
+X,Y,Z         =  XYZGrid(10:20,30:40,(-10:-1)km);
 @test size(Lon)==(11, 11, 10)
 @test Lat[2,2,2]==31.0
+@test size(X)==(11, 11, 10)
+@test Y[2,2,2]==31.0
 
-Lon,Lat,Depth =  LonLatDepthGrid(10:20,30:40,-50km);
-@test Lon[2,2]==11.0
+Lon,Lat,Depth   =  LonLatDepthGrid(10:20,30:40,-50km);
+X,Y,Z           =  XYZGrid(10:20,30:40,-50km);
+@test Lon[2,2] == 11.0
+@test X[2,2]   == 11.0
 
-Lon,Lat,Depth =  LonLatDepthGrid(10,30,(-10:-1)km); # 1D line @ given lon/lat
+Lon,Lat,Depth   =  LonLatDepthGrid(10,30,(-10:-1)km); # 1D line @ given lon/lat
+X,Y,Z           =  XYZGrid(10,30,(-10:-1)km);
 @test size(Lon)==(1,1,10)
 @test Lat[2]==30.0
+@test size(X)==(1,1,10)
+@test Y[2]==30.0
 
 # throw an error if a 2D array is passed as input
 @test_throws ErrorException LonLatDepthGrid(10:20,30:40,[20 30; 40 50]);
-
+@test_throws ErrorException XYZGrid(10:20,30:40,[20 30; 40 50]);
 
 
 # Create 3D arrays & convert them 
@@ -64,6 +72,7 @@ Data            =   ustrip(Depth);
 Data_set1       =   GeoData(Lat,Lon,Depth,(FakeData=Data,Data2=Data.+1.))  
 @test size(Data_set1.depth)==(11, 11, 10)
 @test Data_set1.depth[1,2,3]==-8.0km
+
 
 # Create 2D arrays & convert them 
 Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,-50km);

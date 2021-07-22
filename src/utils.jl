@@ -758,7 +758,7 @@ Note that we apply the transformations in exactly this order:
 
 # Example
 ```julia
-julia> X,Y,Z   =   LonLatDepthGrid(10:20,30:40,-50:-10);
+julia> X,Y,Z   =   XYZGrid(10:20,30:40,-50:-10);
 julia> Data_C  =   CartData(X,Y,Z,(Depth=Z,))
 CartData 
   size  : (11, 11, 41)
