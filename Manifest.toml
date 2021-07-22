@@ -454,7 +454,7 @@ version = "0.9.5"
 [[TriangleIntersect]]
 git-tree-sha1 = "42f3b045a3d95a4686770311edbc41b1abfd5b72"
 repo-rev = "master"
-repo-url = "https://github.com/JuliaGeometry/TriangleIntersect.jl"
+repo-url = "git://github.com/JuliaGeometry/TriangleIntersect.jl.git"
 uuid = "dcd768d6-4344-5c62-a673-42b3679449b0"
 version = "0.0.0"
 
