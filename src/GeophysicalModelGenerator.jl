@@ -19,10 +19,11 @@ export ReadCSV_LatLon, meshgrid, voxGrav
 using DelimitedFiles, Statistics            
 
 # other packages
-using   WriteVTK, Colors, FileIO, Interpolations, Geodesy
+using   WriteVTK, Colors, MeshIO, FileIO, Interpolations, Geodesy
 
 export vtk_multiblock, vtk_save         # Simplifies writing multiblock files
 export LLA
+export load
 
 # add files for specific tasks
 include("data_types.jl")
