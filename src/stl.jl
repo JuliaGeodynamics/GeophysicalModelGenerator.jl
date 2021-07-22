@@ -1,4 +1,6 @@
+# NOTE: this remains WIP, which is why it is not yet in the documentation
 # These are routines that allow importing *.stl triangular surfaces and employ them 
+
 using FileIO
 using GeometryBasics: TriangleP, Mesh, normals, PointMeta, coordinates
 using TriangleIntersect, LinearAlgebra

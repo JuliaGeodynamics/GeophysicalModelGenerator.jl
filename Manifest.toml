@@ -451,6 +451,13 @@ git-tree-sha1 = "7c53c35547de1c5b9d46a4797cf6d8253807108c"
 uuid = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
 version = "0.9.5"
 
+[[TriangleIntersect]]
+git-tree-sha1 = "42f3b045a3d95a4686770311edbc41b1abfd5b72"
+repo-rev = "master"
+repo-url = "https://github.com/JuliaGeometry/TriangleIntersect.jl"
+uuid = "dcd768d6-4344-5c62-a673-42b3679449b0"
+version = "0.0.0"
+
 [[UUIDs]]
 deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"

@@ -25,8 +25,10 @@ Some of the key features are:
 - Handle both scalar and vector data sets.
 - Grab screenshots of cross-sections or maps in published papers and view them in 3D (together with other data).
 - Create a consistent overview that includes all available data of a certain region.
+- Create initial model setups for the 3D geodynamic code [LaMEM](https://bitbucket.org/bkaus/lamem/src/master/).
+- Import LaMEM timesteps. 
 
-All data is transformed into a `GeoData` structure which contains info about the longitude, latitude and depth  along with an arbitrary number of scalar/vector datasets.
+All data is transformed into either a `GeoData` or a `CartData` structure which contains info about `longitude/latitude/depth` or `x/y/z` along with an arbitrary number of scalar/vector datasets, respectively. All data can be exported to Paraview with the `Write_Paraview` routine.
   
 ## Usage 
 The best way to learn how to use this is to install the package (see below) and look at the tutorials in the [manual](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev/).
