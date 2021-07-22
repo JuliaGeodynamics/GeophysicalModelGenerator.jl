@@ -201,9 +201,9 @@ Writing LaMEM marker file -> ./markers/mdb.00000003.dat
 """
 function Save_LaMEMMarkersParallel(Grid::CartData; PartitioningFile=empty, directory="./markers", verbose=true)
 
-    x = ustrip(Grid.x.val[:,1,1]);
-    y = ustrip(Grid.y.val[1,:,1]);
-    z = ustrip(Grid.z.val[1,1,:]);
+    x = ustrip.(Grid.x.val[:,1,1]);
+    y = ustrip.(Grid.y.val[1,:,1]);
+    z = ustrip.(Grid.z.val[1,1,:]);
     
     if haskey(Grid.fields,:Phases)
         Phases = Grid.fields[:Phases];

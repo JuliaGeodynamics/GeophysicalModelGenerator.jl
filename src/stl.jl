@@ -3,15 +3,21 @@
 
 using FileIO
 using GeometryBasics: TriangleP, Mesh, normals, PointMeta, coordinates
-using TriangleIntersect, LinearAlgebra
+using LinearAlgebra
+
+# Warning: the TriangleIntersect dependency does not seem to work on different machines, as the developer did not add a version nunber..
+# That forces us to remove it here, and 
+#using TriangleIntersect
 
 export Ray, Intersection, IntersectRayTriangle, load, TriangleNormal, Point, IntersectRayMesh, coordinates
 export STLToSurface, IsInsideClosedSTL
 
+#=
 # Conversion routines from GeometryBasics triangles to TriangleIntersect triangles:
 Base.convert(::Type{Point}, p::PointMeta)       =   Point(p[1],p[2],p[3])
 Base.convert(::Type{Triangle}, t::TriangleP)    =   Triangle(convert(Point,t[1]),convert(Point,t[2]),convert(Point,t[3]))
 Triangle(t::TriangleP) = convert(Triangle,t)
+
 
 # Define a few routins to allow computing the intersection of a ray with a triangle
 #/(p::GeometryBasics.Point, n::Number) = GeometryBasics.Point(p.x/n, p.y/n, p.z/n)
@@ -153,12 +159,15 @@ function STLToSurface(name::String,  Xin, Yin, minZ)
     return Data
 
 end
+=#
+
 
 """ 
     inside = IsInsideClosedSTL(mesh::Mesh, Pt, eps=1e-3) 
 
 Determine whether a point `Pt` is inside a 3D closed triangular `*.stl` surface or not.
-This implements the winding number method described, following the python code: 
+
+This implements the winding number method, following the python code: 
 https://github.com/marmakoide/inside-3d-mesh
 """
 function IsInsideClosedSTL(mesh::Mesh, Pt, eps=1e-3) 
