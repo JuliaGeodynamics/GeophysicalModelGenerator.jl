@@ -169,8 +169,10 @@ Determine whether a point `Pt` is inside a 3D closed triangular `*.stl` surface 
 
 This implements the winding number method, following the python code: 
 https://github.com/marmakoide/inside-3d-mesh
+
+This again is described in the following [paper](https://igl.ethz.ch/projects/winding-number/) by Alec Jacobson, Ladislav Kavan and Olga Sorkine-Hornung.
 """
-function IsInsideClosedSTL(mesh::Mesh, Pt, eps=1e-3) 
+function IsInsideClosedSTL(mesh::Mesh, Pt::Vector, eps=1e-3) 
 
      # Compute triangle vertices and their norms relative to X
      M_vec  = [mesh.position[i]-Pt[:]   for i in eachindex(mesh.position)];  

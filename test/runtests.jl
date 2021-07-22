@@ -24,6 +24,10 @@ end
     include("test_lamem.jl")
 end
 
+@testset "STL" begin
+    include("test_stl.jl")
+end
+
 # Cleanup 
 foreach(rm, filter(endswith(".vts"), readdir()))
 foreach(rm, filter(endswith(".vtu"), readdir()))
