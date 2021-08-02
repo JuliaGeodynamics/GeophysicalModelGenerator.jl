@@ -26,7 +26,7 @@ GeoParams       =   "0.1"
 Geodesy         =   "1.0"
 GeometryBasics  =   "0.4"
 ImageIO         =   "0.5"
-Interpolations  =   "0.13"
+Interpolations  =   "0.13.2"
 MeshIO          =   "0.4"
 WriteVTK        =   "1.9"
 
