@@ -35,11 +35,9 @@ The best way to learn how to use this is to install the package (see below) and 
 
 ## Installation 
 First, you need to install julia on your machine. We recommend to use the binaries from [https://julialang.org](https://julialang.org).
-Next, start julia and install this and required dependencies within the julia package manager.
-Note that we first install the [GeoParams.jl](https://github.com/JuliaGeodynamics/GeoParams.jl) package after which we install GeophysicalModelGenerator.
+Next, start julia and switch to the julia package manager using `]`, after which you can add the package.
 ```julia
 julia> ]
-(@v1.6) pkg> add https://github.com/JuliaGeodynamics/GeoParams.jl
 (@v1.6) pkg> add https://github.com/JuliaGeodynamics/GeophysicalModelGenerator
 ```
 You can test whether it works on your system with
