@@ -90,10 +90,9 @@ Note that you do not include the `*.jl` extension.
 In order to install GeophysicalModelGenerator.jl, start julia and go to the package manager:
 ```julia
 julia> ]
-(@v1.6) pkg> add https://github.com/JuliaGeodynamics/GeoParams.jl
 (@v1.6) pkg> add https://github.com/JuliaGeodynamics/GeophysicalModelGenerator
 ```
-You first need to install a package called `GeoParams.jl`, after which you install `GeophysicalModelGenerator.jl`. It will automatically install various other packages it relies on (using the correct version).
+This will automatically install various other packages it relies on (using the correct version).
 
 If you want, you can test if it works on your machine by running the test suite in the package manager:
 ```julia
