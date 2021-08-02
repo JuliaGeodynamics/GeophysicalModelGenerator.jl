@@ -27,6 +27,11 @@ version = "1.0.0"
 [[Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 
+[[BibTeX]]
+git-tree-sha1 = "e16505bdc7c0177d0a1709022d4ac41d51c5181d"
+uuid = "7b0aa2c9-049f-5cec-894a-2b6b781bb25e"
+version = "0.1.0"
+
 [[CEnum]]
 git-tree-sha1 = "215a9aa4a1f23fbd05b92769fdd62559488d70e9"
 uuid = "fa961155-64e5-5f13-b03f-caf6b980ea82"
@@ -141,10 +146,8 @@ uuid = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
 version = "0.8.4"
 
 [[GeoParams]]
-deps = ["LaTeXStrings", "Parameters", "Unitful"]
-git-tree-sha1 = "b9be896a1f28902804c06fe09126b7e09e1ba859"
-repo-rev = "main"
-repo-url = "https://github.com/JuliaGeodynamics/GeoParams.jl"
+deps = ["BibTeX", "LaTeXStrings", "Parameters", "Unitful"]
+git-tree-sha1 = "ac1855dd3fde839d278e23ed56b36abb7315b7ae"
 uuid = "e018b62d-d9de-4a26-8697-af89c310ae38"
 version = "0.1.3"
 
