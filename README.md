@@ -38,7 +38,7 @@ First, you need to install julia on your machine. We recommend to use the binari
 Next, start julia and switch to the julia package manager using `]`, after which you can add the package.
 ```julia
 julia> ]
-(@v1.6) pkg> add https://github.com/JuliaGeodynamics/GeophysicalModelGenerator
+(@v1.6) pkg> add GeophysicalModelGenerator
 ```
 You can test whether it works on your system with
 ```julia
