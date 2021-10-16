@@ -13,5 +13,6 @@ For this, GeophysicalModelGenerator provides the following functionality:
 - Routines to generate VTK files from the GeoData structure in order to visualize results in Paraview.
 - The ability to deal with points, 2D profiles and 3D volumes, for both scalar and vector values.
 - Rapidly import screenshots of published papers compare them with other data sets in 3D using paraview. 
+- Create geodynamic input models (for LaMEM)
 
 The best way to get started is to look at the tutorials.
