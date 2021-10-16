@@ -34,6 +34,7 @@ include("Paraview_output.jl")
 include("transformation.jl")
 include("voxel_gravity.jl")
 include("LaMEM_io.jl")
+include("LaMEM_geometry.jl")
 include("stl.jl")
 
 end

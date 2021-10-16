@@ -1,0 +1,179 @@
+# This is a simple 2D subduction setup a free slip upper boundary
+# The geometry is created in MATLAB, and linear rheologies are being used apart from the 
+# crust, which is plastic to allow detachment of the upper boundary
+#
+# The MATLAB file CreateMarkers_Subduction_Linear_FreeSlip_parallel.m is used to create 
+# the input geometry.
+# A direct solver is employed
+
+#===============================================================================
+# Scaling
+#===============================================================================
+
+	units            = geo		# geological units 
+	
+	unit_temperature = 1000
+	unit_length      = 1e3
+	unit_viscosity   = 1e20
+	unit_stress      = 1e9
+	
+#===============================================================================
+# Time stepping parameters
+#===============================================================================
+
+	time_end  = 100   # simulation end time
+	dt        = 0.05  # initial time step
+	dt_min    = 1e-5  # minimum time step (declare divergence if lower value is attempted)
+	dt_max    = 100   # maximum time step
+	inc_dt    = 0.1   # time step increment per time step (fraction of unit)
+	CFL       = 0.5   # CFL (Courant-Friedrichs-Lewy) criterion
+	CFLMAX    = 0.5   # CFL criterion for elasticity
+	nstep_max = 1000  # maximum allowed number of steps (lower bound: time_end/dt_max)
+	nstep_out = 5     # save output every n steps
+	nstep_rdb = 100   # save restart database every n steps
+
+
+#===============================================================================
+# Grid & discretization parameters
+#===============================================================================
+
+# Number of cells for all segments
+	nel_x = 256
+	nel_y = 2
+	nel_z = 64
+
+# Coordinates of all segments (including start and end points)
+
+	coord_x = -1500 1500
+	coord_y =  0   10
+	coord_z = -660  0
+
+#===============================================================================
+# Boundary conditions
+#===============================================================================
+# No-slip boundary flag mask (left right front back bottom top)
+
+	noslip = 0 0 0 0 1 0
+	
+#===============================================================================
+# Solution parameters & controls
+#===============================================================================
+
+	gravity        = 0.0 0.0 -9.81  # gravity vector
+	FSSA           = 1.0            # free surface stabilization parameter [0 - 1]
+	init_guess     = 0              # initial guess flag
+	eta_min        = 1e18           # viscosity upper bound
+	eta_ref 	   = 1e20			# reference viscosity for initial guess	
+	eta_max        = 1e25           # viscosity lower limit	
+	p_litho_plast   = 1              # use lithostatic pressure for plasticity
+
+#===============================================================================
+# Solver options
+#===============================================================================
+	SolverType 		=	direct 			# solver [direct or multigrid]
+	DirectSolver 	=	mumps			# mumps/superlu_dist/pastix	
+	DirectPenalty 	=	1e5
+
+		
+#===============================================================================
+# Model setup & advection
+#===============================================================================
+
+	msetup 		   =  files            
+	mark_load_file = ./markers/mdb     # marker input file (extension is .xxxxxxxx.dat)
+
+	nmark_x        = 3                 # markers per cell in x-direction
+	nmark_y        = 3                 # ...                 y-direction
+	nmark_z        = 3                 # ...                 z-direction
+	bg_phase       = 0                 # background phase ID
+	rand_noise     = 1                 # random noise flag
+	advect         = rk2               # advection scheme
+	interp         = minmod             # velocity interpolation scheme
+	mark_ctrl      = basic             # marker control type
+	nmark_lim      = 8 100            # min/max number per cell
+	
+
+	
+#===============================================================================
+# Output
+#===============================================================================
+
+# Grid output options (output is always active)
+
+	out_file_name       = Subduction2D_FreeSlip_direct # output file name
+	out_pvd             = 1       	# activate writing .pvd file
+	out_phase           = 1
+	out_density         = 1
+	out_visc_total      = 1
+	out_visc_creep      = 1
+	out_velocity        = 1
+	out_pressure        = 1
+	out_eff_press       = 1
+	out_temperature     = 1
+	out_dev_stress      = 1
+	out_j2_dev_stress   = 1
+	out_strain_rate     = 1
+	out_j2_strain_rate  = 1
+	out_yield           = 1
+	out_plast_strain    = 1
+	out_plast_dissip    = 1
+	out_tot_displ       = 1
+	out_moment_res      = 1
+	out_cont_res        = 1
+	
+# AVD phase viewer output options (requires activation)
+
+	out_avd     		= 1 # activate AVD phase output
+	out_avd_pvd 		= 1 # activate writing .pvd file
+	out_avd_ref 		= 3 # AVD grid refinement factor
+	
+
+#===============================================================================
+# Material phase parameters
+#===============================================================================
+
+	# Define properties of mantle
+	<MaterialStart>
+		ID  	= 	0       # phase id
+		rho 	= 	3200    # density
+		eta 	= 	1e20    # viscosity
+	<MaterialEnd>
+
+	# Define properties of crust
+	<MaterialStart>
+		ID  	= 	1 		# phase id
+		rho 	= 	3250 	# density
+		eta 	=	5e22
+		
+		# plastic properties of crust
+		ch		=	5e6		# cohesion [MPa]
+		fr 		=	5		# friction angle	
+		
+	<MaterialEnd>
+	
+	
+	# Define properties of mantle lithosphere/slab
+	<MaterialStart>
+		ID  	= 	2 		# phase id
+		
+		rho 	= 	3250 	# density
+		eta 	= 	5e22 	# viscosity
+	<MaterialEnd>
+	
+	
+#===============================================================================
+# PETSc options
+#===============================================================================
+
+<PetscOptionsStart>
+
+	# LINEAR & NONLINEAR SOLVER OPTIONS
+	#-snes_ksp_ew
+
+
+	-js_ksp_monitor # display how the inner iterations converge
+
+
+<PetscOptionsEnd>
+
+#===============================================================================

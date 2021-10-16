@@ -32,7 +32,7 @@ makedocs(;
             "Paraview output" => "man/paraview_output.md",
             "Tools" => "man/tools.md",
             "Gravity code" => "man/gravity_code.md",
-            "LaMEM I/O" => "man/lamem.md"
+            "LaMEM" => "man/lamem.md"
         ],
         "List of functions"  => "man/listfunctions.md"
     ],
