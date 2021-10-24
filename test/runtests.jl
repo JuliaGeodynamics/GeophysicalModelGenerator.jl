@@ -20,7 +20,7 @@ end
     include("test_transformation.jl")
 end
 
-@testset "LaMEM I/O" begin
+@testset "LaMEM" begin
     include("test_lamem.jl")
 end
 
