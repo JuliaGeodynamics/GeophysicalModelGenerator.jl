@@ -539,7 +539,7 @@ Returns a boolean array of size(Data.Lon), which is true for points that are abo
 
 This can be used, for example, to mask points above/below the Moho in a volumetric dataset or in a profile.
 
-#Example
+# Example
 First we create a 3D data set and a 2D surface:
 ```julia
 julia> Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
@@ -628,10 +628,10 @@ end
 Creates a Vote map which shows consistent features in different 2D/3D tomographic datasets.
 
 The way it works is:
-    - Find a common region between the different GeoData sets (overlapping lon/lat/depth regions)
-    - Interpolate the fields of all DataSets to common coordinates
-    - Filter data points in one model (e.g., areas with a velocity anomaly > 2 percent). Set everything that satisfies this criteria to 1 and everything else to 0.
-    - Sum the results of the different datasets
+- Find a common region between the different GeoData sets (overlapping lon/lat/depth regions)
+- Interpolate the fields of all DataSets to common coordinates
+- Filter data points in one model (e.g., areas with a velocity anomaly > 2 percent). Set everything that satisfies this criteria to 1 and everything else to 0.
+- Sum the results of the different datasets
 
 If a feature is consistent between different datasets, it will have larger values. 
 
