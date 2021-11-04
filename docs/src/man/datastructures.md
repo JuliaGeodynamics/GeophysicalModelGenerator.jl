@@ -4,6 +4,7 @@ The main data structure used in GeophysicalModelGenerator.jl is `GeoData`, which
 
 ```@docs
 GeophysicalModelGenerator.GeoData
+GeophysicalModelGenerator.UTMData
 GeophysicalModelGenerator.CartData
 GeophysicalModelGenerator.LonLatDepthGrid
 GeophysicalModelGenerator.XYZGrid

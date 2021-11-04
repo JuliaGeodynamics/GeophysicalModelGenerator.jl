@@ -91,5 +91,26 @@ Data_cart2      = convert(CartData,Data_set2)
 @test size(Data_cart2.z)==(11, 11, 1)
 @test Data_cart2.z[2,2] ≈ 3240.141612908441
 
+# Create UTM Data structure
+ew          =   422123.0:100:433623.0
+ns          =   4.514137e6:100:4.523637e6
+depth       =   -5.4:.25:0.6
+EW,NS,Depth =   XYZGrid(ew, ns, depth);
+Data        =   ustrip.(Depth);
+Data_set    =   UTMData(EW,NS,Depth,33, true, (FakeData=Data,Data2=Data.+1.))  
 
+@test Data_set.EW[3,4,2]==422323.0
+@test Data_set.NS[3,4,2]==4.514437e6
+@test Data_set.depth[3,4,2]==-5.15km
+@test Data_set.northern[1] == true
+@test Data_set.zone[1] == 33
 
+# convert from UTMData -> GeoData
+Data_set1 = convert(GeoData, Data_set)
+@test Data_set1.lon[20] == 14.099668158564413
+@test Data_set1.lat[20] == 40.77470011887963
+@test Data_set1.depth[20] == -5.4km
+
+# Convert from GeoData -> UTMData
+Data_set2 = convert(UTMData, Data_set1)
+@test sum(abs.(Data_set2.EW.val-Data_set.EW.val)) < 1e-5 
