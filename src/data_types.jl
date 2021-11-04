@@ -111,7 +111,7 @@ struct GeoData
             if maximum(abs.(diff(lon,dims=2)))>maximum(abs.(diff(lon,dims=1))) || maximum(abs.(diff(lon,dims=3)))>maximum(abs.(diff(lon,dims=1)))
                 error("It appears that the lon array has a wrong ordering")
             end
-            if maximum(abs.(diff(lat,dims=1)))>maximum(abs.(diff(lon,dims=2))) || maximum(abs.(diff(lat,dims=3)))>maximum(abs.(diff(lon,dims=2)))
+            if maximum(abs.(diff(lat,dims=1)))>maximum(abs.(diff(lat,dims=2))) || maximum(abs.(diff(lat,dims=3)))>maximum(abs.(diff(lat,dims=2)))
                 error("It appears that the lat array has a wrong ordering")
             end
         end
@@ -278,8 +278,8 @@ struct UTMData
     EW       ::  GeoUnit
     NS       ::  GeoUnit 
     depth    ::  GeoUnit
-    zone     ::  Int
-    northern ::  Bool 
+    zone     ::  Any
+    northern ::  Any
     fields   ::  NamedTuple 
     
     # Ensure that the data is of the correct format
@@ -294,12 +294,12 @@ struct UTMData
 
         # Check ordering of the arrays in case of 3D
         if sum(size(EW).>1)==3
-          #  if maximum(abs.(diff(EW,dims=2)))>1e-9 || maximum(abs.(diff(EW,dims=3)))>1e-9
-          #      error("It appears that the EW array has a wrong ordering")
-          #  end
-          #  if maximum(abs.(diff(NS,dims=1)))>1e-9 || maximum(abs.(diff(NS,dims=3)))>1e-9
-          #      error("It appears that the NS array has a wrong ordering")
-          #  end
+            if maximum(abs.(diff(EW,dims=2)))>maximum(abs.(diff(EW,dims=1))) || maximum(abs.(diff(EW,dims=3)))>maximum(abs.(diff(EW,dims=1)))
+                error("It appears that the EW array has a wrong ordering")
+            end
+            if maximum(abs.(diff(NS,dims=1)))>maximum(abs.(diff(NS,dims=2))) || maximum(abs.(diff(NS,dims=3)))>maximum(abs.(diff(NS,dims=2)))
+                error("It appears that the NS array has a wrong ordering")
+            end
         end
 
         # fields should be a NamedTuple. In case we simply provide an array, lets transfer it accordingly
@@ -324,7 +324,13 @@ struct UTMData
             error("The size of EW/NS/Depth and the Fields should all be the same!")
         end
 
+        if length(zone)==1
+            zone = ones(Int64,size(EW))*zone
+            northern = ones(Bool,size(EW))*northern
+        end
+        
         return new(EW,NS,depth,zone,northern, fields)
+        
      end
 
 end
@@ -332,10 +338,10 @@ end
 # Print an overview of the UTMData struct:
 function Base.show(io::IO, d::UTMData)
     println(io,"UTMData ")
-    if d.northern
-        println(io,"  UTM zone : $(d.zone) North")
+    if d.northern[1]
+        println(io,"  UTM zone : $(minimum(d.zone))-$(maximum(d.zone)) North")
     else
-        println(io,"  UTM zone : $(d.zone) South")
+        println(io,"  UTM zone : $(minimum(d.zone))-$(maximum(d.zone)) South")
     end
     println(io,"    size   : $(size(d.EW))")
     println(io,"    EW     ϵ [ $(minimum(d.EW.val)) : $(maximum(d.EW.val))]")
@@ -354,7 +360,7 @@ function Base.convert(::Type{GeoData}, d::UTMData)
     for i in eachindex(d.EW.val)
 
         # Use functions of the Geodesy package to convert to LLA
-        utmz_i  = UTMZ(d.EW.val[i],d.NS.val[i],Float64(ustrip(d.depth.val[i])*1e3),d.zone,d.northern)
+        utmz_i  = UTMZ(d.EW.val[i],d.NS.val[i],Float64(ustrip.(d.depth.val[i])*1e3),d.zone[i],d.northern[i])
         lla_i   = LLA(utmz_i,wgs84)
         
         Lat[i] = lla_i.lat
@@ -372,18 +378,18 @@ function Base.convert(::Type{UTMData}, d::GeoData)
 
     EW = zeros(size(d.lon));
     NS = zeros(size(d.lon));
-    zone = 0;
-    northern = false
+    zone = zeros(Int64,size(d.lon));
+    northern = zeros(Bool,size(d.lon));
     for i in eachindex(d.lon.val)
 
         # Use functions of the Geodesy package to convert to LLA
-        lla_i   = LLA(d.lat.val[i],d.lon.val[i],Float64(ustrip(d.depth.val[i])*1e3))
+        lla_i   = LLA(d.lat.val[i],d.lon.val[i],Float64(ustrip.(d.depth.val[i])*1e3))
         utmz_i  = UTMZ(lla_i, wgs84)
         
         EW[i] = utmz_i.x
         NS[i] = utmz_i.y
-        zone = utmz_i.zone
-        northern = utmz_i.isnorth
+        zone[i] = utmz_i.zone;
+        northern[i] = utmz_i.isnorth
     end 
 
     return UTMData(EW,NS,d.depth.val,zone, northern, d.fields)
