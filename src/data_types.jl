@@ -3,7 +3,7 @@
 
 import Base: show
 
-export GeoData, CartData, LonLatDepthGrid, XYZGrid, Velocity_SphericalToCartesian!
+export GeoData, CartData, LonLatDepthGrid, XYZGrid, Velocity_SphericalToCartesian!, UTMData
 
 # data structure for a list of values - TO BE REMOVED
 mutable struct ValueList
@@ -48,7 +48,7 @@ julia> Lon3D
  11.0  11.0  11.0  11.0
  15.0  15.0  15.0  15.0
  19.0  19.0  19.0  19.0
- julia> Lat3D
+julia> Lat3D
  3×4×3 Array{Float64, 3}:
  [:, :, 1] =
   1.0  4.0  7.0  10.0
@@ -64,7 +64,7 @@ julia> Lon3D
   1.0  4.0  7.0  10.0
   1.0  4.0  7.0  10.0
   1.0  4.0  7.0  10.0
-  julia> Depth3D
+julia> Depth3D
   3×4×3 Array{Unitful.Quantity{Float64, 𝐋, Unitful.FreeUnits{(km,), 𝐋, nothing}}, 3}:
   [:, :, 1] =
    -20.0 km  -20.0 km  -20.0 km  -20.0 km
@@ -108,10 +108,10 @@ struct GeoData
 
         # Check ordering of the arrays in case of 3D
         if sum(size(lon).>1)==3
-            if maximum(abs.(diff(lon,dims=2)))>1e-9 || maximum(abs.(diff(lon,dims=3)))>1e-9
+            if maximum(abs.(diff(lon,dims=2)))>maximum(abs.(diff(lon,dims=1))) || maximum(abs.(diff(lon,dims=3)))>maximum(abs.(diff(lon,dims=1)))
                 error("It appears that the lon array has a wrong ordering")
             end
-            if maximum(abs.(diff(lat,dims=1)))>1e-9 || maximum(abs.(diff(lat,dims=3)))>1e-9
+            if maximum(abs.(diff(lat,dims=1)))>maximum(abs.(diff(lon,dims=2))) || maximum(abs.(diff(lat,dims=3)))>maximum(abs.(diff(lon,dims=2)))
                 error("It appears that the lat array has a wrong ordering")
             end
         end
@@ -152,6 +152,7 @@ function Base.show(io::IO, d::GeoData)
     println(io,"  depth ϵ [ $(minimum(d.depth.val)) : $(maximum(d.depth.val))]")
     println(io,"  fields: $(keys(d.fields))")
 end
+
 
 
 """
@@ -224,6 +225,170 @@ function Base.convert(::Type{CartData}, d::GeoData)
     return CartData(GeoUnit(X,km),GeoUnit(Y,km),GeoUnit(Z,km),d.fields)
 end
 
+
+
+""" 
+    UTMData(EW::Any, NS:Any, depth::GeoUnit, UTMZone::Int, NorthernHemisphere=true, fields::NamedTuple)
+    
+Data structure that holds one or several fields with UTM coordinates (east-west), (north-south) and depth information.
+
+- `depth` can have units of meter, kilometer or be unitless; it will be converted to km.
+- `fields` should ideally be a NamedTuple which allows you to specify the names of each of the fields. 
+- In case you only pass one array we will convert it to a NamedTuple with default name.
+- A single field should be added as `(DataFieldName=Data,)` (don't forget the comma at the end).
+- Multiple fields  can be added as well.
+- In case you want to display a vector field in paraview, add it as a tuple: `(Velocity=(Veast,Vnorth,Vup), Veast=Veast, Vnorth=Vnorth, Vup=Vup)`; we automatically apply a vector transformation when transforming this to a `CartData` structure from which we generate Paraview output. As this changes the magnitude of the arrows, you will no longer see the `[Veast,Vnorth,Vup]` components in Paraview which is why it is a good ideas to store them as separate Fields.
+- Yet, there is one exception: if the name of the 3-component field is `colors`, we do not apply this vector transformation as this field is regarded to contain RGB colors. 
+- `Lat`,`Lon`,`Depth` should have the same size as the `Data` array. The ordering of the arrays is important. If they are 3D arrays, as in the example below, we assume that the first dimension corresponds to `lon`, second dimension to `lat` and third dimension to `depth` (which should be in km). See below for an example.
+
+# Example     
+```julia-repl
+julia> ew          =   422123.0:100:433623.0
+julia> ns          =   4.514137e6:100:4.523637e6
+julia> depth       =   -5.4:.25:0.6
+julia> EW,NS,Depth =   XYZGrid(ew, ns, depth);
+julia> Data        =   ustrip(Depth);
+julia> Data_set    =   UTMData(EW,NS,Depth,33, true, (FakeData=Data,Data2=Data.+1.))  
+UTMData 
+  UTM zone : 33 North
+    size   : (116, 96, 25)
+    EW     ϵ [ 422123.0 : 433623.0]
+    NS     ϵ [ 4.514137e6 : 4.523637e6]
+    depth  ϵ [ -5.4 km : 0.6 km]
+    fields : (:FakeData, :Data2)
+```
+If you wish, you can convert this from `UTMData` to `GeoData` with
+```julia-repl
+julia> Data_set1 =  convert(GeoData, Data_set)
+GeoData 
+  size  : (116, 96, 25)
+  lon   ϵ [ 14.075969111533457 : 14.213417764154963]
+  lat   ϵ [ 40.77452227533946 : 40.86110443583479]
+  depth ϵ [ -5.4 km : 0.6 km]
+  fields: (:FakeData, :Data2)
+```
+which would allow visualizing this in paraview in the usual manner:
+```julia-repl
+julia> Write_Paraview(Data_set1, "Data_set1")
+1-element Vector{String}:
+ "Data_set1.vts"
+```
+"""
+struct UTMData
+    EW       ::  GeoUnit
+    NS       ::  GeoUnit 
+    depth    ::  GeoUnit
+    zone     ::  Int
+    northern ::  Bool 
+    fields   ::  NamedTuple 
+    
+    # Ensure that the data is of the correct format
+    function UTMData(EW,NS,depth,zone,northern,fields)
+        
+        # check depth & convert it to units of km in case no units are given or it has different length units
+        if unit.(depth)[1]==NoUnits 
+            depth = depth*km                # in case depth has no dimensions
+        end
+        depth = uconvert.(km,depth)         # convert to km
+        depth = GeoUnit(depth,km)           # convert to GeoUnit structure with units of km
+
+        # Check ordering of the arrays in case of 3D
+        if sum(size(EW).>1)==3
+          #  if maximum(abs.(diff(EW,dims=2)))>1e-9 || maximum(abs.(diff(EW,dims=3)))>1e-9
+          #      error("It appears that the EW array has a wrong ordering")
+          #  end
+          #  if maximum(abs.(diff(NS,dims=1)))>1e-9 || maximum(abs.(diff(NS,dims=3)))>1e-9
+          #      error("It appears that the NS array has a wrong ordering")
+          #  end
+        end
+
+        # fields should be a NamedTuple. In case we simply provide an array, lets transfer it accordingly
+        if !(typeof(fields)<: NamedTuple)
+            if (typeof(fields)<: Tuple)
+                if length(fields)==1
+                    fields = (DataSet1=first(fields),)  # The field is a tuple; create a NamedTuple from it
+                else
+                    error("Please employ a NamedTuple as input, rather than  a Tuple")  # out of luck
+                end
+            else
+                fields = (DataSet1=fields,)
+            end
+        end
+
+        DataField = fields[1];
+        if typeof(DataField)<: Tuple
+            DataField = DataField[1];           # in case we have velocity vectors as input
+        end
+
+        if !(size(EW)==size(NS)==size(depth)==size(DataField))    
+            error("The size of EW/NS/Depth and the Fields should all be the same!")
+        end
+
+        return new(EW,NS,depth,zone,northern, fields)
+     end
+
+end
+
+# Print an overview of the UTMData struct:
+function Base.show(io::IO, d::UTMData)
+    println(io,"UTMData ")
+    if d.northern
+        println(io,"  UTM zone : $(d.zone) North")
+    else
+        println(io,"  UTM zone : $(d.zone) South")
+    end
+    println(io,"    size   : $(size(d.EW))")
+    println(io,"    EW     ϵ [ $(minimum(d.EW.val)) : $(maximum(d.EW.val))]")
+    println(io,"    NS     ϵ [ $(minimum(d.NS.val)) : $(maximum(d.NS.val))]")
+    println(io,"    depth  ϵ [ $(minimum(d.depth.val)) : $(maximum(d.depth.val))]")
+    println(io,"    fields : $(keys(d.fields))")
+end
+
+"""
+Converts a `UTMData` structure to a `GeoData` structure
+"""
+function Base.convert(::Type{GeoData}, d::UTMData)  
+
+    Lat = zeros(size(d.EW));
+    Lon = zeros(size(d.EW));
+    for i in eachindex(d.EW.val)
+
+        # Use functions of the Geodesy package to convert to LLA
+        utmz_i  = UTMZ(d.EW.val[i],d.NS.val[i],Float64(ustrip(d.depth.val[i])*1e3),d.zone,d.northern)
+        lla_i   = LLA(utmz_i,wgs84)
+        
+        Lat[i] = lla_i.lat
+        Lon[i] = lla_i.lon
+    end 
+
+    return GeoData(Lon,Lat,d.depth.val,d.fields)
+
+end
+
+"""
+Converts a `GeoData` structure to a `UTMData` structure
+"""
+function Base.convert(::Type{UTMData}, d::GeoData)  
+
+    EW = zeros(size(d.lon));
+    NS = zeros(size(d.lon));
+    zone = 0;
+    northern = false
+    for i in eachindex(d.lon.val)
+
+        # Use functions of the Geodesy package to convert to LLA
+        lla_i   = LLA(d.lat.val[i],d.lon.val[i],Float64(ustrip(d.depth.val[i])*1e3))
+        utmz_i  = UTMZ(lla_i, wgs84)
+        
+        EW[i] = utmz_i.x
+        NS[i] = utmz_i.y
+        zone = utmz_i.zone
+        northern = utmz_i.isnorth
+    end 
+
+    return UTMData(EW,NS,d.depth.val,zone, northern, d.fields)
+
+end
 
 
 """
