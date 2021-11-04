@@ -69,22 +69,27 @@ X,Y,Z           =  XYZGrid(10,30,(-10:-1)km);
 Lon,Lat,Depth   =  LonLatDepthGrid(10:20,30:40,(-10:-1)km); # 3D grid
 Data            =   ustrip(Depth);
 
-Data_set1       =   GeoData(Lat,Lon,Depth,(FakeData=Data,Data2=Data.+1.))  
+Data_set1       =   GeoData(Lon,Lat,Depth,(FakeData=Data,Data2=Data.+1.))  
 @test size(Data_set1.depth)==(11, 11, 10)
 @test Data_set1.depth[1,2,3]==-8.0km
 
+# double-check that giving 3D arrays in the wrong ordering triggers a warning message
+@test_throws ErrorException("It appears that the lon array has a wrong ordering")    GeoData(Lat,Lon,Depth,(FakeData=Data,Data2=Data.+1.))  
 
 # Create 2D arrays & convert them 
 Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,-50km);
 Data            =   ustrip(Depth);
-Data_set2       =   GeoData(Lat,Lon,Depth,(FakeData=Data,Data2=Data.+1.))  
+Data_set2       =   GeoData(Lon,Lat,Depth,(FakeData=Data,Data2=Data.+1.))  
 @test Data_set2.depth[2,2]== -50.0km
 
 # Convert the 2D and 3D arrays to their cartesian counterparts
 Data_cart1      = convert(CartData,Data_set1)
 @test size(Data_cart1.z)==(11, 11, 10)
-@test Data_cart1.z[2,2,2] ≈ 1207.2888765470825
+@test Data_cart1.z[2,2,2] ≈ 3261.2581739797533
 
 Data_cart2      = convert(CartData,Data_set2)
 @test size(Data_cart2.z)==(11, 11, 1)
-@test Data_cart2.z[2,2] ≈ 1199.4657077366442
+@test Data_cart2.z[2,2] ≈ 3240.141612908441
+
+
+

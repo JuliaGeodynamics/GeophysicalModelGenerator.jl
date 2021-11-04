@@ -24,19 +24,69 @@ Data structure that holds one or several fields with longitude, latitude and dep
 - Multiple fields  can be added as well. `lon`,`lat`,`depth` should all have the same size as each of the `fields`.
 - In case you want to display a vector field in paraview, add it as a tuple: `(Velocity=(Veast,Vnorth,Vup), Veast=Veast, Vnorth=Vnorth, Vup=Vup)`; we automatically apply a vector transformation when transforming this to a `CartData` structure from which we generate Paraview output. As this changes the magnitude of the arrows, you will no longer see the `[Veast,Vnorth,Vup]` components in Paraview which is why it is a good ideas to store them as separate Fields.
 - Yet, there is one exception: if the name of the 3-component field is `colors`, we do not apply this vector transformation as this field is regarded to contain RGB colors. 
+- `Lat`,`Lon`,`Depth` should have the same size as the `Data` array. The ordering of the arrays is important. If they are 3D arrays, as in the example below, we assume that the first dimension corresponds to `lon`, second dimension to `lat` and third dimension to `depth` (which should be in km). See below for an example.
 
 # Example     
 ```julia-repl
-julia> Lat         =   1.0:10.0;
-julia> Lon         =   11.0:20.0;
-julia> Depth       =   (-20:-11)*km;
-julia> Data        =   zeros(size(Lon));
-julia> Data_set    =   GeophysicalModelGenerator.GeoData(Lon,Lat,Depth,(DataFieldName=Data,))   
+julia> Lat         =   1.0:3:10.0;
+julia> Lon         =   11.0:4:20.0;
+julia> Depth       =   (-20:5:-10)*km;
+julia> Lon3D,Lat3D,Depth3D = LonLatDepthGrid(Lon, Lat, Depth);
+julia> Lon3D
+3×4×3 Array{Float64, 3}:
+[:, :, 1] =
+ 11.0  11.0  11.0  11.0
+ 15.0  15.0  15.0  15.0
+ 19.0  19.0  19.0  19.0
+
+[:, :, 2] =
+ 11.0  11.0  11.0  11.0
+ 15.0  15.0  15.0  15.0
+ 19.0  19.0  19.0  19.0
+
+[:, :, 3] =
+ 11.0  11.0  11.0  11.0
+ 15.0  15.0  15.0  15.0
+ 19.0  19.0  19.0  19.0
+ julia> Lat3D
+ 3×4×3 Array{Float64, 3}:
+ [:, :, 1] =
+  1.0  4.0  7.0  10.0
+  1.0  4.0  7.0  10.0
+  1.0  4.0  7.0  10.0
+ 
+ [:, :, 2] =
+  1.0  4.0  7.0  10.0
+  1.0  4.0  7.0  10.0
+  1.0  4.0  7.0  10.0
+ 
+ [:, :, 3] =
+  1.0  4.0  7.0  10.0
+  1.0  4.0  7.0  10.0
+  1.0  4.0  7.0  10.0
+  julia> Depth3D
+  3×4×3 Array{Unitful.Quantity{Float64, 𝐋, Unitful.FreeUnits{(km,), 𝐋, nothing}}, 3}:
+  [:, :, 1] =
+   -20.0 km  -20.0 km  -20.0 km  -20.0 km
+   -20.0 km  -20.0 km  -20.0 km  -20.0 km
+   -20.0 km  -20.0 km  -20.0 km  -20.0 km
+  
+  [:, :, 2] =
+   -15.0 km  -15.0 km  -15.0 km  -15.0 km
+   -15.0 km  -15.0 km  -15.0 km  -15.0 km
+   -15.0 km  -15.0 km  -15.0 km  -15.0 km
+  
+  [:, :, 3] =
+   -10.0 km  -10.0 km  -10.0 km  -10.0 km
+   -10.0 km  -10.0 km  -10.0 km  -10.0 km
+   -10.0 km  -10.0 km  -10.0 km  -10.0 km
+julia> Data        =   zeros(size(Lon3D));
+julia> Data_set    =   GeophysicalModelGenerator.GeoData(Lon3D,Lat3D,Depth3D,(DataFieldName=Data,))   
 GeoData 
-  size  : (10,)
-  lon   ϵ [ 1.0 : 10.0]
-  lat   ϵ [ 11.0 : 20.0]
-  depth ϵ [ -20 km : -11 km]
+  size  : (3, 4, 3)
+  lon   ϵ [ 11.0 : 19.0]
+  lat   ϵ [ 1.0 : 10.0]
+  depth ϵ [ -20.0 km : -10.0 km]
   fields: (:DataFieldName,)
 ```
 """
@@ -55,6 +105,16 @@ struct GeoData
         end
         depth = uconvert.(km,depth)         # convert to km
         depth = GeoUnit(depth,km)           # convert to GeoUnit structure with units of km
+
+        # Check ordering of the arrays in case of 3D
+        if sum(size(lon).>1)==3
+            if maximum(abs.(diff(lon,dims=2)))>1e-9 || maximum(abs.(diff(lon,dims=3)))>1e-9
+                error("It appears that the lon array has a wrong ordering")
+            end
+            if maximum(abs.(diff(lat,dims=1)))>1e-9 || maximum(abs.(diff(lat,dims=3)))>1e-9
+                error("It appears that the lat array has a wrong ordering")
+            end
+        end
 
         # fields should be a NamedTuple. In case we simply provide an array, lets transfer it accordingly
         if !(typeof(fields)<: NamedTuple)
@@ -97,7 +157,7 @@ end
 """
     CartData(x::GeoUnit, y::GeoUnit, z::GeoUnit, values::NamedTuple)
 
-Cartesian data in `x/y/z` coordinates to be used with Paraview
+Cartesian data in `x/y/z` coordinates to be used with Paraview.
 This is usually generated automatically from the `GeoData` structure, but you can also invoke do this manually:
 
 ```julia-repl
