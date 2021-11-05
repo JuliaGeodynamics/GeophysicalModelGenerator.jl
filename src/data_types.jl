@@ -232,7 +232,7 @@ end
     
 Data structure that holds one or several fields with UTM coordinates (east-west), (north-south) and depth information.
 
-- `depth` can have units of meter, kilometer or be unitless; it will be converted to km.
+- `depth` can have units of meters, kilometer or be unitless; it will be converted to meters (as UTMZ is usually in meters)
 - `fields` should ideally be a NamedTuple which allows you to specify the names of each of the fields. 
 - In case you only pass one array we will convert it to a NamedTuple with default name.
 - A single field should be added as `(DataFieldName=Data,)` (don't forget the comma at the end).
@@ -245,16 +245,16 @@ Data structure that holds one or several fields with UTM coordinates (east-west)
 ```julia-repl
 julia> ew          =   422123.0:100:433623.0
 julia> ns          =   4.514137e6:100:4.523637e6
-julia> depth       =   -5.4:.25:0.6
+julia> depth       =   -5400:250:600
 julia> EW,NS,Depth =   XYZGrid(ew, ns, depth);
 julia> Data        =   ustrip(Depth);
 julia> Data_set    =   UTMData(EW,NS,Depth,33, true, (FakeData=Data,Data2=Data.+1.))  
 UTMData 
-  UTM zone : 33 North
+  UTM zone : 33-33 North
     size   : (116, 96, 25)
     EW     ϵ [ 422123.0 : 433623.0]
     NS     ϵ [ 4.514137e6 : 4.523637e6]
-    depth  ϵ [ -5.4 km : 0.6 km]
+    depth  ϵ [ -5400.0 m : 600.0 m]
     fields : (:FakeData, :Data2)
 ```
 If you wish, you can convert this from `UTMData` to `GeoData` with
@@ -287,10 +287,10 @@ struct UTMData
         
         # check depth & convert it to units of km in case no units are given or it has different length units
         if unit.(depth)[1]==NoUnits 
-            depth = depth*km                # in case depth has no dimensions
+            depth = depth*m                # in case depth has no dimensions
         end
-        depth = uconvert.(km,depth)         # convert to km
-        depth = GeoUnit(depth,km)           # convert to GeoUnit structure with units of km
+        depth = uconvert.(m,depth)         # convert to meters
+        depth = GeoUnit(depth,m)           # convert to GeoUnit structure with units of meters
 
         # Check ordering of the arrays in case of 3D
         if sum(size(EW).>1)==3
@@ -360,7 +360,7 @@ function Base.convert(::Type{GeoData}, d::UTMData)
     for i in eachindex(d.EW.val)
 
         # Use functions of the Geodesy package to convert to LLA
-        utmz_i  = UTMZ(d.EW.val[i],d.NS.val[i],Float64(ustrip.(d.depth.val[i])*1e3),d.zone[i],d.northern[i])
+        utmz_i  = UTMZ(d.EW.val[i],d.NS.val[i],Float64(ustrip.(d.depth.val[i])),d.zone[i],d.northern[i])
         lla_i   = LLA(utmz_i,wgs84)
         
         Lat[i] = lla_i.lat
@@ -378,6 +378,7 @@ function Base.convert(::Type{UTMData}, d::GeoData)
 
     EW = zeros(size(d.lon));
     NS = zeros(size(d.lon));
+    depth = zeros(size(d.lon));
     zone = zeros(Int64,size(d.lon));
     northern = zeros(Bool,size(d.lon));
     for i in eachindex(d.lon.val)
@@ -388,11 +389,12 @@ function Base.convert(::Type{UTMData}, d::GeoData)
         
         EW[i] = utmz_i.x
         NS[i] = utmz_i.y
+        depth[i] = utmz_i.z
         zone[i] = utmz_i.zone;
         northern[i] = utmz_i.isnorth
     end 
 
-    return UTMData(EW,NS,d.depth.val,zone, northern, d.fields)
+    return UTMData(EW,NS,depth,zone, northern, d.fields)
 
 end
 

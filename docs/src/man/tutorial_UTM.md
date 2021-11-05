@@ -92,13 +92,13 @@ julia> Rho   =  permutedims(Rho,[2 1 3])
 Next we can add the data to the `UTMData` structure. In this, we use the information that the UTM zone was `32 North`.
 
 ```julia
-julia> Data_LM = UTMData(EW,NS,Depth./1e3,32, true, (Thickness=T/1e3*km, Density=Rho*kg/m^3 ))
+julia> Data_LM = UTMData(EW,NS,Depth,32, true, (Thickness=T/1e3*km, Density=Rho*kg/m^3 ))
 UTMData 
   UTM zone : 32-32 North
     size   : (33, 31, 1)
     EW     ϵ [ 286635.0 : 926635.0]
     NS     ϵ [ 4.898615e6 : 5.498615e6]
-    depth  ϵ [ -52.57956788 km : -20.873400850000003 km]
+    depth  ϵ [ -52579.56788 m : -20873.400850000003 m]
     fields : (:Thickness, :Density)
 ```
 
