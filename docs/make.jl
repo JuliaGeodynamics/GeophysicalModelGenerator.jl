@@ -24,7 +24,8 @@ makedocs(;
             "ETOPO1 Topography and geological maps" =>  "man/tutorial_GMT_Topography_GeologicalMap.md",
             "ISC earthquake data" =>  "man/tutorial_ISC_data.md",
             "Plot GPS vectors" =>  "man/tutorial_GPS.md",
-            "Read UTM data" =>  "man/tutorial_UTM.md"    
+            "Read UTM data" =>  "man/tutorial_UTM.md",
+            "VoteMaps" =>  "man/tutorial_VoteMap.md"        
         ],
         "User Guide" => Any[
             "Installation" =>  "man/installation.md",
