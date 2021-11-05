@@ -25,7 +25,7 @@ makedocs(;
             "ISC earthquake data" =>  "man/tutorial_ISC_data.md",
             "Plot GPS vectors" =>  "man/tutorial_GPS.md",
             "Read UTM data" =>  "man/tutorial_UTM.md",
-            "VoteMaps" =>  "man/tutorial_VoteMaps.md"        
+            "VoteMaps" =>  "man/Tutorial_VoteMaps.md"        
         ],
         "User Guide" => Any[
             "Installation" =>  "man/installation.md",
