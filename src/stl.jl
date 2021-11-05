@@ -154,7 +154,7 @@ function STLToSurface(name::String,  Xin, Yin, minZ)
     Y_out[:,:,1] = Y;
     Z_out[:,:,1] = Z;
     
-    Data = CartData(X_out,Y_out,Z_out,(depth=Z_out,))
+    Data = ParaviewData(X_out,Y_out,Z_out,(depth=Z_out,))
 
     return Data
 

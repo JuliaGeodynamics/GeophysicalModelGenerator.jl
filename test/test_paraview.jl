@@ -53,7 +53,7 @@ blue                    = zeros(size(Lon));
 Data_set_color          =   GeoData(Lon, Lat, Depth, (Velocity=Velocity,colors=(red,green,blue),color2=(red,green,blue)))
 Write_Paraview(Data_set_color, "test_Color")
 
-# Manually test the in-place conversion from spherical -> cartesian (done automatically when converting GeoData->CartData  )
+# Manually test the in-place conversion from spherical -> cartesian (done automatically when converting GeoData->ParaviewData  )
 Vel_Cart                =   (copy(Ve),copy(Vn),copy(Vz)) 
 Velocity_SphericalToCartesian!(Data_set_vel, Vel_Cart);
 @test Vel_Cart[2][15]   ≈   0.9743700647852352

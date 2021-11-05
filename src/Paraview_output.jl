@@ -5,7 +5,7 @@ export Write_Paraview
 
 
 """
-    Write_Paraview(DataSet::CartData, filename="test"; PointsData=false)
+    Write_Paraview(DataSet::ParaviewData, filename="test"; PointsData=false)
 
 Writes a structure with Geodata to a paraview (or VTK) file
 
@@ -64,7 +64,7 @@ julia> Write_Paraview(Data_set, "test_Points", PointsData=true)
 
 
 """
-function Write_Paraview(DataSet::CartData, filename="test"; PointsData=false)
+function Write_Paraview(DataSet::ParaviewData, filename="test"; PointsData=false)
 
     # Error checking
     if !(length(size(DataSet.x))==length(size(DataSet.y))==length(size(DataSet.z)))
@@ -117,4 +117,4 @@ function Write_Paraview(DataSet::CartData, filename="test"; PointsData=false)
 end
 
 # Multiple dispatch such that we can also call the routine with GeoData input:
-Write_Paraview(DataSet::GeoData, filename::Any; PointsData=false) = Write_Paraview(convert(CartData,DataSet), filename, PointsData=PointsData);
+Write_Paraview(DataSet::GeoData, filename::Any; PointsData=false) = Write_Paraview(convert(ParaviewData,DataSet), filename, PointsData=PointsData);

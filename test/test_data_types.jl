@@ -34,7 +34,7 @@ Depth2      =   (-100:10:1.0)               # no units
 @test_throws ErrorException GeoData(Lat,Lon,Depth2,(FakeData=Data,Data2=Data.+1.)) 
 
 # Convert 1D vector to cartesian structure
-Data_cart = convert(CartData,Data_set)
+Data_cart = convert(ParaviewData,Data_set)
 
 @test Data_cart.x[3] ≈ 6189.685604255086
 @test Data_cart.y[3] ≈ 324.3876769792181
@@ -83,11 +83,11 @@ Data_set2       =   GeoData(Lon,Lat,Depth,(FakeData=Data,Data2=Data.+1.))
 @test Data_set2.depth[2,2]== -50.0km
 
 # Convert the 2D and 3D arrays to their cartesian counterparts
-Data_cart1      = convert(CartData,Data_set1)
+Data_cart1      = convert(ParaviewData,Data_set1)
 @test size(Data_cart1.z)==(11, 11, 10)
 @test Data_cart1.z[2,2,2] ≈ 3261.2581739797533
 
-Data_cart2      = convert(CartData,Data_set2)
+Data_cart2      = convert(ParaviewData,Data_set2)
 @test size(Data_cart2.z)==(11, 11, 1)
 @test Data_cart2.z[2,2] ≈ 3240.141612908441
 
@@ -114,7 +114,6 @@ Data_set1 = convert(GeoData, Data_set)
 # Convert from GeoData -> UTMData
 Data_set2 = convert(UTMData, Data_set1)
 @test sum(abs.(Data_set2.EW.val-Data_set.EW.val)) < 1e-5 
-
 
 # Convert from GeoData -> UTMData, but for a fixed zone (used for map projection)
 Data_set3 = Convert2UTMzone(Data_set1, 32, true)

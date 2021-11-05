@@ -4,7 +4,7 @@
 #
 # Author: Marcel Thielmann, 05/2021
 
-export Screenshot_To_GeoData, Screenshot_To_CartData
+export Screenshot_To_GeoData, Screenshot_To_ParaviewData
 
 # import CSV data using standard library functions
 # here we assume that the data is indeed comma separated and that comments are preceded with a "#"
@@ -193,7 +193,7 @@ function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperR
 
     # Print overview of the 4 corners here:
     if Cart_Data_Type
-        println("Extracting CartData from: $(filename)")
+        println("Extracting ParaviewData from: $(filename)")
         println("           └ Corners:         x         y         z")
         println("              └ lower left  = ($(rpad( Corner_LowerLeft[1],7)), $(rpad( Corner_LowerLeft[2],7)),  $(rpad( Corner_LowerLeft[3],7)))")
         println("              └ lower right = ($(rpad(Corner_LowerRight[1],7)), $(rpad(Corner_LowerRight[2],7)),  $(rpad(Corner_LowerRight[3],7)))")
@@ -247,7 +247,7 @@ function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperR
 
     # Create GeoData structure - NOTE: RGB data must be 2D matrixes, not 3D!
     if Cart_Data_Type==true
-        data_Image              =   CartData(Lon, Lat, Depth,(colors=(red,green,blue),))
+        data_Image              =   ParaviewData(Lon, Lat, Depth,(colors=(red,green,blue),))
     else
         data_Image              =   GeoData(Lon, Lat, Depth, (colors=(red,green,blue),))
     end
@@ -256,11 +256,11 @@ end
 
 
 """
-    Data = Screenshot_To_CartData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing)
+    Data = Screenshot_To_ParaviewData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing)
 
 Does the same as `Screenshot_To_GeoData`, but returns a Cartesian data structure
 """
-function Screenshot_To_CartData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing)
+function Screenshot_To_ParaviewData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing)
     
 
     # first create a GeoData struct

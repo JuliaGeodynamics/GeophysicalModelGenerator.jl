@@ -293,27 +293,27 @@ end
 
 
 """
-    Surf_interp = InterpolateDataOnSurface(V::CartData, Surf::CartData)
+    Surf_interp = InterpolateDataOnSurface(V::ParaviewData, Surf::ParaviewData)
 
 Interpolates a 3D data set `V` on a surface defined by `Surf`. nex
 # Example
 ```julia
 julia> Data
-CartData 
+ParaviewData 
   size  : (33, 33, 33)
   x     ϵ [ -3.0 : 3.0]
   y     ϵ [ -2.0 : 2.0]
   z     ϵ [ -2.0 : 0.0]
   fields: (:phase, :density, :visc_total, :visc_creep, :velocity, :pressure, :temperature, :dev_stress, :strain_rate, :j2_dev_stress, :j2_strain_rate, :plast_strain, :plast_dissip, :tot_displ, :yield, :moment_res, :cont_res)
 julia> surf
-CartData 
+ParaviewData 
   size  : (96, 96, 1)
   x     ϵ [ -2.9671875 : 3.2671875]
   y     ϵ [ -1.9791666666666667 : 1.9791666666666667]
   z     ϵ [ -1.5353766679763794 : -0.69925457239151]
   fields: (:Depth,)
 julia> Surf_interp = InterpolateDataOnSurface(Data, surf)
-  CartData 
+  ParaviewData 
     size  : (96, 96, 1)
     x     ϵ [ -2.9671875 : 3.2671875]
     y     ϵ [ -1.9791666666666667 : 1.9791666666666667]
@@ -321,7 +321,7 @@ julia> Surf_interp = InterpolateDataOnSurface(Data, surf)
     fields: (:phase, :density, :visc_total, :visc_creep, :velocity, :pressure, :temperature, :dev_stress, :strain_rate, :j2_dev_stress, :j2_strain_rate, :plast_strain, :plast_dissip, :tot_displ, :yield, :moment_res, :cont_res)
 ```
 """
-function InterpolateDataOnSurface(V::CartData, Surf::CartData)
+function InterpolateDataOnSurface(V::ParaviewData, Surf::ParaviewData)
     
     # Create GeoData structure:
     V_geo               =   GeoData(V.x.val, V.y.val, V.z.val, V.fields)
@@ -331,7 +331,7 @@ function InterpolateDataOnSurface(V::CartData, Surf::CartData)
     Surf_geo.depth.val  =   ustrip(Surf_geo.depth.val);
 
     Surf_interp_geo     =   InterpolateDataOnSurface(V_geo, Surf_geo)
-    Surf_interp         =   CartData(Surf_interp_geo.lon.val, Surf_interp_geo.lat.val, ustrip.(Surf_interp_geo.depth.val), Surf_interp_geo.fields)
+    Surf_interp         =   ParaviewData(Surf_interp_geo.lon.val, Surf_interp_geo.lat.val, ustrip.(Surf_interp_geo.depth.val), Surf_interp_geo.fields)
 
     return Surf_interp
 
@@ -488,7 +488,7 @@ function Flatten3DData(Data::GeoData)
     Y = repeat(y_coord./1e3,1,1,ndepth);
     Z = ustrip(Data.depth.val);
 
-    DataFlat = CartData(X, Y, Z, Data.fields)
+    DataFlat = ParaviewData(X, Y, Z, Data.fields)
     return DataFlat
 end
 
@@ -600,11 +600,11 @@ function BelowSurface(Data::GeoData, DataSurface::GeoData)
 end
 
 """
-    Above = AboveSurface(Data_Cart::CartData, DataSurface_Cart::CartData; above=true)
+    Above = AboveSurface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData; above=true)
 
 Determines if points within the 3D `Data_Cart` structure are above the Cartesian surface `DataSurface_Cart`
 """
-function AboveSurface(Data_Cart::CartData, DataSurface_Cart::CartData; above=true)
+function AboveSurface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData; above=true)
 
     Data            =   GeoData(ustrip.(Data_Cart.x.val),       ustrip.(Data_Cart.y.val),        ustrip.(Data_Cart.z.val), Data_Cart.fields)
     DataSurface     =   GeoData(ustrip.(DataSurface_Cart.x.val),ustrip.(DataSurface_Cart.y.val), ustrip.(DataSurface_Cart.z.val), DataSurface_Cart.fields )
@@ -613,12 +613,12 @@ function AboveSurface(Data_Cart::CartData, DataSurface_Cart::CartData; above=tru
 end
 
 """
-    Below = BelowSurface(Data_Cart::CartData, DataSurface_Cart::CartData)
+    Below = BelowSurface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData)
 
 Determines if points within the 3D Data_Cart structure are below the Cartesian surface DataSurface_Cart
 """
-function BelowSurface(Data_Cart::CartData, DataSurface_Cart::CartData)
-    return AboveSurface(Data_Cart::CartData, DataSurface_Cart::CartData; above=false)
+function BelowSurface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData)
+    return AboveSurface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData; above=false)
 end
 
 
@@ -746,7 +746,7 @@ function VoteMap(DataSets::GeoData, criteria::String; dims=(50,50,50))
 end
 
 """
-    RotateTranslateScale!(Data::CartData; Rotate=0, Translate=(0,0,0), Scale=(1.0,1.0,1.0))
+    RotateTranslateScale!(Data::ParaviewData; Rotate=0, Translate=(0,0,0), Scale=(1.0,1.0,1.0))
 
 Does an in-place rotation, translation and scaling of the Cartesian dataset `Data`. 
 
@@ -759,8 +759,8 @@ Note that we apply the transformations in exactly this order:
 # Example
 ```julia
 julia> X,Y,Z   =   XYZGrid(10:20,30:40,-50:-10);
-julia> Data_C  =   CartData(X,Y,Z,(Depth=Z,))
-CartData 
+julia> Data_C  =   ParaviewData(X,Y,Z,(Depth=Z,))
+ParaviewData 
   size  : (11, 11, 41)
   x     ϵ [ 10.0 : 20.0]
   y     ϵ [ 30.0 : 40.0]
@@ -768,7 +768,7 @@ CartData
   fields: (:Depth,)
 julia> RotateTranslateScale!(Data_C, Rotate=30);
 julia> Data_C
-CartData 
+ParaviewData 
   size  : (11, 11, 41)
   x     ϵ [ 8.169872981077807 : 21.83012701892219]
   y     ϵ [ 28.16987298107781 : 41.83012701892219]
@@ -776,7 +776,7 @@ CartData
   fields: (:Depth,)
 ```
 """
-function RotateTranslateScale!(Data::CartData; Rotate=0, Translate=(0,0,0), Scale=(1.0,1.0,1.0))
+function RotateTranslateScale!(Data::ParaviewData; Rotate=0, Translate=(0,0,0), Scale=(1.0,1.0,1.0))
 
     X,Y,Z       = Data.x.val,   Data.y.val,     Data.z.val;         # Extract coordinates
     Xr,Yr,Zr    = X,Y,Z;                                            # Rotated coordinates 

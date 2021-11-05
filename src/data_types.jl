@@ -3,7 +3,7 @@
 
 import Base: show
 
-export GeoData, CartData, LonLatDepthGrid, XYZGrid, Velocity_SphericalToCartesian!, UTMData, Convert2UTMzone
+export GeoData, ParaviewData, LonLatDepthGrid, XYZGrid, Velocity_SphericalToCartesian!, UTMData, Convert2UTMzone
 
 # data structure for a list of values - TO BE REMOVED
 mutable struct ValueList
@@ -22,7 +22,7 @@ Data structure that holds one or several fields with longitude, latitude and dep
 - In case you only pass one array we will convert it to a NamedTuple with default name.
 - A single field should be added as `(DataFieldName=Data,)` (don't forget the comma at the end).
 - Multiple fields  can be added as well. `lon`,`lat`,`depth` should all have the same size as each of the `fields`.
-- In case you want to display a vector field in paraview, add it as a tuple: `(Velocity=(Veast,Vnorth,Vup), Veast=Veast, Vnorth=Vnorth, Vup=Vup)`; we automatically apply a vector transformation when transforming this to a `CartData` structure from which we generate Paraview output. As this changes the magnitude of the arrows, you will no longer see the `[Veast,Vnorth,Vup]` components in Paraview which is why it is a good ideas to store them as separate Fields.
+- In case you want to display a vector field in paraview, add it as a tuple: `(Velocity=(Veast,Vnorth,Vup), Veast=Veast, Vnorth=Vnorth, Vup=Vup)`; we automatically apply a vector transformation when transforming this to a `ParaviewData` structure from which we generate Paraview output. As this changes the magnitude of the arrows, you will no longer see the `[Veast,Vnorth,Vup]` components in Paraview which is why it is a good ideas to store them as separate Fields.
 - Yet, there is one exception: if the name of the 3-component field is `colors`, we do not apply this vector transformation as this field is regarded to contain RGB colors. 
 - `Lat`,`Lon`,`Depth` should have the same size as the `Data` array. The ordering of the arrays is important. If they are 3D arrays, as in the example below, we assume that the first dimension corresponds to `lon`, second dimension to `lat` and third dimension to `depth` (which should be in km). See below for an example.
 
@@ -156,17 +156,17 @@ end
 
 
 """
-    CartData(x::GeoUnit, y::GeoUnit, z::GeoUnit, values::NamedTuple)
+    ParaviewData(x::GeoUnit, y::GeoUnit, z::GeoUnit, values::NamedTuple)
 
 Cartesian data in `x/y/z` coordinates to be used with Paraview.
 This is usually generated automatically from the `GeoData` structure, but you can also invoke do this manually:
 
 ```julia-repl
 julia> Data_set    =   GeophysicalModelGenerator.GeoData(1.0:10.0,11.0:20.0,(-20:-11)*km,(DataFieldName=(-20:-11),))   
-julia> Data_cart = convert(CartData, Data_set)
+julia> Data_cart = convert(ParaviewData, Data_set)
 ```
 """
-mutable struct CartData
+mutable struct ParaviewData
     x       ::  GeoUnit
     y       ::  GeoUnit
     z       ::  GeoUnit
@@ -174,8 +174,8 @@ mutable struct CartData
 end
 
 # Print an overview of the Geodata struct:
-function Base.show(io::IO, d::CartData)
-    println(io,"CartData ")
+function Base.show(io::IO, d::ParaviewData)
+    println(io,"ParaviewData ")
     println(io,"  size  : $(size(d.x))")
     println(io,"  x     ϵ [ $(minimum(d.x.val)) : $(maximum(d.x.val))]")
     println(io,"  y     ϵ [ $(minimum(d.y.val)) : $(maximum(d.y.val))]")
@@ -183,8 +183,8 @@ function Base.show(io::IO, d::CartData)
     println(io,"  fields: $(keys(d.fields))")
 end
 
-# conversion function from GeoData -> CartData
-function Base.convert(::Type{CartData}, d::GeoData)  
+# conversion function from GeoData -> ParaviewData
+function Base.convert(::Type{ParaviewData}, d::GeoData)  
     
     # Utilize the Geodesy.jl package & use the Cartesian Earth-Centered-Earth-Fixed (ECEF) coordinate system
     lon         =   Array(ustrip.(d.lon.val));
@@ -222,7 +222,7 @@ function Base.convert(::Type{CartData}, d::GeoData)
         end
     end
 
-    return CartData(GeoUnit(X,km),GeoUnit(Y,km),GeoUnit(Z,km),d.fields)
+    return ParaviewData(GeoUnit(X,km),GeoUnit(Y,km),GeoUnit(Z,km),d.fields)
 end
 
 
@@ -237,7 +237,7 @@ Data structure that holds one or several fields with UTM coordinates (east-west)
 - In case you only pass one array we will convert it to a NamedTuple with default name.
 - A single field should be added as `(DataFieldName=Data,)` (don't forget the comma at the end).
 - Multiple fields  can be added as well.
-- In case you want to display a vector field in paraview, add it as a tuple: `(Velocity=(Veast,Vnorth,Vup), Veast=Veast, Vnorth=Vnorth, Vup=Vup)`; we automatically apply a vector transformation when transforming this to a `CartData` structure from which we generate Paraview output. As this changes the magnitude of the arrows, you will no longer see the `[Veast,Vnorth,Vup]` components in Paraview which is why it is a good ideas to store them as separate Fields.
+- In case you want to display a vector field in paraview, add it as a tuple: `(Velocity=(Veast,Vnorth,Vup), Veast=Veast, Vnorth=Vnorth, Vup=Vup)`; we automatically apply a vector transformation when transforming this to a `ParaviewData` structure from which we generate Paraview output. As this changes the magnitude of the arrows, you will no longer see the `[Veast,Vnorth,Vup]` components in Paraview which is why it is a good ideas to store them as separate Fields.
 - Yet, there is one exception: if the name of the 3-component field is `colors`, we do not apply this vector transformation as this field is regarded to contain RGB colors. 
 - `Lat`,`Lon`,`Depth` should have the same size as the `Data` array. The ordering of the arrays is important. If they are 3D arrays, as in the example below, we assume that the first dimension corresponds to `lon`, second dimension to `lat` and third dimension to `depth` (which should be in km). See below for an example.
 

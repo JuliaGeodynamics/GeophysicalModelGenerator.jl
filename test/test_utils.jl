@@ -142,7 +142,7 @@ Data_VoteMap = VoteMap([Data_set3D_reverse, Data_set3D], ["Depthdata<-560","LonD
 
 # Test rotation routines
 X,Y,Z   =   LonLatDepthGrid(10:20,30:40,-50:-10);
-Data_C  =   CartData(X,Y,Z,(Depth=Z,))
+Data_C  =   ParaviewData(X,Y,Z,(Depth=Z,))
 RotateTranslateScale!(Data_C, Rotate=30);
 
 @test Data_C.x.val[10] ≈ 20.964101615137753

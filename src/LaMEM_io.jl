@@ -3,7 +3,7 @@ using Printf
 
 # LaMEM I/O
 # 
-# These are routines that help to create a LaMEM marker files from a CartData structure, which can be used to perform geodynamic simulations
+# These are routines that help to create a LaMEM marker files from a ParaviewData structure, which can be used to perform geodynamic simulations
 # We also include routines with which we can read LaMEM *.pvtr files into julia 
 
 export LaMEM_grid, ReadLaMEM_InputFile
@@ -44,11 +44,11 @@ struct LaMEM_grid
 end
 
 """ 
-    CartData(Grid::LaMEM_grid, fields::NamedTuple)
+    ParaviewData(Grid::LaMEM_grid, fields::NamedTuple)
 
-Creates a `CartData` struct from a LaMEM grid and from fields stored on that grid. Note that one needs to have a field `Phases` and optionally a field `Temp` to create LaMEM marker files.
+Creates a `ParaviewData` struct from a LaMEM grid and from fields stored on that grid. Note that one needs to have a field `Phases` and optionally a field `Temp` to create LaMEM marker files.
 """
-CartData(Grid::LaMEM_grid, fields::NamedTuple) = CartData(Grid.X, Grid.Y, Grid.Z, fields)
+ParaviewData(Grid::LaMEM_grid, fields::NamedTuple) = ParaviewData(Grid.X, Grid.Y, Grid.Z, fields)
 
 
 """
@@ -172,9 +172,9 @@ function Base.show(io::IO, d::LaMEM_grid)
 end
 
 """
-    Save_LaMEMMarkersParallel(Grid::CartData; PartitioningFile=empty, directory="./markers", verbose=true)
+    Save_LaMEMMarkersParallel(Grid::ParaviewData; PartitioningFile=empty, directory="./markers", verbose=true)
 
-Saves a LaMEM marker file from the CartData structure `Grid`. It must have a field called `Phases`, holding phase information (as integers) and optionally a field `Temp` with temperature info. 
+Saves a LaMEM marker file from the ParaviewData structure `Grid`. It must have a field called `Phases`, holding phase information (as integers) and optionally a field `Temp` with temperature info. 
 It is possible to provide a LaMEM partitioning file `PartitioningFile`. If not, output is assumed to be for one processor.
 
 The size of `Grid` should be consistent with what is provided in the LaMEM input file. In practice, the size of the mesh can be retrieved from a LaMEM input file using `ReadLaMEM_InputFile`.
@@ -185,7 +185,7 @@ The size of `Grid` should be consistent with what is provided in the LaMEM input
 julia> Grid    = ReadLaMEM_InputFile("LaMEM_input_file.dat")
 julia> Phases  = zeros(Int32,size(Grid.X));
 julia> Temp    = ones(Float64,size(Grid.X));
-julia> Model3D = CartData(Grid, (Phases=Phases,Temp=Temp))
+julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp))
 julia> Save_LaMEMMarkersParallel(Model3D)
 Writing LaMEM marker file -> ./markers/mdb.00000000.dat
 ```    
@@ -199,7 +199,7 @@ Writing LaMEM marker file -> ./markers/mdb.00000003.dat
 ```
 
 """
-function Save_LaMEMMarkersParallel(Grid::CartData; PartitioningFile=empty, directory="./markers", verbose=true)
+function Save_LaMEMMarkersParallel(Grid::ParaviewData; PartitioningFile=empty, directory="./markers", verbose=true)
 
     x = ustrip.(Grid.x.val[:,1,1]);
     y = ustrip.(Grid.y.val[1,:,1]);
@@ -609,14 +609,14 @@ function ReadBinaryData(file::IOStream, start_bin::Int64, Offset::Int64, BytesTo
 end
 
 """
-    Data::CartData = ReadData_PVTR(fname, dir)
+    Data::ParaviewData = ReadData_PVTR(fname, dir)
 
 Reads a parallel, rectilinear, `*.vts` file with the name `fname` and located in `dir` and create a 3D `Data` struct from it.
 
 # Example
 ```julia
 julia> Data = ReadData_PVTR("Haaksbergen.pvtr", "./Timestep_00000005_3.35780500e-01/")
-CartData 
+ParaviewData 
   size  : (33, 33, 33)
   x     ϵ [ -3.0 : 3.0]
   y     ϵ [ -2.0 : 2.0]
@@ -711,9 +711,9 @@ function  ReadData_PVTR(fname, dir)
         fields = merge(fields, Data_Array[i])
     end
 
-    # Create a CartData struct from it.
+    # Create a ParaviewData struct from it.
     X,Y,Z       =   XYZGrid(coord_x, coord_y, coord_z)
-    DataC       =   CartData(X,Y,Z, fields);
+    DataC       =   ParaviewData(X,Y,Z, fields);
 
     return DataC
 end

@@ -28,7 +28,7 @@ GeoData
 A case with no flattening is done with
 ```julia
 julia> data_Cart, refPoint     = GeoData_To_Cartesian(Data_set3D, referencePoint="CenterBottom", Flatten=false)
-  (CartData 
+  (ParaviewData 
     size  : (11, 11, 13)
     lon   ϵ [ -481.81931349723936 km : 481.8193134972397 km]
     lat   ϵ [ -553.7761439713204 km : 564.9108783864752 km]
@@ -39,7 +39,7 @@ julia> data_Cart, refPoint     = GeoData_To_Cartesian(Data_set3D, referencePoint
 Whereas the default flattens the region:
 ```julia
 julia> data_Cart, refPoint     = GeoData_To_Cartesian(Data_set3D, referencePoint="CenterBottom")
-(CartData 
+(ParaviewData 
   size  : (11, 11, 13)
   lon   ϵ [ -481.8193134972393 km : 481.81931349723976 km]
   lat   ϵ [ -553.7761439713197 km : 564.9108783864759 km]
@@ -97,7 +97,7 @@ function GeoData_To_Cartesian(data::GeoData; Flatten=true, lonlatDepth=empty, re
     end
 
     # Convert full structure to cartesian model
-    data_Cart = CartData(GeoUnit(X*km,km),GeoUnit(Y*km,km),GeoUnit(Z*km,km),data.fields)
+    data_Cart = ParaviewData(GeoUnit(X*km,km),GeoUnit(Y*km,km),GeoUnit(Z*km,km),data.fields)
 
     if Flatten==true
         data_Cart.z = data.depth
@@ -108,7 +108,7 @@ end
 
 
 """
-    data = Cartesian_To_GeoData(data_Cart::CartData, refPoint::LLA; Flatten=true)
+    data = Cartesian_To_GeoData(data_Cart::ParaviewData, refPoint::LLA; Flatten=true)
 
 Projects a local Cartesian structure `data_Cart` to a GeoData structure `data_Cart` (with lon/lat/depth), using the reference point `refPoint`.
 The refPoint needs to be in LLA  (latitude, longitude, altitude) format, which can be generated with:
@@ -118,7 +118,7 @@ julia> refPoint = LLA(lat,lon,alt)
 You also need to specify whether the Cartesian domain was `flattened` (by default this is assumed to be the case, as this is how typical geodynamic models work).
 
 """
-function Cartesian_To_GeoData(data_Cart::CartData, refPoint::LLA; Flatten=true)
+function Cartesian_To_GeoData(data_Cart::ParaviewData, refPoint::LLA; Flatten=true)
     
     inverse     =   LLAfromENU(refPoint, wgs84);      
     ENU_Data    =   ENU.(ustrip(data_Cart.x.val)*1e3, ustrip(data_Cart.y.val)*1e3, ustrip(data_Cart.z.val)*1e3); # ENU structure
@@ -142,7 +142,7 @@ function Cartesian_To_GeoData(data_Cart::CartData, refPoint::LLA; Flatten=true)
 end
 
 """
-    data_Rect = InterpolateToRectilinear(data_Cart::CartData; x_lims=empty, y_lims=empty, z_lims=empty, dims=empty)
+    data_Rect = InterpolateToRectilinear(data_Cart::ParaviewData; x_lims=empty, y_lims=empty, z_lims=empty, dims=empty)
 
 This interpolates a Cartesian (but structured) grid `data_Cart`, with (slightly) distorted `x,y` coordinates, to a rectilinear grid with a constant spacing.
 
@@ -152,7 +152,7 @@ This interpolates a Cartesian (but structured) grid `data_Cart`, with (slightly)
 NOT FINISHED YET!
 
 """
-function InterpolateToRectilinear(data_Cart::CartData; x_lims=empty, y_lims=empty, z_lims=empty, dims=empty)
+function InterpolateToRectilinear(data_Cart::ParaviewData; x_lims=empty, y_lims=empty, z_lims=empty, dims=empty)
 
     # if we do not set values for the domain, retrieve them such that the new grid is fully covered by `data_Cart` (to avoid interpolation errors)
     if x_lims==empty
