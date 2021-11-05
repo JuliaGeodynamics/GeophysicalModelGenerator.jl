@@ -13,4 +13,5 @@ GeophysicalModelGenerator.BelowSurface
 GeophysicalModelGenerator.InterpolateDataOnSurface
 GeophysicalModelGenerator.ParseColumns_CSV_File
 GeophysicalModelGenerator.RotateTranslateScale!
+GeophysicalModelGenerator.Convert2UTMzone
 ```

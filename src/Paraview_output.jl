@@ -118,4 +118,3 @@ end
 
 # Multiple dispatch such that we can also call the routine with GeoData input:
 Write_Paraview(DataSet::GeoData, filename::Any; PointsData=false) = Write_Paraview(convert(CartData,DataSet), filename, PointsData=PointsData);
-

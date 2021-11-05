@@ -3,7 +3,7 @@
 
 import Base: show
 
-export GeoData, CartData, LonLatDepthGrid, XYZGrid, Velocity_SphericalToCartesian!, UTMData
+export GeoData, CartData, LonLatDepthGrid, XYZGrid, Velocity_SphericalToCartesian!, UTMData, Convert2UTMzone
 
 # data structure for a list of values - TO BE REMOVED
 mutable struct ValueList
@@ -396,6 +396,37 @@ function Base.convert(::Type{UTMData}, d::GeoData)
 
 end
 
+
+"""
+    Convert2UTMzone(d::GeoData, zone::Int32, isnorth=true)  
+
+Converts a `GeoData` structure to fixed UTM zone.  
+    This useful to use real data as input for a cartesian geodynamic model setup (such as in LaMEM). In that case, we need to project map coordinates to cartesian coordinates.
+    One way to do this is by using UTM coordinates. Close to the fixed UTM zone, the resulting coordinates will be rectilinear and distance in meters. The map distortion becomes larger the further you are away from the center.
+      
+"""
+function Convert2UTMzone(d::GeoData, UTMzone::Int64, isnorth::Bool=true)  
+
+    EW = zeros(size(d.lon));
+    NS  = zeros(size(d.lon));
+    zone        = zeros(Int64,size(d.lon));
+    northern    = zeros(Bool,size(d.lon));
+    trans       = UTMfromLLA(UTMzone, isnorth, wgs84) 
+    for i in eachindex(d.lon.val)
+
+        # Use functions of the Geodesy package to convert to LLA
+        lla_i  =   LLA(d.lat.val[i],d.lon.val[i],Float64(ustrip.(d.depth.val[i])*1e3))
+        utm_i  =   trans(lla_i)
+
+        EW[i] = utm_i.x
+        NS[i] = utm_i.y
+        zone[i] = UTMzone;
+        northern[i] = isnorth
+    end 
+
+    return UTMData(EW,NS,d.depth.val,zone, northern, d.fields)
+
+end
 
 """
     Lon, Lat, Depth = LonLatDepthGrid(Lon::Any, Lat::Any, Depth:Any)

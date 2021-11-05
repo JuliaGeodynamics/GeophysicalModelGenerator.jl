@@ -114,3 +114,8 @@ Data_set1 = convert(GeoData, Data_set)
 # Convert from GeoData -> UTMData
 Data_set2 = convert(UTMData, Data_set1)
 @test sum(abs.(Data_set2.EW.val-Data_set.EW.val)) < 1e-5 
+
+
+# Convert from GeoData -> UTMData, but for a fixed zone (used for map projection)
+Data_set3 = Convert2UTMzone(Data_set1, 32, true)
+@test Data_set3.EW.val[100] ≈  938430.4650476718    
