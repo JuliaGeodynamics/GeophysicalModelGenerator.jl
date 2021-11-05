@@ -118,3 +118,16 @@ end
 
 # Multiple dispatch such that we can also call the routine with GeoData input:
 Write_Paraview(DataSet::GeoData, filename::Any; PointsData=false) = Write_Paraview(convert(ParaviewData,DataSet), filename, PointsData=PointsData);
+
+"""
+    Write_Paraview(DataSet::UTMData, filename::Any; PointsData=false) 
+
+Writes a `UTMData` structure to paraview. Note that this data is *not* transformed into an Earth-like framework, but remains cartesian instead. 
+"""
+function Write_Paraview(DataSet::UTMData, filename::Any; PointsData=false) 
+    
+    PVData = ParaviewData(DataSet.EW, DataSet.NS, DataSet.depth.val, DataSet.fields)
+
+    outfiles = Write_Paraview(PVData, filename, PointsData=PointsData);
+    return outfiles
+end
