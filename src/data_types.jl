@@ -4,7 +4,8 @@
 import Base: show
 
 export  GeoData, ParaviewData, UTMData, CartData,
-        LonLatDepthGrid, XYZGrid, Velocity_SphericalToCartesian!, Convert2UTMzone
+        LonLatDepthGrid, XYZGrid, Velocity_SphericalToCartesian!,
+        Convert2UTMzone, Convert2CartData
 
 # data structure for a list of values - TO BE REMOVED
 mutable struct ValueList
@@ -248,7 +249,7 @@ julia> ew          =   422123.0:100:433623.0
 julia> ns          =   4.514137e6:100:4.523637e6
 julia> depth       =   -5400:250:600
 julia> EW,NS,Depth =   XYZGrid(ew, ns, depth);
-julia> Data        =   ustrip(Depth);
+julia> Data        =   ustrip.(Depth);
 julia> Data_set    =   UTMData(EW,NS,Depth,33, true, (FakeData=Data,Data2=Data.+1.))  
 UTMData 
   UTM zone : 33-33 North
@@ -547,25 +548,27 @@ end
 
 
 """
-    Convert2UTMzone(d::CartData, UTMzone::Int64, isnorth::Bool=true)  
+    Convert2UTMzone(d::CartData, UTMzone::Int64, isnorth::Bool=true; center::Tuple{Float64,Float64}=(0.0,0.0))  
 
-This transfers a `CartData` dataset to a `UTMData` dataset, that has a single UTM zone. 
-
-Note that the user is reponsible to shift the data to the correct location []   
+This transfers a `CartData` dataset to a `UTMData` dataset, that has a single UTM zone. The center of the UTMzone (in UTM coordinates (EW,NS) can be specified), such that the resulting data set is shifted  
 
 """
-function Convert2UTMzone(d::CartData, UTMzone::Int64, isnorth::Bool=true)  
+function Convert2UTMzone(d::CartData, UTMzone::Int64, isnorth::Bool=true; center::Tuple{Float64,Float64}=(0.0,0.0))  
 
-
-    return UTMData(ustrip(d.x.val).*1e3,ustrip(d.y.val).*1e3,ustrip(d.z.val).*1e3,UTMzone, isnorth, d.fields)
+    return UTMData(ustrip.(d.x.val).*1e3 .+ center[1],ustrip.(d.y.val).*1e3 .+ center[2],
+                   ustrip.(d.z.val).*1e3,UTMzone, isnorth, d.fields)
 
 end
 
 """
+    Convert2CartData(d::UTMData; center::Tuple{Float64,Float64}=(0.0,0.0))
 Converts a `UTMData` structure to a `CartData` structure, which essentially transfers the dimensions to km
 """
-Base.convert(::Type{CartData}, d::UTMData)  = CartData(ustrip(d.EW.val)./1e3, ustrip(d.NS.val)./1e3 ,ustrip(d.depth.val)./1e3,d.fields)
+function Convert2CartData(d::UTMData; center::Tuple{Float64,Float64}=(0.0,0.0))  
 
+    return CartData( (ustrip.(d.EW.val) .- center[1])./1e3, (ustrip.(d.NS.val) .- center[2])./1e3,
+                     ustrip.(d.depth.val)./1e3, d.fields)
+end
 
 """
     Lon, Lat, Depth = LonLatDepthGrid(Lon::Any, Lat::Any, Depth:Any)
