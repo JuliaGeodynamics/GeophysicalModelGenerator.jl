@@ -13,22 +13,25 @@ In many cases, we want to add topographic data as well to our visualization. Thi
 
 #### 1. Download topographic data of the Alpine region
 
-The nice thing about GMT is that it automatically downloads data for you, from a certain region:
+The nice thing about GMT is that it automatically downloads data for you for a certain region and with a certain resolution. As this is a routine that you may use often in your daily workflow, we added the function `ImportTopo` that simplifies this. Note that this function only is available once `GMT` is loaded. 
 
 ```julia
-julia> using GMT
-julia> G = gmtread("@earth_relief_01m.grd", limits=[4,20,37,49], grid=true);
+julia> using GeophysicalModelGenerator, GMT
+julia> Topo = ImportTopo([4,20,37,49], file="@earth_relief_01m.grd")
+GeoData 
+  size  : (960, 720, 1)
+  lon   ϵ [ 4.0 : 19.983333333333334]
+  lat   ϵ [ 37.0 : 48.983333333333334]
+  depth ϵ [ -3.8725 km : 4.2495 km]
+  fields: (:Topography,)
 ```
-The data is available in different resolutions; see [here](http://gmt.soest.hawaii.edu/doc/latest/grdimage.html) for an overview. Generally, it is advisable to not use the largest 
+The data is available in different resolutions; see [here](http://gmt.soest.hawaii.edu/doc/latest/grdimage.html) for an overview. Generally, it is advisable to not use the largest resolution if you have a large area. 
 
 #### 2. Save
 
-Transforming this to Paraview is piece of cake:
+Transforming this to Paraview is a piece of cake:
 
 ```julia
-julia> Lon,Lat,Depth    =   LonLatDepthGrid(G.x[1:end-1],G.y[1:end-1],0);
-julia> Depth[:,:,1]     =   1e-3*G.z';
-julia> data_Topo        =   GeoData(Lon, Lat, Depth, (Topography=Depth*km,))
 julia> Write_Paraview(data_Topo, "Topography_Alps") 
 ```
 The result is shown here, together with Moho data

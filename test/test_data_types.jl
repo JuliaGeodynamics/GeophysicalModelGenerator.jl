@@ -128,10 +128,10 @@ Data     =   Z
 Data_setC =   CartData(X,Y,Z, (FakeData=Data,Data2=Data.+1.))
 @test sum(abs.(Data_setC.x.val)) ≈ 2310.0km
 
-# Convert from CartData -> UTMData []
+# Convert from CartData -> UTMData
 Data_set4 = Convert2UTMzone(Data_setC, 33, true)
 
-# Convert from  UTMData -> CartData with shifting
+# Convert from  UTMData -> CartData with shifting (useful to create a LaMEM model, for example)
 using Statistics
 centerUTM = (mean(Data_set.EW.val), mean(Data_set.NS.val))
 Data_set5 = Convert2CartData(Data_set, center=centerUTM)
@@ -139,8 +139,7 @@ Data_set5 = Convert2CartData(Data_set, center=centerUTM)
 @test  Data_set5.y.val[22] == -4.75km
 @test  Data_set5.z.val[22] == -5.4km
 
-# Convert result back to UTM
+# Convert result back to UTM (convert LaMEM results back to UTM & afterwards to GeoData)
 Data_set6 = Convert2UTMzone(Data_set5, 33, true, center=centerUTM)
 @test sum(Data_set.EW.val-Data_set6.EW.val) ≈ 0.0
 @test sum(Data_set.NS.val-Data_set6.NS.val) ≈ 0.0
-
