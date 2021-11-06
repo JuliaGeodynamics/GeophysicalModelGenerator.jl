@@ -431,20 +431,6 @@ function Convert2UTMzone(d::GeoData, UTMzone::Int64, isnorth::Bool=true)
 
 end
 
-"""
-    Convert2UTMzone(d::CartData, UTMzone::Int64, isnorth::Bool=true)  
-
-This transfers a `CartData` dataset to a `UTMData` dataset, that has a single UTM zone. 
-
-Note that the user is reponsible to shift the data to the correct location []   
-
-"""
-function Convert2UTMzone(d::CartData, UTMzone::Int64, isnorth::Bool=true)  
-
-
-    return UTMData(ustrip(d.x.val).*1e3,ustrip(d.y.val).*1e3,ustrip(d.z.val).*1e3,UTMzone, isnorth, d.fields)
-
-end
 
 
 """ 
@@ -559,6 +545,21 @@ function Base.show(io::IO, d::CartData)
     println(io,"    fields : $(keys(d.fields))")
 end
 
+
+"""
+    Convert2UTMzone(d::CartData, UTMzone::Int64, isnorth::Bool=true)  
+
+This transfers a `CartData` dataset to a `UTMData` dataset, that has a single UTM zone. 
+
+Note that the user is reponsible to shift the data to the correct location []   
+
+"""
+function Convert2UTMzone(d::CartData, UTMzone::Int64, isnorth::Bool=true)  
+
+
+    return UTMData(ustrip(d.x.val).*1e3,ustrip(d.y.val).*1e3,ustrip(d.z.val).*1e3,UTMzone, isnorth, d.fields)
+
+end
 
 """
 Converts a `UTMData` structure to a `CartData` structure, which essentially transfers the dimensions to km
