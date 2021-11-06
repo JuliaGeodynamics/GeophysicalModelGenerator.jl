@@ -117,7 +117,7 @@ function Write_Paraview(DataSet::ParaviewData, filename="test"; PointsData=false
 end
 
 # Multiple dispatch such that we can also call the routine with GeoData input:
-Write_Paraview(DataSet::GeoData, filename::Any; PointsData=false) = Write_Paraview(convert(ParaviewData,DataSet), filename, PointsData=PointsData);
+Write_Paraview(DataSet::GeoData,  filename::Any; PointsData=false) = Write_Paraview(convert(ParaviewData,DataSet), filename, PointsData=PointsData);
 
 """
     Write_Paraview(DataSet::UTMData, filename::Any; PointsData=false) 
@@ -127,6 +127,19 @@ Writes a `UTMData` structure to paraview. Note that this data is *not* transform
 function Write_Paraview(DataSet::UTMData, filename::Any; PointsData=false) 
     
     PVData = ParaviewData(DataSet.EW, DataSet.NS, DataSet.depth.val, DataSet.fields)
+
+    outfiles = Write_Paraview(PVData, filename, PointsData=PointsData);
+    return outfiles
+end
+
+"""
+    Write_Paraview(DataSet::CartData, filename::Any; PointsData=false) 
+
+Writes a `CartData` structure to paraview. 
+"""
+function Write_Paraview(DataSet::CartData, filename::Any; PointsData=false) 
+    
+    PVData = ParaviewData(DataSet.x.val, DataSet.y.val, DataSet.z.val, DataSet.fields)
 
     outfiles = Write_Paraview(PVData, filename, PointsData=PointsData);
     return outfiles

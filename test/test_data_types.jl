@@ -111,10 +111,29 @@ Data_set1 = convert(GeoData, Data_set)
 @test Data_set1.lat[20] == 40.77470011887963
 @test Data_set1.depth[20] == -5400m
 
-# Convert from GeoData -> UTMData
+# convert from UTMData -> CartData [doesn't do shifting, only transfers to km!]
+Data_set2 = convert(CartData, Data_set)
+@test Data_set2.x[3,4,2]==422.323km
+@test Data_set2.y[3,4,2]==4514.437km
+@test Data_set2.z[3,4,2]==-5.15km
+
+# Convert from GeoData -> UTMData 
 Data_set2 = convert(UTMData, Data_set1)
 @test sum(abs.(Data_set2.EW.val-Data_set.EW.val)) < 1e-5 
 
 # Convert from GeoData -> UTMData, but for a fixed zone (used for map projection)
 Data_set3 = Convert2UTMzone(Data_set1, 32, true)
 @test Data_set3.EW.val[100] ≈  938430.4650476718    
+
+
+# Create CartData structure
+x        =   0:2:10
+y        =   -5:5
+z        =   -10:2:2
+X,Y,Z    =   XYZGrid(x, y, z);
+Data     =   Z
+Data_setC =   CartData(X,Y,Z, (FakeData=Data,Data2=Data.+1.))
+@test sum(abs.(Data_setC.x.val)) ≈ 2310.0km
+
+# Convert from CartData -> UTMData [NO SHIFTING IS APPLIED!]
+Data_set4 = Convert2UTMzone(Data_setC, 33, true)

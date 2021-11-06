@@ -3,7 +3,8 @@
 
 import Base: show
 
-export GeoData, ParaviewData, LonLatDepthGrid, XYZGrid, Velocity_SphericalToCartesian!, UTMData, Convert2UTMzone
+export  GeoData, ParaviewData, UTMData, CartData,
+        LonLatDepthGrid, XYZGrid, Velocity_SphericalToCartesian!, Convert2UTMzone
 
 # data structure for a list of values - TO BE REMOVED
 mutable struct ValueList
@@ -431,6 +432,141 @@ function Convert2UTMzone(d::GeoData, UTMzone::Int64, isnorth::Bool=true)
 end
 
 """
+    Convert2UTMzone(d::CartData, UTMzone::Int64, isnorth::Bool=true)  
+
+This transfers a `CartData` dataset to a `UTMData` dataset, that has a single UTM zone. 
+
+Note that the user is reponsible to shift the data to the correct location []   
+
+"""
+function Convert2UTMzone(d::CartData, UTMzone::Int64, isnorth::Bool=true)  
+
+
+    return UTMData(ustrip(d.x.val).*1e3,ustrip(d.y.val).*1e3,ustrip(d.z.val).*1e3,UTMzone, isnorth, d.fields)
+
+end
+
+
+""" 
+    CartData(x::Any, y::Any, z::GeoUnit, fields::NamedTuple)
+    
+Data structure that holds one or several fields with with Cartesian x/y/z coordinates. Distances are in kilometers
+
+- `x`,`y`,`z` can have units of meters, kilometer or be unitless; they will be converted to kilometers
+- `fields` should ideally be a NamedTuple which allows you to specify the names of each of the fields. 
+- In case you only pass one array we will convert it to a NamedTuple with default name.
+- A single field should be added as `(DataFieldName=Data,)` (don't forget the comma at the end).
+- Multiple fields  can be added as well.
+- In case you want to display a vector field in paraview, add it as a tuple: `(Velocity=(Vx,Vnorth,Vup), Veast=Veast, Vnorth=Vnorth, Vup=Vup)`; we automatically apply a vector transformation when transforming this to a `ParaviewData` structure from which we generate Paraview output. As this changes the magnitude of the arrows, you will no longer see the `[Veast,Vnorth,Vup]` components in Paraview which is why it is a good ideas to store them as separate Fields.
+- Yet, there is one exception: if the name of the 3-component field is `colors`, we do not apply this vector transformation as this field is regarded to contain RGB colors. 
+- `x`,`y`,`z` should have the same size as the `Data` array. The ordering of the arrays is important. If they are 3D arrays, as in the example below, we assume that the first dimension corresponds to `x`, second dimension to `y` and third dimension to `z` (which should be in km). See below for an example.
+
+# Example     
+```julia-repl
+julia> x        =   0:2:10
+julia> y        =   -5:5
+julia> z        =   -10:2:2
+julia> X,Y,Z    =   XYZGrid(x, y, z);
+julia> Data     =   Z
+julia> Data_set =   CartData(X,Y,Z, (FakeData=Data,Data2=Data.+1.))
+CartData 
+    size : (6, 11, 7)
+    x    ϵ [ 0.0 km : 10.0 km]
+    y    ϵ [ -5.0 km : 5.0 km]
+    z    ϵ [ -10.0 km : 2.0 km]
+    fields : (:FakeData, :Data2)
+```
+`CartData` is particularly useful in combination with cartesian geodynamic codes, such as LaMEM, which require cartesian grids.
+You can directly save your data to Paraview with
+```julia-repl
+julia> Write_Paraview(Data_set, "Data_set")
+1-element Vector{String}:
+ "Data_set.vts"
+```
+
+If you wish, you can convert this to `UTMData` (which will simply convert the )
+```julia-repl
+julia> Data_set1 =  convert(GeoData, Data_set)
+GeoData 
+  size  : (116, 96, 25)
+  lon   ϵ [ 14.075969111533457 : 14.213417764154963]
+  lat   ϵ [ 40.77452227533946 : 40.86110443583479]
+  depth ϵ [ -5.4 km : 0.6 km]
+  fields: (:FakeData, :Data2)
+```
+which would allow visualizing this in paraview in the usual manner:
+
+"""
+struct CartData
+    x       ::  GeoUnit
+    y       ::  GeoUnit 
+    z       ::  GeoUnit
+    fields  ::  NamedTuple 
+    
+    # Ensure that the data is of the correct format
+    function CartData(x,y,z,fields)
+       
+        # Check ordering of the arrays in case of 3D
+        if sum(size(x).>1)==3
+            if maximum(abs.(diff(x,dims=2)))>maximum(abs.(diff(x,dims=1))) || maximum(abs.(diff(x,dims=3)))>maximum(abs.(diff(x,dims=1)))
+                error("It appears that the x-array has a wrong ordering")
+            end
+            if maximum(abs.(diff(y,dims=1)))>maximum(abs.(diff(y,dims=2))) || maximum(abs.(diff(y,dims=3)))>maximum(abs.(diff(y,dims=2)))
+                error("It appears that the y-array has a wrong ordering")
+            end
+        end
+
+        # check depth & convert it to units of km in case no units are given or it has different length units
+        x = Convert!(x,km)
+        y = Convert!(y,km)
+        z = Convert!(z,km)
+        
+        # fields should be a NamedTuple. In case we simply provide an array, lets transfer it accordingly
+        if !(typeof(fields)<: NamedTuple)
+            if (typeof(fields)<: Tuple)
+                if length(fields)==1
+                    fields = (DataSet1=first(fields),)  # The field is a tuple; create a NamedTuple from it
+                else
+                    error("Please employ a NamedTuple as input, rather than a Tuple")  # out of luck
+                end
+            else
+                fields = (DataSet1=fields,)
+            end
+        end
+
+        DataField = fields[1];
+        if typeof(DataField)<: Tuple
+            DataField = DataField[1];           # in case we have velocity vectors as input
+        end
+
+        if !(size(x)==size(y)==size(z)==size(DataField))    
+            error("The size of x/y/z and the Fields should all be the same!")
+        end
+
+        return new(x,y,z,fields)
+        
+     end
+
+end
+
+# Print an overview of the UTMData struct:
+function Base.show(io::IO, d::CartData)
+    println(io,"CartData ")
+    println(io,"    size : $(size(d.x))")
+    println(io,"    x    ϵ [ $(minimum(d.x.val)) : $(maximum(d.x.val))]")
+    println(io,"    y    ϵ [ $(minimum(d.y.val)) : $(maximum(d.y.val))]")
+    println(io,"    z    ϵ [ $(minimum(d.z.val)) : $(maximum(d.z.val))]")
+    println(io,"    fields : $(keys(d.fields))")
+end
+
+
+"""
+Converts a `UTMData` structure to a `CartData` structure, which essentially transfers the dimensions to km
+"""
+Base.convert(::Type{CartData}, d::UTMData)  = CartData(ustrip(d.EW.val)./1e3, ustrip(d.NS.val)./1e3 ,ustrip(d.depth.val)./1e3,d.fields)
+
+
+"""
     Lon, Lat, Depth = LonLatDepthGrid(Lon::Any, Lat::Any, Depth:Any)
 
 Creates 3D arrays of `Lon`, `Lat`, `Depth` from 1D vectors or numbers
@@ -552,4 +688,15 @@ function Velocity_SphericalToCartesian!(Data::GeoData, Velocity::Tuple)
         Velocity[2][i] = V_xyz[2];
         Velocity[3][i] = V_xyz[3];
     end
+end
+
+# Internal function that converts arrays to a GeoUnit with certain units
+function Convert!(d,u)
+    if unit.(d)[1]==NoUnits 
+        d = d*u                # in case it has no dimensions
+    end
+    d = uconvert.(u,d)         # convert to u
+    d = GeoUnit(d,u)           # convert to GeoUnit structure with units of u
+
+    return d
 end
