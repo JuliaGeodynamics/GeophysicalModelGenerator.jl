@@ -5,7 +5,7 @@ using Documenter
 
 makedocs(;
     modules=[GeophysicalModelGenerator],
-    authors="Marcel Thielmann, Boris Kaus",
+    authors="Marcel Thielmann, Boris Kaus, Luca De Siena",
     sitename="GeophysicalModelGenerator.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
@@ -26,6 +26,7 @@ makedocs(;
             "Plot GPS vectors" =>  "man/tutorial_GPS.md",
             "Read UTM data" =>  "man/tutorial_UTM.md",
             "VoteMaps" =>  "man/Tutorial_Votemaps.md"        
+            "Kilometer-scale volcano" =>  "man/tutorial_Flegrei.md",
         ],
         "User Guide" => Any[
             "Installation" =>  "man/installation.md",
