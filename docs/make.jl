@@ -5,7 +5,7 @@ using Documenter
 
 makedocs(;
     modules=[GeophysicalModelGenerator],
-    authors="Marcel Thielmann, Boris Kaus, Luca De Siena",
+    authors="Marcel Thielmann, Boris Kaus",
     sitename="GeophysicalModelGenerator.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
