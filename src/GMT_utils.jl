@@ -48,7 +48,7 @@ julia> Write_Paraview(Topo,"Topo_Alps")
 """
 function ImportTopo(limits; file::String="@earth_relief_01m.grd")
 
-    G               =   gmtread(file, limits=[4,20,37,49], grid=true);
+    G               =   gmtread(file, limits=limits, grid=true);
     Lon,Lat,Depth   =   LonLatDepthGrid(G.x[1:end-1],G.y[1:end-1],0);
     Depth[:,:,1]    =   1e-3*G.z';
     Topo            =   GeoData(Lon, Lat, Depth, (Topography=Depth*km,))
