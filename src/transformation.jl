@@ -1,5 +1,9 @@
 # This provides various transformations (GeoData <=> Cartesian)
-export GeoData_To_Cartesian, Cartesian_To_GeoData, InterpolateToRectilinear
+#
+# NOTE; much of this functionality can now be done (better?) using Convert2UTMzone, which converts GeoData to a single UTM zone (flattening it)
+
+export GeoData_To_Cartesian, Cartesian_To_GeoData, InterpolateToRectilinear,
+       ProjectCartData
 
 """
     data_Cart, refPoint = GeoData_To_Cartesian(data::GeoData; Flatten=true, lonlatDepth=empty, referencePoint="Center")
@@ -174,4 +178,16 @@ function InterpolateToRectilinear(data_Cart::ParaviewData; x_lims=empty, y_lims=
 
 
     return x,y,z
+end
+
+"""
+
+Projects all datafields from the GeoData struct `d` to the CartData struct `d_cart`
+"""
+function ProjectCartData(d_cart::CartData, d::GeoData, p::ProjectionPoint)
+
+
+
+    Data_UTM        = Convert2UTMzone(d_cart, 33, true, center=centerUTM);
+
 end

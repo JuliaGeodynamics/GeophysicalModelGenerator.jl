@@ -91,6 +91,16 @@ Data_cart2      = convert(ParaviewData,Data_set2)
 @test size(Data_cart2.z)==(11, 11, 1)
 @test Data_cart2.z[2,2] ≈ 3240.141612908441
 
+# Test projection points (used for map projections)
+p1 = ProjectionPoint();
+@test  p1.Lat==49.9929
+@test  p1.Lon==8.2473
+@test  p1.EW ≈ 446048.5158750616
+@test  p1.NS ≈ 5.53811274482716e6
+
+p2 = ProjectionPoint(p1.EW,p1.NS,p1.zone,p1.isnorth)
+@test p1.EW-p2.EW + p1.NS-p2.NS + p1.zone-p2.zone == 0.0
+
 # Create UTM Data structure
 ew          =   422123.0:100:433623.0
 ns          =   4.514137e6:100:4.523637e6
@@ -116,8 +126,9 @@ Data_set2 = convert(UTMData, Data_set1)
 @test sum(abs.(Data_set2.EW.val-Data_set.EW.val)) < 1e-5 
 
 # Convert from GeoData -> UTMData, but for a fixed zone (used for map projection)
-Data_set3 = Convert2UTMzone(Data_set1, 32, true)
-@test Data_set3.EW.val[100] ≈  938430.4650476718    
+proj = ProjectionPoint(Lat= 40.77470011887963, Lon=14.099668158564413)
+Data_set3 = Convert2UTMzone(Data_set1, proj)
+@test Data_set3.EW.val[100] ≈  432022.99999999994   
 
 # Create CartData structure
 x        =   0:2:10
@@ -129,17 +140,16 @@ Data_setC =   CartData(X,Y,Z, (FakeData=Data,Data2=Data.+1.))
 @test sum(abs.(Data_setC.x.val)) ≈ 2310.0km
 
 # Convert from CartData -> UTMData
-Data_set4 = Convert2UTMzone(Data_setC, 33, true)
+Data_set4 = Convert2UTMzone(Data_setC, proj)
 
 # Convert from  UTMData -> CartData with shifting (useful to create a LaMEM model, for example)
 using Statistics
-centerUTM = (mean(Data_set.EW.val), mean(Data_set.NS.val))
-Data_set5 = Convert2CartData(Data_set, center=centerUTM)
-@test  Data_set5.x.val[22] == -3.65km
-@test  Data_set5.y.val[22] == -4.75km
+Data_set5 = Convert2CartData(Data_set, proj)
+@test  Data_set5.x.val[22] == 0.2km
+@test  Data_set5.y.val[22] == -9.313225746154785e-13km
 @test  Data_set5.z.val[22] == -5.4km
 
 # Convert result back to UTM (convert LaMEM results back to UTM & afterwards to GeoData)
-Data_set6 = Convert2UTMzone(Data_set5, 33, true, center=centerUTM)
+Data_set6 = Convert2UTMzone(Data_set5, proj)
 @test sum(Data_set.EW.val-Data_set6.EW.val) ≈ 0.0
 @test sum(Data_set.NS.val-Data_set6.NS.val) ≈ 0.0

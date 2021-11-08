@@ -5,7 +5,58 @@ import Base: show
 
 export  GeoData, ParaviewData, UTMData, CartData,
         LonLatDepthGrid, XYZGrid, Velocity_SphericalToCartesian!,
-        Convert2UTMzone, Convert2CartData
+        Convert2UTMzone, Convert2CartData, ProjectionPoint
+
+"""
+    ProjectionPoint
+    struct ProjectionPoint
+        Lon     :: Float64
+        Lat     :: Float64
+        EW      :: Float64
+        NS      :: Float64
+        zone    :: Integer
+        isnorth :: Bool
+    end
+
+Structure that holds the coordinates of a point that is used to project a data set from Lon/Lat to a Cartesian grid and vice-versa.
+"""
+struct ProjectionPoint
+    Lat     :: Float64 
+    Lon     :: Float64
+    EW      :: Float64
+    NS      :: Float64
+    zone    :: Integer
+    isnorth :: Bool
+end
+
+"""
+    ProjectionPoint(;Lat=49.9929, Lon=8.2473)
+
+Defines a projection point used for map projections, by specifying latitude and longitude
+
+"""
+function ProjectionPoint(;Lat=49.9929, Lon=8.2473)
+    # Default = Mainz (center of universe)
+    x_lla = LLA(Lat, Lon, 0.0);    # Lat/Lon/Alt of geodesy package 
+    x_utmz = UTMZ(x_lla, wgs84)    # UTMZ of 
+
+    ProjectionPoint(Lat, Lon, x_utmz.x, x_utmz.y, Int64(x_utmz.zone), x_utmz.isnorth)
+end
+
+"""
+    ProjectionPoint(EW::Float64, NS::Float64, Zone::Int64, isnorth::Bool)
+
+Defines a projection point used for map projections, by specifying UTM coordinates (EW/NS), UTM Zone and whether you are on the northern hemisphere
+
+"""
+function ProjectionPoint(EW::Float64, NS::Float64, Zone::Int64, isnorth::Bool)
+    
+    x_utmz = UTMZ(EW,NS,0.0,Zone, isnorth)    # UTMZ of 
+    x_lla = LLA(x_utmz, wgs84);    # Lat/Lon/Alt of geodesy package 
+    
+    ProjectionPoint(x_lla.lat, x_lla.lon, EW, NS, Zone, isnorth)
+end
+
 
 # data structure for a list of values - TO BE REMOVED
 mutable struct ValueList
@@ -402,20 +453,20 @@ end
 
 
 """
-    Convert2UTMzone(d::GeoData, zone::Int32, isnorth=true)  
+    Convert2UTMzone(d::GeoData, p::ProjectionPoint)  
 
-Converts a `GeoData` structure to fixed UTM zone.  
+Converts a `GeoData` structure to fixed UTM zone, around a given `ProjectionPoint`  
     This useful to use real data as input for a cartesian geodynamic model setup (such as in LaMEM). In that case, we need to project map coordinates to cartesian coordinates.
-    One way to do this is by using UTM coordinates. Close to the fixed UTM zone, the resulting coordinates will be rectilinear and distance in meters. The map distortion becomes larger the further you are away from the center.
+    One way to do this is by using UTM coordinates. Close to the `ProjectionPoint` the resulting coordinates will be rectilinear and distance in meters. The map distortion becomes larger the further you are away from the center.
       
 """
-function Convert2UTMzone(d::GeoData, UTMzone::Int64, isnorth::Bool=true)  
+function Convert2UTMzone(d::GeoData, proj::ProjectionPoint)  
 
     EW = zeros(size(d.lon));
     NS  = zeros(size(d.lon));
     zone        = zeros(Int64,size(d.lon));
     northern    = zeros(Bool,size(d.lon));
-    trans       = UTMfromLLA(UTMzone, isnorth, wgs84) 
+    trans       = UTMfromLLA(proj.zone, proj.isnorth, wgs84) 
     for i in eachindex(d.lon.val)
 
         # Use functions of the Geodesy package to convert to LLA
@@ -424,8 +475,8 @@ function Convert2UTMzone(d::GeoData, UTMzone::Int64, isnorth::Bool=true)
 
         EW[i] = utm_i.x
         NS[i] = utm_i.y
-        zone[i] = UTMzone;
-        northern[i] = isnorth
+        zone[i] = proj.zone;
+        northern[i] = proj.isnorth
     end 
 
     return UTMData(EW,NS,d.depth.val,zone, northern, d.fields)
@@ -548,25 +599,24 @@ end
 
 
 """
-    Convert2UTMzone(d::CartData, UTMzone::Int64, isnorth::Bool=true; center::Tuple{Float64,Float64}=(0.0,0.0))  
+    Convert2UTMzone(d::CartData, proj::ProjectionPoint)  
 
-This transfers a `CartData` dataset to a `UTMData` dataset, that has a single UTM zone. The center of the UTMzone (in UTM coordinates (EW,NS) can be specified), such that the resulting data set is shifted  
-
+This transfers a `CartData` dataset to a `UTMData` dataset, that has a single UTM zone. The point around which we project is `ProjectionPoint`
 """
-function Convert2UTMzone(d::CartData, UTMzone::Int64, isnorth::Bool=true; center::Tuple{Float64,Float64}=(0.0,0.0))  
+function Convert2UTMzone(d::CartData, proj::ProjectionPoint)  
 
-    return UTMData(ustrip.(d.x.val).*1e3 .+ center[1],ustrip.(d.y.val).*1e3 .+ center[2],
-                   ustrip.(d.z.val).*1e3,UTMzone, isnorth, d.fields)
+    return UTMData(ustrip.(d.x.val).*1e3 .+ proj.EW,ustrip.(d.y.val).*1e3 .+ proj.NS,
+                   ustrip.(d.z.val).*1e3,proj.zone, proj.isnorth, d.fields)
 
 end
 
 """
-    Convert2CartData(d::UTMData; center::Tuple{Float64,Float64}=(0.0,0.0))
+    Convert2CartData(d::UTMData, proj::ProjectionPoint)
 Converts a `UTMData` structure to a `CartData` structure, which essentially transfers the dimensions to km
 """
-function Convert2CartData(d::UTMData; center::Tuple{Float64,Float64}=(0.0,0.0))  
+function Convert2CartData(d::UTMData, proj::ProjectionPoint)  
 
-    return CartData( (ustrip.(d.EW.val) .- center[1])./1e3, (ustrip.(d.NS.val) .- center[2])./1e3,
+    return CartData( (ustrip.(d.EW.val) .- proj.EW)./1e3, (ustrip.(d.NS.val) .- proj.NS)./1e3,
                      ustrip.(d.depth.val)./1e3, d.fields)
 end
 

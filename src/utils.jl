@@ -1,7 +1,8 @@
 # few utils that are useful 
 
 export meshgrid, CrossSection, ExtractSubvolume, SubtractHorizontalMean, Flatten3DData
-export ParseColumns_CSV_File, AboveSurface, BelowSurface, VoteMap, InterpolateDataOnSurface
+export ParseColumns_CSV_File, AboveSurface, BelowSurface, VoteMap
+export InterpolateDataOnSurface, InterpolateDataFields2D
 export RotateTranslateScale!
 
 """
@@ -291,6 +292,55 @@ function InterpolateDataFields(V::GeoData, Lon, Lat, Depth)
     return Data_profile
 end
 
+"""
+    InterpolateDataFields2D(V::GeoData, Lon, Lat, Depth)
+
+Interpolates a data field `V` on a 2D grid defined by `Lon,Lat`. Typically used for horizontal surfaces
+"""
+function InterpolateDataFields2D(V::GeoData, Lon, Lat)
+
+    Lon_vec     =  V.lon.val[:,1,1];
+    Lat_vec     =  V.lat.val[1,:,1];
+   
+    fields_new  = V.fields;
+    field_names = keys(fields_new);
+    for i = 1:length(V.fields)
+        if typeof(V.fields[i]) <: Tuple
+            # vector or anything that contains more than 1 field
+            data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop 
+            data_array = zeros(size(Lon,1),size(Lon,2),size(Lon,3),length(data_tuple));     # create a 3D array that holds the 2D interpolated values
+            unit_array = zeros(size(data_array));
+
+            for j=1:length(data_tuple)
+                interpol    =   LinearInterpolation((Lon_vec, Lat_vec), ustrip.(data_tuple[j]),extrapolation_bc = Flat());      # create interpolation object
+                data_array[:,:,1,j] =   interpol.(Lon, Lat);          
+            end
+            data_new    = tuple([data_array[:,:,1,c] for c in 1:size(data_array,4)]...)     # transform 3D matrix to tuple
+
+        else
+            # scalar field
+            if length(size(V.fields[i]))==3
+                interpol    =   LinearInterpolation((Lon_vec, Lat_vec), V.fields[i][:,:,1], extrapolation_bc = Flat());            # create interpolation object
+            else
+                interpol    =   LinearInterpolation((Lon_vec, Lat_vec), V.fields[i], extrapolation_bc = Flat());            # create interpolation object
+            end
+
+            data_new    =   interpol.(Lon, Lat);                                                 # interpolate data field
+        end
+        
+        # replace the one 
+        new_field   =   NamedTuple{(field_names[i],)}((data_new,))                          # Create a tuple with same name
+        fields_new  =   merge(fields_new, new_field);                                       # replace the field in fields_new
+        
+    end
+    
+
+    # Create a GeoData struct with the newly interpolated fields
+   # Data_profile = GeoData(Lon, Lat, Depth*0, fields_new);
+
+    return fields_new
+end
+
 
 """
     Surf_interp = InterpolateDataOnSurface(V::ParaviewData, Surf::ParaviewData)
@@ -468,6 +518,7 @@ end
 
 
 # "flatten" a GeoData input to obtain x/y/z values
+## OBSOLETE GIVEN UTMData projection?
 function Flatten3DData(Data::GeoData)
 
     ndepth = size(Data.lat.val,3)
