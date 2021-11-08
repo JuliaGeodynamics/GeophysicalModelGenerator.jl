@@ -1,6 +1,6 @@
 # few utils that are useful 
 
-export meshgrid, CrossSection, ExtractSubvolume, SubtractHorizontalMean, Flatten3DData
+export meshgrid, CrossSection, ExtractSubvolume, SubtractHorizontalMean
 export ParseColumns_CSV_File, AboveSurface, BelowSurface, VoteMap
 export InterpolateDataOnSurface, InterpolateDataFields2D
 export RotateTranslateScale!
@@ -293,7 +293,7 @@ function InterpolateDataFields(V::GeoData, Lon, Lat, Depth)
 end
 
 """
-    InterpolateDataFields2D(V::GeoData, Lon, Lat, Depth)
+    InterpolateDataFields2D(V::GeoData, Lon, Lat)
 
 Interpolates a data field `V` on a 2D grid defined by `Lon,Lat`. Typically used for horizontal surfaces
 """
@@ -333,12 +333,20 @@ function InterpolateDataFields2D(V::GeoData, Lon, Lat)
         fields_new  =   merge(fields_new, new_field);                                       # replace the field in fields_new
         
     end
+
+    # Interpolate z-coordinate as well
+    if length(size(V.lon))==3
+        interpol    =   LinearInterpolation((Lon_vec, Lat_vec), V.depth.val[:,:,1], extrapolation_bc = Flat());            # create interpolation object
+    else
+        interpol    =   LinearInterpolation((Lon_vec, Lat_vec), V.depth.val, extrapolation_bc = Flat());            # create interpolation object
+    end
+    depth_new =  interpol.(Lon, Lat);    
     
 
     # Create a GeoData struct with the newly interpolated fields
-   # Data_profile = GeoData(Lon, Lat, Depth*0, fields_new);
+    # Data_profile = GeoData(Lon, Lat, Depth*0, fields_new);
 
-    return fields_new
+    return depth_new, fields_new
 end
 
 
@@ -517,31 +525,7 @@ function SubtractHorizontalMean(V::AbstractArray{T, 2}; Percentage=false) where 
 end
 
 
-# "flatten" a GeoData input to obtain x/y/z values
-## OBSOLETE GIVEN UTMData projection?
-function Flatten3DData(Data::GeoData)
 
-    ndepth = size(Data.lat.val,3)
-    lat = Data.lat.val[:,:,1]
-    lon = Data.lon.val[:,:,1]
-
-    # origin
-    xo_lla = LLA.(ones(size(lat)).*minimum(vec(lat)), ones(size(lon)).*minimum(vec(lon)), zeros(size(lat))); # convert to LLA format
-
-    # compute x-coordinates by computing the eucledian distance between longitudes, but setting the latitudes to the same value
-    x_lla = LLA.(ones(size(lat)).*minimum(vec(lat)), lon, zeros(size(lat))); # convert to LLA format
-    x_coord = euclidean_distance.(x_lla, xo_lla);
-    x_lla = LLA.(lat, ones(size(lon)).*minimum(vec(lon)), zeros(size(lat))); # convert to LLA format
-    y_coord = euclidean_distance.(x_lla, xo_lla);
-
-    # now create matrices from that (convert m to km as this is the internal standard)
-    X = repeat(x_coord./1e3,1,1,ndepth);
-    Y = repeat(y_coord./1e3,1,1,ndepth);
-    Z = ustrip(Data.depth.val);
-
-    DataFlat = ParaviewData(X, Y, Z, Data.fields)
-    return DataFlat
-end
 
 
 """ 

@@ -620,6 +620,18 @@ function Convert2CartData(d::UTMData, proj::ProjectionPoint)
                      ustrip.(d.depth.val)./1e3, d.fields)
 end
 
+
+"""
+    Convert2CartData(d::GeoData, proj::ProjectionPoint)
+Converts a `GeoData` structure to a `CartData` structure, which essentially transfers the dimensions to km
+"""
+function Convert2CartData(d::GeoData, proj::ProjectionPoint)  
+
+    d_UTM = Convert2UTMzone(d,proj)
+    return CartData( (ustrip.(d_UTM.EW.val) .- proj.EW)./1e3, (ustrip.(d_UTM.NS.val) .- proj.NS)./1e3,
+                     ustrip.(d_UTM.depth.val)./1e3, d_UTM.fields)
+end
+
 """
     Lon, Lat, Depth = LonLatDepthGrid(Lon::Any, Lat::Any, Depth:Any)
 

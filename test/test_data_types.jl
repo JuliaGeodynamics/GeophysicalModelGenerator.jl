@@ -146,7 +146,7 @@ Data_set4 = Convert2UTMzone(Data_setC, proj)
 using Statistics
 Data_set5 = Convert2CartData(Data_set, proj)
 @test  Data_set5.x.val[22] == 0.2km
-@test  Data_set5.y.val[22] == -9.313225746154785e-13km
+@test  Data_set5.y.val[22] ≈ -9.313225746154785e-13km
 @test  Data_set5.z.val[22] == -5.4km
 
 # Convert result back to UTM (convert LaMEM results back to UTM & afterwards to GeoData)
