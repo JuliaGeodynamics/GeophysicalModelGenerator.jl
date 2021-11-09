@@ -71,11 +71,11 @@ julia> depth           =   data[:,3];
 julia> Vp              =   data[:,4];
 julia> Vs              =   data[:,5];
 julia> VpVs            =   data[:,6];
-julia> resolution      =   (length(unique(depthUTM)),  length(unique(SN)), length(unique(WE)))
+julia> resolution      =   (length(unique(depth)),  length(unique(SN)), length(unique(WE)))
 julia> dim_perm        =   [3 2 1]
 julia> we              =   permutedims(reshape(WE, resolution), dim_perm);
 julia> sn              =   permutedims(reshape(SN, resolution), dim_perm);
-julia> depth           =   permutedims(reshape(depthUTM, resolution), dim_perm);
+julia> depth           =   permutedims(reshape(depth, resolution), dim_perm);
 julia> Vp3d            =   permutedims(reshape(Vp, resolution), dim_perm);
 julia> Vs3d            =   permutedims(reshape(Vs, resolution), dim_perm);
 julia> Vp_Vs3d         =   permutedims(reshape(VpVs, resolution), dim_perm);
@@ -98,26 +98,21 @@ julia> list_files        = glob("AmbientNoiseTomography/*.txt");
 julia> li                = size(list_files, 1);
 julia> for i = 1:li
 julia>   nameFile        = list_files[i];
-julia>   name_vts        = name[24:26];
+julia>   name_vts        = name_vts[24:26];
 julia>   data            = readdlm(nameFile, '\t', Float64);
 julia>   WE              = data[:,1];
 julia>   SN              = data[:,2];
-julia>   depthUTM        = data[:,3];
+julia>   depth           = data[:,3];
 julia>   Vs              = data[:,4];
 ```
 However these models are too wide, so it is better to constrain them:
 
 ```julia
-julia>   indWE           = findall(x -> 419000<=x<=435000, WE);
-julia>   WE              = WE[indWE];
-julia>   SN              = SN[indWE];
-julia>   depthUTM        = depthUTM[indWE];
-julia>   Vs              = Vs[indWE];
-julia>   indSN           = findall(x -> 4514000<=x<=4528000, SN);
-julia>   WE              = WE[indSN];
-julia>   SN              = SN[indSN];
-julia>   depthUTM        = depthUTM[indSN];
-julia>   Vs              = Vs[indSN];
+julia>   findall( (WE .>= 419000) .& (WE.<=435000) .& (SN.>=4514000) .& (SN.<=4528000) );
+julia>   WE              = WE[ind];
+julia>   SN              = SN[ind];
+julia>   depth           = depth[ind];
+julia>   Vs              = Vs[ind];
 ```
 Also, nodes are irregular, hence we create a 3D lat,long regular grid from UTM - measurements are all in the same time zone:
 
@@ -125,7 +120,7 @@ Also, nodes are irregular, hence we create a 3D lat,long regular grid from UTM -
 julia>  l                = length(WE);
 julia>  n_WE             = minimum(WE):100:maximum(WE);
 julia>  n_SN             = minimum(SN):100:maximum(SN);
-julia>  we, sn, Depth    = XYZGrid(n_WE, n_SN, depthUTM[1]);
+julia>  we, sn, Depth    = XYZGrid(n_WE, n_SN, depth[1]);
 julia>  Vs_3D            = zeros(size(Depth));
 julia>  Cgrid            = CartesianGrid((size(we, 1), size(we, 2)), (minimum(we), minimum(sn)), (we[2,2,1] - we[1,1,1], sn[2,2,1] - sn[1,1,1]))
 julia>  coord            = PointSet([WE[:]'; SN[:]']);
@@ -136,7 +131,7 @@ julia>  sol              = solve(P, S);
 julia>  sol_Vs           = values(sol).Vs;
 julia>  Vs_2D            = reshape(sol_Vs, size(domain(sol)));
 julia>  Vs_3D[:,:,1]     = Vs_2D;
-julia>  Data_set_Cartesian =   CartData(we, sn, Depth, (Vs_m_s = Vs_3D,))
+julia>  Data_set_Cartesian =   CartData(we, sn, Depth, (Vs * (km / s),))
 julia>  Write_Paraview(Data_set_Cartesian, "CF_Noise_Cartesian_"*name_vts)
 julia>  Data_set         =   UTMData(we, sn, Depth, 33, true, (Vs = Vs_3D*(km / s),));
 julia>  Data_set_UTM     =   convert(GeophysicalModelGenerator.GeoData,Data_set);
