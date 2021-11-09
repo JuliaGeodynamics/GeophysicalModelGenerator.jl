@@ -3,24 +3,36 @@ using Test
 using GeophysicalModelGenerator
 
 # Create 3D volume with some fake data
-Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
-Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Depth*2,LonData=Lon))  
+Lon,Lat,Depth   =   LonLatDepthGrid(5:25,20:50,(-1300:100:0)km);
+Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Depth*2 + Lon*km,LonData=Lon))  
+
+proj            =   ProjectionPoint(Lon=20,Lat=35)
+
+# Convert this 3D dataset to a Cartesian dataset (the grid will not be orthogonal)
+Data_set3D_Cart =   Convert2CartData(Data_set3D, proj)  
+@test sum(abs.(Data_set3D_Cart.x.val)) ≈ 5.293469089428514e6km
+
+# Create Cartesian grid
+X,Y,Z           =   XYZGrid(-500:100:500,-900:200:900,(-500:100:0)km);
+Data_Cart       =   CartData(X,Y,Z,(Z=Z,))  
+
+# Project values of Data_set3D to the cartesian data
+Data_Cart       =   ProjectCartData(Data_Cart, Data_set3D, proj)
+@test sum(Data_Cart.fields.Depthdata) ≈ -316834.28716859705km
+@test sum(Data_Cart.fields.LonData) ≈ 13165.712831402916
 
 
+# Next, 3D surface (like topography)
+Lon,Lat,Depth   =   LonLatDepthGrid(5:25,20:50,0);
+Depth           =   cos.(Lon/5).*sin.(Lat)*10
+Data_surf       =   GeoData(Lon,Lat,Depth,(Z=Depth,))  
+Data_surf_Cart  =   Convert2CartData(Data_surf, proj)  
 
-# Transform the grid to cartesian & back, without flattening (so no distortion)
-data_Cart, refPoint     = GeoData_To_Cartesian(Data_set3D, referencePoint="CenterBottom", Flatten=false);
-Data_set3D_transformed  = Cartesian_To_GeoData(data_Cart, refPoint, Flatten=false) # transform back
+# Cartesian surface
+X,Y,Z           =   XYZGrid(-500:10:500,-900:20:900,0);
+Data_Cart       =   CartData(X,Y,Z,(Z=Z,))  
 
-@test Data_set3D_transformed.lon[1] ≈ Data_set3D.lon[1]
-@test Data_set3D_transformed.lat[1] ≈ Data_set3D.lat[1]
-@test Data_set3D_transformed.depth[1] ≈ Data_set3D.depth[1]
+Data_Cart       =   ProjectCartData(Data_Cart, Data_surf, proj)
+@test sum(Data_Cart.z.val) ≈ 1858.2487019158766km
+@test sum(Data_Cart.fields.Z) ≈ 1858.2487019158766
 
-@test Data_set3D_transformed.lon[600] ≈ Data_set3D.lon[600]
-@test Data_set3D_transformed.lat[600] ≈ Data_set3D.lat[600]
-@test Data_set3D_transformed.depth[600] ≈ Data_set3D.depth[600]
-
-# Next, we flatten the setup. That 
-
-
-Write_Paraview(Data_set3D_transformed, "data_3d_transformed")

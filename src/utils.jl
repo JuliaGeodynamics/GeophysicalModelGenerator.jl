@@ -1,7 +1,8 @@
 # few utils that are useful 
 
-export meshgrid, CrossSection, ExtractSubvolume, SubtractHorizontalMean, Flatten3DData
-export ParseColumns_CSV_File, AboveSurface, BelowSurface, VoteMap, InterpolateDataOnSurface
+export meshgrid, CrossSection, ExtractSubvolume, SubtractHorizontalMean
+export ParseColumns_CSV_File, AboveSurface, BelowSurface, VoteMap
+export InterpolateDataOnSurface, InterpolateDataFields2D
 export RotateTranslateScale!
 
 """
@@ -291,6 +292,63 @@ function InterpolateDataFields(V::GeoData, Lon, Lat, Depth)
     return Data_profile
 end
 
+"""
+    InterpolateDataFields2D(V::GeoData, Lon, Lat)
+
+Interpolates a data field `V` on a 2D grid defined by `Lon,Lat`. Typically used for horizontal surfaces
+"""
+function InterpolateDataFields2D(V::GeoData, Lon, Lat)
+
+    Lon_vec     =  V.lon.val[:,1,1];
+    Lat_vec     =  V.lat.val[1,:,1];
+   
+    fields_new  = V.fields;
+    field_names = keys(fields_new);
+    for i = 1:length(V.fields)
+        if typeof(V.fields[i]) <: Tuple
+            # vector or anything that contains more than 1 field
+            data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop 
+            data_array = zeros(size(Lon,1),size(Lon,2),size(Lon,3),length(data_tuple));     # create a 3D array that holds the 2D interpolated values
+            unit_array = zeros(size(data_array));
+
+            for j=1:length(data_tuple)
+                interpol    =   LinearInterpolation((Lon_vec, Lat_vec), ustrip.(data_tuple[j]),extrapolation_bc = Flat());      # create interpolation object
+                data_array[:,:,1,j] =   interpol.(Lon, Lat);          
+            end
+            data_new    = tuple([data_array[:,:,1,c] for c in 1:size(data_array,4)]...)     # transform 3D matrix to tuple
+
+        else
+            # scalar field
+            if length(size(V.fields[i]))==3
+                interpol    =   LinearInterpolation((Lon_vec, Lat_vec), V.fields[i][:,:,1], extrapolation_bc = Flat());            # create interpolation object
+            else
+                interpol    =   LinearInterpolation((Lon_vec, Lat_vec), V.fields[i], extrapolation_bc = Flat());            # create interpolation object
+            end
+
+            data_new    =   interpol.(Lon, Lat);                                                 # interpolate data field
+        end
+        
+        # replace the one 
+        new_field   =   NamedTuple{(field_names[i],)}((data_new,))                          # Create a tuple with same name
+        fields_new  =   merge(fields_new, new_field);                                       # replace the field in fields_new
+        
+    end
+
+    # Interpolate z-coordinate as well
+    if length(size(V.lon))==3
+        interpol    =   LinearInterpolation((Lon_vec, Lat_vec), V.depth.val[:,:,1], extrapolation_bc = Flat());            # create interpolation object
+    else
+        interpol    =   LinearInterpolation((Lon_vec, Lat_vec), V.depth.val, extrapolation_bc = Flat());            # create interpolation object
+    end
+    depth_new =  interpol.(Lon, Lat);    
+    
+
+    # Create a GeoData struct with the newly interpolated fields
+    # Data_profile = GeoData(Lon, Lat, Depth*0, fields_new);
+
+    return depth_new, fields_new
+end
+
 
 """
     Surf_interp = InterpolateDataOnSurface(V::ParaviewData, Surf::ParaviewData)
@@ -467,30 +525,7 @@ function SubtractHorizontalMean(V::AbstractArray{T, 2}; Percentage=false) where 
 end
 
 
-# "flatten" a GeoData input to obtain x/y/z values
-function Flatten3DData(Data::GeoData)
 
-    ndepth = size(Data.lat.val,3)
-    lat = Data.lat.val[:,:,1]
-    lon = Data.lon.val[:,:,1]
-
-    # origin
-    xo_lla = LLA.(ones(size(lat)).*minimum(vec(lat)), ones(size(lon)).*minimum(vec(lon)), zeros(size(lat))); # convert to LLA format
-
-    # compute x-coordinates by computing the eucledian distance between longitudes, but setting the latitudes to the same value
-    x_lla = LLA.(ones(size(lat)).*minimum(vec(lat)), lon, zeros(size(lat))); # convert to LLA format
-    x_coord = euclidean_distance.(x_lla, xo_lla);
-    x_lla = LLA.(lat, ones(size(lon)).*minimum(vec(lon)), zeros(size(lat))); # convert to LLA format
-    y_coord = euclidean_distance.(x_lla, xo_lla);
-
-    # now create matrices from that (convert m to km as this is the internal standard)
-    X = repeat(x_coord./1e3,1,1,ndepth);
-    Y = repeat(y_coord./1e3,1,1,ndepth);
-    Z = ustrip(Data.depth.val);
-
-    DataFlat = ParaviewData(X, Y, Z, Data.fields)
-    return DataFlat
-end
 
 
 """ 
