@@ -23,12 +23,13 @@ This tutorial visualizes available 3D data at a local volcano (Campi Flegrei cal
 
 #### 1. Download all data for region
 
-You will need to download the zipped folder containing all files from: https://seafile.rlp.net/f/ff2c8424274c4d56b1f7/
+You will need to download the zipped folder containing all files from [here](https://seafile.rlp.net/f/ff2c8424274c4d56b1f7/).
+
 Make sure that you are in the unzipped directory.
 
 #### 2. Geomorphology
 
-Load both the the shape (.shp) files contained in "./Geomorphology/*.shp" inside Paraview:
+Load both the the shape (.shp) files contained in "./Geomorphology/*.shp" inside Paraview. In the following figures we show the Cartesian representation (not geolocalized - left) and the UTM (UTM). Our shape files can only be loaded in the cartesian:
 
 ![Tutorial_Flegrei_Geomorphology](../assets/img/Flegrei_Geomorphology.png)
 
@@ -54,9 +55,11 @@ julia> EQ_Data_UTM         = UTMData(WE, SN, depth, 33, true, (Depth=depth * m,T
 julia> Data_set_UTM        =   convert(GeophysicalModelGenerator.GeoData,EQ_Data_UTM)
 julia> Write_Paraview(Data_set_UTM, "CF_Earthquakes_UTM", PointsData=true)
 ```
-Save in paraview with both cartesian and UTM formats. The final seismicity map looks like this - the colour scale distinguishes earthquakes of different decades. Notice the progressive migration of recent seismicity (black dots) towards East:
+Save in paraview with both cartesian and UTM formats. The final seismicity map looks like this:
 
 ![Tutorial_Flegrei_seismicity](../assets/img/Flegrei_Seismicity.png)
+
+The colour scale distinguishes earthquakes of different decades. Notice the progressive migration of recent seismicity (black dots) towards East.
 
 #### 4. Velocity model
 
@@ -114,7 +117,7 @@ julia>   SN              = SN[ind];
 julia>   depth           = depth[ind];
 julia>   Vs              = Vs[ind];
 ```
-Also, nodes are irregular, hence we create a 3D lat,long regular grid from UTM - measurements are all in the same time zone:
+Also, nodes are irregular, hence we create a 3D regular UTM:
 
 ```julia
 julia>  l                = length(WE);
@@ -122,7 +125,7 @@ julia>  n_WE             = minimum(WE):100:maximum(WE);
 julia>  n_SN             = minimum(SN):100:maximum(SN);
 julia>  we, sn, Depth    = XYZGrid(n_WE, n_SN, depth[1]);
 julia>  Vs_3D            = zeros(size(Depth));
-julia>  Cgrid            = CartesianGrid((size(we, 1), size(we, 2)), (minimum(we), minimum(sn)), (we[2,2,1] - we[1,1,1], sn[2,2,1] - sn[1,1,1]))
+julia>  Cgrid            = GeoStats.CartesianGrid((size(we, 1), size(we, 2)), (minimum(we), minimum(sn)), (we[2,2,1] - we[1,1,1], sn[2,2,1] - sn[1,1,1]))
 julia>  coord            = PointSet([WE[:]'; SN[:]']);
 julia>  Geo              = georef((Vs = Vs[:],), coord);
 julia>  P                = EstimationProblem(Geo, Cgrid, :Vs);
@@ -131,13 +134,15 @@ julia>  sol              = solve(P, S);
 julia>  sol_Vs           = values(sol).Vs;
 julia>  Vs_2D            = reshape(sol_Vs, size(domain(sol)));
 julia>  Vs_3D[:,:,1]     = Vs_2D;
-julia>  Data_set_Cartesian =   CartData(we, sn, Depth, (Vs * (km / s),))
-julia>  Write_Paraview(Data_set_Cartesian, "CF_Noise_Cartesian_"*name_vts)
-julia>  Data_set         =   UTMData(we, sn, Depth, 33, true, (Vs = Vs_3D*(km / s),));
-julia>  Data_set_UTM     =   convert(GeophysicalModelGenerator.GeoData, Data_set);
+julia>  Data_set_Cart    = CartData(we, sn, Depth, (Vs = Vs_3D  * (km / s),))
+julia>  Write_Paraview(Data_set_Cart, "CF_Noise" * name_vts * "_Cartesian")
+julia>  Data_set         = UTMData(we, sn, Depth, 33, true, (Vs = Vs_3D*(km / s),));
+julia>  Data_set_UTM     = convert(GeophysicalModelGenerator.GeoData, Data_set);
 julia>  Write_Paraview(Data_set_UTM, "CF_Noise_UTM_"*name_vts)
 julia>  end
 ```
 This is one of the horizontal sections created by the code in the previous model in both reference systems:
 
 ![Tutorial_Flegrei_Noise](../assets/img/Flegrei_Noise.png)
+
+If you want to run the entire example, you can find the .jl code [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/main/tutorial/Tutorial_Flegrei.jl)
