@@ -16,13 +16,13 @@ using GMT, NearestNeighbors, GeoParams, GeophysicalModelGenerator
 filename_topo = "./ETOPO1/ETOPO1_Ice_g_gmt4.grd" # this only works if you are in the directory where the data is located
 filename_geo  = "./tectonic_maps_4dmb_2020_09_17/tectonicmap_SPP.png" #tectonicmap_schmid_2004.png"
 
-# 3. Select latitude and longitude range for topo
+# 2. Select latitude and longitude range for topo
 lat_min = 37.0
 lat_max = 49.0
 lon_min = 4.0
 lon_max = 20.0
 
-# 2. load desired topography data using GMT.jl and adapt the data to make it compatible with GeoData
+# 2.1 load desired topography data using GMT.jl and adapt the data to make it compatible with GeoData
 G = gmtread(filename_topo, limits=[lon_min,lon_max,lat_min,lat_max]);
 Lon,Lat,Depth    =   LonLatDepthGrid(G.x[1:end],G.y[1:end],0);
 numel_topo       =   prod(size(Lon));

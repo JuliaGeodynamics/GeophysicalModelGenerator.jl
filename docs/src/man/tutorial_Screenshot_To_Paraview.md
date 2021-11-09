@@ -33,11 +33,12 @@ The first step is to crop the image such that we only see the profile itself:
 
 #### 2. Read data of a cross-section & create VTS file
 
-We look at the bigger image and determine the `lon,lat,depth` coordinates of the lower left and upper right corners of this image. We estimate this to be at:
+We look at the bigger image and determine the `lon,lat,depth` coordinates of the lower left and upper right corners of this image. We estimate this to be (well, in fact, Mark Handy knew the exact coordinates, which contain a typo in the paper but are correct in her PhD thesis):
 ```julia
-julia> Corner_LowerLeft  = ( 3.5, 46.0, -400.0)
-julia> Corner_UpperRight = (16.0, 42.5, 0.0)
+julia> Corner_LowerLeft  = ( 4.65, 45.73, -400.0)
+julia> Corner_UpperRight = (17.23, 43.80, 0.0)
 ```
+
 Once this is done, and we saved the picture under `Lippitsch_Fig13a.png`, you can transfer it into GeoData format with:
 
 ```julia
@@ -45,14 +46,14 @@ julia> using GeophysicalModelGenerator
 julia> data_profile1 = Screenshot_To_GeoData("Lippitsch_Fig13a.png",Corner_LowerLeft, Corner_UpperRight)
 Extracting GeoData from: Lippitsch_Fig13a.png
            └ Corners:         lon       lat       depth
-              └ lower left  = [3.5    ; 46.0   ;  -400.0 ]
-              └ lower right = [16.0   ; 42.5   ;  -400.0 ]
-              └ upper left  = [3.5    ; 46.0   ;  0.0    ]
-              └ upper right = [16.0   ; 42.5   ;  0.0    ]
+              └ lower left  = (4.65   , 45.73  ,  -400.0 )
+              └ lower right = (17.23  , 43.8   ,  -400.0 )
+              └ upper left  = (4.65   , 45.73  ,  0.0    )
+              └ upper right = (17.23  , 43.8   ,  0.0    )
 GeoData 
   size  : (325, 824, 1)
-  lon   ϵ [ 3.4999999999999996 : 16.0]
-  lat   ϵ [ 42.49999999999999 : 46.00000000000001]
+  lon   ϵ [ 4.6499999999999995 : 17.230000000000004]
+  lat   ϵ [ 43.79999999999999 : 45.730000000000004]
   depth ϵ [ -400.00000000000006 km : 0.0 km]
   fields: (:colors,)
 ```

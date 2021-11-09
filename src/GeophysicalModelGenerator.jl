@@ -1,6 +1,7 @@
 module GeophysicalModelGenerator
 
 using Base: String, show_index, Tuple, FieldDescStorage
+using Requires
 
 
 # Load & export some useful commands/functions from GeoParams:
@@ -8,7 +9,7 @@ import GeoParams
 using .GeoParams
 export 
         @u_str, uconvert, upreffered, unit, ustrip, NoUnits,  #  Units 
-        GeoUnit, GEO_units, SI_units, NO_units, AbstractGeoUnits, 
+        GeoUnit, GEO_units, SI_units, NO_units, AbstratGeoUnits, 
         Nondimensionalize, Nondimensionalize!, Dimensionalize, Dimensionalize!,
         superscript, upreferred, GEO, SI, NONE, isDimensional, 
         km, m, cm, mm, Myrs, yr, s, MPa, Pa, Pas, K, C, kg, mol
@@ -36,5 +37,13 @@ include("voxel_gravity.jl")
 include("LaMEM_io.jl")
 include("LaMEM_geometry.jl")
 include("stl.jl")
+
+# Add plotting routines
+function __init__()
+        @require GMT = "5752ebe1-31b9-557e-87aa-f909b540aa54" begin
+                @eval include("./GMT_utils.jl")
+        end
+end
+
 
 end

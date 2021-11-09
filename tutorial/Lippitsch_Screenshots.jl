@@ -11,13 +11,14 @@
 using GeophysicalModelGenerator
 
 # Process cross-sections of Figure 13. Note that we estimated some of the lon/lat locations
-data_Fig13a         =   Screenshot_To_GeoData("Lippitsch_Fig13a.png",( 3.4, 46.0, -400.0), (16.9, 42.5, 0.0))
+	       
+data_Fig13a         =   Screenshot_To_GeoData("Lippitsch_Fig13a.png",( 4.65,45.73, -400.0), (17.23, 43.80, 0.0))
 Write_Paraview(data_Fig13a, "Lippitsch_Fig13a") 
-
-data_Fig13b         =   Screenshot_To_GeoData("Lippitsch_Fig13b.png",( 5.7, 52.0, -400.0), (11.6, 43.5, 0.0))
+	      
+data_Fig13b         =   Screenshot_To_GeoData("Lippitsch_Fig13b.png",( 5.51,51.53, -400.0), (12.04, 43.68 , 0.0))
 Write_Paraview(data_Fig13b, "Lippitsch_Fig13b") 
-
-data_Fig13c         =   Screenshot_To_GeoData("Lippitsch_Fig13c.png",(17.7, 51.0, -400.0), (10.7, 43.5, 0.0))
+	   
+data_Fig13c         =   Screenshot_To_GeoData("Lippitsch_Fig13c.png",(17.78,50.95, -400.0), (11.66, 43.68, 0.0))
 Write_Paraview(data_Fig13c, "Lippitsch_Fig13c") 
 
 # Mapview images

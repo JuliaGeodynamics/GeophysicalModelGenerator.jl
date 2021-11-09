@@ -27,7 +27,7 @@ function ConvertGeo2Cart(inputdata::GeoData)
     Z = ValueList("z",inputdata.depth.unit,R.*sind(inputdata.lat.values))
 
     # assign all data to the respective struct
-    convdata = CartData(X,Y,Z,inputdata.values) 
+    convdata = ParaviewData(X,Y,Z,inputdata.values) 
 
    return convdata
 

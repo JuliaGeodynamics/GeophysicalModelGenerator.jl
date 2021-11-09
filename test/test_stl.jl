@@ -17,5 +17,5 @@ end
 
 @test Phase[14,6,2] == 1.0
 
-#Data_Cat = CartData(X,Y,Z, (Phase=Phase,))
+#Data_Cat = ParaviewData(X,Y,Z, (Phase=Phase,))
 #Write_Paraview(Data_Cat,"Data_Cat")

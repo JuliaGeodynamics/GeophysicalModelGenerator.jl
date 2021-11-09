@@ -53,7 +53,7 @@ LaMEM Grid:
 julia> Phases = zeros(Int32,   size(Grid.X));
 julia> Temp   = zeros(Float64, size(Grid.X));
 julia> AddBox!(Phases,Temp,Grid, xlim=(0,500), zlim=(-50,0), phase=ConstantPhase(3), DipAngle=10, T=ConstantTemp(1000))
-julia> Model3D = CartData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
+julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
 julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview 
 1-element Vector{String}:
  "LaMEM_ModelSetup.vts"   
@@ -65,7 +65,7 @@ julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
 julia> Phases = zeros(Int32,   size(Grid.X));
 julia> Temp   = zeros(Float64, size(Grid.X));
 julia> AddBox!(Phases,Temp,Grid, xlim=(0,500), zlim=(-50,0), phase=ConstantPhase(3), DipAngle=10, T=ConstantTemp(1000))
-julia> Model3D = CartData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
+julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
 julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview 
 1-element Vector{String}:
  "LaMEM_ModelSetup.vts"   
