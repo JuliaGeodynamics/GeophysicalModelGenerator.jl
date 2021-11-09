@@ -134,7 +134,7 @@ julia>  Vs_3D[:,:,1]     = Vs_2D;
 julia>  Data_set_Cartesian =   CartData(we, sn, Depth, (Vs * (km / s),))
 julia>  Write_Paraview(Data_set_Cartesian, "CF_Noise_Cartesian_"*name_vts)
 julia>  Data_set         =   UTMData(we, sn, Depth, 33, true, (Vs = Vs_3D*(km / s),));
-julia>  Data_set_UTM     =   convert(GeophysicalModelGenerator.GeoData,Data_set);
+julia>  Data_set_UTM     =   convert(GeophysicalModelGenerator.GeoData, Data_set);
 julia>  Write_Paraview(Data_set_UTM, "CF_Noise_UTM_"*name_vts)
 julia>  end
 ```

@@ -24,9 +24,9 @@ SN                  = data[:,3];
 depth               = data[:,4];
 
 # 1.2 save in both formats
-EQ_Data_Cart        = CartData(WE,SN,depth,(Depth=depth,Time=time*y,));
+EQ_Data_Cart        = CartData(WE,SN,depth,(Depth=depth * m,Time=time * yr,));
 Write_Paraview(EQ_Data_Cart, "CF_Earthquakes_Cartesian", PointsData=true)
-EQ_Data_UTM         = UTMData(WE, SN, depth, 33, true, (Depth=depth,Time=time,));
+EQ_Data_UTM         = UTMData(WE, SN, depth, 33, true, (Depth=depth * m,Time=time * yr,));
 Data_set_UTM        =   convert(GeophysicalModelGenerator.GeoData,EQ_Data_UTM)
 Write_Paraview(Data_set_UTM, "CF_Earthquakes_UTM", PointsData=true)
 
@@ -59,38 +59,43 @@ list_files        = glob("AmbientNoiseTomography/*.txt");
 li                = size(list_files, 1);
 for i = 1:li
   nameFile        = list_files[i];
-  name_vts        = name_vts[1:3];
+  name_vts        = nameFile[24:26];
   data            = readdlm(nameFile, '\t', Float64);
   WE              = data[:,1];
   SN              = data[:,2];
-  depth           = data[:,3];
+  depthUTM        = data[:,3];
   Vs              = data[:,4];
 
 # 3.1 Constrain them on a smaller grid:
-findall( (WE .>= 419000) .& (WE.<=435000) .& (SN.>=4514000) .& (SN.<=4528000) );
-  WE              = WE[ind];
-  SN              = SN[ind];
-  depth        = depth[ind];
-  Vs              = Vs[ind];
-  
+  indWE           = findall(x -> 419000<=x<=435000, WE);
+  WE              = WE[indWE];
+  SN              = SN[indWE];
+  depthUTM        = depthUTM[indWE];
+  Vs              = Vs[indWE];
+  indSN           = findall(x -> 4514000<=x<=4528000, SN);
+  WE              = WE[indSN];
+  SN              = SN[indSN];
+  depthUTM        = depthUTM[indSN];
+  Vs              = Vs[indSN];
+
   # 3.2 Make the grid regular and interpolate, then write the result:
-l                 = length(WE);
+ l                = length(WE);
  n_WE             = minimum(WE):100:maximum(WE);
  n_SN             = minimum(SN):100:maximum(SN);
  we, sn, Depth    = XYZGrid(n_WE, n_SN, depth[1]);
  Vs_3D            = zeros(size(Depth));
  Cgrid            = CartesianGrid((size(we, 1), size(we, 2)), (minimum(we), minimum(sn)), (we[2,2,1] - we[1,1,1], sn[2,2,1] - sn[1,1,1]))
  coord            = PointSet([WE[:]'; SN[:]']);
- Geo              = georef((Vs = Vs[ind],), coord);
+ Geo              = georef((Vs = Vs[:],), coord);
  P                = EstimationProblem(Geo, Cgrid, :Vs);
  S                = IDW(:Vs => (;neighbors=2));
  sol              = solve(P, S);
  sol_Vs           = values(sol).Vs;
  Vs_2D            = reshape(sol_Vs, size(domain(sol)));
  Vs_3D[:,:,1]     = Vs_2D;
- Data_set_Cartesian =   CartData(we, sn, Depth, (Vs = Vs_3D * (km / s),))
- Write_Paraview(Data_set_Cartesian, "CF_Noise_"*name_vts*"_Cartesian")
+ Data_set_Cartesian =   CartData(we, sn, Depth, (Vs = Vs_3D*(km / s),))
+ Write_Paraview(Data_set_Cartesian, "CF_Noise_Cartesian_"*name_vts)
  Data_set         =   UTMData(we, sn, Depth, 33, true, (Vs = Vs_3D*(km / s),));
- Data_set_UTM     =   convert(GeophysicalModelGenerator.GeoData,Data_set);
- Write_Paraview(Data_set_UTM, "CF_Noise_"*name_vts)
+ Data_set_UTM     =   convert(GeophysicalModelGenerator.GeoData, Data_set);
+ Write_Paraview(Data_set_UTM, "CF_Noise_UTM_"*name_vts)
  end
