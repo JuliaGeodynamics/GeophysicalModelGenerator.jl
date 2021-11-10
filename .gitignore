@@ -1,2 +1,3 @@
 /test/*.vts
 /test/*.vtu
+.DS_Store
