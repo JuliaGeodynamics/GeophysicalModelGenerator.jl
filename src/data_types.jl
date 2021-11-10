@@ -590,10 +590,10 @@ end
 # Print an overview of the UTMData struct:
 function Base.show(io::IO, d::CartData)
     println(io,"CartData ")
-    println(io,"    size : $(size(d.x))")
-    println(io,"    x    ϵ [ $(minimum(d.x.val)) : $(maximum(d.x.val))]")
-    println(io,"    y    ϵ [ $(minimum(d.y.val)) : $(maximum(d.y.val))]")
-    println(io,"    z    ϵ [ $(minimum(d.z.val)) : $(maximum(d.z.val))]")
+    println(io,"    size   : $(size(d.x))")
+    println(io,"    x      ϵ [ $(minimum(d.x.val)) : $(maximum(d.x.val))]")
+    println(io,"    y      ϵ [ $(minimum(d.y.val)) : $(maximum(d.y.val))]")
+    println(io,"    z      ϵ [ $(minimum(d.z.val)) : $(maximum(d.z.val))]")
     println(io,"    fields : $(keys(d.fields))")
 end
 
