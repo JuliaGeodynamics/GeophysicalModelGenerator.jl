@@ -5,7 +5,7 @@ export Write_Paraview
 
 
 """
-    Write_Paraview(DataSet::ParaviewData, filename="test"; PointsData=false)
+    outfiles, vtkfile = Write_Paraview(DataSet::ParaviewData, filename="test"; PointsData=false)
 
 Writes a structure with Geodata to a paraview (or VTK) file
 
@@ -113,7 +113,7 @@ function Write_Paraview(DataSet::ParaviewData, filename="test"; PointsData=false
     end
     outfiles = vtk_save(vtkfile);
 
-    return outfiles
+    return outfiles, vtkfile
 end
 
 # Multiple dispatch such that we can also call the routine with GeoData input:
