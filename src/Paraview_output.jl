@@ -1,13 +1,14 @@
 # Write paraview (VTK/VTS) files for 3D volumes, cross-sections and lines
 using WriteVTK
 
-export Write_Paraview
+export Write_Paraview, Movie_Paraview
 
 
 """
-    outfiles, vtkfile = Write_Paraview(DataSet::ParaviewData, filename="test"; PointsData=false)
+    pvd = Write_Paraview(DataSet::ParaviewData, filename="test"; PointsData=false, pvd=nothing, time=nothing)
 
-Writes a structure with Geodata to a paraview (or VTK) file
+Writes a structure with `Geodata`` to a paraview (or VTK) file. If you have unstructured points (e.g., earthquake data), set `PointsData=true`.
+In case you want to create a movie in Paraview, and this is a timestep of that movie you also have to pass `time` and `pvd`
 
 # Example 1: Write a 3D volume 
 ```julia-repl
@@ -64,7 +65,7 @@ julia> Write_Paraview(Data_set, "test_Points", PointsData=true)
 
 
 """
-function Write_Paraview(DataSet::ParaviewData, filename="test"; PointsData=false)
+function Write_Paraview(DataSet::ParaviewData, filename="test"; PointsData=false, pvd=nothing, time=nothing)
 
     # Error checking
     if !(length(size(DataSet.x))==length(size(DataSet.y))==length(size(DataSet.z)))
@@ -112,23 +113,29 @@ function Write_Paraview(DataSet::ParaviewData, filename="test"; PointsData=false
         end
     end
     outfiles = vtk_save(vtkfile);
+    println("Saved file: $(outfiles[1])")
 
-    return outfiles, vtkfile
+    if !isnothing(pvd)
+        # Write movie 
+        pvd[time] = vtkfile
+    end
+
+    return pvd
 end
 
 # Multiple dispatch such that we can also call the routine with GeoData input:
-Write_Paraview(DataSet::GeoData,  filename::Any; PointsData=false) = Write_Paraview(convert(ParaviewData,DataSet), filename, PointsData=PointsData);
+Write_Paraview(DataSet::GeoData,  filename::Any; PointsData=false, pvd=nothing, time=nothing) = Write_Paraview(convert(ParaviewData,DataSet), filename, PointsData=PointsData, pvd=pvd, time=time);
 
 """
     Write_Paraview(DataSet::UTMData, filename::Any; PointsData=false) 
 
 Writes a `UTMData` structure to paraview. Note that this data is *not* transformed into an Earth-like framework, but remains cartesian instead. 
 """
-function Write_Paraview(DataSet::UTMData, filename::Any; PointsData=false) 
+function Write_Paraview(DataSet::UTMData, filename::Any; PointsData=false, pvd=nothing, time=nothing) 
     
     PVData = ParaviewData(DataSet.EW, DataSet.NS, DataSet.depth.val, DataSet.fields)
 
-    outfiles = Write_Paraview(PVData, filename, PointsData=PointsData);
+    outfiles = Write_Paraview(PVData, filename, PointsData=PointsData, pvd=pvd, time=time);
     return outfiles
 end
 
@@ -137,10 +144,48 @@ end
 
 Writes a `CartData` structure to paraview. 
 """
-function Write_Paraview(DataSet::CartData, filename::Any; PointsData=false) 
+function Write_Paraview(DataSet::CartData, filename::Any; PointsData=false, pvd=nothing, time=nothing) 
     
     PVData = ParaviewData(DataSet.x.val, DataSet.y.val, DataSet.z.val, DataSet.fields)
 
-    outfiles = Write_Paraview(PVData, filename, PointsData=PointsData);
+    outfiles = Write_Paraview(PVData, filename, PointsData=PointsData, pvd=pvd, time=time);
     return outfiles
 end
+
+
+
+"""
+    pvd = Movie_Paraview(; name="Movie", pvd=pvd, Finalize::Bool=false, Initialize::Bool=true)
+
+If you want to make a movie of your data set, you can use this routine to initialize and to finalize the movie-file.
+It will create a `*.pvd` file, which you can open in Paraview 
+
+Individual timesteps are added to the movie by passing `pvd` and the time of the timestep to the `Write_Paraview` routine.
+
+Example
+=======
+
+Usually this is used inside a `*.jl` script, as in this pseudo-example:
+```julia
+movie = Movie_Paraview(name="Movie", Initialize=true)
+for itime=1:10
+    name = "test"*string(itime)
+    movie = Write_Paraview(Data, name, pvd=movie, time=itime)
+end
+Movie_Paraview(pvd=movie, Finalize=true)
+```
+"""
+function Movie_Paraview(; name="Movie", pvd=nothing, Finalize::Bool=false, Initialize::Bool=true)
+
+    if Initialize
+        pvd = paraview_collection(name) 
+    end
+    if Finalize
+        vtk_save(pvd)
+    end
+    
+    return pvd
+end
+
+    
+   
