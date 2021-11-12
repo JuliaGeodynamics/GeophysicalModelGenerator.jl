@@ -13,7 +13,9 @@ The routines provided here have the following functionality:
 ```@docs
 GeophysicalModelGenerator.ReadLaMEM_InputFile
 GeophysicalModelGenerator.GetProcessorPartitioning
-GeophysicalModelGenerator.LaMEM_grid
+GeophysicalModelGenerator.Save_LaMEMTopography
+GeophysicalModelGenerator.Save_LaMEMMarkersParallel
+GeophysicalModelGenerator.ReadData_PVTR
 GeophysicalModelGenerator.AddBox!
 GeophysicalModelGenerator.ConstantTemp
 GeophysicalModelGenerator.LinearTemp
@@ -21,6 +23,5 @@ GeophysicalModelGenerator.HalfspaceCoolingTemp
 GeophysicalModelGenerator.SpreadingRateTemp
 GeophysicalModelGenerator.ConstantPhase
 GeophysicalModelGenerator.LithosphericPhases
-GeophysicalModelGenerator.Save_LaMEMMarkersParallel
-GeophysicalModelGenerator.ReadData_PVTR
+GeophysicalModelGenerator.LaMEM_grid
 ```
