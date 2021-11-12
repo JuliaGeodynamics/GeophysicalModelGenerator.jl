@@ -177,11 +177,12 @@ Movie_Paraview(pvd=movie, Finalize=true)
 """
 function Movie_Paraview(; name="Movie", pvd=nothing, Finalize::Bool=false, Initialize::Bool=true)
 
-    if Initialize
+    if (Initialize) & !(Finalize)
         pvd = paraview_collection(name) 
     end
     if Finalize
         vtk_save(pvd)
+        println("Saved PVD file")
     end
     
     return pvd
