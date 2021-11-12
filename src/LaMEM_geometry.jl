@@ -155,7 +155,7 @@ julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
 ```
 """
 function AddSphere!(Phase, Temp, Grid::LaMEM_grid;      # required input
-    cen=Tuple{3}, radius=Tuple{1},                         # center and radius of the sphere
+    cen=Tuple{3}, radius=Tuple{1},                      # center and radius of the sphere
     phase = ConstantPhase(1),                           # Sets the phase number(s) in the sphere
     T=nothing )                                         # Sets the thermal structure (various fucntions are available)
           
@@ -221,7 +221,7 @@ julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
 function AddEllipsoid!(Phase, Temp, Grid::LaMEM_grid;      # required input
     cen=Tuple{3}, axes=Tuple{3},                           # center and semi-axes of the ellpsoid
     Origin=nothing, StrikeAngle=0, DipAngle=0,             # origin & dip/strike
-    phase = ConstantPhase(1),                              # Sets the phase number(s) in the box
+    phase = ConstantPhase(1),                              # Sets the phase number(s) in the ellipsoid
     T=nothing )                                            # Sets the thermal structure (various fucntions are available)
 
     if Origin==nothing 
@@ -298,8 +298,8 @@ julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
 ```
 """
 function AddCylinder!(Phase, Temp, Grid::LaMEM_grid;    # required input
-    base=Tuple{3}, cap=Tuple{3}, radius=Tuple{1},       # center and radius of the sphere
-    phase = ConstantPhase(1),                           # Sets the phase number(s) in the sphere
+    base=Tuple{3}, cap=Tuple{3}, radius=Tuple{1},       # base, cap and radius of the cylinder
+    phase = ConstantPhase(1),                           # Sets the phase number(s) in the cylinder
     T=nothing )                                         # Sets the thermal structure (various fucntions are available)
     
     # axis vector of cylinder
