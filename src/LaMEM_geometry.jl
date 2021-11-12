@@ -8,7 +8,7 @@ using SpecialFunctions: erfc
 # These are routines that help to create LaMEM input geometries, such as slabs with a given angle
 #
 
-export  AddBox!, 
+export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!,
         ConstantTemp, LinearTemp, HalfspaceCoolingTemp, SpreadingRateTemp,
         ConstantPhase, LithosphericPhases
 
@@ -110,6 +110,98 @@ function AddBox!(Phase, Temp, Grid::LaMEM_grid;                 # required input
     # Set the phase. Different routines are available for that - see below.
     Phase[ind] = Compute_Phase(Phase[ind], Temp[ind], Xrot[ind], Yrot[ind], Zrot[ind], phase)
     
+    return nothing
+end
+
+function AddSphere!(Phase, Temp, Grid::LaMEM_grid;      # required input
+    cen=Tuple{3}, radius=Tuple{1},                         # center and radius of the sphere
+    phase = ConstantPhase(1),                           # Sets the phase number(s) in the sphere
+    T=nothing )                                         # Sets the thermal structure (various fucntions are available)
+          
+    # Set phase number & thermal structure in the full domain
+    ind = findall(((Grid.X .- cen[1]).^2 + (Grid.Y .- cen[2]).^2 + (Grid.Z .- cen[3]).^2).^0.5 .< radius)
+
+    # Compute thermal structure accordingly. See routines below for different options
+    if T != nothing
+        Temp[ind] = Compute_ThermalStructure(Temp[ind], Grid.X[ind], Grid.Y[ind], Grid.Z[ind], T)
+    end
+
+    # Set the phase. Different routines are available for that - see below.
+    Phase[ind] = Compute_Phase(Phase[ind], Temp[ind], Grid.X[ind], Grid.Y[ind], Grid.Z[ind], phase)
+
+    return nothing
+end
+
+function AddEllipsoid!(Phase, Temp, Grid::LaMEM_grid;      # required input
+    cen=Tuple{3}, axes=Tuple{3}, zlim=Tuple{2},           # center and semi-axes of the ellpsoid
+    Origin=nothing, StrikeAngle=0, DipAngle=0,             # origin & dip/strike
+    phase = ConstantPhase(1),                              # Sets the phase number(s) in the box
+    T=nothing )                                            # Sets the thermal structure (various fucntions are available)
+
+    if Origin==nothing 
+        Origin = cen  # center
+    end
+
+    # Perform rotation of 3D coordinates:
+    Xrot = Grid.X .- Origin[1];
+    Yrot = Grid.Y .- Origin[2];
+    Zrot = Grid.Z .- Origin[3];
+
+    Rot3D!(Xrot,Yrot,Zrot, StrikeAngle, DipAngle)
+
+
+    # Set phase number & thermal structure in the full domain
+    x2     = axes[1]^2
+    y2     = axes[2]^2
+    z2     = axes[3]^2
+    cenRot = cen .- Origin
+    ind = findall((((Xrot .- cenRot[1]).^2)./x2 + ((Yrot .- cenRot[2]).^2)./y2 +
+                   ((Zrot .- cenRot[3]).^2)./z2) .^0.5 .<= 1)
+
+    # Compute thermal structure accordingly. See routines below for different options
+    if T != nothing
+        Temp[ind] = Compute_ThermalStructure(Temp[ind], Xrot[ind], Yrot[ind], Zrot[ind], T)
+    end
+
+    # Set the phase. Different routines are available for that - see below.
+    Phase[ind] = Compute_Phase(Phase[ind], Temp[ind], Xrot[ind], Yrot[ind], Zrot[ind], phase)
+
+    return nothing
+end
+
+function AddCylinder!(Phase, Temp, Grid::LaMEM_grid;    # required input
+    base=Tuple{3}, cap=Tuple{3}, radius=Tuple{1},       # center and radius of the sphere
+    phase = ConstantPhase(1),                           # Sets the phase number(s) in the sphere
+    T=nothing )                                         # Sets the thermal structure (various fucntions are available)
+    
+    # axis vector of cylinder
+    axVec = cap .- base
+    ax2   = (axVec[1]^2 + axVec[2]^2 + axVec[3]^2)
+
+    # distance between grid points and cylinder base
+    dx_b  = Grid.X .- base[1]
+    dy_b  = Grid.Y .- base[2]
+    dz_b  = Grid.Z .- base[3]
+
+    # find normalized parametric coordinate of a point-axis projection
+    t     = (axVec[1] .* dx_b .+ axVec[2] .* dy_b .+ axVec[3] .* dz_b) ./ ax2
+
+    # find distance vector between point and axis
+    dx    = dx_b .- t.*axVec[1]
+    dy    = dy_b .- t.*axVec[2]
+    dz    = dz_b .- t.*axVec[3]
+
+    # Set phase number & thermal structure in the full domain
+    ind = findall((t .>= 0.0) .& (t .<= 1.0) .& ((dx.^2 + dy.^2 + dz.^2).^0.5 .<= radius))
+
+    # Compute thermal structure accordingly. See routines below for different options
+    if T != nothing
+        Temp[ind] = Compute_ThermalStructure(Temp[ind], Grid.X[ind], Grid.Y[ind], Grid.Z[ind], T)
+    end
+
+    # Set the phase. Different routines are available for that - see below.
+    Phase[ind] = Compute_Phase(Phase[ind], Temp[ind], Grid.X[ind], Grid.Y[ind], Grid.Z[ind], phase)
+
     return nothing
 end
 
