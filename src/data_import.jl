@@ -158,16 +158,17 @@ end
 
 
 """
-    Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing)
+    Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, Cartesian=false, UTM=false, UTMzone, isnorth=true)
 
-Take a screenshot of Georeferenced image (either a `lat/lon` map at a given depth or a profile) and converts it to a GeoData struct, which can be saved to Paraview
+Take a screenshot of Georeferenced image either a `lat/lon`, `x,y` (if `Cartesian=true`) or in UTM coordinates (if `UTM=true`) at a given depth or along profile and converts it to a `GeoData`, `CartData` or `UTMData` struct, which can be saved to Paraview
 
-The lower left and upper right coordinates of the image need to be specified in tuples of `(lon,lat,depth)`, where `depth` is negative in the Earth.
+The lower left and upper right coordinates of the image need to be specified in tuples of `(lon,lat,depth)` or `(UTM_ew, UTM_ns, depth)`, where `depth` is negative in the Earth (and in km).
 
 The lower right and upper left corners can be specified optionally (to take non-orthogonal images into account). If they are not specified, the image is considered orthogonal and the corners are computed from the other two.
 
+*Note*: if your data is in `UTM` coordinates you also need to provide the `UTMzone` and whether we are on the northern hemisphere or not (`isnorth`).
 """
-function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, Cart_Data_Type=false)
+function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, Cartesian=false, UTM=false, UTMzone=nothing, isnorth=true)
 
     img         =   load(filename)      # load image
 
@@ -192,14 +193,31 @@ function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperR
     end
 
     # Print overview of the 4 corners here:
-    if Cart_Data_Type
-        println("Extracting ParaviewData from: $(filename)")
+    if Cartesian
+        println("Extracting CartData from: $(filename)")
         println("           └ Corners:         x         y         z")
         println("              └ lower left  = ($(rpad( Corner_LowerLeft[1],7)), $(rpad( Corner_LowerLeft[2],7)),  $(rpad( Corner_LowerLeft[3],7)))")
         println("              └ lower right = ($(rpad(Corner_LowerRight[1],7)), $(rpad(Corner_LowerRight[2],7)),  $(rpad(Corner_LowerRight[3],7)))")
         println("              └ upper left  = ($(rpad( Corner_UpperLeft[1],7)), $(rpad( Corner_UpperLeft[2],7)),  $(rpad( Corner_UpperLeft[3],7)))")
         println("              └ upper right = ($(rpad(Corner_UpperRight[1],7)), $(rpad(Corner_UpperRight[2],7)),  $(rpad(Corner_UpperRight[3],7)))")
-    else
+    end
+    if UTM
+        if isnothing(UTMzone)
+            error("You need to specify UTMzone and isnorth if reading in UTM data.")
+        end
+        println("Extracting UTMData from: $(filename)")
+        if isnorth
+        println("       UTM Zone $(UTMzone) Northern Hemisphere")
+        else
+        println("       UTM Zone $(UTMzone) Southern Hemisphere")
+        end
+        println("           └ Corners:         E-W (x)  | N-S (y) | depth (z)")
+        println("              └ lower left  = ($(rpad( Corner_LowerLeft[1],7)), $(rpad( Corner_LowerLeft[2],7)),  $(rpad( Corner_LowerLeft[3],7)))")
+        println("              └ lower right = ($(rpad(Corner_LowerRight[1],7)), $(rpad(Corner_LowerRight[2],7)),  $(rpad(Corner_LowerRight[3],7)))")
+        println("              └ upper left  = ($(rpad( Corner_UpperLeft[1],7)), $(rpad( Corner_UpperLeft[2],7)),  $(rpad( Corner_UpperLeft[3],7)))")
+        println("              └ upper right = ($(rpad(Corner_UpperRight[1],7)), $(rpad(Corner_UpperRight[2],7)),  $(rpad(Corner_UpperRight[3],7)))")
+    end
+    if (!Cartesian) && (!UTM)
         println("Extracting GeoData from: $(filename)")
         println("           └ Corners:         lon       lat       depth")
         println("              └ lower left  = ($(rpad( Corner_LowerLeft[1],7)), $(rpad( Corner_LowerLeft[2],7)),  $(rpad( Corner_LowerLeft[3],7)))")
@@ -235,10 +253,10 @@ function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperR
     interp_linear_depth     =   LinearInterpolation((xs, zs), Corners_depth)    # create interpolation object
 
     # Interpolate
-    Lon_int,Lat_int,Depth   =   LonLatDepthGrid(1:grid_size[1],1:grid_size[2],0)
-    Lon                     =   interp_linear_lon.(Lon_int,Lat_int);
-    Lat                     =   interp_linear_lat.(Lon_int,Lat_int);
-    Depth                   =   interp_linear_depth.(Lon_int,Lat_int);
+    X_int,Y_int,Depth       =   XYZGrid(1:grid_size[1],1:grid_size[2],0)
+    X                       =   interp_linear_lon.(X_int,   Y_int);
+    Y                       =   interp_linear_lat.(X_int,   Y_int);
+    Depth                   =   interp_linear_depth.(X_int, Y_int);
 
     # Transfer to 3D arrays (check if needed or not; if yes, redo error message in struct routin)
     red                     =   zeros(size(Depth)); red[:,:,1]   = r;
@@ -246,10 +264,14 @@ function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperR
     blue                    =   zeros(size(Depth)); blue[:,:,1]  = b;
 
     # Create GeoData structure - NOTE: RGB data must be 2D matrixes, not 3D!
-    if Cart_Data_Type==true
-        data_Image              =   ParaviewData(Lon, Lat, Depth,(colors=(red,green,blue),))
-    else
-        data_Image              =   GeoData(Lon, Lat, Depth, (colors=(red,green,blue),))
+    if Cartesian
+        data_Image              =   CartData(X, Y, Depth,(colors=(red,green,blue),))
+    end
+    if UTM
+        data_Image              =   UTMData(X, Y, Depth, UTMzone, isnorth, (colors=(red,green,blue),))
+    end
+    if (!Cartesian) && (!UTM)
+        data_Image              =   GeoData(X, Y, Depth, (colors=(red,green,blue),))
     end
     return data_Image
 end
