@@ -23,7 +23,6 @@ Save_LaMEMMarkersParallel(Model3D, verbose=false)
 # Save parallel output
 Save_LaMEMMarkersParallel(Model3D, PartitioningFile=PartitioningFile, verbose=false)
 
-
 # Test creating model setups
 Grid        =   ReadLaMEM_InputFile("test_files/Subduction2D_FreeSlip_Particles_Linear_DirectSolver.dat")
 Phases      =   zeros(Int32,   size(Grid.X));
