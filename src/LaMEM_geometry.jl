@@ -113,6 +113,47 @@ function AddBox!(Phase, Temp, Grid::LaMEM_grid;                 # required input
     return nothing
 end
 
+"""
+    AddSphere!(Phase, Temp, Grid::LaMEM_grid; cen=Tuple{3}, radius=Tuple{1},
+            phase = ConstantPhase(1).
+            T=nothing )
+
+Adds a sphere with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
+
+
+Parameters
+====
+- Phase - Phase array (consistent with Grid)
+- Temp  - Temperature array (consistent with Grid)
+- Grid - LaMEM grid structure (usually obtained with ReadLaMEM_InputFile)
+- cen - center coordinates of sphere
+- radius - radius of sphere
+- phase - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()` 
+- T - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()` 
+
+
+Example
+========
+
+Sphere with constant phase and temperature:
+```julia 
+julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
+LaMEM Grid: 
+  nel         : (32, 32, 32)
+  marker/cell : (3, 3, 3)
+  markers     : (96, 96, 96)
+  x           ϵ [-3.0 : 3.0]
+  y           ϵ [-2.0 : 2.0]
+  z           ϵ [-2.0 : 0.0]
+julia> Phases = zeros(Int32,   size(Grid.X));
+julia> Temp   = zeros(Float64, size(Grid.X));
+julia> AddSphere!(Phases,Temp,Grid, cen=(0,0,-1), radius=0.5, phase=ConstantPhase(2), T=ConstantTemp(800))
+julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
+julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview 
+1-element Vector{String}:
+ "LaMEM_ModelSetup.vts"   
+```
+"""
 function AddSphere!(Phase, Temp, Grid::LaMEM_grid;      # required input
     cen=Tuple{3}, radius=Tuple{1},                         # center and radius of the sphere
     phase = ConstantPhase(1),                           # Sets the phase number(s) in the sphere
@@ -132,8 +173,53 @@ function AddSphere!(Phase, Temp, Grid::LaMEM_grid;      # required input
     return nothing
 end
 
+"""
+    AddEllipsoid!(Phase, Temp, Grid::LaMEM_grid; cen=Tuple{3}, axes=Tuple{3},
+            Origin=nothing, StrikeAngle=0, DipAngle=0,
+            phase = ConstantPhase(1).
+            T=nothing )
+
+Adds an Ellipsoid with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
+
+
+Parameters
+====
+- Phase - Phase array (consistent with Grid)
+- Temp  - Temperature array (consistent with Grid)
+- Grid - LaMEM grid structure (usually obtained with ReadLaMEM_InputFile)
+- cen - center coordinates of sphere
+- axes - semi-axes of ellipsoid in X,Y,Z
+- Origin - the origin, used to rotate the box around. Default is the left-front-top corner
+- StrikeAngle - strike angle of slab
+- DipAngle - dip angle of slab
+- phase - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()` 
+- T - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()` 
+
+
+Example
+========
+
+Ellipsoid with constant phase and temperature, rotated 90 degrees and tilted by 45 degrees:
+```julia 
+julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
+LaMEM Grid: 
+  nel         : (32, 32, 32)
+  marker/cell : (3, 3, 3)
+  markers     : (96, 96, 96)
+  x           ϵ [-3.0 : 3.0]
+  y           ϵ [-2.0 : 2.0]
+  z           ϵ [-2.0 : 0.0]
+julia> Phases = zeros(Int32,   size(Grid.X));
+julia> Temp   = zeros(Float64, size(Grid.X));
+julia> AddEllipsoid!(Phases,Temp,Grid, cen=(-1,-1,-1), axes=(0.2,0.1,0.5), StrikeAngle=90, DipAngle=45, phase=ConstantPhase(3), T=ConstantTemp(600))
+julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
+julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview 
+1-element Vector{String}:
+ "LaMEM_ModelSetup.vts"   
+```
+"""
 function AddEllipsoid!(Phase, Temp, Grid::LaMEM_grid;      # required input
-    cen=Tuple{3}, axes=Tuple{3}, zlim=Tuple{2},           # center and semi-axes of the ellpsoid
+    cen=Tuple{3}, axes=Tuple{3},                           # center and semi-axes of the ellpsoid
     Origin=nothing, StrikeAngle=0, DipAngle=0,             # origin & dip/strike
     phase = ConstantPhase(1),                              # Sets the phase number(s) in the box
     T=nothing )                                            # Sets the thermal structure (various fucntions are available)
@@ -169,6 +255,48 @@ function AddEllipsoid!(Phase, Temp, Grid::LaMEM_grid;      # required input
     return nothing
 end
 
+"""
+    AddCylinder!(Phase, Temp, Grid::LaMEM_grid; base=Tuple{3}, cap=Tuple{3}, radius=Tuple{1},
+            phase = ConstantPhase(1).
+            T=nothing )
+
+Adds a cylinder with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
+
+
+Parameters
+====
+- Phase - Phase array (consistent with Grid)
+- Temp  - Temperature array (consistent with Grid)
+- Grid - LaMEM grid structure (usually obtained with ReadLaMEM_InputFile)
+- base - center coordinate of bottom of cylinder
+- cap - center coordinate of top of cylinder
+- radius - radius of the cylinder
+- phase - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()` 
+- T - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()` 
+
+
+Example
+========
+
+Cylinder with constant phase and temperature:
+```julia 
+julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
+LaMEM Grid: 
+  nel         : (32, 32, 32)
+  marker/cell : (3, 3, 3)
+  markers     : (96, 96, 96)
+  x           ϵ [-3.0 : 3.0]
+  y           ϵ [-2.0 : 2.0]
+  z           ϵ [-2.0 : 0.0]
+julia> Phases = zeros(Int32,   size(Grid.X));
+julia> Temp   = zeros(Float64, size(Grid.X));
+julia> AddCylinder!(Phases,Temp,Grid, base=(-1,-1,-1.5), cap=(1,1,-0.5), radius=0.25, phase=ConstantPhase(4), T=ConstantTemp(400))
+julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
+julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview 
+1-element Vector{String}:
+ "LaMEM_ModelSetup.vts"   
+```
+"""
 function AddCylinder!(Phase, Temp, Grid::LaMEM_grid;    # required input
     base=Tuple{3}, cap=Tuple{3}, radius=Tuple{1},       # center and radius of the sphere
     phase = ConstantPhase(1),                           # Sets the phase number(s) in the sphere
@@ -248,7 +376,7 @@ end
 
 
 """
-    Linear(Ttop=0, Tbot=1000)
+    LinearTemp(Ttop=0, Tbot=1000)
     
 Set a linear temperature structure from top to bottom
 

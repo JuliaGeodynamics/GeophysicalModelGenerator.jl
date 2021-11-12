@@ -15,6 +15,9 @@ GeophysicalModelGenerator.ReadLaMEM_InputFile
 GeophysicalModelGenerator.GetProcessorPartitioning
 GeophysicalModelGenerator.LaMEM_grid
 GeophysicalModelGenerator.AddBox!
+GeophysicalModelGenerator.AddSphere!
+GeophysicalModelGenerator.AddEllipsoid!
+GeophysicalModelGenerator.AddCylinder!
 GeophysicalModelGenerator.ConstantTemp
 GeophysicalModelGenerator.LinearTemp
 GeophysicalModelGenerator.HalfspaceCoolingTemp
