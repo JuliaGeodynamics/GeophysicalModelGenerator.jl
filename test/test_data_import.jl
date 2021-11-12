@@ -36,7 +36,7 @@ data_Image          =   Screenshot_To_GeoData(filename,Corner_LowerLeft, Corner_
 @test data_Image.lon[1000]==17.592964824120603
 @test data_Image.lat[1000]==50.59296482412061
 @test data_Image.depth[1000]==-590km
-@test Write_Paraview(data_Image, "Profile_1")[1]=="Profile_1.vts"
+@test Write_Paraview(data_Image, "Profile_1")==nothing
 
 # Mapview (distorted)
 filename            =   "test.png";             # fake png
