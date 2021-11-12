@@ -17,6 +17,9 @@ GeophysicalModelGenerator.Save_LaMEMTopography
 GeophysicalModelGenerator.Save_LaMEMMarkersParallel
 GeophysicalModelGenerator.ReadData_PVTR
 GeophysicalModelGenerator.AddBox!
+GeophysicalModelGenerator.AddSphere!
+GeophysicalModelGenerator.AddEllipsoid!
+GeophysicalModelGenerator.AddCylinder!
 GeophysicalModelGenerator.ConstantTemp
 GeophysicalModelGenerator.LinearTemp
 GeophysicalModelGenerator.HalfspaceCoolingTemp
