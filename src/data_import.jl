@@ -4,7 +4,7 @@
 #
 # Author: Marcel Thielmann, 05/2021
 
-export Screenshot_To_GeoData, Screenshot_To_ParaviewData
+export Screenshot_To_GeoData, Screenshot_To_CartData, Screenshot_To_UTMData
 
 # import CSV data using standard library functions
 # here we assume that the data is indeed comma separated and that comments are preceded with a "#"
@@ -278,16 +278,32 @@ end
 
 
 """
-    Data = Screenshot_To_ParaviewData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing)
+    Data = Screenshot_To_CartData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing)
 
-Does the same as `Screenshot_To_GeoData`, but returns a Cartesian data structure
+Does the same as `Screenshot_To_GeoData`, but returns a `CartData` structure
 """
-function Screenshot_To_ParaviewData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing)
+function Screenshot_To_CartData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing)
     
 
     # first create a GeoData struct
-    Data_Cart = Screenshot_To_GeoData(filename, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, Cart_Data_Type=true)
+    Data_Cart = Screenshot_To_GeoData(filename, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, Cartesian=true)
 
     return Data_Cart
 
 end
+
+"""
+    Data = Screenshot_To_UTMData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, UTMzone::Int64=nothing, isnorth::Bool=true)
+
+Does the same as `Screenshot_To_GeoData`, but returns for UTM data 
+Note that you have to specify the `UTMzone` and `isnorth`
+"""
+function Screenshot_To_UTMData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, UTMzone::Int64=nothing, isnorth::Bool=true)
+
+      # first create a GeoData struct
+      Data_UTM = Screenshot_To_GeoData(filename, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, Cartesian=false, UTM=true, UTMzone=UTMzone, isnorth=isnorth)
+
+      return Data_UTM
+
+end
+
