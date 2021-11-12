@@ -48,7 +48,7 @@ data_Image          =   Screenshot_To_GeoData(filename,Corner_LowerLeft, Corner_
 @test data_Image.lon[1000]==2.814070351758794
 @test data_Image.lat[1000]==40.00000000000001
 @test data_Image.depth[1000]==-15km
-@test Write_Paraview(data_Image, "MapView_1")[1] == "MapView_1.vts"
+@test Write_Paraview(data_Image, "MapView_1") == nothing
 
 
 
