@@ -7,7 +7,8 @@ using Printf
 # We also include routines with which we can read LaMEM *.pvtr files into julia 
 
 export LaMEM_grid, ReadLaMEM_InputFile
-export Save_LaMEMMarkersParallel, GetProcessorPartitioning, ReadData_VTR, ReadData_PVTR
+export Save_LaMEMMarkersParallel, Save_LaMEMTopography
+export GetProcessorPartitioning, ReadData_VTR, ReadData_PVTR
 
 """
 Structure that holds information about the LaMEM grid (usually read from an input file).
@@ -50,6 +51,12 @@ Creates a `ParaviewData` struct from a LaMEM grid and from fields stored on that
 """
 ParaviewData(Grid::LaMEM_grid, fields::NamedTuple) = ParaviewData(Grid.X, Grid.Y, Grid.Z, fields)
 
+""" 
+    CartData(Grid::LaMEM_grid, fields::NamedTuple)
+
+Creates a `CartData` struct from a LaMEM grid and from fields stored on that grid. Note that one needs to have a field `Phases` and optionally a field `Temp` to create LaMEM marker files.
+"""
+CartData(Grid::LaMEM_grid, fields::NamedTuple) = CartData(Grid.X, Grid.Y, Grid.Z, fields)
 
 """
     value = ParseValue_LaMEM_InputFile(file,keyword,type)
@@ -716,4 +723,35 @@ function  ReadData_PVTR(fname, dir)
     DataC       =   ParaviewData(X,Y,Z, fields);
 
     return DataC
+end
+
+"""
+    Save_LaMEMTopography(Topo::CartData, filename::String)
+
+This writes a topography file `Topo` for use in LaMEM, which should have size `(nx,ny,1)` and contain the field `:Topography` 
+"""
+function Save_LaMEMTopography(Topo::CartData, filename::String)
+
+    if (size(Topo.z.val,3) != 1)
+        error("Not a valid `CartData' Topography file (size in 3rd dimension should be 1)")
+    end
+    if !haskey(Topo.fields,:Topography)
+        error("The topography `CartData` structure requires a field :Topography")
+    end
+
+    # Code the topograhic data into a vector
+    nx = Float64(size(Topo.fields.Topography,1));
+    ny = Float64(size(Topo.fields.Topography,2));
+    x0 = ustrip(Topo.x.val[1,1,1])
+    y0 = ustrip(Topo.y.val[1,1,1])
+    dx = ustrip(Topo.x.val[2,2,1]) - x0
+    dy = ustrip(Topo.y.val[2,2,1]) - y0
+    Topo_vec = [ nx;ny;x0;y0;dx;dy; Topo.fields.Topography[:]]
+
+    # Write as PetscBinary file
+    PetscBinaryWrite_Vec(filename, Topo_vec)
+
+    println("Written LaMEM topography file: $(filename)")
+
+    return nothing
 end
