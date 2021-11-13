@@ -64,13 +64,13 @@ data_Image          =   Screenshot_To_GeoData(filename,Corner_LowerLeft, Corner_
 @test Write_Paraview(data_Image, "MapView_1") == nothing
 
 # MapView in CartData
-data_Image          =   Screenshot_To_GeoData(filename,Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, Cartesian=true)
+data_Image          =   Screenshot_To_CartData(filename,Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft)
 @test data_Image.x.val[22] ≈ 0.42424242424242425km
 @test data_Image.y.val[22] ≈ 48.666666666666664km
 @test data_Image.z.val[22] ≈ -15km
 
 # MapView in UTMData
-data_Image          =   Screenshot_To_GeoData(filename,Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, UTM=true, UTMzone=33, isnorth=true)
+data_Image          =   Screenshot_To_UTMData(filename,Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, UTMzone=33, isnorth=true)
 @test data_Image.EW.val[22] ≈ 0.42424242424242425
 @test data_Image.NS.val[22] ≈ 48.666666666666664
 @test data_Image.depth.val[22] ≈ -15.0m

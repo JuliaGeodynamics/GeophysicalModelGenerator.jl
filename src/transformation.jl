@@ -8,6 +8,7 @@ export ProjectCartData
     d_cart = ProjectCartData(d_cart::CartData, d::GeoData, p::ProjectionPoint)
 
 Projects all datafields from the GeoData struct `d` to the CartData struct `d_cart`, around the projection point `p`.
+`d_cart` *must* be an orthogonal cartesian grid (deformed doesn't work; use `Convert2CartData(d, proj)`, where `proj` is a projection point in that case).
 
 # Note:    
 - If `d_cart` and `d` are horizontal surfaces (3rd dimension has size==1), it also interpolates the depth coordinate.    

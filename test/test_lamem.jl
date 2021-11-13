@@ -23,7 +23,6 @@ Save_LaMEMMarkersParallel(Model3D, verbose=false)
 # Save parallel output
 Save_LaMEMMarkersParallel(Model3D, PartitioningFile=PartitioningFile, verbose=false)
 
-
 # Test creating model setups
 Grid        =   ReadLaMEM_InputFile("test_files/Subduction2D_FreeSlip_Particles_Linear_DirectSolver.dat")
 Phases      =   zeros(Int32,   size(Grid.X));
@@ -58,4 +57,33 @@ Model3D     =   ParaviewData(Grid, (Phases=Phases,Temp=Temp));
 Write_Paraview(Model3D,"LaMEM_ModelSetup")                  # Save model to paraview    
 
 
+# Test writing a LaMEM topography file
+X,Y,Z = XYZGrid(-20:20,-10:10,0);
+Z = cos.(2*pi.*X./5).*cos.(2*pi.*Y./10)
 
+Topo = CartData(X,Y,Z,(Topography=Z,))
+@test Save_LaMEMTopography(Topo, "test_topo.dat")==nothing
+rm("test_topo.dat")
+
+
+# Test adding geometric primitives
+Grid    = ReadLaMEM_InputFile("test_files/GeometricPrimitives.dat")
+Phases  = zeros(Int32,size(Grid.X));
+Temp    = zeros(Float64,size(Grid.X));
+AddSphere!(Phases,Temp,Grid, cen=(0,0,-6), radius=2, phase=ConstantPhase(1), T=ConstantTemp(800))
+@test Phases[55,55,55] == 1
+@test Phases[56,56,56] == 0
+@test Temp[44,52,21]   == 800.0
+@test Temp[44,52,20]   == 0.0
+
+AddEllipsoid!(Phases,Temp,Grid, cen=(-2,-1,-7), axes=(1,2,3), StrikeAngle=90, DipAngle=45, phase=ConstantPhase(2), T=ConstantTemp(600))
+@test Phases[11,37,28] == 2
+@test Phases[10,37,28] == 0
+@test Temp[31,58,18]   == 600.0
+@test Temp[31,59,18]   == 0.0
+
+AddCylinder!(Phases,Temp,Grid, base=(0,0,-5), cap=(3,3,-2), radius=1.5, phase=ConstantPhase(3), T=ConstantTemp(400))
+@test Phases[55,65,75] == 3
+@test Phases[54,65,75] == 0
+@test Temp[55,46,45]   == 400.0
+@test Temp[55,45,45]   == 800.0

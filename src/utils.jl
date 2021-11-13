@@ -652,12 +652,34 @@ function AboveSurface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData; a
 end
 
 """
+    Above = AboveSurface(Data_Cart::CartData, DataSurface_Cart::CartData; above=true)
+
+Determines if points within the 3D `Data_Cart` structure are above the Cartesian surface `DataSurface_Cart`
+"""
+function AboveSurface(Data_Cart::CartData, DataSurface_Cart::CartData; above=true)
+
+    Data            =   GeoData(ustrip.(Data_Cart.x.val),       ustrip.(Data_Cart.y.val),        ustrip.(Data_Cart.z.val), Data_Cart.fields)
+    DataSurface     =   GeoData(ustrip.(DataSurface_Cart.x.val),ustrip.(DataSurface_Cart.y.val), ustrip.(DataSurface_Cart.z.val), DataSurface_Cart.fields )
+
+    return Above    =   AboveSurface(Data, DataSurface; above=above)
+end
+
+"""
     Below = BelowSurface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData)
 
 Determines if points within the 3D Data_Cart structure are below the Cartesian surface DataSurface_Cart
 """
 function BelowSurface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData)
     return AboveSurface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData; above=false)
+end
+
+"""
+    Below = BelowSurface(Data_Cart::CartData, DataSurface_Cart::CartData)
+
+Determines if points within the 3D Data_Cart structure are below the Cartesian surface DataSurface_Cart
+"""
+function BelowSurface(Data_Cart::CartData, DataSurface_Cart::CartData)
+    return AboveSurface(Data_Cart::CartData, DataSurface_Cart::CartData; above=false)
 end
 
 
