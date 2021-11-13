@@ -59,6 +59,25 @@ Creates a `CartData` struct from a LaMEM grid and from fields stored on that gri
 CartData(Grid::LaMEM_grid, fields::NamedTuple) = CartData(Grid.X, Grid.Y, Grid.Z, fields)
 
 """
+    Below = BelowSurface(Data_LaMEM::LaMEM_grid, DataSurface_Cart::CartData)
+
+Determines if points within the 3D `LaMEM_grid` structure are below the Cartesian surface DataSurface_Cart
+"""
+function BelowSurface(Grid::LaMEM_grid, DataSurface_Cart::CartData)
+    return AboveSurface(CartData(Grid,(Z=Grid.Z,)), DataSurface_Cart; above=false)
+end
+
+"""
+    Above = AboveSurface(Data_LaMEM::LaMEM_grid, DataSurface_Cart::CartData)
+
+Determines if points within the 3D `LaMEM_grid` structure are above the Cartesian surface DataSurface_Cart
+"""
+function AboveSurface(Grid::LaMEM_grid, DataSurface_Cart::CartData)
+    return AboveSurface(CartData(Grid,(Z=Grid.Z,)), DataSurface_Cart; above=true)
+end
+
+
+"""
     value = ParseValue_LaMEM_InputFile(file,keyword,type)
 
 Extracts a certain `keyword` from a LaMEM input `file` and convert it to a certain type 
@@ -179,9 +198,9 @@ function Base.show(io::IO, d::LaMEM_grid)
 end
 
 """
-    Save_LaMEMMarkersParallel(Grid::ParaviewData; PartitioningFile=empty, directory="./markers", verbose=true)
+    Save_LaMEMMarkersParallel(Grid::CartData; PartitioningFile=empty, directory="./markers", verbose=true)
 
-Saves a LaMEM marker file from the ParaviewData structure `Grid`. It must have a field called `Phases`, holding phase information (as integers) and optionally a field `Temp` with temperature info. 
+Saves a LaMEM marker file from the `CartData` structure `Grid`. It must have a field called `Phases`, holding phase information (as integers) and optionally a field `Temp` with temperature info. 
 It is possible to provide a LaMEM partitioning file `PartitioningFile`. If not, output is assumed to be for one processor.
 
 The size of `Grid` should be consistent with what is provided in the LaMEM input file. In practice, the size of the mesh can be retrieved from a LaMEM input file using `ReadLaMEM_InputFile`.
@@ -192,7 +211,7 @@ The size of `Grid` should be consistent with what is provided in the LaMEM input
 julia> Grid    = ReadLaMEM_InputFile("LaMEM_input_file.dat")
 julia> Phases  = zeros(Int32,size(Grid.X));
 julia> Temp    = ones(Float64,size(Grid.X));
-julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp))
+julia> Model3D = CartData(Grid, (Phases=Phases,Temp=Temp))
 julia> Save_LaMEMMarkersParallel(Model3D)
 Writing LaMEM marker file -> ./markers/mdb.00000000.dat
 ```    
@@ -206,20 +225,20 @@ Writing LaMEM marker file -> ./markers/mdb.00000003.dat
 ```
 
 """
-function Save_LaMEMMarkersParallel(Grid::ParaviewData; PartitioningFile=empty, directory="./markers", verbose=true)
+function Save_LaMEMMarkersParallel(Grid::CartData; PartitioningFile=empty, directory="./markers", verbose=true)
 
     x = ustrip.(Grid.x.val[:,1,1]);
     y = ustrip.(Grid.y.val[1,:,1]);
     z = ustrip.(Grid.z.val[1,1,:]);
     
     if haskey(Grid.fields,:Phases)
-        Phases = Grid.fields[:Phases];
+        Phases = Grid.fields[:Phases];  
     else
         error("You must provide the field :Phases in the structure")
     end
     
     if haskey(Grid.fields,:Temp)
-        Temp = Grid.fields[:Temp];
+        Temp = Grid.fields[:Temp];      
     else
         if verbose
             println("Field :Temp is not provided; setting it to zero")
@@ -257,9 +276,9 @@ function Save_LaMEMMarkersParallel(Grid::ParaviewData; PartitioningFile=empty, d
     for n=1:Nproc
         # Extract coordinates for current processor
         
-        part_x   = Grid.x.val[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]];
-        part_y   = Grid.y.val[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]];
-        part_z   = Grid.z.val[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]];
+        part_x   = ustrip.(Grid.x.val[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]]);
+        part_y   = ustrip.(Grid.y.val[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]]);
+        part_z   = ustrip.(Grid.z.val[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]]);
         part_phs = Phases[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]];
         part_T   =   Temp[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]];
         num_particles = size(part_x,1)* size(part_x,2) * size(part_x,3);
@@ -746,7 +765,7 @@ function Save_LaMEMTopography(Topo::CartData, filename::String)
     y0 = ustrip(Topo.y.val[1,1,1])
     dx = ustrip(Topo.x.val[2,2,1]) - x0
     dy = ustrip(Topo.y.val[2,2,1]) - y0
-    Topo_vec = [ nx;ny;x0;y0;dx;dy; Topo.fields.Topography[:]]
+    Topo_vec = [ nx;ny;x0;y0;dx;dy; ustrip.(Topo.fields.Topography[:])]
 
     # Write as PetscBinary file
     PetscBinaryWrite_Vec(filename, Topo_vec)

@@ -8,8 +8,8 @@ Grid        =   ReadLaMEM_InputFile("test_files/SaltModels.dat")
 # Transfer into ParaviewData struct:
 Phases      =   zeros(Int32,   size(Grid.X));
 Temp        =   zeros(Float64, size(Grid.X));
-Model3D     =   ParaviewData(Grid, (Phases=Grid.Z,));
-@test  Model3D.y.val[100]==-1.9375
+Model3D     =   CartData(Grid, (Phases=Grid.Z,));
+@test  Model3D.y.val[100]==-1.9375km
 
 # Read Partitioning file: 
 PartitioningFile = "test_files/ProcessorPartitioning_4cpu_1.2.2.bin"
@@ -53,7 +53,7 @@ Temp        =   ones(Float64, size(Grid.X))*1350;
 AddBox!(Phases,Temp,Grid, xlim=(0,500), zlim=(-500,-20), phase=LithosphericPhases(Layers=[15 15 250], Phases=[1 2 3 0],Tlab=1250), DipAngle=10, T=SpreadingRateTemp(MORside="right", SpreadingVel=3))
 @test sum(Temp) == 1.189394358568891e9
 
-Model3D     =   ParaviewData(Grid, (Phases=Phases,Temp=Temp));
+Model3D     =   CartData(Grid, (Phases=Phases,Temp=Temp));
 Write_Paraview(Model3D,"LaMEM_ModelSetup")                  # Save model to paraview    
 
 
