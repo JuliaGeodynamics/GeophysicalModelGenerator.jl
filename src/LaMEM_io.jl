@@ -765,7 +765,7 @@ function Save_LaMEMTopography(Topo::CartData, filename::String)
     y0 = ustrip(Topo.y.val[1,1,1])
     dx = ustrip(Topo.x.val[2,2,1]) - x0
     dy = ustrip(Topo.y.val[2,2,1]) - y0
-    Topo_vec = [ nx;ny;x0;y0;dx;dy; Topo.fields.Topography[:]]
+    Topo_vec = [ nx;ny;x0;y0;dx;dy; ustrip.(Topo.fields.Topography[:])]
 
     # Write as PetscBinary file
     PetscBinaryWrite_Vec(filename, Topo_vec)
