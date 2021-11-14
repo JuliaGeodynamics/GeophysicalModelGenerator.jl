@@ -416,7 +416,7 @@ function Base.convert(::Type{GeoData}, d::UTMData)
         utmz_i  = UTMZ(d.EW.val[i],d.NS.val[i],Float64(ustrip.(d.depth.val[i])),d.zone[i],d.northern[i])
         lla_i   = LLA(utmz_i,wgs84)
         lon = lla_i.lon;
-        if lon<0; lon = 360+lon; end # as GMT expects this
+       # if lon<0; lon = 360+lon; end # as GMT expects this
 
         Lat[i] = lla_i.lat
         Lon[i] = lon
