@@ -27,11 +27,13 @@ makedocs(;
             "Read UTM data" =>  "man/tutorial_UTM.md",
             "VoteMaps" =>  "man/Tutorial_Votemaps.md",      
             "Kilometer-scale volcano" =>  "man/tutorial_local_Flegrei.md"
+            "Generating LaMEM model" =>  "man/LaPalma_example.md"
         ],
         "User Guide" => Any[
             "Installation" =>  "man/installation.md",
             "Data Structures" =>  "man/datastructures.md",
             "Data Import" =>  "man/dataimport.md",
+            "Projection" =>  "man/projection.md",
             "Paraview output" => "man/paraview_output.md",
             "Tools" => "man/tools.md",
             "Gravity code" => "man/gravity_code.md",

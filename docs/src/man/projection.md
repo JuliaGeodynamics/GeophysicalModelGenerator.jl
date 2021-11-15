@@ -99,8 +99,7 @@ julia> Write_Paraview(Topo_Cart_orth,"Topo_Cart_orth");
 ![Topo_Europe_CartData_Proj](../assets/img/Topo_Europe_CartData_Proj.png)
 So this interpolates the topographic data from the `GeoData` to the orthogonal cartesian grid (which can be used with LaMEM, for example).
 
-You can do similar projections with full 3D data sets.
-
+You can do similar projections with full 3D data sets or pointwise data. 
 
 #### 3. List of functions
 ```@docs
