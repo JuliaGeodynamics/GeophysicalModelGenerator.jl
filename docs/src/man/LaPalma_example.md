@@ -8,14 +8,13 @@ EditURL = "<unknown>/LaPalma_example.jl"
 In this tutorial, your will learn how to use real data to create a geodynamic model setup with LaMEM. We will use the data of La Palma, which is a volcanic island that started erupting in mid september 2021.
 LaMEM is a cartesian geodynamic model, which implies that you will have to transfer the data from `GeoData` to `CartData`.
 
-## Steps
 
-#### 1. Load data
+## 1. Load data
 We will use two types of data to create the model
  1) Topography
  2) Earthquake locations
 
-We start withn loading the required packages
+We start with loading the required packages
 
 ````julia
 using GeophysicalModelGenerator, JLD2
@@ -99,7 +98,7 @@ As earthquakes are point-wise data, you have to specify this.
 ![LaPalma_EQTopo_GeoData](../assets/img/TopoEQs_LaPalma_GeoData.png)
 Note that this data is not in "easy" coordinates (see coordinate axis in the plot, where `z` is *not* pointing upwards).
 
-#### 2. Convert data to cartesian coordinates
+## 2. Convert data
 In order to create model setups, it is helpful to first transfer the data to Cartesian.
 This requires us to first determine a *projection point*, that is fixed. Often, it is helpful to use the center of the topography for this. In the present example, we will center the model around La Palma itself:
 
@@ -166,7 +165,7 @@ Saved file: Topo_LaMEM.vts
 
 ````
 
-#### 3. Create the LaMEM setup
+## 3. Create LaMEM setup
 
 In a next step, we need to read the LaMEM input file of the simulation. In particular, this will read the lateral dimensions of the grid and
 the number of control volumes (elements), you want to apply in every direction.
@@ -232,7 +231,7 @@ Phases[ind] .= 0;
 nothing #hide
 ````
 
-And all "air" points that aree below sea-level becomes "water"
+And all "air" points that are below sea-level becomes "water"
 
 ````julia
 ind = findall( (Phases.==0) .& (Grid.Z .< 0));

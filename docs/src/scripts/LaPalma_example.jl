@@ -10,7 +10,7 @@
 #  1) Topography 
 #  2) Earthquake locations 
 
-# We start withn loading the required packages
+# We start with loading the required packages
 using GeophysicalModelGenerator, JLD2
 using GMT
 
