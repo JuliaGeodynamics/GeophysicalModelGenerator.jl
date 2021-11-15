@@ -103,8 +103,8 @@ You can do similar projections with full 3D data sets or pointwise data.
 
 #### 3. List of functions
 ```@docs
-GeophysicalModelGenerator.Convert2UTMData
-GeophysicalModelGenerator.Convert2CartData
 GeophysicalModelGenerator.ProjectionPoint
+GeophysicalModelGenerator.Convert2CartData
 GeophysicalModelGenerator.ProjectCartData
+GeophysicalModelGenerator.Convert2UTMzone
 ```
