@@ -21,8 +21,8 @@ GeoData
   fields: (:Topography,)
 julia> Write_Paraview(Topo,"Topo")
 Saved file: Topo.vts
-```
-The result is shown on the globe as 
+ ```
+The result is shown on the globe as: 
 ![Topo_Europe_GeoData](../assets/img/Topo_Europe_GeoData.png)
 
 You can convert this to UTM zone as:
@@ -35,7 +35,7 @@ UTMData
     NS     ϵ [ 2.7649477474783654e6 : 5.505892073781423e6]
     depth  ϵ [ -4985.5 m : 3123.0 m]
     fields : (:Topography,)
-```
+ ```
 As the area is large, it covers a range of `UTM` zones (and every point has a UTM zone attached). Within each zone, the coordinates are approximately orthogonal. Plotting this to Paraview does *not* result in a sensible dataset.
 
 Yet, what we could do instead is show all data with respect to a single UTM zone. For this, we have to select a point around which we project (in this case more or less in the center):
@@ -43,7 +43,7 @@ Yet, what we could do instead is show all data with respect to a single UTM zone
 ```julia
 julia> p=ProjectionPoint(Lon=17.3, Lat=37.5)
 ProjectionPoint(37.5, 17.3, 703311.4380385976, 4.152826288024972e6, 33, true)
- ```
+```
 
 Projecting the `GeoData` set using this projection point is done with:
 ```julia
@@ -69,7 +69,7 @@ CartData
     z      ϵ [ -4.9855 km : 3.123 km]
     fields : (:Topography,)
  ```
- This shows that the model is ~5600 by 3000 km.
+This shows that the model is ~5600 by 3000 km.
 ![Topo_Europe_CartData](../assets/img/Topo_Europe_CartData.png)
 
 Whereas this is ok to look at and compare with a LaMEM model setup, we cannot use it to perform internal calculations (or to generate a LaMEM model setup), because the `x` and `y` coordinates are distorted and not orthogonal. 
@@ -107,4 +107,4 @@ GeophysicalModelGenerator.Convert2UTMData
 GeophysicalModelGenerator.Convert2CartData
 GeophysicalModelGenerator.ProjectionPoint
 GeophysicalModelGenerator.ProjectCartData
- ```
+```

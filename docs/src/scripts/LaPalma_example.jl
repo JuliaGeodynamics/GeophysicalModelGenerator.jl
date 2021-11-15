@@ -90,7 +90,7 @@ Phases[ind] .= 3;
 ind     =   AboveSurface(Grid, Topo_cart);           
 Phases[ind] .= 0;
 
-# And all "air" points that aree below sea-level becomes "water"
+# And all "air" points that are below sea-level becomes "water"
 ind = findall( (Phases.==0) .& (Grid.Z .< 0));
 Phases[ind] .= 1;
 
