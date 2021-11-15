@@ -21,7 +21,7 @@ GeoData
   fields: (:Topography,)
 julia> Write_Paraview(Topo,"Topo")
 Saved file: Topo.vts
- ```
+```
 The result is shown on the globe as: 
 ![Topo_Europe_GeoData](../assets/img/Topo_Europe_GeoData.png)
 
@@ -35,7 +35,7 @@ UTMData
     NS     ϵ [ 2.7649477474783654e6 : 5.505892073781423e6]
     depth  ϵ [ -4985.5 m : 3123.0 m]
     fields : (:Topography,)
- ```
+```
 As the area is large, it covers a range of `UTM` zones (and every point has a UTM zone attached). Within each zone, the coordinates are approximately orthogonal. Plotting this to Paraview does *not* result in a sensible dataset.
 
 Yet, what we could do instead is show all data with respect to a single UTM zone. For this, we have to select a point around which we project (in this case more or less in the center):
@@ -55,7 +55,7 @@ UTMData
     NS     ϵ [ 2.7649477474783654e6 : 5.938114212160672e6]
     depth  ϵ [ -4985.5 m : 3123.0 m]
     fields : (:Topography,)
- ```
+```
 Whereas this is now in UTM Data (in meters), it is distorted. 
 ![Topo_Europe_UTMData](../assets/img/Topo_Europe_UTMData.png)
 
@@ -68,7 +68,7 @@ CartData
     y      ϵ [ -1387.8785405466067 km : 1785.2879241356998 km]
     z      ϵ [ -4.9855 km : 3.123 km]
     fields : (:Topography,)
- ```
+```
 This shows that the model is ~5600 by 3000 km.
 ![Topo_Europe_CartData](../assets/img/Topo_Europe_CartData.png)
 
@@ -84,7 +84,7 @@ CartData
     y      ϵ [ -1000.0 km : 1000.0 km]
     z      ϵ [ 0.0 km : 0.0 km]
     fields : (:Z,)
- ```
+```
 Next, we can project the topographic data (in `GeoData` format) on this orthogonal grid
 ```julia
 julia> Topo_Cart_orth  = ProjectCartData(Topo_Cart_orth, Topo, p)
@@ -95,7 +95,7 @@ CartData
     z      ϵ [ -4.485650671162607 km : 2.5909655318121865 km]
     fields : (:Topography,)
 julia> Write_Paraview(Topo_Cart_orth,"Topo_Cart_orth");    
- ```
+```
 ![Topo_Europe_CartData_Proj](../assets/img/Topo_Europe_CartData_Proj.png)
 So this interpolates the topographic data from the `GeoData` to the orthogonal cartesian grid (which can be used with LaMEM, for example).
 
