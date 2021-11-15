@@ -4,9 +4,8 @@
 # In this tutorial, your will learn how to use real data to create a geodynamic model setup with LaMEM. We will use the data of La Palma, which is a volcanic island that started erupting in mid september 2021.
 # LaMEM is a cartesian geodynamic model, which implies that you will have to transfer the data from `GeoData` to `CartData`. 
 #
-# ## Steps
 #
-# #### 1. Load data
+# ## 1. Load data
 # We will use two types of data to create the model
 #  1) Topography 
 #  2) Earthquake locations 
@@ -37,7 +36,7 @@ Write_Paraview(Topo,"Topo")
 # ![LaPalma_EQTopo_GeoData](../assets/img/TopoEQs_LaPalma_GeoData.png)
 # Note that this data is not in "easy" coordinates (see coordinate axis in the plot, where `z` is *not* pointing upwards). 
 
-# #### 2. Convert data to cartesian coordinates
+# ## 2. Convert data 
 # In order to create model setups, it is helpful to first transfer the data to Cartesian.   
 # This requires us to first determine a *projection point*, that is fixed. Often, it is helpful to use the center of the topography for this. In the present example, we will center the model around La Palma itself:
 proj = ProjectionPoint(Lon=-17.84, Lat=28.56)          
@@ -58,7 +57,7 @@ Topo_LaMEM = ProjectCartData(Topo_LaMEM, Topo, proj)
 Write_Paraview(EQ_cart,"EQ_cart",PointsData=true)
 Write_Paraview(Topo_LaMEM,"Topo_LaMEM")
 
-# #### 3. Create the LaMEM setup
+# ## 3. Create LaMEM setup
 #
 # In a next step, we need to read the LaMEM input file of the simulation. In particular, this will read the lateral dimensions of the grid and 
 # the number of control volumes (elements), you want to apply in every direction.
@@ -120,7 +119,6 @@ Save_LaMEMMarkersParallel(Model3D)
 
 # Next, you can use this to run the LaMEM model and visualize the model results in Paraview as well.
 # If you are interested in doing this, have a look at the LaMEM [wiki](https://bitbucket.org/bkaus/lamem/wiki/Home) pages.
-
 
 
 #src Note: The markdown page is generated using:
