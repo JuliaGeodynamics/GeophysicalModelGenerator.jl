@@ -36,11 +36,3 @@ Data_Cart       =   ProjectCartData(Data_Cart, Data_surf, proj)
 @test sum(Data_Cart.z.val) ≈ 1858.2487019158766km
 @test sum(Data_Cart.fields.Z) ≈ 1858.2487019158766
 
-# Cartesian surface for UTM
-WE,SN,depth     =   420000:1000:430000, 4510000:1000:4520000, 0:500:5000;
-Data_surfUTM    =   UTMData(WE, SN, depth, 33, true, (Depth = depth,));
-Data_Cart       =   CartData(X,Y,Z,(Z=Z,))  
-
-Data_Cart       =   ProjectCartData(Data_Cart, Data_surfUTM, proj)
-# @test sum(Data_Cart.z.val) ≈ 1858.2487019158766km
-# @test sum(Data_Cart.fields.Z) ≈ 1858.2487019158766
