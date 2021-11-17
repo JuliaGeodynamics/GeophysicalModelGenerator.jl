@@ -8,7 +8,6 @@ export  GeoData, ParaviewData, UTMData, CartData,
         Convert2UTMzone, Convert2CartData, ProjectionPoint
 
 """
-    ProjectionPoint
     struct ProjectionPoint
         Lon     :: Float64
         Lat     :: Float64
@@ -30,12 +29,11 @@ struct ProjectionPoint
 end
 
 """
-    ProjectionPoint(;Lat=49.9929, Lon=8.2473)
+    ProjectionPoint(; Lat=49.9929, Lon=8.2473)
 
 Defines a projection point used for map projections, by specifying latitude and longitude
-
 """
-function ProjectionPoint(;Lat=49.9929, Lon=8.2473)
+function ProjectionPoint(; Lat=49.9929, Lon=8.2473)
     # Default = Mainz (center of universe)
     x_lla = LLA(Lat, Lon, 0.0);    # Lat/Lon/Alt of geodesy package 
     x_utmz = UTMZ(x_lla, wgs84)    # UTMZ of 
@@ -416,7 +414,7 @@ function Base.convert(::Type{GeoData}, d::UTMData)
         utmz_i  = UTMZ(d.EW.val[i],d.NS.val[i],Float64(ustrip.(d.depth.val[i])),d.zone[i],d.northern[i])
         lla_i   = LLA(utmz_i,wgs84)
         lon = lla_i.lon;
-        if lon<0; lon = 360+lon; end # as GMT expects this
+       # if lon<0; lon = 360+lon; end # as GMT expects this
 
         Lat[i] = lla_i.lat
         Lon[i] = lon
