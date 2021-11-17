@@ -1,13 +1,13 @@
 """
 This is Tutorial_SeismicityTime.jl. It shows how you can create a movie
-to represent your seismicity through time for two local volcano cases:
-    Campi Flegrei and Etna (Italy).
+to represent your seismicity through time for Campi Flegrei (Italy).
 
 You will need to download the zipped folder containing all files from:
 (https://seafile.rlp.net/f/ff2c8424274c4d56b1f7/](https://ngdc.noaa.gov/mgg/global/global.html)
 Remember to work in the downloaded directory.
 
 """
+
 
 using DelimitedFiles, GeophysicalModelGenerator, Dates
 
@@ -50,10 +50,8 @@ for itime = 1:length(t)-1
     DN              = dates_num[tt];
     label_time      = Dates.value(DN[end]);
     if size(tt,1)>1
-        Data_set    = CartData(we, sn, Depth1, 33, true, (Depth=Depth1*km,Timedata=DN));
+        Data_set    = UTMData(we, sn, Depth1, 33, true, (Depth=Depth1*km,Timedata=DN));
         movie       = Write_Paraview(Data_set, name,pvd=movie,time=label_time,PointsData=true);
     end
 end
 Movie_Paraview(pvd=movie, Finalize=true)
-
-

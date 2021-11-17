@@ -27,7 +27,8 @@ makedocs(;
             "Read UTM data" =>  "man/tutorial_UTM.md",
             "VoteMaps" =>  "man/Tutorial_Votemaps.md",      
             "Kilometer-scale volcano" =>  "man/tutorial_local_Flegrei.md",
-            "Generating LaMEM model" =>  "man/LaPalma_example.md"
+            "Generating LaMEM model" =>  "man/LaPalma_example.md",
+            "Create movies" =>  "man/tutorial_time_Seismicity.md"
         ],
         "User Guide" => Any[
             "Installation" =>  "man/installation.md",

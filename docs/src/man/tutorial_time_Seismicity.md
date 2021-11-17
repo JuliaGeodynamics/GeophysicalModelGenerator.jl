@@ -5,25 +5,19 @@
 This tutorial creates a movie of the spatial variations in seismicity using the earthquakes previously visualized at Campi Flegrei caldera. We visualize it against the travel-time model and tomography:
 
 - Earthquake data for the 1983-84 unrest:
-    - De Siena, L., Chiodini, G., Vilardo, G., Del Pezzo, E., Castellano, M., Colombelli, S., Tisato, N. and Ventura, G., 2017. Source and dynamics of a volcanic caldera unrest: Campi Flegrei, 1983–84. Scientific reports, 7(1), pp.1-13. doi:10.1038/s41598-017-08192-7
+  - De Siena, L., Chiodini, G., Vilardo, G., Del Pezzo, E., Castellano, M., Colombelli, S., Tisato, N. and Ventura, G., 2017. Source and dynamics of a volcanic caldera unrest: Campi Flegrei, 1983–84. Scientific reports, 7(1), pp.1-13. doi:10.1038/s41598-017-08192-7
 
 ## Steps
 
-#### 1. Download all data for region
+### 1. Download all data for region
 
 You will need to download the zipped folder containing all files from [here](https://seafile.rlp.net/f/ff2c8424274c4d56b1f7/).
 
-Make sure that you are in the unzipped directory.
+Make sure that you are in the unzipped directory. To reproduce exactly the figure, you will need the velocity model loaded in the km-scale volcano tutorial, [here](./tutorial_local_Flegrei.md)
 
-#### 2. Geomorphology and velocity
+![Tutorial_SeismicTime_1](../assets/img/Tutorial_SeismicityTime_1.png)
 
-Load both the the shape (.shp) files contained in "./Geomorphology/*.shp" inside Paraview. In the following figures we show the Cartesian representation (not geolocalized - left) and the UTM (UTM). Our shape files can only be loaded in the cartesian:
-
-![Tutorial_SeismicTime_Geomorphology](../assets/img/Geomorphology_Velocity.png)
-
-To reproduce it, represent the coastline as data points with black solid color and assign your favourite color map to the morphology. Note that each block color number corresponds to a different morphology. Beware that this file only works in cartesian coordinate, as it is still impossible to generate shape files in real UTM coordinates. To reproduce exactly the figure, you will need the velocity model loaded in the km-scale volcano tutorial.
-
-#### 3. Earthquakes in movie
+### 2. Earthquakes in movie
 
 Create the folder **TemporalSeismicity** in the current folder and open the movie with the function *Movie_Paraview*.
 
@@ -37,7 +31,9 @@ julia> movie               = Movie_Paraview(name=string(p3,"/TemporalSeismicity"
 julia> if isdir(string(p3,"/TemporalSeismicity"))==0
 julia>     mkdir(string(p3,"/TemporalSeismicity"));
 julia> end
+
 ```
+
 Now let's load the earthquake data provided as text files. The first column gives us a temporal marker we can use to plot earthquakes in different periods. We used the *Date* package to transform this time into dates.
 
 ```julia
@@ -54,7 +50,9 @@ julia> WE                  = data[:,2];
 julia> SN                  = data[:,3];
 julia> depth               = data[:,4];
 julia> dates_num           = dates - dates[1];
+
 ```
+
 Select earthquakes every 50 days from the starting date (17/01/1983) and use them to create the frames for the video.
 
 ```julia
@@ -70,18 +68,20 @@ julia>    Depth1          = depth[tt];
 julia>    DN              = dates_num[tt];
 julia>    label_time      = Dates.value(DN[end]);
 julia>    if size(tt,1)>1
-julia>        Data_set    = CartData(we, sn, Depth1, 33, true, (Depth=Depth1*km,Timedata=DN));
+julia>        Data_set    = UTMData(we, sn, Depth1, 33, true, (Depth=Depth1*km,Timedata=DN));
 julia>        movie       = Write_Paraview(Data_set, name,pvd=movie,time=label_time,PointsData=true);
 julia>    end
 julia>end
 julia>Movie_Paraview(pvd=movie, Finalize=true)
+
 ```
-This tutorial has created a new *TemporalSeismicity.pvd* that can be loaded in Paraview. 
 
-![Tutorial_SeismicTime_PVD](../assets/img/SeismicityTime_PVD.png)
+This tutorial has created a new *TemporalSeismicity.pvd* that can be loaded in Paraview.
 
-Notice the animation panel, allowing you to run the video. You can select video speed by opening the *Animation View* under the *View* tab.
+![Tutorial_SeismicTime_PVD](../assets/img/Tutorial_SeismicityTime_2.png)
 
-![Tutorial_SeismicTime_Movie](../assets/img/LocationTime.mov)
+Notice the animation panel, allowing you to run the video. You can select video speed by opening the *Animation View* under the *View* tab. Note that you can slow down the movie there if you need.
+
+![Tutorial_SeismicTime_Movie](../assets/img/Tutorial_SeismicityTime_3.mov)
 
 If you want to run the entire example, you can find the .jl code [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/main/tutorial/Tutorial_SeismicityTime.jl)
