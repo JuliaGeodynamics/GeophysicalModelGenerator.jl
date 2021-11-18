@@ -217,10 +217,6 @@ function ExtractSubvolume(V::GeoData; Interpolate=false, Lon_level=nothing, Lat_
 end
 
 
-
-
-
-
 function CheckBounds(Data::GeoUnit, Data_Cross)
     
     min_Data, max_Data = minimum(Data.val), maximum(Data.val);
@@ -297,6 +293,66 @@ function InterpolateDataFields(V::GeoData, Lon, Lat, Depth)
 end
 
 """
+    InterpolateDataFields(V::UTMData, EW, NS, Depth)
+
+Interpolates a data field `V` on a grid defined by `UTM,Depth`
+"""
+function InterpolateDataFields(V::UTMData, EW, NS, Depth)
+
+    EW_vec      =  V.EW.val[:,1,1];
+    NS_vec      =  V.NS.val[1,:,1];
+    Depth_vec   =  V.depth.val[1,1,:];
+    if Depth_vec[1]>Depth_vec[end]
+        ReverseData = true
+    else
+        ReverseData = false
+    end
+
+    fields_new  = V.fields;
+    field_names = keys(fields_new);
+    for i = 1:length(V.fields)
+        if typeof(V.fields[i]) <: Tuple
+            # vector or anything that contains more than 1 field
+            data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop 
+            data_array = zeros(size(EW,1),size(EW,2),size(EW,3),length(data_tuple));     # create a 3D array that holds the 2D interpolated values
+            unit_array = zeros(size(data_array));
+
+            for j=1:length(data_tuple)
+                if ReverseData
+                    ndim        =   length(size(data_tuple[j]))
+                    interpol    =   LinearInterpolation((EW_vec, NS_vec, reverse(Depth_vec)), reverse(ustrip.(data_tuple[j]), dims=ndim) ,extrapolation_bc = Flat());      # create interpolation object
+                else
+                    interpol    =   LinearInterpolation((EW_vec, NS_vec, Depth_vec), ustrip.(data_tuple[j]),extrapolation_bc = Flat());      # create interpolation object
+                end
+                data_array[:,:,:,j] =   interpol.(EW, NS, Depth);          
+            end
+            data_new    = tuple([data_array[:,:,:,c] for c in 1:size(data_array,4)]...)     # transform 3D matrix to tuple
+
+        else
+            # scalar field
+            if ReverseData
+                ndim        =   length(size(V.fields[i]))
+                interpol    =   LinearInterpolation((EW_vec, NS_vec, reverse(Depth_vec)), reverse(V.fields[i], dims=ndim), extrapolation_bc = Flat(),);            # create interpolation object
+            else
+                interpol    =   LinearInterpolation((EW_vec, NS_vec, Depth_vec), V.fields[i], extrapolation_bc = Flat());            # create interpolation object
+            end
+            data_new    =   interpol.(EW, NS, Depth);                                                 # interpolate data field
+        end
+        
+        # replace the one 
+        new_field   =   NamedTuple{(field_names[i],)}((data_new,))                          # Create a tuple with same name
+        fields_new  =   merge(fields_new, new_field);                                       # replace the field in fields_new
+        
+    end
+    
+
+    # Create a GeoData struct with the newly interpolated fields
+    Data_profile = UTMData(EW, NS, Depth, fields_new);
+
+    return Data_profile
+end
+
+"""
     InterpolateDataFields2D(V::GeoData, Lon, Lat)
 
 Interpolates a data field `V` on a 2D grid defined by `Lon,Lat`. Typically used for horizontal surfaces
@@ -349,6 +405,63 @@ function InterpolateDataFields2D(V::GeoData, Lon, Lat)
 
     # Create a GeoData struct with the newly interpolated fields
     # Data_profile = GeoData(Lon, Lat, Depth*0, fields_new);
+
+    return depth_new, fields_new
+end
+
+"""
+    InterpolateDataFields2D(V::UTMData, EW, NS)
+
+Interpolates a data field `V` on a 2D grid defined by `UTM`. Typically used for horizontal surfaces
+"""
+function InterpolateDataFields2D(V::UTMData, EW, NS)
+
+    EW_vec      =  V.EW.val[:,1,1];
+    NS_vec      =  V.NS.val[1,:,1];
+   
+    fields_new  = V.fields;
+    field_names = keys(fields_new);
+    for i = 1:length(V.fields)
+        if typeof(V.fields[i]) <: Tuple
+            # vector or anything that contains more than 1 field
+            data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop 
+            data_array = zeros(size(EW,1),size(EW,2),size(EW,3),length(data_tuple));     # create a 3D array that holds the 2D interpolated values
+            unit_array = zeros(size(data_array));
+
+            for j=1:length(data_tuple)
+                interpol    =   LinearInterpolation((EW_vec, NS_vec), ustrip.(data_tuple[j]),extrapolation_bc = Flat());      # create interpolation object
+                data_array[:,:,1,j] =   interpol.(EW, NS);          
+            end
+            data_new    = tuple([data_array[:,:,1,c] for c in 1:size(data_array,4)]...)     # transform 3D matrix to tuple
+
+        else
+            # scalar field
+            if length(size(V.fields[i]))==3
+                interpol    =   LinearInterpolation((EW_vec, NS_vec), V.fields[i][:,:,1], extrapolation_bc = Flat());            # create interpolation object
+            else
+                interpol    =   LinearInterpolation((EW_vec, NS_vec), V.fields[i], extrapolation_bc = Flat());            # create interpolation object
+            end
+
+            data_new    =   interpol.(EW, NS);                                                 # interpolate data field
+        end
+        
+        # replace the one 
+        new_field   =   NamedTuple{(field_names[i],)}((data_new,))                          # Create a tuple with same name
+        fields_new  =   merge(fields_new, new_field);                                       # replace the field in fields_new
+        
+    end
+
+    # Interpolate z-coordinate as well
+    if length(size(V.lon))==3
+        interpol    =   LinearInterpolation((EW_vec, NS_vec), V.depth.val[:,:,1], extrapolation_bc = Flat());            # create interpolation object
+    else
+        interpol    =   LinearInterpolation((EW_vec, NS_vec), V.depth.val, extrapolation_bc = Flat());            # create interpolation object
+    end
+    depth_new =  interpol.(EW, NS);    
+    
+
+    # Create a UTMData struct with the newly interpolated fields
+    # Data_profile = UTMData(EW, NS, Depth*0, fields_new);
 
     return depth_new, fields_new
 end
