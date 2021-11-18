@@ -452,7 +452,7 @@ function InterpolateDataFields2D(V::UTMData, EW, NS)
     end
 
     # Interpolate z-coordinate as well
-    if length(size(V.lon))==3
+    if length(size(V.depth))==3
         interpol    =   LinearInterpolation((EW_vec, NS_vec), V.depth.val[:,:,1], extrapolation_bc = Flat());            # create interpolation object
     else
         interpol    =   LinearInterpolation((EW_vec, NS_vec), V.depth.val, extrapolation_bc = Flat());            # create interpolation object
