@@ -16,7 +16,7 @@ export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!,
 """
     AddBox!(Phase, Temp, Grid::LaMEM_grid; xlim=Tuple{2}, [ylim=Tuple{2}], zlim=Tuple{2},
             Origin=nothing, StrikeAngle=0, DipAngle=0,
-            phase = ConstantPhase(1).
+            phase = ConstantPhase(1),
             T=nothing )
 
 Adds a box with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
