@@ -10,7 +10,8 @@ using SpecialFunctions: erfc
 
 export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!,
         ConstantTemp, LinearTemp, HalfspaceCoolingTemp, SpreadingRateTemp,
-        ConstantPhase, LithosphericPhases
+        ConstantPhase, LithosphericPhases, 
+        Compute_ThermalStructure, Compute_Phase
 
 
 """
