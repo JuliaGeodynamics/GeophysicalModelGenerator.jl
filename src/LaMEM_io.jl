@@ -1,5 +1,6 @@
 using Base: Int64, Float64, NamedTuple
 using Printf
+using Glob
 
 # LaMEM I/O
 # 
@@ -8,7 +9,7 @@ using Printf
 
 export LaMEM_grid, ReadLaMEM_InputFile
 export Save_LaMEMMarkersParallel, Save_LaMEMTopography
-export GetProcessorPartitioning, ReadData_VTR, ReadData_PVTR
+export GetProcessorPartitioning, ReadData_VTR, ReadData_PVTR, CreatePartitioningFile
 
 """
 Structure that holds information about the LaMEM grid (usually read from an input file).
@@ -773,4 +774,43 @@ function Save_LaMEMTopography(Topo::CartData, filename::String)
     println("Written LaMEM topography file: $(filename)")
 
     return nothing
+end
+
+"""
+    CreatePartitioningFile(LaMEM_input::String, NumProc::Int64; LaMEM_dir::String=pwd(), LaMEM_options::String="", MPI_dir="")
+
+This executes LaMEM for the input file `LaMEM_input` & creates a parallel partitioning file for `NumProc` processors.
+The directory where the LaMEM binary is can be specified; if not it is assumed to be in the current directory.
+Likewise for the `mpiexec` directory (if not specified it is assumed to be available on the command line).
+
+"""
+function CreatePartitioningFile(LaMEM_input::String,NumProc::Int64; LaMEM_dir::String=pwd(), LaMEM_options="", MPI_dir="")
+
+    # Create string to execute LaMEM
+    mpi_str     =  MPI_dir*"mpiexec -n $(NumProc) " 
+    LaMEM_str   =  LaMEM_dir*"/"*"LaMEM -ParamFile "*LaMEM_input*" -mode save_grid "
+    str         =  mpi_str*LaMEM_str
+    
+    println("Executing command: $str")
+    
+    # Run
+    exit=run(`sh -c $str`, wait=false);
+    
+    # Retrieve newest file
+    if success(exit)
+        files=readdir(glob"ProcessorPartitioning_*.bin")
+        time_modified = zeros(length(files))
+        for (i,file) in enumerate(files)
+            time_modified[i] = stat(file).mtime
+        end
+        id          = findall(time_modified.==maximum(time_modified))   # last modified
+        PartFile    = files[id]
+        
+        println("Successfuly generated PartitioningFile: $(PartFile[1])")
+    else
+        error("Something went wrong with executing command ")
+    end
+
+    return PartFile[1]
+
 end

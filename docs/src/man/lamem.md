@@ -27,4 +27,5 @@ GeophysicalModelGenerator.SpreadingRateTemp
 GeophysicalModelGenerator.ConstantPhase
 GeophysicalModelGenerator.LithosphericPhases
 GeophysicalModelGenerator.LaMEM_grid
+GeophysicalModelGenerator.CreatePartitioningFile
 ```
