@@ -231,6 +231,11 @@ function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperR
     i = 2; Corners_lat     = [Corner_UpperLeft[i] Corner_UpperRight[i]; Corner_LowerLeft[i] Corner_LowerRight[i]; ]
     i = 3; Corners_depth   = [Corner_UpperLeft[i] Corner_UpperRight[i]; Corner_LowerLeft[i] Corner_LowerRight[i]; ]
 
+   # i = 1; Corners_lon     = [Corner_LowerLeft[i] Corner_LowerRight[i]; Corner_UpperLeft[i] Corner_UpperRight[i];]
+   # i = 2; Corners_lat     = [Corner_LowerLeft[i] Corner_LowerRight[i]; Corner_UpperLeft[i] Corner_UpperRight[i];]
+   # i = 3; Corners_depth   = [Corner_LowerLeft[i] Corner_LowerRight[i]; Corner_UpperLeft[i] Corner_UpperRight[i];]
+
+  
     # Extract the colors from the grid
     img_RGB     =   convert.(RGB, img)     # convert to  RGB data
 
@@ -249,8 +254,8 @@ function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperR
     xs                      =   [1,grid_size[1]];
     zs                      =   [1,grid_size[2]];
     interp_linear_lon       =   LinearInterpolation((xs, zs), Corners_lon)      # create interpolation object
-    interp_linear_lat       =   LinearInterpolation((xs, zs), Corners_lat)      # create interpolation object
-    interp_linear_depth     =   LinearInterpolation((xs, zs), Corners_depth)    # create interpolation object
+    interp_linear_lat       =   LinearInterpolation((xs, zs), Corners_lat)       # create interpolation object
+    interp_linear_depth     =   LinearInterpolation((xs, zs), Corners_depth)     # create interpolation object
 
     # Interpolate
     X_int,Y_int,Depth       =   XYZGrid(1:grid_size[1],1:grid_size[2],0)

@@ -31,7 +31,7 @@ function ProjectCartData(d_cart::CartData, d::GeoData, p::ProjectionPoint)
     
     if size(Data_lonlat.lon.val,3)==1
         z_new, fields_new = InterpolateDataFields2D(d,Data_lonlat.lon.val, Data_lonlat.lat.val)
-        
+      
         # Create new struct 
         d_cart = CartData(d_cart.x.val,d_cart.y.val,z_new,fields_new)
     
