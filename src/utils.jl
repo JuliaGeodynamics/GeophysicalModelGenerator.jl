@@ -1069,3 +1069,20 @@ function DrapeOnTopo(Topo::GeoData, Data::GeoData)
     return Topo_new
 
 end
+
+
+""" 
+    DrapeOnTopo(Topo::CartData, Data::CartData)
+
+Drapes Cartesian Data on topography 
+"""
+function DrapeOnTopo(Topo::CartData, Data::CartData)
+    Topo_lonlat = GeoData(ustrip.(Topo.x.val),ustrip.(Topo.y.val), ustrip.(Topo.z.val), Topo.fields )
+    Data_lonlat = GeoData(ustrip.(Data.x.val),ustrip.(Data.y.val), ustrip.(Data.z.val), Data.fields )
+
+    Topo_new_lonlat = DrapeOnTopo(Topo_lonlat, Data_lonlat)
+
+    Topo_new = CartData(Topo_new_lonlat.lon.val, Topo_new_lonlat.lat.val, Topo_new_lonlat.depth.val, Topo_new_lonlat.fields)
+
+    return Topo_new
+end
