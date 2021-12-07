@@ -1,18 +1,18 @@
 using Test
 using GeophysicalModelGenerator
 
-
 # Create 1D dataset with lat/lon/depth
 Lat         =   1.0:10.0;
 Lon         =   11.0:20.0;
 Depth       =   (-20:-11)*km;
 Data        =   zeros(size(Lon));
-Data_set    =   GeoData(Lat,Lon,Depth,(FakeData=Data,Data2=Data.+1.))     
+Data_set    =   GeoData(Lat,Lon,Depth,(FakeData=Data,Data2=Data.+1.))     # create GeoData without attributes
 @test Data_set.depth[2]==-19km
 
 Depth1      =   (-20.:-11.)*m;            # depth has units of m
 Data_set1   =   GeoData(Lat,Lon,Depth1,(FakeData=Data,Data2=Data.+1.))    
 @test Data_set1.depth[2]==-0.019km
+@test Data_set.atts["note"]=="No attributes were given to this dataset" # check whether the default attribute assignment works
 
 Depth2      =   -20.:-11.;              # no units
 Data_set2   =   GeoData(Lat,Lon,Depth2,(FakeData=Data,Data2=Data.+1.))     
@@ -28,6 +28,12 @@ Data_set4 = GeoData(Lat,Lon,Depth,(Data,))
 
 # Throw an error if we supply a Tuple with 2 fields (the user should really supply names in that case)
 @test_throws ErrorException GeoData(Lat,Lon,Depth,(Data,Data))
+
+# test assignment of attributes
+att_dict = Dict("author"=>"Marcel", "year"=>2021)
+Data_set4 = GeoData(Lat,Lon,Depth,(Data,),att_dict)
+@test Data_set4.atts["author"]=="Marcel"
+@test Data_set4.atts["year"]==2021
 
 # check that an error is thrown if a different size input is given for depth
 Depth2      =   (-100:10:1.0)               # no units
@@ -114,6 +120,7 @@ Data_set    =   UTMData(EW,NS,Depth,33, true, (FakeData=Data,Data2=Data.+1.))
 @test Data_set.depth[3,4,2]==-5150m
 @test Data_set.northern[1] == true
 @test Data_set.zone[1] == 33
+@test Data_set.atts["note"]=="No attributes were given to this dataset" # check whether the default attribute assignment works
 
 # convert from UTMData -> GeoData
 Data_set1 = convert(GeoData, Data_set)
