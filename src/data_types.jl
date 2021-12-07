@@ -237,10 +237,9 @@ mutable struct ParaviewData
     y       ::  GeoUnit
     z       ::  GeoUnit
     fields  ::  NamedTuple
-    atts    ::  Dict
 end
 
-# Print an overview of the Geodata struct:
+# Print an overview of the ParaviewData struct:
 function Base.show(io::IO, d::ParaviewData)
     println(io,"ParaviewData ")
     println(io,"  size  : $(size(d.x))")
@@ -248,9 +247,6 @@ function Base.show(io::IO, d::ParaviewData)
     println(io,"  y     ϵ [ $(minimum(d.y.val)) : $(maximum(d.y.val))]")
     println(io,"  z     ϵ [ $(minimum(d.z.val)) : $(maximum(d.z.val))]")
     println(io,"  fields: $(keys(d.fields))")
-    if any( propertynames(d) .== :atts)
-        println(io,"  attributes: $(keys(d.atts))")
-    end
 end
 
 # conversion function from GeoData -> ParaviewData
@@ -292,14 +288,9 @@ function Base.convert(::Type{ParaviewData}, d::GeoData)
         end
     end
 
-    # handle the case where an old GeoData structure is converted
-    if any( propertynames(d) .== :atts)
-        atts = d.atts;
-    else
-        atts = Dict("note" => "No attributes were given to this dataset") # assign the default
-    end
 
-    return ParaviewData(GeoUnit(X,km),GeoUnit(Y,km),GeoUnit(Z,km),d.fields,atts)
+
+    return ParaviewData(GeoUnit(X,km),GeoUnit(Y,km),GeoUnit(Z,km),d.fields)
 end
 
 
