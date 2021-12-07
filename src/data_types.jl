@@ -8,7 +8,6 @@ export  GeoData, ParaviewData, UTMData, CartData,
         Convert2UTMzone, Convert2CartData, ProjectionPoint
 
 """
-    ProjectionPoint
     struct ProjectionPoint
         Lon     :: Float64
         Lat     :: Float64
@@ -30,12 +29,11 @@ struct ProjectionPoint
 end
 
 """
-    ProjectionPoint(;Lat=49.9929, Lon=8.2473)
+    ProjectionPoint(; Lat=49.9929, Lon=8.2473)
 
 Defines a projection point used for map projections, by specifying latitude and longitude
-
 """
-function ProjectionPoint(;Lat=49.9929, Lon=8.2473)
+function ProjectionPoint(; Lat=49.9929, Lon=8.2473)
     # Default = Mainz (center of universe)
     x_lla = LLA(Lat, Lon, 0.0);    # Lat/Lon/Alt of geodesy package 
     x_utmz = UTMZ(x_lla, wgs84)    # UTMZ of 
@@ -456,9 +454,11 @@ function Base.convert(::Type{GeoData}, d::UTMData)
         # Use functions of the Geodesy package to convert to LLA
         utmz_i  = UTMZ(d.EW.val[i],d.NS.val[i],Float64(ustrip.(d.depth.val[i])),d.zone[i],d.northern[i])
         lla_i   = LLA(utmz_i,wgs84)
-        
+        lon = lla_i.lon;
+       # if lon<0; lon = 360+lon; end # as GMT expects this
+
         Lat[i] = lla_i.lat
-        Lon[i] = lla_i.lon
+        Lon[i] = lon
     end 
 
     # handle the case where an old GeoData structure is converted
@@ -664,15 +664,33 @@ end
 # Print an overview of the UTMData struct:
 function Base.show(io::IO, d::CartData)
     println(io,"CartData ")
-    println(io,"    size : $(size(d.x))")
-    println(io,"    x    ϵ [ $(minimum(d.x.val)) : $(maximum(d.x.val))]")
-    println(io,"    y    ϵ [ $(minimum(d.y.val)) : $(maximum(d.y.val))]")
-    println(io,"    z    ϵ [ $(minimum(d.z.val)) : $(maximum(d.z.val))]")
+    println(io,"    size   : $(size(d.x))")
+    println(io,"    x      ϵ [ $(minimum(d.x.val)) : $(maximum(d.x.val))]")
+    println(io,"    y      ϵ [ $(minimum(d.y.val)) : $(maximum(d.y.val))]")
+    println(io,"    z      ϵ [ $(minimum(d.z.val)) : $(maximum(d.z.val))]")
     println(io,"    fields : $(keys(d.fields))")
     if any( propertynames(d) .== :atts)
         println(io,"  attributes: $(keys(d.atts))")
     end
 end
+
+"""
+    CartData(xyz::Tuple{Array,Array,Array})
+
+This creates a `CartData` struct if you have a Tuple with 3D coordinates as input.
+# Example 
+```julia
+julia> data = CartData(XYZGrid(-10:10,-5:5,0))
+CartData 
+    size : (21, 11, 1)
+    x    ϵ [ -10.0 km : 10.0 km]
+    y    ϵ [ -5.0 km : 5.0 km]
+    z    ϵ [ 0.0 km : 0.0 km]
+    fields : (:Z,)
+```
+"""
+CartData(xyz::Tuple) = CartData(xyz[1],xyz[2],xyz[3],(Z=xyz[3],))
+
 
 
 """

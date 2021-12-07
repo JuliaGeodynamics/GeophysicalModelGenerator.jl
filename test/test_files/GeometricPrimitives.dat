@@ -1,0 +1,22 @@
+#===============================================================================
+# Grid & discretization parameters
+#===============================================================================
+# Number of cells for all segments
+
+	nel_x = 32
+	nel_y = 32
+	nel_z = 32
+
+# Coordinates of all segments (including start and end points)
+
+	coord_x =  -5.0 5.0
+	coord_y =  -5.0 5.0
+	coord_z = -10.0 0.0
+
+#===============================================================================
+# Model setup & advection
+#===============================================================================
+
+	nmark_x         = 3                 # markers per cell in x-direction
+	nmark_y         = 3                 # ...                 y-direction
+	nmark_z         = 3                 # ...                 z-direction

@@ -132,6 +132,11 @@ Data_set1 = convert(GeoData, Data_set)
 Data_set2 = convert(UTMData, Data_set1)
 @test sum(abs.(Data_set2.EW.val-Data_set.EW.val)) < 1e-5 
 
+# Test Projection point for negative values
+proj = ProjectionPoint(Lat= -2.8, Lon=36)
+@test proj.zone == 37
+@test proj.isnorth == false
+
 # Convert from GeoData -> UTMData, but for a fixed zone (used for map projection)
 proj = ProjectionPoint(Lat= 40.77470011887963, Lon=14.099668158564413)
 Data_set3 = Convert2UTMzone(Data_set1, proj)

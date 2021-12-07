@@ -4,6 +4,9 @@ export meshgrid, CrossSection, ExtractSubvolume, SubtractHorizontalMean
 export ParseColumns_CSV_File, AboveSurface, BelowSurface, VoteMap
 export InterpolateDataOnSurface, InterpolateDataFields2D
 export RotateTranslateScale!
+export DrapeOnTopo
+
+using NearestNeighbors
 
 """
     meshgrid(vx,vy,vz)
@@ -293,6 +296,66 @@ function InterpolateDataFields(V::GeoData, Lon, Lat, Depth)
 end
 
 """
+    InterpolateDataFields(V::UTMData, EW, NS, Depth)
+
+Interpolates a data field `V` on a grid defined by `UTM,Depth`
+"""
+function InterpolateDataFields(V::UTMData, EW, NS, Depth)
+
+    EW_vec      =  V.EW.val[:,1,1];
+    NS_vec      =  V.NS.val[1,:,1];
+    Depth_vec   =  V.depth.val[1,1,:];
+    if Depth_vec[1]>Depth_vec[end]
+        ReverseData = true
+    else
+        ReverseData = false
+    end
+
+    fields_new  = V.fields;
+    field_names = keys(fields_new);
+    for i = 1:length(V.fields)
+        if typeof(V.fields[i]) <: Tuple
+            # vector or anything that contains more than 1 field
+            data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop 
+            data_array = zeros(size(EW,1),size(EW,2),size(EW,3),length(data_tuple));     # create a 3D array that holds the 2D interpolated values
+            unit_array = zeros(size(data_array));
+
+            for j=1:length(data_tuple)
+                if ReverseData
+                    ndim        =   length(size(data_tuple[j]))
+                    interpol    =   LinearInterpolation((EW_vec, NS_vec, reverse(Depth_vec)), reverse(ustrip.(data_tuple[j]), dims=ndim) ,extrapolation_bc = Flat());      # create interpolation object
+                else
+                    interpol    =   LinearInterpolation((EW_vec, NS_vec, Depth_vec), ustrip.(data_tuple[j]),extrapolation_bc = Flat());      # create interpolation object
+                end
+                data_array[:,:,:,j] =   interpol.(EW, NS, Depth);          
+            end
+            data_new    = tuple([data_array[:,:,:,c] for c in 1:size(data_array,4)]...)     # transform 3D matrix to tuple
+
+        else
+            # scalar field
+            if ReverseData
+                ndim        =   length(size(V.fields[i]))
+                interpol    =   LinearInterpolation((EW_vec, NS_vec, reverse(Depth_vec)), reverse(V.fields[i], dims=ndim), extrapolation_bc = Flat(),);            # create interpolation object
+            else
+                interpol    =   LinearInterpolation((EW_vec, NS_vec, Depth_vec), V.fields[i], extrapolation_bc = Flat());            # create interpolation object
+            end
+            data_new    =   interpol.(EW, NS, Depth);                                                 # interpolate data field
+        end
+        
+        # replace the one 
+        new_field   =   NamedTuple{(field_names[i],)}((data_new,))                          # Create a tuple with same name
+        fields_new  =   merge(fields_new, new_field);                                       # replace the field in fields_new
+        
+    end
+    
+
+    # Create a GeoData struct with the newly interpolated fields
+    Data_profile = UTMData(EW, NS, Depth, fields_new);
+
+    return Data_profile
+end
+
+"""
     InterpolateDataFields2D(V::GeoData, Lon, Lat)
 
 Interpolates a data field `V` on a 2D grid defined by `Lon,Lat`. Typically used for horizontal surfaces
@@ -312,11 +375,18 @@ function InterpolateDataFields2D(V::GeoData, Lon, Lat)
             unit_array = zeros(size(data_array));
 
             for j=1:length(data_tuple)
-                interpol    =   LinearInterpolation((Lon_vec, Lat_vec), ustrip.(data_tuple[j]),extrapolation_bc = Flat());      # create interpolation object
+                if length(size(data_tuple[j]))==3
+                    interpol    =   LinearInterpolation((Lon_vec, Lat_vec), ustrip.(data_tuple[j][:,:,1]),extrapolation_bc = Flat());      # create interpolation object
+                else
+                    interpol    =   LinearInterpolation((Lon_vec, Lat_vec), ustrip.(data_tuple[j]),extrapolation_bc = Flat());      # create interpolation object
+                end
                 data_array[:,:,1,j] =   interpol.(Lon, Lat);          
             end
-            data_new    = tuple([data_array[:,:,1,c] for c in 1:size(data_array,4)]...)     # transform 3D matrix to tuple
-
+            if length(size(data_tuple[1]))==3
+                data_new    = tuple([data_array[:,:,:,c] for c in 1:size(data_array,4)]...)     # transform 3D matrix to tuple
+            else
+                data_new    = tuple([data_array[:,:,1,c] for c in 1:size(data_array,4)]...)     # transform 3D matrix to tuple
+            end
         else
             # scalar field
             if length(size(V.fields[i]))==3
@@ -345,6 +415,63 @@ function InterpolateDataFields2D(V::GeoData, Lon, Lat)
 
     # Create a GeoData struct with the newly interpolated fields
     # Data_profile = GeoData(Lon, Lat, Depth*0, fields_new);
+
+    return depth_new, fields_new
+end
+
+"""
+    InterpolateDataFields2D(V::UTMData, EW, NS)
+
+Interpolates a data field `V` on a 2D grid defined by `UTM`. Typically used for horizontal surfaces
+"""
+function InterpolateDataFields2D(V::UTMData, EW, NS)
+
+    EW_vec      =  V.EW.val[:,1,1];
+    NS_vec      =  V.NS.val[1,:,1];
+   
+    fields_new  = V.fields;
+    field_names = keys(fields_new);
+    for i = 1:length(V.fields)
+        if typeof(V.fields[i]) <: Tuple
+            # vector or anything that contains more than 1 field
+            data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop 
+            data_array = zeros(size(EW,1),size(EW,2),size(EW,3),length(data_tuple));     # create a 3D array that holds the 2D interpolated values
+            unit_array = zeros(size(data_array));
+
+            for j=1:length(data_tuple)
+                interpol    =   LinearInterpolation((EW_vec, NS_vec), ustrip.(data_tuple[j]),extrapolation_bc = Flat());      # create interpolation object
+                data_array[:,:,1,j] =   interpol.(EW, NS);          
+            end
+            data_new    = tuple([data_array[:,:,1,c] for c in 1:size(data_array,4)]...)     # transform 3D matrix to tuple
+
+        else
+            # scalar field
+            if length(size(V.fields[i]))==3
+                interpol    =   LinearInterpolation((EW_vec, NS_vec), V.fields[i][:,:,1], extrapolation_bc = Flat());            # create interpolation object
+            else
+                interpol    =   LinearInterpolation((EW_vec, NS_vec), V.fields[i], extrapolation_bc = Flat());            # create interpolation object
+            end
+
+            data_new    =   interpol.(EW, NS);                                                 # interpolate data field
+        end
+        
+        # replace the one 
+        new_field   =   NamedTuple{(field_names[i],)}((data_new,))                          # Create a tuple with same name
+        fields_new  =   merge(fields_new, new_field);                                       # replace the field in fields_new
+        
+    end
+
+    # Interpolate z-coordinate as well
+    if length(size(V.depth))==3
+        interpol    =   LinearInterpolation((EW_vec, NS_vec), V.depth.val[:,:,1], extrapolation_bc = Flat());            # create interpolation object
+    else
+        interpol    =   LinearInterpolation((EW_vec, NS_vec), V.depth.val, extrapolation_bc = Flat());            # create interpolation object
+    end
+    depth_new =  interpol.(EW, NS);    
+    
+
+    # Create a UTMData struct with the newly interpolated fields
+    # Data_profile = UTMData(EW, NS, Depth*0, fields_new);
 
     return depth_new, fields_new
 end
@@ -648,12 +775,34 @@ function AboveSurface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData; a
 end
 
 """
+    Above = AboveSurface(Data_Cart::CartData, DataSurface_Cart::CartData; above=true)
+
+Determines if points within the 3D `Data_Cart` structure are above the Cartesian surface `DataSurface_Cart`
+"""
+function AboveSurface(Data_Cart::CartData, DataSurface_Cart::CartData; above=true)
+
+    Data            =   GeoData(ustrip.(Data_Cart.x.val),       ustrip.(Data_Cart.y.val),        ustrip.(Data_Cart.z.val), Data_Cart.fields)
+    DataSurface     =   GeoData(ustrip.(DataSurface_Cart.x.val),ustrip.(DataSurface_Cart.y.val), ustrip.(DataSurface_Cart.z.val), DataSurface_Cart.fields )
+
+    return Above    =   AboveSurface(Data, DataSurface; above=above)
+end
+
+"""
     Below = BelowSurface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData)
 
 Determines if points within the 3D Data_Cart structure are below the Cartesian surface DataSurface_Cart
 """
 function BelowSurface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData)
     return AboveSurface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData; above=false)
+end
+
+"""
+    Below = BelowSurface(Data_Cart::CartData, DataSurface_Cart::CartData)
+
+Determines if points within the 3D Data_Cart structure are below the Cartesian surface DataSurface_Cart
+"""
+function BelowSurface(Data_Cart::CartData, DataSurface_Cart::CartData)
+    return AboveSurface(Data_Cart::CartData, DataSurface_Cart::CartData; above=false)
 end
 
 
@@ -848,3 +997,92 @@ function RotateTranslateScale!(Data::ParaviewData; Rotate=0, Translate=(0,0,0), 
 end
 
 
+"""
+    Topo = DrapeOnTopo(Topo::GeoData, Data::GeoData) 
+
+This drapes fields of a data set `Data` on the topography `Topo`    
+
+
+"""
+function DrapeOnTopo(Topo::GeoData, Data::GeoData)
+
+    
+    Lon,Lat,Depth    =   LonLatDepthGrid( Topo.lon.val[:,1,1], Topo.lat.val[1,:,1],Topo.depth.val[1,1,:]);
+
+    # use nearest neighbour to interpolate data
+    coord       =   [vec(Data.lon.val)'; vec(Data.lat.val)'];
+    kdtree      =   KDTree(coord; leafsize = 10);
+    points      =   [vec(Lon)';vec(Lat)'];
+    idx,dist    =   nn(kdtree, points);
+
+
+    idx_out     = findall(  (Lon .<  minimum(Data.lon.val)) .| (Lon .>  maximum(Data.lon.val)) .|
+                            (Lat .<  minimum(Data.lat.val)) .| (Lat .>  maximum(Data.lat.val)) )
+    
+    fields_new  = Topo.fields;
+    field_names = keys(Data.fields);
+    
+    for i = 1:length(Data.fields)
+        
+        if typeof(Data.fields[i]) <: Tuple
+
+            # vector or anything that contains more than 1 field
+            data_tuple = Data.fields[i]      # we have a tuple (likely a vector field), so we have to loop 
+
+            data_array = zeros(typeof(data_tuple[1][1]),size(Topo.lon.val,1),size(Topo.lon.val,2),size(Topo.lon.val,3),length(Data.fields[i]));     # create a 3D array that holds the 2D interpolated values
+            unit_array = zeros(size(data_array));
+
+            for j=1:length(data_tuple)
+                data_field           =   data_tuple[j];
+                tmp                  =   data_array[:,:,:,1]; 
+                tmp                  =   data_field[idx]
+                data_array[:,:,:,j]  =   tmp
+            end
+            
+            data_new    = tuple([data_array[:,:,:,c] for c in 1:size(data_array,4)]...)       # transform 4D matrix to tuple
+
+            # remove points outside domain
+            for j=1:length(data_tuple)
+                tmp           =   data_new[j]; 
+                tmp[idx_out] .= NaN
+                data_array[:,:,:,j]  =   tmp
+            end
+            data_new    = tuple([data_array[:,:,:,c] for c in 1:size(data_array,4)]...)       # transform 4D matrix to tuple
+
+        else
+            
+            # scalar field
+            data_new        =   zeros(typeof(Data.fields[i][1]), size(Topo.lon.val,1),size(Topo.lon.val,2),size(Topo.lon.val,3));
+            data_new        =   Data.fields[i][idx]                                 # interpolate data field
+            
+        end
+        
+        # replace the one 
+        new_field   =   NamedTuple{(field_names[i],)}((data_new,))                          # Create a tuple with same name
+        fields_new  =   merge(fields_new, new_field);                                       # replace the field in fields_new
+        
+    end 
+
+
+    Topo_new        =   GeoData(Topo.lon.val,Topo.lat.val,Topo.depth.val, fields_new)
+
+    return Topo_new
+
+end
+
+
+""" 
+    DrapeOnTopo(Topo::CartData, Data::CartData)
+
+Drapes Cartesian Data on topography 
+"""
+function DrapeOnTopo(Topo::CartData, Data::CartData)
+    Topo_lonlat = GeoData(ustrip.(Topo.x.val),ustrip.(Topo.y.val), ustrip.(Topo.z.val), Topo.fields )
+    Data_lonlat = GeoData(ustrip.(Data.x.val),ustrip.(Data.y.val), ustrip.(Data.z.val), Data.fields )
+
+    Topo_new_lonlat = DrapeOnTopo(Topo_lonlat, Data_lonlat)
+
+    Topo_new = CartData(Topo_new_lonlat.lon.val, Topo_new_lonlat.lat.val, Topo_new_lonlat.depth.val, Topo_new_lonlat.fields)
+
+    return Topo_new
+end

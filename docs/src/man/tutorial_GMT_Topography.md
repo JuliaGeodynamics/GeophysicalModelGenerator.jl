@@ -32,7 +32,7 @@ The data is available in different resolutions; see [here](http://gmt.soest.hawa
 Transforming this to Paraview is a piece of cake:
 
 ```julia
-julia> Write_Paraview(data_Topo, "Topography_Alps") 
+julia> Write_Paraview(Topo, "Topography_Alps") 
 ```
 The result is shown here, together with Moho data
 
