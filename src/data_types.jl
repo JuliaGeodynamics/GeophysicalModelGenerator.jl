@@ -145,10 +145,11 @@ struct GeoData
     lon     ::  GeoUnit
     lat     ::  GeoUnit 
     depth   ::  GeoUnit
-    fields  ::  NamedTuple 
+    fields  ::  NamedTuple
+    atts    ::  Dict
     
     # Ensure that the data is of the correct format
-    function GeoData(lon,lat,depth,fields)
+    function GeoData(lon,lat,depth,fields,atts=nothing)
         
         # check depth & convert it to units of km in case no units are given or it has different length units
         if unit.(depth)[1]==NoUnits 
@@ -188,8 +189,19 @@ struct GeoData
         if !(size(lon)==size(lat)==size(depth)==size(DataField))    
             error("The size of Lon/Lat/Depth and the Fields should all be the same!")
         end
+        
+        if isnothing(atts)
+            # if nothing is given as attributes, then we note that in GeoData
+            atts = Dict("note" => "No attributes were given to this dataset")
+        else
+            # check if a dict was given
+            if !(typeof(atts)<: Dict)
+                error("Attributes should be given as Dict!")
+            end
+        end
 
-        return new(lon,lat,depth,fields)
+        return new(lon,lat,depth,fields,atts)
+
      end
 
 end
@@ -202,6 +214,9 @@ function Base.show(io::IO, d::GeoData)
     println(io,"  lat   ϵ [ $(minimum(d.lat.val)) : $(maximum(d.lat.val))]")
     println(io,"  depth ϵ [ $(minimum(d.depth.val)) : $(maximum(d.depth.val))]")
     println(io,"  fields: $(keys(d.fields))")
+    if any( propertynames(d) .== :atts)
+        println(io,"  attributes: $(keys(d.atts))")
+    end
 end
 
 
@@ -224,7 +239,7 @@ mutable struct ParaviewData
     fields  ::  NamedTuple
 end
 
-# Print an overview of the Geodata struct:
+# Print an overview of the ParaviewData struct:
 function Base.show(io::IO, d::ParaviewData)
     println(io,"ParaviewData ")
     println(io,"  size  : $(size(d.x))")
@@ -272,6 +287,8 @@ function Base.convert(::Type{ParaviewData}, d::GeoData)
             end
         end
     end
+
+
 
     return ParaviewData(GeoUnit(X,km),GeoUnit(Y,km),GeoUnit(Z,km),d.fields)
 end
@@ -332,9 +349,10 @@ struct UTMData
     zone     ::  Any
     northern ::  Any
     fields   ::  NamedTuple 
+    atts     ::  Dict
     
     # Ensure that the data is of the correct format
-    function UTMData(EW,NS,depth,zone,northern,fields)
+    function UTMData(EW,NS,depth,zone,northern,fields,atts=nothing)
         
         # check depth & convert it to units of km in case no units are given or it has different length units
         if unit.(depth)[1]==NoUnits 
@@ -380,7 +398,18 @@ struct UTMData
             northern = ones(Bool,size(EW))*northern
         end
         
-        return new(EW,NS,depth,zone,northern, fields)
+        # take care of attributes
+        if isnothing(atts)
+            # if nothing is given as attributes, then we note that in GeoData
+            atts = Dict("note" => "No attributes were given to this dataset")
+        else
+            # check if a dict was given
+            if !(typeof(atts)<: Dict)
+                error("Attributes should be given as Dict!")
+            end
+        end
+
+        return new(EW,NS,depth,zone,northern, fields,atts)
         
      end
 
@@ -399,6 +428,9 @@ function Base.show(io::IO, d::UTMData)
     println(io,"    NS     ϵ [ $(minimum(d.NS.val)) : $(maximum(d.NS.val))]")
     println(io,"    depth  ϵ [ $(minimum(d.depth.val)) : $(maximum(d.depth.val))]")
     println(io,"    fields : $(keys(d.fields))")
+    if any( propertynames(d) .== :atts)
+        println(io,"  attributes: $(keys(d.atts))")
+    end
 end
 
 """
@@ -420,7 +452,14 @@ function Base.convert(::Type{GeoData}, d::UTMData)
         Lon[i] = lon
     end 
 
-    return GeoData(Lon,Lat,d.depth.val,d.fields)
+    # handle the case where an old GeoData structure is converted
+    if any( propertynames(d) .== :atts)
+        atts = d.atts;
+    else
+        atts = Dict("note" => "No attributes were given to this dataset") # assign the default
+    end
+
+    return GeoData(Lon,Lat,d.depth.val,d.fields,atts)
 
 end
 
@@ -447,7 +486,14 @@ function Base.convert(::Type{UTMData}, d::GeoData)
         northern[i] = utmz_i.isnorth
     end 
 
-    return UTMData(EW,NS,depth,zone, northern, d.fields)
+    # handle the case where an old GeoData structure is converted
+    if any( propertynames(d) .== :atts)
+        atts = d.atts;
+    else
+        atts = Dict("note" => "No attributes were given to this dataset") # assign the default
+    end
+
+    return UTMData(EW,NS,depth,zone, northern, d.fields, atts)
 
 end
 
@@ -479,7 +525,14 @@ function Convert2UTMzone(d::GeoData, proj::ProjectionPoint)
         northern[i] = proj.isnorth
     end 
 
-    return UTMData(EW,NS,d.depth.val,zone, northern, d.fields)
+    # handle the case where an old GeoData structure is converted
+    if any( propertynames(d) .== :atts)
+        atts = d.atts;
+    else
+        atts = Dict("note" => "No attributes were given to this dataset") # assign the default
+    end
+
+    return UTMData(EW,NS,d.depth.val,zone, northern, d.fields,atts)
 
 end
 
@@ -539,10 +592,11 @@ struct CartData
     x       ::  GeoUnit
     y       ::  GeoUnit 
     z       ::  GeoUnit
-    fields  ::  NamedTuple 
+    fields  ::  NamedTuple
+    atts    ::  Dict 
     
     # Ensure that the data is of the correct format
-    function CartData(x,y,z,fields)
+    function CartData(x,y,z,fields,atts=nothing)
        
         # Check ordering of the arrays in case of 3D
         if sum(size(x).>1)==3
@@ -581,7 +635,18 @@ struct CartData
             error("The size of x/y/z and the Fields should all be the same!")
         end
 
-        return new(x,y,z,fields)
+        # take care of attributes
+        if isnothing(atts)
+            # if nothing is given as attributes, then we note that
+            atts = Dict("note" => "No attributes were given to this dataset")
+        else
+            # check if a dict was given
+            if !(typeof(atts)<: Dict)
+                error("Attributes should be given as Dict!")
+            end
+        end
+
+        return new(x,y,z,fields,atts)
         
      end
 
@@ -595,6 +660,9 @@ function Base.show(io::IO, d::CartData)
     println(io,"    y      ϵ [ $(minimum(d.y.val)) : $(maximum(d.y.val))]")
     println(io,"    z      ϵ [ $(minimum(d.z.val)) : $(maximum(d.z.val))]")
     println(io,"    fields : $(keys(d.fields))")
+    if any( propertynames(d) .== :atts)
+        println(io,"  attributes: $(keys(d.atts))")
+    end
 end
 
 """
@@ -624,7 +692,7 @@ This transfers a `CartData` dataset to a `UTMData` dataset, that has a single UT
 function Convert2UTMzone(d::CartData, proj::ProjectionPoint)  
 
     return UTMData(ustrip.(d.x.val).*1e3 .+ proj.EW,ustrip.(d.y.val).*1e3 .+ proj.NS,
-                   ustrip.(d.z.val).*1e3,proj.zone, proj.isnorth, d.fields)
+                   ustrip.(d.z.val).*1e3,proj.zone, proj.isnorth, d.fields, d.atts)
 
 end
 
@@ -634,8 +702,15 @@ Converts a `UTMData` structure to a `CartData` structure, which essentially tran
 """
 function Convert2CartData(d::UTMData, proj::ProjectionPoint)  
 
+        # handle the case where an old structure is converted
+        if any( propertynames(d) .== :atts)
+            atts = d.atts;
+        else
+            atts = Dict("note" => "No attributes were given to this dataset") # assign the default
+        end
+
     return CartData( (ustrip.(d.EW.val) .- proj.EW)./1e3, (ustrip.(d.NS.val) .- proj.NS)./1e3,
-                     ustrip.(d.depth.val)./1e3, d.fields)
+                     ustrip.(d.depth.val)./1e3, d.fields,atts)
 end
 
 
@@ -647,7 +722,7 @@ function Convert2CartData(d::GeoData, proj::ProjectionPoint)
 
     d_UTM = Convert2UTMzone(d,proj)
     return CartData( (ustrip.(d_UTM.EW.val) .- proj.EW)./1e3, (ustrip.(d_UTM.NS.val) .- proj.NS)./1e3,
-                     ustrip.(d_UTM.depth.val)./1e3, d_UTM.fields)
+                     ustrip.(d_UTM.depth.val)./1e3, d_UTM.fields,d_UTM.atts)
 end
 
 """
