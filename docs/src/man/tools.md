@@ -18,4 +18,5 @@ GeophysicalModelGenerator.Convert2CartData
 GeophysicalModelGenerator.ImportTopo
 GeophysicalModelGenerator.ProjectCartData
 GeophysicalModelGenerator.DrapeOnTopo
+GeophysicalModelGenerator.LithostaticPressure!
 ```

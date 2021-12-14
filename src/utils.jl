@@ -4,7 +4,7 @@ export meshgrid, CrossSection, ExtractSubvolume, SubtractHorizontalMean
 export ParseColumns_CSV_File, AboveSurface, BelowSurface, VoteMap
 export InterpolateDataOnSurface, InterpolateDataFields2D
 export RotateTranslateScale!
-export DrapeOnTopo
+export DrapeOnTopo, LithostaticPressure!
 
 using NearestNeighbors
 
@@ -1085,4 +1085,21 @@ function DrapeOnTopo(Topo::CartData, Data::CartData)
     Topo_new = CartData(Topo_new_lonlat.lon.val, Topo_new_lonlat.lat.val, Topo_new_lonlat.depth.val, Topo_new_lonlat.fields)
 
     return Topo_new
+end
+
+""" 
+    LithostaticPressure!(Plithos::Array, Density::Array, dz::Number; g=9.81)
+
+Computes lithostatic pressure from a 3D density array, assuming constant soacing `dz` in vertical direction. Optionally, the gravitational acceleration `g` can be specified.
+
+"""
+function LithostaticPressure!(Plithos::Array{T,N}, Density::Array{T,N}, dz::Number; g=9.81) where {T,N}
+    
+    Plithos[:] = Density*dz*g;
+    
+    selectdim(Plithos,N,size(Plithos)[N]) .= 0      # set upper row to zero
+    
+    Plithos[:] = reverse!(cumsum(reverse!(Plithos),dims=N))
+    
+    return nothing
 end
