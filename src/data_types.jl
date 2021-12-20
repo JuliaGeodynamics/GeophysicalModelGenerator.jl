@@ -134,11 +134,12 @@ julia> Depth3D
 julia> Data        =   zeros(size(Lon3D));
 julia> Data_set    =   GeophysicalModelGenerator.GeoData(Lon3D,Lat3D,Depth3D,(DataFieldName=Data,))   
 GeoData 
-  size  : (3, 4, 3)
-  lon   ϵ [ 11.0 : 19.0]
-  lat   ϵ [ 1.0 : 10.0]
-  depth ϵ [ -20.0 km : -10.0 km]
-  fields: (:DataFieldName,)
+  size      : (3, 4, 3)
+  lon       ϵ [ 11.0 : 19.0]
+  lat       ϵ [ 1.0 : 10.0]
+  depth     ϵ [ -20.0 km : -10.0 km]
+  fields    : (:DataFieldName,)
+  attributes: ["note"]
 ```
 """
 struct GeoData
@@ -209,11 +210,11 @@ end
 # Print an overview of the Geodata struct:
 function Base.show(io::IO, d::GeoData)
     println(io,"GeoData ")
-    println(io,"  size  : $(size(d.lon))")
-    println(io,"  lon   ϵ [ $(minimum(d.lon.val)) : $(maximum(d.lon.val))]")
-    println(io,"  lat   ϵ [ $(minimum(d.lat.val)) : $(maximum(d.lat.val))]")
-    println(io,"  depth ϵ [ $(minimum(d.depth.val)) : $(maximum(d.depth.val))]")
-    println(io,"  fields: $(keys(d.fields))")
+    println(io,"  size      : $(size(d.lon))")
+    println(io,"  lon       ϵ [ $(minimum(d.lon.val)) : $(maximum(d.lon.val))]")
+    println(io,"  lat       ϵ [ $(minimum(d.lat.val)) : $(maximum(d.lat.val))]")
+    println(io,"  depth     ϵ [ $(minimum(d.depth.val)) : $(maximum(d.depth.val))]")
+    println(io,"  fields    : $(keys(d.fields))")
     if any( propertynames(d) .== :atts)
         println(io,"  attributes: $(keys(d.atts))")
     end
@@ -319,21 +320,23 @@ julia> Data        =   ustrip.(Depth);
 julia> Data_set    =   UTMData(EW,NS,Depth,33, true, (FakeData=Data,Data2=Data.+1.))  
 UTMData 
   UTM zone : 33-33 North
-    size   : (116, 96, 25)
-    EW     ϵ [ 422123.0 : 433623.0]
-    NS     ϵ [ 4.514137e6 : 4.523637e6]
-    depth  ϵ [ -5400.0 m : 600.0 m]
-    fields : (:FakeData, :Data2)
+    size    : (116, 96, 25)
+    EW      ϵ [ 422123.0 : 433623.0]
+    NS      ϵ [ 4.514137e6 : 4.523637e6]
+    depth   ϵ [ -5400.0 m : 600.0 m]
+    fields  : (:FakeData, :Data2)
+  attributes: ["note"]
 ```
 If you wish, you can convert this from `UTMData` to `GeoData` with
 ```julia-repl
 julia> Data_set1 =  convert(GeoData, Data_set)
 GeoData 
-  size  : (116, 96, 25)
-  lon   ϵ [ 14.075969111533457 : 14.213417764154963]
-  lat   ϵ [ 40.77452227533946 : 40.86110443583479]
-  depth ϵ [ -5.4 km : 0.6 km]
-  fields: (:FakeData, :Data2)
+  size      : (116, 96, 25)
+  lon       ϵ [ 14.075969111533457 : 14.213417764154963]
+  lat       ϵ [ 40.77452227533946 : 40.86110443583479]
+  depth     ϵ [ -5.4 km : 0.6 km]
+  fields    : (:FakeData, :Data2)
+  attributes: ["note"]
 ```
 which would allow visualizing this in paraview in the usual manner:
 ```julia-repl
@@ -423,11 +426,11 @@ function Base.show(io::IO, d::UTMData)
     else
         println(io,"  UTM zone : $(minimum(d.zone))-$(maximum(d.zone)) South")
     end
-    println(io,"    size   : $(size(d.EW))")
-    println(io,"    EW     ϵ [ $(minimum(d.EW.val)) : $(maximum(d.EW.val))]")
-    println(io,"    NS     ϵ [ $(minimum(d.NS.val)) : $(maximum(d.NS.val))]")
-    println(io,"    depth  ϵ [ $(minimum(d.depth.val)) : $(maximum(d.depth.val))]")
-    println(io,"    fields : $(keys(d.fields))")
+    println(io,"    size    : $(size(d.EW))")
+    println(io,"    EW      ϵ [ $(minimum(d.EW.val)) : $(maximum(d.EW.val))]")
+    println(io,"    NS      ϵ [ $(minimum(d.NS.val)) : $(maximum(d.NS.val))]")
+    println(io,"    depth   ϵ [ $(minimum(d.depth.val)) : $(maximum(d.depth.val))]")
+    println(io,"    fields  : $(keys(d.fields))")
     if any( propertynames(d) .== :atts)
         println(io,"  attributes: $(keys(d.atts))")
     end
@@ -561,11 +564,12 @@ julia> X,Y,Z    =   XYZGrid(x, y, z);
 julia> Data     =   Z
 julia> Data_set =   CartData(X,Y,Z, (FakeData=Data,Data2=Data.+1.))
 CartData 
-    size : (6, 11, 7)
-    x    ϵ [ 0.0 km : 10.0 km]
-    y    ϵ [ -5.0 km : 5.0 km]
-    z    ϵ [ -10.0 km : 2.0 km]
-    fields : (:FakeData, :Data2)
+    size    : (6, 11, 7)
+    x       ϵ [ 0.0 km : 10.0 km]
+    y       ϵ [ -5.0 km : 5.0 km]
+    z       ϵ [ -10.0 km : 2.0 km]
+    fields  : (:FakeData, :Data2)
+  attributes: ["note"]
 ```
 `CartData` is particularly useful in combination with cartesian geodynamic codes, such as LaMEM, which require cartesian grids.
 You can directly save your data to Paraview with
@@ -655,11 +659,11 @@ end
 # Print an overview of the UTMData struct:
 function Base.show(io::IO, d::CartData)
     println(io,"CartData ")
-    println(io,"    size   : $(size(d.x))")
-    println(io,"    x      ϵ [ $(minimum(d.x.val)) : $(maximum(d.x.val))]")
-    println(io,"    y      ϵ [ $(minimum(d.y.val)) : $(maximum(d.y.val))]")
-    println(io,"    z      ϵ [ $(minimum(d.z.val)) : $(maximum(d.z.val))]")
-    println(io,"    fields : $(keys(d.fields))")
+    println(io,"    size    : $(size(d.x))")
+    println(io,"    x       ϵ [ $(minimum(d.x.val)) : $(maximum(d.x.val))]")
+    println(io,"    y       ϵ [ $(minimum(d.y.val)) : $(maximum(d.y.val))]")
+    println(io,"    z       ϵ [ $(minimum(d.z.val)) : $(maximum(d.z.val))]")
+    println(io,"    fields  : $(keys(d.fields))")
     if any( propertynames(d) .== :atts)
         println(io,"  attributes: $(keys(d.atts))")
     end
@@ -673,11 +677,12 @@ This creates a `CartData` struct if you have a Tuple with 3D coordinates as inpu
 ```julia
 julia> data = CartData(XYZGrid(-10:10,-5:5,0))
 CartData 
-    size : (21, 11, 1)
-    x    ϵ [ -10.0 km : 10.0 km]
-    y    ϵ [ -5.0 km : 5.0 km]
-    z    ϵ [ 0.0 km : 0.0 km]
-    fields : (:Z,)
+    size    : (21, 11, 1)
+    x       ϵ [ -10.0 km : 10.0 km]
+    y       ϵ [ -5.0 km : 5.0 km]
+    z       ϵ [ 0.0 km : 0.0 km]
+    fields  : (:Z,)
+  attributes: ["note"]
 ```
 """
 CartData(xyz::Tuple) = CartData(xyz[1],xyz[2],xyz[3],(Z=xyz[3],))
