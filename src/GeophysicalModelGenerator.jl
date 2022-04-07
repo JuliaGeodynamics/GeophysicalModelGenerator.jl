@@ -12,7 +12,8 @@ export
         GeoUnit, GEO_units, SI_units, NO_units, AbstratGeoUnits, 
         Nondimensionalize, Nondimensionalize!, Dimensionalize, Dimensionalize!,
         superscript, upreferred, GEO, SI, NONE, isDimensional, 
-        km, m, cm, mm, Myrs, yr, s, MPa, Pa, Pas, K, C, kg, mol
+        km, m, cm, mm, Myrs, yr, s, MPa, Pa, Pas, K, C, kg, mol,
+        isDimensional, Value, NumValue, Unit, UnitValue
 
 export ReadCSV_LatLon, meshgrid, voxGrav
 

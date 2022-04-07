@@ -153,12 +153,20 @@ struct GeoData
     function GeoData(lon,lat,depth,fields,atts=nothing)
         
         # check depth & convert it to units of km in case no units are given or it has different length units
-        if unit.(depth)[1]==NoUnits 
+        if unit.(depth[1])==NoUnits 
             depth = depth*km                # in case depth has no dimensions
         end
         depth = uconvert.(km,depth)         # convert to km
-        depth = GeoUnit(depth,km)           # convert to GeoUnit structure with units of km
+        depth = GeoUnit(depth)              # convert to GeoUnit structure with units of km
 
+        if isa(lat, StepRangeLen)
+            lat = Vector(lat);
+        end
+
+        if isa(lon, StepRangeLen)
+            lon = Vector(lon);
+        end
+        
         # Check ordering of the arrays in case of 3D
         if sum(size(lon).>1)==3
             if maximum(abs.(diff(lon,dims=2)))>maximum(abs.(diff(lon,dims=1))) || maximum(abs.(diff(lon,dims=3)))>maximum(abs.(diff(lon,dims=1)))
@@ -199,8 +207,8 @@ struct GeoData
             if !(typeof(atts)<: Dict)
                 error("Attributes should be given as Dict!")
             end
-        end
-
+        end 
+        
         return new(lon,lat,depth,fields,atts)
 
      end
@@ -291,7 +299,7 @@ function Base.convert(::Type{ParaviewData}, d::GeoData)
 
 
 
-    return ParaviewData(GeoUnit(X,km),GeoUnit(Y,km),GeoUnit(Z,km),d.fields)
+    return ParaviewData(GeoUnit(X),GeoUnit(Y),GeoUnit(Z),d.fields)
 end
 
 
@@ -362,7 +370,7 @@ struct UTMData
             depth = depth*m                # in case depth has no dimensions
         end
         depth = uconvert.(m,depth)         # convert to meters
-        depth = GeoUnit(depth,m)           # convert to GeoUnit structure with units of meters
+        depth = GeoUnit(depth)             # convert to GeoUnit structure with units of meters
 
         # Check ordering of the arrays in case of 3D
         if sum(size(EW).>1)==3
@@ -462,7 +470,12 @@ function Base.convert(::Type{GeoData}, d::UTMData)
         atts = Dict("note" => "No attributes were given to this dataset") # assign the default
     end
 
-    return GeoData(Lon,Lat,d.depth.val,d.fields,atts)
+    depth = d.depth.val
+    if Unit(d.depth[1])==m
+        depth = depth/1000
+    end
+
+    return GeoData(Lon,Lat,depth,d.fields,atts)
 
 end
 
@@ -860,7 +873,7 @@ function Convert!(d,u)
         d = d*u                # in case it has no dimensions
     end
     d = uconvert.(u,d)         # convert to u
-    d = GeoUnit(d,u)           # convert to GeoUnit structure with units of u
+    d = GeoUnit(d)             # convert to GeoUnit structure with units of u
 
     return d
 end

@@ -3,7 +3,7 @@
 export meshgrid, CrossSection, ExtractSubvolume, SubtractHorizontalMean
 export ParseColumns_CSV_File, AboveSurface, BelowSurface, VoteMap
 export InterpolateDataOnSurface, InterpolateDataFields2D
-export RotateTranslateScale!
+export RotateTranslateScale
 export DrapeOnTopo, LithostaticPressure!
 
 using NearestNeighbors
@@ -62,10 +62,10 @@ function CrossSection(V::GeoData; dims=(100,100), Interpolate=false, Depth_level
                                                 LinRange(minimum(V.lat.val), maximum(V.lat.val), dims[2]),
                                                 Depth_level)
         else
-            ind_z   =   argmin(abs.(V.depth.val[1,1,:] .- Depth_level))
+            ind_z   =   argmin(abs.(NumValue(V.depth.val[1,1,:]) .- Depth_level.val))
             iDepth  =   ind_z:ind_z;
-            iLon    =   1:size(V.lon.val,1);
-            iLat    =   1:size(V.lat.val,2);
+            iLon    =   1:size(NumValue(V.lon),1);
+            iLat    =   1:size(NumValue(V.lat),2);
         end
     end
 
@@ -207,7 +207,7 @@ function ExtractSubvolume(V::GeoData; Interpolate=false, Lon_level=nothing, Lat_
         i_s, i_e    =   argmin(abs.(V.lat.val[1,:,1] .- Lat_level[1])), argmin(abs.(V.lat.val[1,:,1] .- Lat_level[2]))
         iLat        =   i_s:i_e;
         
-        i_s, i_e    =   argmin(abs.(V.depth.val[1,1,:] .- Depth_level[1])), argmin(abs.(V.depth.val[1,1,:] .- Depth_level[2]))
+        i_s, i_e    =   argmin(abs.(V.depth.val[1,1,:] .- ustrip(Depth_level[1]))), argmin(abs.(V.depth.val[1,1,:] .- ustrip(Depth_level[2])))
         step        =   1;
         if i_e<i_s
             step=-1
@@ -222,8 +222,8 @@ end
 
 function CheckBounds(Data::GeoUnit, Data_Cross)
     
-    min_Data, max_Data = minimum(Data.val), maximum(Data.val);
-    if Data_Cross < min_Data || Data_Cross>max_Data
+    min_Data, max_Data = NumValue(minimum(Data.val)), NumValue(maximum(Data.val));
+    if ustrip(Data_Cross) < min_Data || ustrip(Data_Cross)>max_Data
         error("Outside bounds [$min_Data : $max_Data]; $Data_Cross")
     end
 end
@@ -267,7 +267,7 @@ function InterpolateDataFields(V::GeoData, Lon, Lat, Depth)
                 else
                     interpol    =   LinearInterpolation((Lon_vec, Lat_vec, Depth_vec), ustrip.(data_tuple[j]),extrapolation_bc = Flat());      # create interpolation object
                 end
-                data_array[:,:,:,j] =   interpol.(Lon, Lat, Depth);          
+                data_array[:,:,:,j] =   interpol.(Lon, Lat, ustrip.(Depth));          
             end
             data_new    = tuple([data_array[:,:,:,c] for c in 1:size(data_array,4)]...)     # transform 3D matrix to tuple
 
@@ -279,7 +279,7 @@ function InterpolateDataFields(V::GeoData, Lon, Lat, Depth)
             else
                 interpol    =   LinearInterpolation((Lon_vec, Lat_vec, Depth_vec), V.fields[i], extrapolation_bc = Flat());            # create interpolation object
             end
-            data_new    =   interpol.(Lon, Lat, Depth);                                                 # interpolate data field
+            data_new    =   interpol.(Lon, Lat, ustrip.(Depth));                                                 # interpolate data field
         end
         
         # replace the one 
@@ -930,7 +930,7 @@ function VoteMap(DataSets::GeoData, criteria::String; dims=(50,50,50))
 end
 
 """
-    RotateTranslateScale!(Data::ParaviewData; Rotate=0, Translate=(0,0,0), Scale=(1.0,1.0,1.0))
+    Data_R = RotateTranslateScale(Data::ParaviewData; Rotate=0, Translate=(0,0,0), Scale=(1.0,1.0,1.0))
 
 Does an in-place rotation, translation and scaling of the Cartesian dataset `Data`. 
 
@@ -950,8 +950,8 @@ ParaviewData
   y     ϵ [ 30.0 : 40.0]
   z     ϵ [ -50.0 : -10.0]
   fields: (:Depth,)
-julia> RotateTranslateScale!(Data_C, Rotate=30);
-julia> Data_C
+julia> Data_R = RotateTranslateScale(Data_C, Rotate=30);
+julia> Data_R
 ParaviewData 
   size  : (11, 11, 41)
   x     ϵ [ 8.169872981077807 : 21.83012701892219]
@@ -960,7 +960,7 @@ ParaviewData
   fields: (:Depth,)
 ```
 """
-function RotateTranslateScale!(Data::ParaviewData; Rotate=0, Translate=(0,0,0), Scale=(1.0,1.0,1.0))
+function RotateTranslateScale(Data::ParaviewData; Rotate=0, Translate=(0,0,0), Scale=(1.0,1.0,1.0))
 
     X,Y,Z       = Data.x.val,   Data.y.val,     Data.z.val;         # Extract coordinates
     Xr,Yr,Zr    = X,Y,Z;                                            # Rotated coordinates 
@@ -990,10 +990,11 @@ function RotateTranslateScale!(Data::ParaviewData; Rotate=0, Translate=(0,0,0), 
     Zr .+= Translate[3];
     
     # Modify original structure
-    Data.x.val = Xr;
-    Data.y.val = Yr;
-    Data.z.val = Zr;
+    #Data.x.val = Xr;
+    #Data.y.val = Yr;
+    #Data.z.val = Zr;
     
+    return ParaviewData(Xr,Yr,Zr, Data.fields)
 end
 
 

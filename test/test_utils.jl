@@ -142,16 +142,15 @@ Data_VoteMap = VoteMap([Data_set3D_reverse, Data_set3D], ["Depthdata<-560","LonD
 # Test rotation routines
 X,Y,Z   =   LonLatDepthGrid(10:20,30:40,-50:-10);
 Data_C  =   ParaviewData(X,Y,Z,(Depth=Z,))
-RotateTranslateScale!(Data_C, Rotate=30);
+Data_C1 =   RotateTranslateScale(Data_C, Rotate=30);
+@test Data_C1.x.val[10] ≈ 20.964101615137753
+@test Data_C1.y.val[10] ≈ 32.66987298107781
+@test Data_C1.z.val[20] == -50
 
-@test Data_C.x.val[10] ≈ 20.964101615137753
-@test Data_C.y.val[10] ≈ 32.66987298107781
-@test Data_C.z.val[20] == -50
-
-RotateTranslateScale!(Data_C, Scale=10, Rotate=10, Translate=(1,2,3));
-@test Data_C.x.val[10] ≈ 213.78115820908607
-@test Data_C.y.val[10] ≈ 339.4092822315127
-@test Data_C.z.val[20] == -497.0
+Data_C1 = RotateTranslateScale(Data_C, Scale=10, Rotate=10, Translate=(1,2,3));
+@test Data_C1.x.val[10] ≈ 213.78115820908607
+@test Data_C1.y.val[10] ≈ 339.4092822315127
+@test Data_C1.z.val[20] == -497.0
 
 
 # Test 

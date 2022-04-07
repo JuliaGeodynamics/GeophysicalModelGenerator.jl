@@ -9,7 +9,7 @@ Grid        =   ReadLaMEM_InputFile("test_files/SaltModels.dat")
 Phases      =   zeros(Int32,   size(Grid.X));
 Temp        =   zeros(Float64, size(Grid.X));
 Model3D     =   CartData(Grid, (Phases=Grid.Z,));
-@test  Model3D.y.val[100]==-1.9375km
+@test  Value(Model3D.y[100])==-1.9375km
 
 # Read Partitioning file: 
 PartitioningFile = "test_files/ProcessorPartitioning_4cpu_1.2.2.bin"
