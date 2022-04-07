@@ -1,3 +1,4 @@
+using GeophysicalModelGenerator
 using .GeophysicalModelGenerator
 using Documenter
 
