@@ -1,4 +1,4 @@
-using GeophysicalModelGenerator
+using .GeophysicalModelGenerator
 using Documenter
 
 #DocMeta.setdocmeta!(GeophysicalModelGenerator, :DocTestSetup, :(using GeophysicalModelGenerator); recursive=true)
