@@ -9,7 +9,8 @@ export Visualise
 This starts an interactive widget that allows you to explore a 3D data set `DataSet` in an interactive manner.
 All fields in the dataset can be explored, and if the optional parameter `Topography` is provided, the topography will be drawn on top.
 
-Note that this requires orthogonal grids 
+Note that this requires orthogonal grids, so it will work with a `GeoData` set, or with an orthogonal `CartData` set.
+Note that you may have to use `ProjectCartData` to project it to orthogonal cartesian coordinates.
 """
 function Visualise(Data; Topography=nothing, Topo_range=nothing)
 
@@ -22,7 +23,6 @@ function Visualise(Data; Topography=nothing, Topo_range=nothing)
         z = Data.depth.val[1,1,:];  zlab = "depth [km]"
         orthogonal = true;
     elseif isa(Data,CartData)
-
         # Determine 
         x = Data.x.val[:,1,1];    xlab = "X [km]"
         y = Data.y.val[1,:,1];    ylab = "Y [km]"
@@ -100,17 +100,17 @@ function Visualise(Data; Topography=nothing, Topo_range=nothing)
                                default="roma")
 
     # Colorbar limits
-    cmin = @lift minimum($vol)
-    cmax = @lift maximum($vol)
+    cmin = @lift round(minimum($vol), digits=2)
+    cmax = @lift round(maximum($vol), digits=2)
     cmin_str = @lift string($cmin)
     cmax_str = @lift string($cmax)
     
-    cmin_box    = Textbox(fig, stored_string = cmin_str,width = 200)
-    cmax_box    = Textbox(fig, stored_string = cmax_str,width = 200)
+    cmin_box    = Textbox(fig, stored_string = cmin_str,width = nothing)
+    cmax_box    = Textbox(fig, stored_string = cmax_str,width = nothing)
 
     iso_level = Observable([1.7])
     iso_alpha = Observable(0.5);
-    iso_box     = Textbox(fig, stored_string ="$(iso_level[][1])",width = 200)
+    iso_box     = Textbox(fig, stored_string ="$(iso_level[][1])",width = nothing)
     iso_toggle  = Toggle(fig, active = true); 
     iso_slide   = Slider(fig, range = 0:.01:1)
     set_close_to!(iso_slide, iso_alpha[])
@@ -120,7 +120,7 @@ function Visualise(Data; Topography=nothing, Topo_range=nothing)
     fig[2, 1] = vgrid!(
         hgrid!(Label(fig, "Dataset",  width = nothing),menu_dataset),
         hgrid!(Label(fig, "Colormap", width = nothing),menu_colormap),
-        hgrid!(Label(fig, "Color axis limits", width = nothing), hgrid!(cmin_box, Label(fig, "-", width = nothing), cmax_box)),
+        hgrid!(Label(fig, "Color axis limits", width = nothing), hgrid!(cmin_box, Label(fig, "-", width = 20), cmax_box)),
         hgrid!(hgrid!(Label(fig, "Isovalue", width = nothing), iso_toggle), hgrid!(iso_box,Label(fig, "α: ", width = nothing),iso_slide));
         tellheight = false)
 
@@ -137,8 +137,10 @@ function Visualise(Data; Topography=nothing, Topo_range=nothing)
 
     if orthogonal
         plt = volumeslices!(ax, x_vec,y_vec,z_vec,vol, colorrange=(cmin,cmax), colormap=:roma)
+        iso = GLMakie.contour!(plt, x_vec, y_vec, z_vec, vol, levels = iso_level, alpha=iso_alpha, colormap=plt.attributes.colormap, colorrange=plt.attributes.colorrange)
 
-        iso = contour!(plt, x_vec, y_vec, z_vec, vol, levels = iso_level, alpha=iso_alpha, colormap=plt.attributes.colormap, colorrange=plt.attributes.colorrange)
+#        plt = volumeslices!(ax, reverse(x_vec),reverse(y_vec),z_vec,vol, colorrange=(cmin,cmax), colormap=:roma)
+#        iso = GLMakie.contour!(plt, reverse(x_vec), reverse(y_vec), z_vec, vol, levels = iso_level, alpha=iso_alpha, colormap=plt.attributes.colormap, colorrange=plt.attributes.colorrange)
     end
 
     topo_alpha = Observable(0.5)
@@ -234,12 +236,18 @@ function Visualise(Data; Topography=nothing, Topo_range=nothing)
         hmaps = [plt[Symbol(:heatmap_, s)][] for s ∈ (:yz, :xz, :xy)]
         toggles = [Toggle(lo[i, nc + 1], active = true) for i ∈ 1:4]
 
-        map(zip([hmaps; topo_surf], toggles)) do (h, t)
-            connect!(h.visible, t.active)
+        if !isnothing(Topography)
+            map(zip([hmaps; topo_surf], toggles)) do (h, t)
+                connect!(h.visible, t.active)
+            end
+        else
+            map(zip(hmaps, toggles[1:3])) do (h, t)
+                connect!(h.visible, t.active)
+            end
         end
     end
 
-    fig
+    display(fig)
     
     return nothing
 end

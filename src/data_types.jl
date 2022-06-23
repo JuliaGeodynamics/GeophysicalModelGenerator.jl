@@ -471,7 +471,7 @@ function Base.convert(::Type{GeoData}, d::UTMData)
     end
 
     depth = d.depth.val
-    if GeophysicalModelGenerator.Unit(d.depth[1])==m
+    if d.depth[1].unit==m
         depth = depth/1000
     end
 
