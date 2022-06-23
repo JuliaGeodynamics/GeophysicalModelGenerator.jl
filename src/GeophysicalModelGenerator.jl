@@ -44,14 +44,13 @@ function __init__()
         @require GMT = "5752ebe1-31b9-557e-87aa-f909b540aa54" begin
                 @eval include("./GMT_utils.jl")
         end
-     #   @require GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a" begin
-     #           @eval include("./Visualisation.jl")
-     #   end
+        @require GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a" begin
+                println("Loading GLMakie plotting routines within GMG")
+                @eval include("./Visualisation.jl")
+        end
         
 end
 
-# For debugging:
-include("./Visualisation.jl")
 
 
 end

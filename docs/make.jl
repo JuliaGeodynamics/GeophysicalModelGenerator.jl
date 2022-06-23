@@ -38,6 +38,7 @@ makedocs(;
             "Projection" =>  "man/projection.md",
             "Paraview output" => "man/paraview_output.md",
             "Tools" => "man/tools.md",
+            "Visualisation" => "man/visualise.md",
             "Gravity code" => "man/gravity_code.md",
             "LaMEM" => "man/lamem.md"
         ],

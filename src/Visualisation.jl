@@ -1,5 +1,5 @@
 # This contains visualisation widgets which are optionally made available when GLMakie is loaded along with GMG
-using GLMakie, Statistics
+using .GLMakie, Statistics
 
 export Visualise
 
@@ -80,7 +80,7 @@ function Visualise(Data; Topography=nothing, Topo_range=nothing)
     vol = lift(get_vol, data_selected)              
 
     fig = Figure(resolution = (2000,2000), fontsize=20)
-    ax = LScene(fig[1, 1:2])
+    ax = LScene(fig[1, 1:2], scenekw = (camera = cam3d!, raw = false))
 
     # Create sliders
     sgrid = SliderGrid(
@@ -246,6 +246,10 @@ function Visualise(Data; Topography=nothing, Topo_range=nothing)
             end
         end
     end
+
+    # axis data
+    ax3 = ax.scene.plots[1]
+
 
     display(fig)
     
