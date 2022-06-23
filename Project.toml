@@ -38,8 +38,9 @@ NearestNeighbors = "0.2 - 0.4"
 Parameters = "0.10 - 0.12"
 Requires = "1.0 - 1.1"
 SpecialFunctions = "1.0 - 1.6"
-WriteVTK = "0.8 - 1"
+WriteVTK = "1"
 julia = "1.6"
+GMT = "0.40"
 
 [extras]
 GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
