@@ -42,5 +42,11 @@ Data = CartData(Grid, (T=Temp, Phases=Phases))
 
 @test NumValue(Data.x[3,3,2]) ≈ 2.2222222222222223
 
-# To be tested: doing the same for cross-sections or horizontal slices
+# Doing the same for vertical cross-sections
 Grid2D              =   CreateCartGrid(size=(10,30),x=(0.,10), z=(2.,10))
+Temp2D              =   ones(Float64, Grid2D.N...)*1350;
+Phases2D            =   zeros(Int32,  Grid2D.N...);
+
+Data2D = CartData(Grid2D, (T=Temp2D, Phases=Phases2D))
+
+@test NumValue(Data.x[3,1,2]) ≈ 2.2222222222222223

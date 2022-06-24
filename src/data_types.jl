@@ -702,21 +702,7 @@ CartData
 """
 CartData(xyz::Tuple) = CartData(xyz[1],xyz[2],xyz[3],(Z=xyz[3],))
 
-"""
-    Data = CartData(Grid::CartGrid, fields::NamedTuple; y_val=0.0) 
 
-Returns a CartData set given a cartesian grid `Grid` and `fields` defined on that grid.
-"""
-function CartData(Grid::CartGrid, fields::NamedTuple; y_val=0.0)
-    if length(Grid2D.N)==3
-        X,Y,Z = XYZGrid(Grid.coord1D[1], Grid.coord1D[2], Grid.coord1D[3])  # 3D grid
-
-    elseif length(Grid2D.N)==2
-        X,Y,Z = XYZGrid(Grid.coord1D[1], y_val, Grid.coord1D[2])  # 3D grid
-    end
-    
-    return CartData(X,Y,Z, fields)
-end
 
 """
     Convert2UTMzone(d::CartData, proj::ProjectionPoint)  
@@ -1069,4 +1055,27 @@ function coordinate_grids(Data::CartGrid)
     X,Y,Z = XYZGrid(NumValue(Data.coord1D[1]), NumValue(Data.coord1D[2]), NumValue(Data.coord1D[3]))
 
     return X,Y,Z
+end
+
+"""
+    Data = CartData(Grid::CartGrid, fields::NamedTuple; y_val=0.0) 
+
+Returns a CartData set given a cartesian grid `Grid` and `fields` defined on that grid.
+"""
+function CartData(Grid::CartGrid, fields::NamedTuple; y_val=0.0)
+    if length(Grid.N)==3
+        X,Y,Z = XYZGrid(Grid.coord1D[1], Grid.coord1D[2], Grid.coord1D[3])  # 3D grid
+    elseif length(Grid.N)==2
+        X,Y,Z = XYZGrid(Grid.coord1D[1], y_val, Grid.coord1D[2])  # 2D grid
+
+        # the fields need to be reshaped from 2D to 3D arrays; we replace them in the NamedTuple as follows
+        names = keys(fields)
+        for ifield = 1:length(names)
+            dat = reshape(fields[ifield],Grid.N[1],1,Grid.N[2]);    # reshape into 3D form
+            fields = merge(fields, [names[ifield] => dat])
+        end
+        
+    end
+    
+    return CartData(X,Y,Z, fields)
 end
