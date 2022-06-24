@@ -986,14 +986,17 @@ function CreateCartGrid(;
 
     FT = typeof(x[1])
     if      dim==1
+        x = FT.(x)
         L = (x[2] - x[1],)
         X₁= (x[1], )
     elseif  dim==2
+        x,z = FT.(x), FT.(z)
         L = (x[2] - x[1], z[2] - z[1])
         X₁= (x[1], z[1])
     else
-        L = (x[2] - x[1], z[2] - z[1], y[2] - y[1])
-        X₁= (x[1], z[1], y[1])
+        x,y,z = FT.(x), FT.(y), FT.(z)
+        L = (x[2] - x[1], y[2] - y[1], z[2] - z[1])
+        X₁= (x[1], y[1], z[1])
     end
     Xₙ  = X₁ .+ L  
     Δ   = L ./ (N .- 1)       

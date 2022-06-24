@@ -13,7 +13,7 @@ AddBox!(Phases,Temp,Grid, xlim=(2,4), zlim=(-15,-10), phase=ConstantPhase(3), Di
 @test sum(Temp) ≈ 1.4254722397218528e6
 
 AddEllipsoid!(Phases,Temp,Grid, cen=(4,15,-17), axes=(1,2,3), StrikeAngle=90, DipAngle=45, phase=ConstantPhase(2), T=ConstantTemp(600))
-@test sum(Temp) ≈ 1.4037222397218528e6
+@test sum(Temp) ≈ 1.4037222397218528e6 rtol=1e-6
 
 # CartData 
 X,Y,Z               =   XYZGrid(1.0:1:10.0, 11.0:1:20.0, -20:1:-10);
@@ -23,10 +23,10 @@ Phases              =   zeros(Int32,   size(Data));
 Grid                =   CartData(X,Y,Z,(DataFieldName=Data,))   
 
 AddBox!(Phases,Temp,Grid, xlim=(2,4), zlim=(-15,-10), phase=ConstantPhase(3), DipAngle=10, T=LinearTemp(Tbot=1350, Ttop=200))
-@test sum(Temp) ≈ 1.4254722397218528e6
+@test sum(Temp) ≈ 1.4254722397218528e6  rtol=1e-6
 
 AddEllipsoid!(Phases,Temp,Grid, cen=(4,15,-17), axes=(1,2,3), StrikeAngle=90, DipAngle=45, phase=ConstantPhase(2), T=ConstantTemp(600))
-@test sum(Temp) ≈ 1.4037222397218528e6
+@test sum(Temp) ≈ 1.4037222397218528e6  rtol=1e-6
 
 # CartGrid
 Grid                =   CreateCartGrid(size=(10,20,30),x=(0.,10), y=(0.,10), z=(2.,10))
@@ -50,3 +50,17 @@ Phases2D            =   zeros(Int32,  Grid2D.N...);
 Data2D = CartData(Grid2D, (T=Temp2D, Phases=Phases2D))
 
 @test NumValue(Data.x[3,1,2]) ≈ 2.2222222222222223
+
+
+# test AboveSurface with the Grid object
+Grid        =   CreateCartGrid(size=(10,20,30),x=(0.,10), y=(0.,10), z=(-10.,2.))
+Temp        =   ones(Float64, Grid.N...)*1350;
+Phases      =   zeros(Int32,  Grid.N...);
+
+
+Topo_cart   =   CartData(XYZGrid(-1:.2:20,-12:.2:13,0));
+ind         =   AboveSurface(Grid, Topo_cart);
+@test sum(ind[1,1,:]) == 5
+
+ind         =   BelowSurface(Grid, Topo_cart);
+@test sum(ind[1,1,:]) == 25
