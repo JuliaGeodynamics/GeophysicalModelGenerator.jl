@@ -1,4 +1,4 @@
-# test LaMEM i/o routines
+# test LaMEM I/O routines
 using Test, GeophysicalModelGenerator
 
 # Load LaMEM input file:

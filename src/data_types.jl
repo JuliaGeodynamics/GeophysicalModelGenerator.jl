@@ -5,7 +5,8 @@ import Base: show
 
 export  GeoData, ParaviewData, UTMData, CartData,
         LonLatDepthGrid, XYZGrid, Velocity_SphericalToCartesian!,
-        Convert2UTMzone, Convert2CartData, ProjectionPoint
+        Convert2UTMzone, Convert2CartData, ProjectionPoint,
+        coordinate_grids
 
 """
     struct ProjectionPoint
@@ -142,7 +143,7 @@ GeoData
   attributes: ["note"]
 ```
 """
-struct GeoData
+struct GeoData <: AbstractGeneralGrid
     lon     ::  GeoUnit
     lat     ::  GeoUnit 
     depth   ::  GeoUnit
@@ -241,7 +242,7 @@ julia> Data_set    =   GeophysicalModelGenerator.GeoData(1.0:10.0,11.0:20.0,(-20
 julia> Data_cart = convert(ParaviewData, Data_set)
 ```
 """
-mutable struct ParaviewData
+mutable struct ParaviewData <: AbstractGeneralGrid
     x       ::  GeoUnit
     y       ::  GeoUnit
     z       ::  GeoUnit
@@ -353,7 +354,7 @@ julia> Write_Paraview(Data_set1, "Data_set1")
  "Data_set1.vts"
 ```
 """
-struct UTMData
+struct UTMData <: AbstractGeneralGrid
     EW       ::  GeoUnit
     NS       ::  GeoUnit 
     depth    ::  GeoUnit
@@ -605,7 +606,7 @@ GeoData
 which would allow visualizing this in paraview in the usual manner:
 
 """
-struct CartData
+struct CartData <: AbstractGeneralGrid
     x       ::  GeoUnit
     y       ::  GeoUnit 
     z       ::  GeoUnit
@@ -876,4 +877,45 @@ function Convert!(d,u)
     d = GeoUnit(d)             # convert to GeoUnit structure with units of u
 
     return d
+end
+
+"""
+    X,Y,Z = coordinate_grids(Data::CartData)
+
+Returns 3D coordinate arrays
+"""
+function coordinate_grids(Data::CartData)
+
+    return NumValue(Data.x), NumValue(Data.y), NumValue(Data.z)
+end
+
+"""
+    LON,LAT,Z = coordinate_grids(Data::GeoData)
+
+Returns 3D coordinate arrays
+"""
+function coordinate_grids(Data::GeoData)
+
+    return NumValue(Data.lon), NumValue(Data.lat), NumValue(Data.depth)
+end
+
+"""
+    EW,NS,Z = coordinate_grids(Data::UTMData)
+
+Returns 3D coordinate arrays
+"""
+function coordinate_grids(Data::UTMData)
+
+    return NumValue(Data.EW), NumValue(Data.NS), NumValue(Data.depth)
+end
+
+"""
+    X,Y,Z = coordinate_grids(Data::ParaviewData)
+
+Returns 3D coordinate arrays
+"""
+function coordinate_grids(Data::ParaviewData)
+    X,Y,Z = XYZGrid(NumValue(Data.x), NumValue(Data.y), NumValue(Data.z))
+
+    return X,Y,Z
 end

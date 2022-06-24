@@ -14,7 +14,7 @@ export GetProcessorPartitioning, ReadData_VTR, ReadData_PVTR, CreatePartitioning
 """
 Structure that holds information about the LaMEM grid (usually read from an input file).
 """
-struct LaMEM_grid
+struct LaMEM_grid <: AbstractGeneralGrid
     nmark_x :: Int64
     nmark_y :: Int64
     nmark_z :: Int64
@@ -813,4 +813,14 @@ function CreatePartitioningFile(LaMEM_input::String,NumProc::Int64; LaMEM_dir::S
 
     return PartFile[1]
 
+end
+
+"""
+    X,Y,Z = coordinate_grids(Data::LaMEM_grid)
+
+Returns 3D coordinate arrays
+"""
+function coordinate_grids(Data::LaMEM_grid)
+
+    return Data.X, Data.Y, Data.Z
 end

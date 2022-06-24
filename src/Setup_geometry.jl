@@ -3,9 +3,9 @@ using Printf
 using Parameters        # helps setting default parameters in structures
 using SpecialFunctions: erfc  
 
-# LaMEM_geometry
+# Setup_geometry
 # 
-# These are routines that help to create LaMEM input geometries, such as slabs with a given angle
+# These are routines that help to create input geometries, such as slabs with a given angle
 #
 
 export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!,
@@ -15,7 +15,7 @@ export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!,
 
 
 """
-    AddBox!(Phase, Temp, Grid::LaMEM_grid; xlim=Tuple{2}, [ylim=Tuple{2}], zlim=Tuple{2},
+    AddBox!(Phase, Temp, Grid::AbstractGeneralGrid; xlim=Tuple{2}, [ylim=Tuple{2}], zlim=Tuple{2},
             Origin=nothing, StrikeAngle=0, DipAngle=0,
             phase = ConstantPhase(1),
             T=nothing )
@@ -27,10 +27,10 @@ Parameters
 ====
 - Phase - Phase array (consistent with Grid)
 - Temp  - Temperature array (consistent with Grid)
-- Grid - LaMEM grid structure (usually obtained with ReadLaMEM_InputFile)
-- xlim - left/right coordinates of box
-- ylim - front/back coordinates of box [optional; if not specified we use the whole box]
-- zlim - bottom/top coordinates of box
+- Grid -  grid structure (usually obtained with ReadLaMEM_InputFile, but can also be other grid types)
+- xlim -  left/right coordinates of box
+- ylim -  front/back coordinates of box [optional; if not specified we use the whole box]
+- zlim -  bottom/top coordinates of box
 - Origin - the origin, used to rotate the box around. Default is the left-front-top corner
 - StrikeAngle - strike angle of slab
 - DipAngle - dip angle of slab
@@ -72,15 +72,18 @@ julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
  "LaMEM_ModelSetup.vts"   
 ```
 """
-function AddBox!(Phase, Temp, Grid::LaMEM_grid;                 # required input
+function AddBox!(Phase, Temp, Grid::AbstractGeneralGrid;                 # required input
                 xlim=Tuple{2}, ylim=nothing, zlim=Tuple{2},     # limits of the box
                 Origin=nothing, StrikeAngle=0, DipAngle=0,      # origin & dip/strike
                 phase = ConstantPhase(1),                       # Sets the phase number(s) in the box
                 T=nothing )                                     # Sets the thermal structure (various fucntions are available)
     
+    # Retrieve 3D data arrays for the grid
+    X,Y,Z = coordinate_grids(Grid)
+
     # Limits of block                
     if ylim==nothing 
-        ylim = (Grid.coord_y...,) 
+        ylim = (minimum(Y), maximum(Y)) 
     end
     
     if Origin==nothing 
@@ -88,9 +91,9 @@ function AddBox!(Phase, Temp, Grid::LaMEM_grid;                 # required input
     end
 
     # Perform rotation of 3D coordinates:
-    Xrot = Grid.X .- Origin[1];
-    Yrot = Grid.Y .- Origin[2];
-    Zrot = Grid.Z .- Origin[3];
+    Xrot = X .- Origin[1];
+    Yrot = Y .- Origin[2];
+    Zrot = Z .- Origin[3];
 
     Rot3D!(Xrot,Yrot,Zrot, StrikeAngle, DipAngle)
 
@@ -115,7 +118,7 @@ function AddBox!(Phase, Temp, Grid::LaMEM_grid;                 # required input
 end
 
 """
-    AddSphere!(Phase, Temp, Grid::LaMEM_grid; cen=Tuple{3}, radius=Tuple{1},
+    AddSphere!(Phase, Temp, Grid::AbstractGeneralGrid; cen=Tuple{3}, radius=Tuple{1},
             phase = ConstantPhase(1).
             T=nothing )
 
@@ -155,27 +158,30 @@ julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
  "LaMEM_ModelSetup.vts"   
 ```
 """
-function AddSphere!(Phase, Temp, Grid::LaMEM_grid;      # required input
+function AddSphere!(Phase, Temp, Grid::AbstractGeneralGrid;      # required input
     cen=Tuple{3}, radius=Tuple{1},                         # center and radius of the sphere
     phase = ConstantPhase(1),                           # Sets the phase number(s) in the sphere
     T=nothing )                                         # Sets the thermal structure (various fucntions are available)
           
+    # Retrieve 3D data arrays for the grid
+    X,Y,Z = coordinate_grids(Grid)
+
     # Set phase number & thermal structure in the full domain
-    ind = findall(((Grid.X .- cen[1]).^2 + (Grid.Y .- cen[2]).^2 + (Grid.Z .- cen[3]).^2).^0.5 .< radius)
+    ind = findall(((X .- cen[1]).^2 + (Y .- cen[2]).^2 + (Z .- cen[3]).^2).^0.5 .< radius)
 
     # Compute thermal structure accordingly. See routines below for different options
     if T != nothing
-        Temp[ind] = Compute_ThermalStructure(Temp[ind], Grid.X[ind], Grid.Y[ind], Grid.Z[ind], T)
+        Temp[ind] = Compute_ThermalStructure(Temp[ind], X[ind], Y[ind], Z[ind], T)
     end
 
     # Set the phase. Different routines are available for that - see below.
-    Phase[ind] = Compute_Phase(Phase[ind], Temp[ind], Grid.X[ind], Grid.Y[ind], Grid.Z[ind], phase)
+    Phase[ind] = Compute_Phase(Phase[ind], Temp[ind], X[ind], Y[ind], Z[ind], phase)
 
     return nothing
 end
 
 """
-    AddEllipsoid!(Phase, Temp, Grid::LaMEM_grid; cen=Tuple{3}, axes=Tuple{3},
+    AddEllipsoid!(Phase, Temp, Grid::AbstractGeneralGrid; cen=Tuple{3}, axes=Tuple{3},
             Origin=nothing, StrikeAngle=0, DipAngle=0,
             phase = ConstantPhase(1).
             T=nothing )
@@ -219,7 +225,7 @@ julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
  "LaMEM_ModelSetup.vts"   
 ```
 """
-function AddEllipsoid!(Phase, Temp, Grid::LaMEM_grid;      # required input
+function AddEllipsoid!(Phase, Temp, Grid::AbstractGeneralGrid;      # required input
     cen=Tuple{3}, axes=Tuple{3},                           # center and semi-axes of the ellpsoid
     Origin=nothing, StrikeAngle=0, DipAngle=0,             # origin & dip/strike
     phase = ConstantPhase(1),                              # Sets the phase number(s) in the box
@@ -229,13 +235,15 @@ function AddEllipsoid!(Phase, Temp, Grid::LaMEM_grid;      # required input
         Origin = cen  # center
     end
 
+    # Retrieve 3D data arrays for the grid
+    X,Y,Z = coordinate_grids(Grid)
+
     # Perform rotation of 3D coordinates:
-    Xrot = Grid.X .- Origin[1];
-    Yrot = Grid.Y .- Origin[2];
-    Zrot = Grid.Z .- Origin[3];
+    Xrot = X .- Origin[1];
+    Yrot = Y .- Origin[2];
+    Zrot = Z .- Origin[3];
 
     Rot3D!(Xrot,Yrot,Zrot, StrikeAngle, DipAngle)
-
 
     # Set phase number & thermal structure in the full domain
     x2     = axes[1]^2
@@ -257,7 +265,7 @@ function AddEllipsoid!(Phase, Temp, Grid::LaMEM_grid;      # required input
 end
 
 """
-    AddCylinder!(Phase, Temp, Grid::LaMEM_grid; base=Tuple{3}, cap=Tuple{3}, radius=Tuple{1},
+    AddCylinder!(Phase, Temp, Grid::AbstractGeneralGrid; base=Tuple{3}, cap=Tuple{3}, radius=Tuple{1},
             phase = ConstantPhase(1).
             T=nothing )
 
@@ -268,7 +276,7 @@ Parameters
 ====
 - Phase - Phase array (consistent with Grid)
 - Temp  - Temperature array (consistent with Grid)
-- Grid - LaMEM grid structure (usually obtained with ReadLaMEM_InputFile)
+- Grid - Grid structure (usually obtained with ReadLaMEM_InputFile)
 - base - center coordinate of bottom of cylinder
 - cap - center coordinate of top of cylinder
 - radius - radius of the cylinder
@@ -298,8 +306,8 @@ julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
  "LaMEM_ModelSetup.vts"   
 ```
 """
-function AddCylinder!(Phase, Temp, Grid::LaMEM_grid;    # required input
-    base=Tuple{3}, cap=Tuple{3}, radius=Tuple{1},       # center and radius of the sphere
+function AddCylinder!(Phase, Temp, Grid::AbstractGeneralGrid;   # required input
+    base=Tuple{3}, cap=Tuple{3}, radius=Tuple{1},               # center and radius of the sphere
     phase = ConstantPhase(1),                           # Sets the phase number(s) in the sphere
     T=nothing )                                         # Sets the thermal structure (various fucntions are available)
     
@@ -307,10 +315,13 @@ function AddCylinder!(Phase, Temp, Grid::LaMEM_grid;    # required input
     axVec = cap .- base
     ax2   = (axVec[1]^2 + axVec[2]^2 + axVec[3]^2)
 
+    # Retrieve 3D data arrays for the grid
+    X,Y,Z = coordinate_grids(Grid)
+
     # distance between grid points and cylinder base
-    dx_b  = Grid.X .- base[1]
-    dy_b  = Grid.Y .- base[2]
-    dz_b  = Grid.Z .- base[3]
+    dx_b  = X .- base[1]
+    dy_b  = Y .- base[2]
+    dz_b  = Z .- base[3]
 
     # find normalized parametric coordinate of a point-axis projection
     t     = (axVec[1] .* dx_b .+ axVec[2] .* dy_b .+ axVec[3] .* dz_b) ./ ax2
@@ -325,11 +336,11 @@ function AddCylinder!(Phase, Temp, Grid::LaMEM_grid;    # required input
 
     # Compute thermal structure accordingly. See routines below for different options
     if T != nothing
-        Temp[ind] = Compute_ThermalStructure(Temp[ind], Grid.X[ind], Grid.Y[ind], Grid.Z[ind], T)
+        Temp[ind] = Compute_ThermalStructure(Temp[ind], X[ind], Y[ind], Z[ind], T)
     end
 
     # Set the phase. Different routines are available for that - see below.
-    Phase[ind] = Compute_Phase(Phase[ind], Temp[ind], Grid.X[ind], Grid.Y[ind], Grid.Z[ind], phase)
+    Phase[ind] = Compute_Phase(Phase[ind], Temp[ind], X[ind], Y[ind], Z[ind], phase)
 
     return nothing
 end
