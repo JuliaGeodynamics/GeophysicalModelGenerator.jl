@@ -788,6 +788,30 @@ function AboveSurface(Data_Cart::CartData, DataSurface_Cart::CartData; above=tru
 end
 
 """
+    Above = AboveSurface(Grid::CartGrid, DataSurface_Cart::CartData; above=true)
+
+Determines if points described by the `Grid` CartGrid structure are above the Cartesian surface `DataSurface_Cart`
+"""
+function AboveSurface(Grid::CartGrid, DataSurface_Cart::CartData; above=true)
+
+    X,Y,Z = XYZGrid(Grid.coord1D...)
+    Data = CartData(Grid,(Z=Z,))
+
+    return AboveSurface(Data, DataSurface_Cart; above=above)
+end
+
+
+"""
+    Below = BelowSurface(Grid::CartGrid, DataSurface_Cart::CartData)
+
+    Determines if points described by the `Grid` CartGrid structure are above the Cartesian surface `DataSurface_Cart`
+"""
+function BelowSurface(Grid::CartGrid, DataSurface_Cart::CartData)
+    return AboveSurface(Grid, DataSurface_Cart; above=false)
+end
+
+
+"""
     Below = BelowSurface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData)
 
 Determines if points within the 3D Data_Cart structure are below the Cartesian surface DataSurface_Cart

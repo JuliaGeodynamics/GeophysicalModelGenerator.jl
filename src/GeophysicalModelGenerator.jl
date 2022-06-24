@@ -17,6 +17,10 @@ export
 
 export ReadCSV_LatLon, meshgrid, voxGrav
 
+abstract type AbstractGeneralGrid end                                    # general grid types 
+
+export AbstractGeneralGrid
+
 # julia standard library packages
 using DelimitedFiles, Statistics            
 
@@ -36,7 +40,7 @@ include("Paraview_output.jl")
 include("transformation.jl")
 include("voxel_gravity.jl")
 include("LaMEM_io.jl")
-include("LaMEM_geometry.jl")
+include("Setup_geometry.jl")
 include("stl.jl")
 
 # Add optional routines (only activated when the packages are loaded)

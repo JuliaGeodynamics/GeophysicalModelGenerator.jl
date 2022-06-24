@@ -24,6 +24,10 @@ end
     include("test_lamem.jl")
 end
 
+@testset "SetupGeometry" begin
+    include("test_setup_geometry.jl")
+end
+
 @testset "STL" begin
     include("test_stl.jl")
 end
