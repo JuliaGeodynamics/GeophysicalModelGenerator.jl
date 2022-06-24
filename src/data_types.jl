@@ -6,7 +6,8 @@ import Base: show
 export  GeoData, ParaviewData, UTMData, CartData,
         LonLatDepthGrid, XYZGrid, Velocity_SphericalToCartesian!,
         Convert2UTMzone, Convert2CartData, ProjectionPoint,
-        coordinate_grids
+        coordinate_grids, CreateCartGrid, CartGrid
+        
 
 """
     struct ProjectionPoint
@@ -916,6 +917,142 @@ Returns 3D coordinate arrays
 """
 function coordinate_grids(Data::ParaviewData)
     X,Y,Z = XYZGrid(NumValue(Data.x), NumValue(Data.y), NumValue(Data.z))
+
+    return X,Y,Z
+end
+
+
+"""
+    Structure that holds data for an orthogonal cartesian grid, which can be described with 1D vectors
+"""
+struct CartGrid{FT, D} <: AbstractGeneralGrid
+    ConstantΔ   :: Bool                         # Constant spacing (true in all cases for now)
+    N           :: NTuple{D,Int}                # Number of grid points in every direction
+    Δ           :: NTuple{D,FT}                 # (constant) spacing in every direction
+    L           :: NTuple{D,FT}                 # Domain size
+    min         :: NTuple{D,FT}                 # start of the grid in every direction 
+    max         :: NTuple{D,FT}                 # end of the grid in every direction 
+    coord1D     :: NTuple{D,StepRangeLen{FT}}   # Tuple with 1D vectors in all directions
+    coord1D_cen :: NTuple{D,StepRangeLen{FT}}   # Tuple with 1D vectors of center points in all directions
+end   
+
+
+"""
+
+Creates a 1D, 2D or 3D cartesian grid of given size. Grid can be created by defining the size and either the `extent` (length) of the grid in all directions, or by defining start & end points 
+
+Spacing is assumed to be constant
+
+Note: since this is mostly for Solid Earth geoscience applications, the second dimension is called z (vertical)
+
+# Examples
+====
+
+```julia
+Grid = CreateCartGrid(size=(10,20),x=(0.,10), z=(2.,10))
+Grid{Float64, 2} 
+           size: (10, 20) 
+         length: (10.0, 8.0) 
+         domain: x ∈ [0.0, 10.0], z ∈ [2.0, 10.0] 
+ grid spacing Δ: (1.1111111111111112, 0.42105263157894735) 
+```
+"""
+function CreateCartGrid(;
+    size=(),
+     x = nothing, z = nothing, y = nothing,
+     extent = nothing
+)
+    
+    if isa(size, Number)
+        size = (size,)  # transfer to tuple
+    end
+    if isa(extent, Number)
+        extent = (extent,) 
+    end
+    N = size
+    dim =   length(N)   
+    
+    # Specify domain by length in every direction
+    if !isnothing(extent)
+        x,y,z = nothing, nothing, nothing
+        x = (0., extent[1])
+        if dim>1
+            z =  (-extent[2], 0.0)       # vertical direction (negative)
+        end
+        if dim>2
+            y = (0., extent[3])
+        end
+    end
+
+    FT = typeof(x[1])
+    if      dim==1
+        L = (x[2] - x[1],)
+        X₁= (x[1], )
+    elseif  dim==2
+        L = (x[2] - x[1], z[2] - z[1])
+        X₁= (x[1], z[1])
+    else
+        L = (x[2] - x[1], z[2] - z[1], y[2] - y[1])
+        X₁= (x[1], z[1], y[1])
+    end
+    Xₙ  = X₁ .+ L  
+    Δ   = L ./ (N .- 1)       
+
+    # Generate 1D coordinate arrays of vertexes in all directions
+    coord1D=()
+    for idim=1:dim
+        coord1D  = (coord1D...,   range(X₁[idim], Xₙ[idim]; length = N[idim]  ))
+    end
+    
+    # Generate 1D coordinate arrays centers in all directionbs
+    coord1D_cen=()
+    for idim=1:dim
+        coord1D_cen  = (coord1D_cen...,   range(X₁[idim]+Δ[idim]/2, Xₙ[idim]-Δ[idim]/2; length = N[idim]-1  ))
+    end
+    
+    ConstantΔ   = true;
+    return CartGrid(ConstantΔ,N,Δ,L,X₁,Xₙ,coord1D, coord1D_cen)
+
+end
+
+# view grid object
+function show(io::IO, g::CartGrid{FT, DIM}) where {FT, DIM}
+  
+    print(io, "CartGrid{$FT, $DIM} \n",
+              "           size: $(g.N) \n",
+              "         length: $(g.L) \n",
+              "         domain: $(domain_string(g)) \n",
+              " grid spacing Δ: $(g.Δ) \n")
+
+end
+
+# nice printing of grid
+function domain_string(grid::CartGrid{FT, DIM}) where {FT, DIM}
+    
+    xₗ, xᵣ = grid.coord1D[1][1], grid.coord1D[1][end]
+    if DIM>1
+        yₗ, yᵣ = grid.coord1D[2][1], grid.coord1D[2][end]
+    end
+    if DIM>2
+        zₗ, zᵣ = grid.coord1D[3][1], grid.coord1D[3][end]
+    end
+    if DIM==1
+        return "x ∈ [$xₗ, $xᵣ]"
+    elseif DIM==2
+        return "x ∈ [$xₗ, $xᵣ], z ∈ [$yₗ, $yᵣ]"
+    elseif DIM==3
+        return "x ∈ [$xₗ, $xᵣ], y ∈ [$yₗ, $yᵣ], z ∈ [$zₗ, $zᵣ]"
+    end
+end
+
+
+"""
+    X,Y,Z = coordinate_grids(Data::CartGrid)
+
+Returns 3D coordinate arrays
+"""
+function coordinate_grids(Data::CartGrid)
+    X,Y,Z = XYZGrid(NumValue(Data.coord1D[1]), NumValue(Data.coord1D[2]), NumValue(Data.coord1D[3]))
 
     return X,Y,Z
 end
