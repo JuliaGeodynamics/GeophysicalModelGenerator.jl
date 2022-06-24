@@ -36,3 +36,8 @@ Phases              =   zeros(Int32,  Grid.N...);
 AddBox!(Phases,Temp,Grid, xlim=(2,4), zlim=(4,8), phase=ConstantPhase(3), DipAngle=10, T=LinearTemp(Tbot=1350, Ttop=200))
 
 @test maximum(Phases) == 3
+
+# Create a CartData structure from it
+Data = CartData(Grid, (T=Temp, Phases=Phases))
+
+@test NumValue(Data.x[3,3,2]) ≈ 2.2222222222222223
