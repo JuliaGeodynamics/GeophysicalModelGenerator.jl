@@ -703,12 +703,17 @@ CartData
 CartData(xyz::Tuple) = CartData(xyz[1],xyz[2],xyz[3],(Z=xyz[3],))
 
 """
-    Data = CartData(Grid::CartGrid, fields::NamedTuple) 
+    Data = CartData(Grid::CartGrid, fields::NamedTuple; y_val=0.0) 
 
 Returns a CartData set given a cartesian grid `Grid` and `fields` defined on that grid.
 """
-function CartData(Grid::CartGrid, fields::NamedTuple)
-    X,Y,Z = XYZGrid(Grid.coord1D[1], Grid.coord1D[2], Grid.coord1D[3])
+function CartData(Grid::CartGrid, fields::NamedTuple; y_val=0.0)
+    if length(Grid2D.N)==3
+        X,Y,Z = XYZGrid(Grid.coord1D[1], Grid.coord1D[2], Grid.coord1D[3])  # 3D grid
+
+    elseif length(Grid2D.N)==2
+        X,Y,Z = XYZGrid(Grid.coord1D[1], y_val, Grid.coord1D[2])  # 3D grid
+    end
     
     return CartData(X,Y,Z, fields)
 end

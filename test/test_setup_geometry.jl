@@ -41,3 +41,6 @@ AddBox!(Phases,Temp,Grid, xlim=(2,4), zlim=(4,8), phase=ConstantPhase(3), DipAng
 Data = CartData(Grid, (T=Temp, Phases=Phases))
 
 @test NumValue(Data.x[3,3,2]) ≈ 2.2222222222222223
+
+# To be tested: doing the same for cross-sections or horizontal slices
+Grid2D              =   CreateCartGrid(size=(10,30),x=(0.,10), z=(2.,10))
