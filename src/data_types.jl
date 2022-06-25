@@ -6,7 +6,7 @@ import Base: show
 export  GeoData, ParaviewData, UTMData, CartData,
         LonLatDepthGrid, XYZGrid, Velocity_SphericalToCartesian!,
         Convert2UTMzone, Convert2CartData, ProjectionPoint,
-        coordinate_grids, CreateCartGrid, CartGrid
+        coordinate_grids, CreateCartGrid, CartGrid, flip
         
 
 """
@@ -221,9 +221,9 @@ end
 function Base.show(io::IO, d::GeoData)
     println(io,"GeoData ")
     println(io,"  size      : $(size(d.lon))")
-    println(io,"  lon       ϵ [ $(minimum(d.lon.val)) : $(maximum(d.lon.val))]")
-    println(io,"  lat       ϵ [ $(minimum(d.lat.val)) : $(maximum(d.lat.val))]")
-    println(io,"  depth     ϵ [ $(minimum(d.depth.val)) : $(maximum(d.depth.val))]")
+    println(io,"  lon       ϵ [ $(first(d.lon.val)) : $(last(d.lon.val))]")
+    println(io,"  lat       ϵ [ $(first(d.lat.val)) : $(last(d.lat.val))]")
+    println(io,"  depth     ϵ [ $(first(d.depth.val)) : $(last(d.depth.val))]")
     println(io,"  fields    : $(keys(d.fields))")
     if any( propertynames(d) .== :atts)
         println(io,"  attributes: $(keys(d.atts))")
@@ -254,9 +254,9 @@ end
 function Base.show(io::IO, d::ParaviewData)
     println(io,"ParaviewData ")
     println(io,"  size  : $(size(d.x))")
-    println(io,"  x     ϵ [ $(minimum(d.x.val)) : $(maximum(d.x.val))]")
-    println(io,"  y     ϵ [ $(minimum(d.y.val)) : $(maximum(d.y.val))]")
-    println(io,"  z     ϵ [ $(minimum(d.z.val)) : $(maximum(d.z.val))]")
+    println(io,"  x     ϵ [ $(first(d.x.val)) : $(last(d.x.val))]")
+    println(io,"  y     ϵ [ $(first(d.y.val)) : $(last(d.y.val))]")
+    println(io,"  z     ϵ [ $(first(d.z.val)) : $(last(d.z.val))]")
     println(io,"  fields: $(keys(d.fields))")
 end
 
@@ -437,9 +437,9 @@ function Base.show(io::IO, d::UTMData)
         println(io,"  UTM zone : $(minimum(d.zone))-$(maximum(d.zone)) South")
     end
     println(io,"    size    : $(size(d.EW))")
-    println(io,"    EW      ϵ [ $(minimum(d.EW.val)) : $(maximum(d.EW.val))]")
-    println(io,"    NS      ϵ [ $(minimum(d.NS.val)) : $(maximum(d.NS.val))]")
-    println(io,"    depth   ϵ [ $(minimum(d.depth.val)) : $(maximum(d.depth.val))]")
+    println(io,"    EW      ϵ [ $(first(d.EW.val)) : $(last(d.EW.val))]")
+    println(io,"    NS      ϵ [ $(first(d.NS.val)) : $(last(d.NS.val))]")
+    println(io,"    depth   ϵ [ $(first(d.depth.val)) : $(last(d.depth.val))]")
     println(io,"    fields  : $(keys(d.fields))")
     if any( propertynames(d) .== :atts)
         println(io,"  attributes: $(keys(d.atts))")
@@ -513,6 +513,29 @@ function Base.convert(::Type{UTMData}, d::GeoData)
 
     return UTMData(EW,NS,depth,zone, northern, d.fields, atts)
 
+end
+
+
+"""
+    Data = flip(Data::GeoData, dimension=3)
+
+This flips the data in the structure in a certain dimension (default is z [3])
+"""
+function flip(Data::GeoData, dimension=3)
+    
+    depth = reverse(Data.depth.val,dims=dimension)*Data.depth.unit  # flip depth
+    lon   = reverse(Data.lon.val,dims=dimension)*Data.lon.unit      # flip 
+    lat   = reverse(Data.lat.val,dims=dimension)*Data.lat.unit      # flip 
+    
+    # flip fields
+    fields = Data.fields;
+    name_keys  = keys(fields)
+    for ifield = 1:length(fields)
+        dat = reverse(fields[ifield],dims=dimension);               # flip direction
+        fields = merge(fields, [name_keys[ifield] => dat])  # replace in existing NTuple
+    end
+
+    return GeoData(lon,lat,depth, fields)
 end
 
 
