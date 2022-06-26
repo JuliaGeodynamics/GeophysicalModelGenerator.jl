@@ -16,6 +16,8 @@ Data            =   Depth*2;                # some data
 Vx,Vy,Vz        =   ustrip(Data*3),ustrip(Data*4),ustrip(Data*5);
 Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)))  
 
+# Create 3D cartesian dataset
+Data_setCart3D  =   CartData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)))  
 
 # Create 3D volume with some fake data
 Lon,Lat,Depth           =   LonLatDepthGrid(10:20,30:40,(0:-25:-300)km);
@@ -68,6 +70,11 @@ test_cross      =   CrossSection(Data_set3D, Start=(10,30), End=(20,40), dims=(5
 #test_cross_rev  =   CrossSection(Data_set3D_reverse, Start=(10,30), End=(20,40), dims=(50,100), Interpolate=true)
 #@test size(test_cross_rev.fields[3][2])==(50,100,1)
 #@test Write_Paraview(test_cross_rev, "profile_test_rev")[1]=="profile_test_rev.vts"
+
+# Cross-section with cartesian data
+test_cross      =   CrossSection(Data_setCart3D, Lon_level=15, dims=(50,100), Interpolate=true)
+@test size(test_cross.fields[3][2])==(1,50,100)
+@test test_cross.x[1,2,3]==GeoUnit(15km)
 
 # Extract sub-volume
 

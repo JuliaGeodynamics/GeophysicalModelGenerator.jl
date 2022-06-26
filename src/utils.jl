@@ -51,48 +51,50 @@ GeoData
 ```
 
 """
-function CrossSection(V::GeoData; dims=(100,100), Interpolate=false, Depth_level=nothing, Lat_level=nothing, Lon_level=nothing, Start=nothing, End=nothing )
+function CrossSection(V::AbstractGeneralGrid; dims=(100,100), Interpolate=false, Depth_level=nothing, Lat_level=nothing, Lon_level=nothing, Start=nothing, End=nothing )
 
     CheckIsVolume(V);       # Check if it is a volume
 
+    X,Y,Z = coordinate_grids(V)
+
     if !isnothing(Depth_level)    # Horizontal slice
-        CheckBounds(V.depth, Depth_level)    
+        CheckBounds(Z, Depth_level)    
         if Interpolate
-            Lon,Lat,Depth = LonLatDepthGrid(    LinRange(minimum(V.lon.val), maximum(V.lon.val), dims[1]),
-                                                LinRange(minimum(V.lat.val), maximum(V.lat.val), dims[2]),
+            Lon,Lat,Depth = LonLatDepthGrid(    LinRange(minimum(X), maximum(X), dims[1]),
+                                                LinRange(minimum(Y), maximum(Y), dims[2]),
                                                 Depth_level)
         else
-            ind_z   =   argmin(abs.(NumValue(V.depth.val[1,1,:]) .- Depth_level.val))
+            ind_z   =   argmin(abs.(NumValue(Z[1,1,:]) .- Depth_level.val))
             iDepth  =   ind_z:ind_z;
-            iLon    =   1:size(NumValue(V.lon),1);
-            iLat    =   1:size(NumValue(V.lat),2);
+            iLon    =   1:size(NumValue(X),1);
+            iLat    =   1:size(NumValue(Y),2);
         end
     end
 
     if !isnothing(Lat_level)   # vertical slice @ given latitude
-        CheckBounds(V.lat, Lat_level)    
+        CheckBounds(Y, Lat_level)    
         if Interpolate
-            Lon,Lat,Depth = LonLatDepthGrid(    LinRange(minimum(V.lon.val), maximum(V.lon.val), dims[1]),
+            Lon,Lat,Depth = LonLatDepthGrid(    LinRange(minimum(X), maximum(X), dims[1]),
                                                 Lat_level,
-                                                LinRange(minimum(V.depth.val), maximum(V.depth.val), dims[2]))
+                                                LinRange(minimum(Z), maximum(Z), dims[2]))
         else
-            ind_l   =   argmin(abs.(V.lat.val[1,:,1] .- Lat_level))
-            iDepth  =   1:size(V.depth.val,3)
-            iLon    =   1:size(V.lon.val,1);
+            ind_l   =   argmin(abs.(Y[1,:,1] .- Lat_level))
+            iDepth  =   1:size(Z,3)
+            iLon    =   1:size(X,1);
             iLat    =   ind_l:ind_l
         end
     end
 
     if !isnothing(Lon_level)   # vertical slice @ given longitude
-        CheckBounds(V.lon, Lon_level)    
+        CheckBounds(X, Lon_level)    
         if Interpolate 
             Lon,Lat,Depth = LonLatDepthGrid(    Lon_level,
-                                                LinRange(minimum(  V.lat.val), maximum(  V.lat.val), dims[1]),
-                                                LinRange(minimum(V.depth.val), maximum(V.depth.val), dims[2]))
+                                                LinRange(minimum(Y), maximum(Y), dims[1]),
+                                                LinRange(minimum(Z), maximum(Z), dims[2]))
         else
-            ind_l   =   argmin(abs.(V.lon.val[:,1,1] .- Lon_level))
-            iDepth  =   1:size(V.depth.val,3)
-            iLat    =   1:size(V.lat.val,2);
+            ind_l   =   argmin(abs.(X[:,1,1] .- Lon_level))
+            iDepth  =   1:size(Z,3)
+            iLat    =   1:size(Y,2);
             iLon    =   ind_l:ind_l
         end
     end
@@ -106,11 +108,11 @@ function CrossSection(V::GeoData; dims=(100,100), Interpolate=false, Depth_level
 
         Lon_dum,Lat_p,Depth_p = LonLatDepthGrid(    Start[1],
                                                 LinRange(Start[2], End[2], dims[1]),
-                                                LinRange(minimum(V.depth.val), maximum(V.depth.val), dims[2]))
+                                                LinRange(minimum(Z), maximum(Z), dims[2]))
 
         Lon_p,Lat_dum,Depth = LonLatDepthGrid(    LinRange(Start[1], End[1], dims[1]),
                                                 Start[2],
-                                                LinRange(minimum(V.depth.val), maximum(V.depth.val), dims[2]))
+                                                LinRange(minimum(Z), maximum(Z), dims[2]))
 
         Lon             =   zeros(dims[1],dims[2],1)
         Lat             =   zeros(dims[1],dims[2],1)
@@ -228,6 +230,13 @@ function CheckBounds(Data::GeoUnit, Data_Cross)
     end
 end
 
+function CheckBounds(Data::AbstractArray, Data_Cross)
+    
+    min_Data, max_Data = NumValue(minimum(Data)), NumValue(maximum(Data));
+    if ustrip(Data_Cross) < min_Data || ustrip(Data_Cross)>max_Data
+        error("Outside bounds [$min_Data : $max_Data]; $Data_Cross")
+    end
+end
 
 function CheckIsVolume(Volume::GeoData)
     if any(size(Volume.lon).==1)
@@ -235,16 +244,25 @@ function CheckIsVolume(Volume::GeoData)
     end
 end
 
+function CheckIsVolume(Volume::CartData)
+    if any(size(Volume.x).==1)
+        error("It appears your GeoData structure is not a volume; can't compute a cross-section")
+    end
+end
+
+
 """
     InterpolateDataFields(V::GeoData, Lon, Lat, Depth)
 
 Interpolates a data field `V` on a grid defined by `Lon,Lat,Depth`
 """
-function InterpolateDataFields(V::GeoData, Lon, Lat, Depth)
+function InterpolateDataFields(V::AbstractGeneralGrid, Lon, Lat, Depth)
 
-    Lon_vec     =  V.lon.val[:,1,1];
-    Lat_vec     =  V.lat.val[1,:,1];
-    Depth_vec   =  V.depth.val[1,1,:];
+    X,Y,Z = coordinate_grids(V)
+
+    Lon_vec     =  X[:,1,1];
+    Lat_vec     =  Y[1,:,1];
+    Depth_vec   =  Z[1,1,:];
     if Depth_vec[1]>Depth_vec[end]
         ReverseData = true
     else
@@ -290,7 +308,13 @@ function InterpolateDataFields(V::GeoData, Lon, Lat, Depth)
     
 
     # Create a GeoData struct with the newly interpolated fields
-    Data_profile = GeoData(Lon, Lat, Depth, fields_new);
+    if isa(V,GeoData)
+        Data_profile = GeoData(Lon, Lat, Depth, fields_new);
+    elseif isa(V,CartData)
+        Data_profile = CartData(Lon, Lat, Depth, fields_new);
+    else
+        error("still to be implemented")
+    end
 
     return Data_profile
 end
