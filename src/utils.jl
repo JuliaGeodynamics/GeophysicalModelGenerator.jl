@@ -562,18 +562,21 @@ end
 
 
 # Extracts a sub-data set using indices
-function ExtractDataSets(V::GeoData, iLon, iLat, iDepth)
+function ExtractDataSets(V::AbstractGeneralGrid, iLon, iLat, iDepth)
 
-    Lon     =   zeros(typeof(V.lon.val[1]), length(iLon),length(iLat),length(iDepth));
-    Lat     =   zeros(typeof(V.lat.val[1]), length(iLon),length(iLat),length(iDepth));
-    Depth   =   zeros(typeof(V.depth.val[1]), length(iLon),length(iLat),length(iDepth));
+    X,Y,Z = coordinate_grids(V)
+
+
+    Lon     =   zeros(typeof(X[1]), length(iLon),length(iLat),length(iDepth));
+    Lat     =   zeros(typeof(Y[1]), length(iLon),length(iLat),length(iDepth));
+    Depth   =   zeros(typeof(Z[1]), length(iLon),length(iLat),length(iDepth));
     
     iLo                 =   1:length(iLon);
     iLa                 =   1:length(iLat);
     iDe                 =   1:length(iDepth)
-    Lon[iLo,iLa,iDe]    =     V.lon.val[iLon, iLat, iDepth];
-    Lat[iLo,iLa,iDe]    =     V.lat.val[iLon, iLat, iDepth];
-    Depth[iLo,iLa,iDe]  =   V.depth.val[iLon, iLat, iDepth];
+    Lon[iLo,iLa,iDe]    =   X[iLon, iLat, iDepth];
+    Lat[iLo,iLa,iDe]    =   Y[iLon, iLat, iDepth];
+    Depth[iLo,iLa,iDe]  =   Z[iLon, iLat, iDepth];
 
     fields_new  = V.fields;
     field_names = keys(fields_new);
@@ -604,7 +607,13 @@ function ExtractDataSets(V::GeoData, iLon, iLat, iDepth)
     
 
     # Create a GeoData struct with the newly interpolated fields
-    Data_profile = GeoData(Lon, Lat, Depth, fields_new);
+    if isa(V,GeoData)
+        Data_profile = GeoData(Lon, Lat, Depth, fields_new);
+    elseif isa(V,CartData)
+        Data_profile = CartData(Lon, Lat, Depth, fields_new);
+    else
+        error("Not yet implemented")
+    end
 
 end
 
