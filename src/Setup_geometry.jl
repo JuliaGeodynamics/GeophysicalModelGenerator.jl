@@ -537,41 +537,65 @@ end
 
 
 """
-    LithosphericPhases(Layers=[10 20 30], Phases=[1 2 3 4], Tlab=nothing )
+    LithosphericPhases(Layers=[10 20 15], Phases=[1 2 3 4], Tlab=nothing )
     
 This allows defining a layered lithosphere. Layering is defined from the top downwards.
 
 Parameters
 ===
-- Layers : the thickness of the layers from top downwards
-- Phases : the phases of the layers from top down. Note that this array 
-- Tlab   : Temperature of the lithosphere asthenosphere boundary. If specified, the phases at locations with T>Tlab is set to Phases[end]
+- Layers : The thickness of each layer, ordered from top to bottom. The thickness of the last layer does not have to be specified.
+- Phases : The phases of the layers, ordered from top to bottom.
+- Tlab   : Temperature of the lithosphere asthenosphere boundary. If specified, the phases at locations with T>Tlab are set to Phases[end].
 
 """
 @with_kw_noshow mutable struct LithosphericPhases <: AbstractPhaseNumber
-    Layers  = [10., 20., 50.]
+    Layers  = [10., 20., 15.]
     Phases  = [1,   2  , 3,  4]
     Tlab    = nothing
 end
 
-function Compute_Phase(Phase, Temp, X, Y, Z, s::LithosphericPhases)
+
+"""
+    Phase = Compute_Phase(Phase, Temp, X, Y, Z, s::LithosphericPhases, Ztop)
+
+or
+
+    Phase = Compute_Phase(Phase, Temp, Grid::AbstractGeneralGrid, s::LithosphericPhases)
+
+This copies the layered lithosphere onto the Phase matrix.
+
+Parameters
+===
+- Phase - Phase array
+- Temp  - Temperature array
+- X     - x-coordinate array (consistent with Phase and Temp)
+- Y     - y-coordinate array (consistent with Phase and Temp)
+- Z     - Vertical coordinate array (consistent with Phase and Temp)
+- s     - LithosphericPhases
+- Ztop  - Vertical coordinate of top of model box
+- Grid  - Grid structure (usually obtained with ReadLaMEM_InputFile)
+"""
+function Compute_Phase(Phase, Temp, X, Y, Z, s::LithosphericPhases; Ztop=0)
     @unpack Layers, Phases, Tlab  = s
 
     Phase .= Phases[end]
-    Ztop  = 0
-    for i=1:length(Layers)
-        Zbot = Ztop-Layers[i]
-        ind = findall( ( Z .>= Zbot) .&  (Z .<= Ztop) );
+
+    for i = 1 : length(Layers)
+        Zbot        = Ztop-Layers[i]
+        ind         = findall( ( Z .>= Zbot) .&  (Z .<= Ztop) );
         Phase[ind] .= Phases[i]
 
-        Ztop = Zbot
+        Ztop        = Zbot
     end
 
     # set phase to mantle if requested
     if Tlab != nothing
-        ind = findall(Temp .> Tlab)
+        ind         = findall(Temp .> Tlab)
         Phase[ind] .= Phases[end]
     end
 
     return Phase
 end
+
+# allow AbstractGeneralGrid instead of Z and Ztop
+Compute_Phase(Phase, Temp, Grid::LaMEM_grid, s::LithosphericPhases) = Compute_Phase(Phase, Temp, Grid.X, Grid.Y, Grid.Z, s::LithosphericPhases, Ztop=maximum(Grid.coord_z))
