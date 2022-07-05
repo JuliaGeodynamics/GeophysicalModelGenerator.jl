@@ -52,6 +52,31 @@ Data2D = CartData(Grid2D, (T=Temp2D, Phases=Phases2D))
 @test NumValue(Data.x[3,1,2]) ≈ 2.2222222222222223
 
 
+# LithosphericPhases
+LP                  =   LithosphericPhases(Layers=[5 10 6], Phases=[0 1 2 3], Tlab=nothing);
+X,Y,Z               =   XYZGrid(-5:1:5,-5:1:5,-20:1:5);
+Phases              =   zeros(Int32,   size(X));
+Temp                =   zeros(Int32,   size(X));
+Phases              =   Compute_Phase(Phases, Temp, X, Y, Z, LP);
+
+@test Phases[1,1,end]   == 3
+@test Phases[1,1,7]     == 1
+
+Phases              =   Compute_Phase(Phases, Temp, X, Y, Z, LP, Ztop=5);
+
+@test Phases[1,1,end-4] == 0
+@test Phases[1,1,5]     == 2
+
+LP                  =   LithosphericPhases(Layers=[0.5 1.0 1.0], Phases=[0 1 2], Tlab=nothing);
+Grid                =   ReadLaMEM_InputFile("test_files/SaltModels.dat");
+Phases              =   zeros(Int32,   size(Grid.X));
+Temp                =   zeros(Int32,   size(Grid.X));
+Phases              =   Compute_Phase(Phases, Temp, Grid, LP);
+
+@test Phases[1,1,25]    == 1
+@test Phases[1,1,73]    == 0
+
+
 # test AboveSurface with the Grid object
 Grid        =   CreateCartGrid(size=(10,20,30),x=(0.,10), y=(0.,10), z=(-10.,2.))
 Temp        =   ones(Float64, Grid.N...)*1350;
