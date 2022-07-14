@@ -1,6 +1,7 @@
 using Base: Int64, Float64, NamedTuple
 using Printf
 using Glob
+using Interpolations
 
 # LaMEM I/O
 # 
@@ -892,14 +893,30 @@ function Save_LaMEMTopography(Topo::CartData, filename::String)
         error("The topography `CartData` structure requires a field :Topography")
     end
 
-    # Code the topograhic data into a vector
+    # get grid properties
     nx = Float64(size(Topo.fields.Topography,1));
     ny = Float64(size(Topo.fields.Topography,2));
-    x0 = ustrip(Topo.x.val[1,1,1])
-    y0 = ustrip(Topo.y.val[1,1,1])
-    dx = ustrip(Topo.x.val[2,2,1]) - x0
-    dy = ustrip(Topo.y.val[2,2,1]) - y0
-    Topo_vec = [ nx;ny;x0;y0;dx;dy; ustrip.(Topo.fields.Topography[:])]
+    x0 = ustrip(Topo.x.val[1,1,1]);
+    y0 = ustrip(Topo.y.val[1,1,1]);
+
+    # LaMEM wants a uniform grid, so interpolate if necessary 
+    if length(unique(trunc.(diff(Topo.x.val[:,1,1]), digits=8))) > 1 || length(unique(trunc.(diff(Topo.y.val[1,:,1]), digits=8))) > 1
+        x1       = ustrip(Topo.x.val[end,1,1]);
+        y1       = ustrip(Topo.y.val[1,end,1]);
+        dx       = (x1-x0) / (nx-1);
+        dy       = (y1-y0) / (ny-1);
+  
+        itp      = LinearInterpolation((Topo.x.val[:,1,1], Topo.y.val[1,:,1]), ustrip.(Topo.fields.Topography[:,:,1]));
+        Topo_itp = [itp(x,y) for x in x0:dx:x1, y in y0:dy:y1];
+
+        # Code the topograhic data into a vector
+        Topo_vec = [ nx;ny;x0;y0;dx;dy; Topo_itp[:]]
+    else
+        dx = ustrip(Topo.x.val[2,2,1]) - x0
+        dy = ustrip(Topo.y.val[2,2,1]) - y0
+        # Code the topograhic data into a vector
+        Topo_vec = [ nx;ny;x0;y0;dx;dy; ustrip.(Topo.fields.Topography[:])]
+    end    
 
     # Write as PetscBinary file
     PetscBinaryWrite_Vec(filename, Topo_vec)
