@@ -15,34 +15,42 @@ export GetProcessorPartitioning, ReadData_VTR, ReadData_PVTR, CreatePartitioning
 Structure that holds information about the LaMEM grid (usually read from an input file).
 """
 struct LaMEM_grid <: AbstractGeneralGrid
+    # number of markers per element
     nmark_x :: Int64
     nmark_y :: Int64
     nmark_z :: Int64
+    # total number of markers
     nump_x  :: Int64 
     nump_y  :: Int64
     nump_z  :: Int64
-    
+    # total number of elements in grid
     nel_x   :: Int64
     nel_y   :: Int64
     nel_z   :: Int64
-
+    # exent of the grid
     W       ::  Float64
     L       ::  Float64
     H       ::  Float64
-
+    # start and end coordinates of grid segments
     coord_x 
     coord_y 
     coord_z
-
-    x1D_c
-    y1D_c
-    z1D_c
-
+    # 1D vectors with marker coordinates
+    x_vec
+    y_vec
+    z_vec
+    # grid with marker coordinates
     X 
     Y 
     Z
-
-   
+    # 1D vectors with node coordinates
+    xn_vec
+    yn_vec
+    zn_vec
+    # grid with node coordinates
+    Xn 
+    Yn 
+    Zn   
 end
 
 """ 
@@ -141,50 +149,175 @@ z           ϵ [-2.0 : 0.0]
 """
 function ReadLaMEM_InputFile(file)
 
-    nmark_x = ParseValue_LaMEM_InputFile(file,"nmark_x",Int64)
-    nmark_y = ParseValue_LaMEM_InputFile(file,"nmark_y",Int64)
-    nmark_z = ParseValue_LaMEM_InputFile(file,"nmark_z",Int64)
+    # read information from file
+    nmark_x   = ParseValue_LaMEM_InputFile(file,"nmark_x",Int64);
+    nmark_y   = ParseValue_LaMEM_InputFile(file,"nmark_y",Int64);
+    nmark_z   = ParseValue_LaMEM_InputFile(file,"nmark_z",Int64);
 
-    nel_x   = ParseValue_LaMEM_InputFile(file,"nel_x",Int64)
-    nel_y   = ParseValue_LaMEM_InputFile(file,"nel_y",Int64)
-    nel_z   = ParseValue_LaMEM_InputFile(file,"nel_z",Int64)
+    nel_x     = ParseValue_LaMEM_InputFile(file,"nel_x",Int64);
+    nel_y     = ParseValue_LaMEM_InputFile(file,"nel_y",Int64);
+    nel_z     = ParseValue_LaMEM_InputFile(file,"nel_z",Int64);
 
-    coord_x = ParseValue_LaMEM_InputFile(file,"coord_x",Float64)
-    coord_y = ParseValue_LaMEM_InputFile(file,"coord_y",Float64)
-    coord_z = ParseValue_LaMEM_InputFile(file,"coord_z",Float64)
+    coord_x   = ParseValue_LaMEM_InputFile(file,"coord_x",Float64);
+    coord_y   = ParseValue_LaMEM_InputFile(file,"coord_y",Float64);
+    coord_z   = ParseValue_LaMEM_InputFile(file,"coord_z",Float64);
 
-    if (length(coord_x)>2) || (length(coord_y)>2) || (length(coord_z)>2)
-        error("Routine currently not working for variable grid spacing")
+    # compute infromation from file
+    W         = coord_x[end]-coord_x[1];
+    L         = coord_y[end]-coord_y[1];
+    H         = coord_z[end]-coord_z[1];
+
+    nel_x_tot = sum(nel_x);
+    nel_y_tot = sum(nel_y);
+    nel_z_tot = sum(nel_z);
+
+    nump_x    = nel_x_tot*nmark_x;
+    nump_y    = nel_y_tot*nmark_y;
+    nump_z    = nel_z_tot*nmark_z;
+
+    # uniform spacing
+    if (length(coord_x)==2) && (length(coord_y)==2) && (length(coord_z)==2)
+        # node spacing
+        dx       = W / nel_x_tot;
+        dy       = W / nel_y_tot;
+        dz       = W / nel_z_tot;
+
+        # node coordinate vectors
+        xn       = coord_x[1] : dx : coord_x[end];
+        yn       = coord_y[1] : dy : coord_y[end];
+        zn       = coord_z[1] : dz : coord_z[end];
+
+        # node grid
+        Xn,Yn,Zn = XYZGrid(xn, yn, zn); 
+
+        # marker spacing
+        dx       = W / nump_x;
+        dy       = L / nump_y;
+        dz       = H / nump_z;
+
+        # marker coordinate vectors   
+        x        = coord_x[1]+dx/2 : dx : coord_x[end]-dx/2;
+        y        = coord_y[1]+dy/2 : dy : coord_y[end]-dy/2;
+        z        = coord_z[1]+dz/2 : dz : coord_z[end]-dz/2;
+
+        # marker grid
+        X,Y,Z    = XYZGrid(x, y, z);
+
+    # non-uniform spacing
+    else
+        # read missing information
+        nseg_x   = ParseValue_LaMEM_InputFile(file,"nseg_x",Int64);
+        nseg_y   = ParseValue_LaMEM_InputFile(file,"nseg_y",Int64);
+        nseg_z   = ParseValue_LaMEM_InputFile(file,"nseg_z",Int64);
+
+        bias_x   = ParseValue_LaMEM_InputFile(file,"bias_x",Float64);
+        bias_y   = ParseValue_LaMEM_InputFile(file,"bias_y",Float64);
+        bias_z   = ParseValue_LaMEM_InputFile(file,"bias_z",Float64);
+
+        ## Nodes
+        # make coordinate vectors
+        xn       = make1DCoords(nseg_x, nel_x, coord_x, bias_x);
+        yn       = make1DCoords(nseg_y, nel_y, coord_y, bias_y);
+        zn       = make1DCoords(nseg_z, nel_z, coord_z, bias_z);  
+
+        # node grid
+        Xn,Yn,Zn = XYZGrid(xn, yn, zn);
+
+        ## Markers
+        # make marker coordinate vectors
+        x        = make1DMarkerCoords(xn, nmark_x);
+        y        = make1DMarkerCoords(yn, nmark_y);
+        z        = make1DMarkerCoords(zn, nmark_z);
+
+        # marker grid
+        X, Y, Z  = XYZGrid(x, y, z);
     end
 
-    W       = coord_x[end]-coord_x[1];
-    L       = coord_y[end]-coord_y[1];
-    H       = coord_z[end]-coord_z[1];
-
-    nump_x  = nel_x*nmark_x;
-    nump_y  = nel_y*nmark_y;
-    nump_z  = nel_z*nmark_z;
-
-    dx      =   W/nump_x;
-    dy      =   L/nump_y;
-    dz      =   H/nump_z;
-
-    # these lines should be replaced with a separate routine for variable spacing   
-    x       =   coord_x[1]+dx/2: dx : coord_x[end]-dx/2;
-    y       =   coord_y[1]+dy/2: dy : coord_y[end]-dy/2;
-    z       =   coord_z[1]+dz/2: dz : coord_z[end]-dz/2;
-
-    X,Y,Z   =   XYZGrid(x,y,z); # create 3D grid using regular spacing
-    
+    # finish Grid
     Grid    =  LaMEM_grid(  nmark_x,    nmark_y,    nmark_z,
-                            nump_x,     nump_y,     nump_z,
-                            nel_x,      nel_y,      nel_z,    
-                            W,          L,          H,
-                            coord_x,    coord_y,    coord_z,
-                            x,          y,          z,
-                            X,          Y,          Z);
+    nump_x,     nump_y,     nump_z,
+    nel_x_tot,  nel_y_tot,  nel_z_tot,    
+    W,          L,          H,
+    coord_x,    coord_y,    coord_z,
+    x,          y,          z,
+    X,          Y,          Z,
+    xn,         yn,         zn,
+    Xn,         Yn,         Zn);
 
     return Grid
+end
+
+function make1DMarkerCoords(xn::Array{Float64, 1}, nmark::Int64)
+    # preallocate
+    nel  = length(xn) - 1
+    nump = nel * nmark;
+    x    = zeros(Float64, nump);
+
+    # compute coordinates
+    for i = 1 : nel
+        # start of cell
+        x0 = xn[i];
+        # markers spacing inside cell
+        dx = (xn[i+1] - x0) / nmark;
+
+        # compute position
+        for j = 1 : nmark
+            x[nmark*i-(nmark-j)] = x0 + dx/2 + (j-1)*dx;
+        end
+    end
+
+    return x
+end
+
+function make1DCoords(nseg::Int64, nel, coord::Array{Float64, 1}, bias)
+    # preallocate
+    nel_tot = sum(nel);
+    x       = zeros(Float64, nel_tot+1);
+
+    for i = 1 : nseg
+        # indices of this segment in the coordinate vector
+        if i == 1
+            indE = nel[1] + 1
+        else
+            indE = sum(nel[1:i]) + 1;
+        end
+        indS = indE - nel[i];
+
+        # compute coordinates
+        x[indS:indE] = makeCoordSegment(coord[i], coord[i+1], nel[i], bias[i]);
+    end
+
+    return x
+end
+
+function makeCoordSegment(xStart::Float64, xEnd::Float64, numCells::Int64, bias::Float64)
+    # average cell size
+    avgSize = (xEnd - xStart) / numCells;
+
+    # uniform case
+    if bias == 1.0
+        x = Array(xStart : avgSize : xEnd);
+    # non-uniform case
+    else
+        x = zeros(Float64, numCells+1)
+        # cell size limits
+        begSize = 2.0 * avgSize / (1.0 + bias);
+        endSize = bias * begSize;
+
+        # cell size increment (negative for bias < 1)
+        dx      = (endSize - begSize) / (numCells - 1);
+
+        # generate coordinates
+        x[1]    = xStart;
+        for i = 2 : numCells + 1
+            x[i] = x[i-1] + begSize + (i-2)*dx;
+        end
+
+        # overwrite last coordinate
+        x[end] = xEnd;
+    end
+
+    return x
 end
 
 # Print an overview of the LaMEM Grid struct:
@@ -192,10 +325,10 @@ function Base.show(io::IO, d::LaMEM_grid)
     println(io,"LaMEM Grid: ")
     println(io,"  nel         : ($(d.nel_x), $(d.nel_y), $(d.nel_z))")
     println(io,"  marker/cell : ($(d.nmark_x), $(d.nmark_y), $(d.nmark_z))")
-    println(io,"  markers     : ($(d.nump_x), $(d.nump_x), $(d.nump_x))")
-    println(io,"  x           ϵ [$(d.coord_x[1]) : $(d.coord_x[2])]")
-    println(io,"  y           ϵ [$(d.coord_y[1]) : $(d.coord_y[2])]")
-    println(io,"  z           ϵ [$(d.coord_z[1]) : $(d.coord_z[2])]")
+    println(io,"  markers     : ($(d.nump_x), $(d.nump_y), $(d.nump_z))")
+    println(io,"  x           ϵ [$(d.coord_x[1]) : $(d.coord_x[end])]")
+    println(io,"  y           ϵ [$(d.coord_y[1]) : $(d.coord_y[end])]")
+    println(io,"  z           ϵ [$(d.coord_z[1]) : $(d.coord_z[end])]")
 end
 
 """

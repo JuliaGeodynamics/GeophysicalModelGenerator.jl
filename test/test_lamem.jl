@@ -1,6 +1,12 @@
 # test LaMEM I/O routines
 using Test, GeophysicalModelGenerator
 
+# Load LaMEM input file with grid refinement:
+Grid        = ReadLaMEM_InputFile("test_files/non-uniform_grid.dat")
+@test Grid.X[2358] ≈  1.833333333333335
+@test Grid.Y[7741] ≈ -0.450000000000000
+@test Grid.Z[5195] ≈ -8.897114711471147
+
 # Load LaMEM input file:
 Grid        =   ReadLaMEM_InputFile("test_files/SaltModels.dat")
 @test Grid.X[10] ≈ -2.40625
