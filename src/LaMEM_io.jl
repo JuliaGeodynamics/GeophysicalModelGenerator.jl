@@ -180,8 +180,8 @@ function ReadLaMEM_InputFile(file)
     if (length(coord_x)==2) && (length(coord_y)==2) && (length(coord_z)==2)
         # node spacing
         dx       = W / nel_x_tot;
-        dy       = W / nel_y_tot;
-        dz       = W / nel_z_tot;
+        dy       = L / nel_y_tot;
+        dz       = H / nel_z_tot;
 
         # node coordinate vectors
         xn       = coord_x[1] : dx : coord_x[end];
