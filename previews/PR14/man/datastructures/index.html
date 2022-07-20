@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Data Structures · GeophysicalModelGenerator.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">GeophysicalModelGenerator.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../tutorials/">Overview</a></li><li><a class="tocitem" href="../tutorial_load3DSeismicData/">3D seismic tomography from ASCII</a></li><li><a class="tocitem" href="../tutorial_loadregular3DSeismicData_netCDF/">3D seismic tomography from netCDF</a></li><li><a class="tocitem" href="../tutorial_MohoTopo/">Visualize Moho topography</a></li><li><a class="tocitem" href="../tutorial_GMT_Topography/">Create GMT-based topography</a></li><li><a class="tocitem" href="../tutorial_Coastlines/">Coastlines</a></li><li><a class="tocitem" href="../tutorial_Screenshot_To_Paraview/">Import screenshots</a></li><li><a class="tocitem" href="../tutorial_loadirregular3DSeismicData/">Interpolate irregular 3D seismic tomography</a></li><li><a class="tocitem" href="../tutorial_GMT_Topography_GeologicalMap/">ETOPO1 Topography and geological maps</a></li><li><a class="tocitem" href="../tutorial_ISC_data/">ISC earthquake data</a></li><li><a class="tocitem" href="../tutorial_GPS/">Plot GPS vectors</a></li><li><a class="tocitem" href="../tutorial_UTM/">Read UTM data</a></li><li><a class="tocitem" href="../Tutorial_Votemaps/">VoteMaps</a></li><li><a class="tocitem" href="../tutorial_local_Flegrei/">Kilometer-scale volcano</a></li></ul></li><li><span class="tocitem">User Guide</span><ul><li><a class="tocitem" href="../installation/">Installation</a></li><li class="is-active"><a class="tocitem" href>Data Structures</a></li><li><a class="tocitem" href="../dataimport/">Data Import</a></li><li><a class="tocitem" href="../paraview_output/">Paraview output</a></li><li><a class="tocitem" href="../tools/">Tools</a></li><li><a class="tocitem" href="../gravity_code/">Gravity code</a></li><li><a class="tocitem" href="../lamem/">LaMEM</a></li></ul></li><li><a class="tocitem" href="../listfunctions/">List of functions</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">User Guide</a></li><li class="is-active"><a href>Data Structures</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Data Structures</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/master/docs/src/man/datastructures.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Data-structures"><a class="docs-heading-anchor" href="#Data-structures">Data structures</a><a id="Data-structures-1"></a><a class="docs-heading-anchor-permalink" href="#Data-structures" title="Permalink"></a></h1><p>The main data structure used in GeophysicalModelGenerator.jl is <code>GeoData</code>, which contains info about the <code>longitude</code>,<code>latitude</code>, and <code>depth</code> of a data set, as well as several data sets itself. We also provide a <code>UTMData</code>, which is essentially the same but with UTM coordinates, and a <code>CartData</code> structure, which has Cartesian coordinates in kilometers (as used in many geodynamic codes). If one wishes to transfer <code>GeoData</code> to <code>CartData</code>, one needs to provide a <code>ProjectionPoint</code>. For plotting, we transfer this into the <code>ParaviewData</code> structure, which has cartesian coordinates around the center of the Earth. We employ the <code>wgs84</code> reference ellipsoid as provided by the <a href="https://github.com/JuliaGeo/Geodesy.jl">Geodesy.jl</a> package to perform this transformation.</p><article class="docstring"><header><a class="docstring-binding" id="GeophysicalModelGenerator.GeoData" href="#GeophysicalModelGenerator.GeoData"><code>GeophysicalModelGenerator.GeoData</code></a> — <span class="docstring-category">Type</span></header><section><div><pre><code class="language-julia">GeoData(lon::Any, lat:Any, depth::GeoUnit, fields::NamedTuple)</code></pre><p>Data structure that holds one or several fields with longitude, latitude and depth information.</p><ul><li><code>depth</code> can have units of meter, kilometer or be unitless; it will be converted to km.</li><li><code>fields</code> should ideally be a NamedTuple which allows you to specify the names of each of the fields. </li><li>In case you only pass one array we will convert it to a NamedTuple with default name.</li><li>A single field should be added as <code>(DataFieldName=Data,)</code> (don&#39;t forget the comma at the end).</li><li>Multiple fields  can be added as well. <code>lon</code>,<code>lat</code>,<code>depth</code> should all have the same size as each of the <code>fields</code>.</li><li>In case you want to display a vector field in paraview, add it as a tuple: <code>(Velocity=(Veast,Vnorth,Vup), Veast=Veast, Vnorth=Vnorth, Vup=Vup)</code>; we automatically apply a vector transformation when transforming this to a <code>ParaviewData</code> structure from which we generate Paraview output. As this changes the magnitude of the arrows, you will no longer see the <code>[Veast,Vnorth,Vup]</code> components in Paraview which is why it is a good ideas to store them as separate Fields.</li><li>Yet, there is one exception: if the name of the 3-component field is <code>colors</code>, we do not apply this vector transformation as this field is regarded to contain RGB colors. </li><li><code>Lat</code>,<code>Lon</code>,<code>Depth</code> should have the same size as the <code>Data</code> array. The ordering of the arrays is important. If they are 3D arrays, as in the example below, we assume that the first dimension corresponds to <code>lon</code>, second dimension to <code>lat</code> and third dimension to <code>depth</code> (which should be in km). See below for an example.</li></ul><p><strong>Example</strong></p><pre><code class="language-julia-repl">julia&gt; Lat         =   1.0:3:10.0;
+julia&gt; Lon         =   11.0:4:20.0;
+julia&gt; Depth       =   (-20:5:-10)*km;
+julia&gt; Lon3D,Lat3D,Depth3D = LonLatDepthGrid(Lon, Lat, Depth);
+julia&gt; Lon3D
+3×4×3 Array{Float64, 3}:
+[:, :, 1] =
+ 11.0  11.0  11.0  11.0
+ 15.0  15.0  15.0  15.0
+ 19.0  19.0  19.0  19.0
+
+[:, :, 2] =
+ 11.0  11.0  11.0  11.0
+ 15.0  15.0  15.0  15.0
+ 19.0  19.0  19.0  19.0
+
+[:, :, 3] =
+ 11.0  11.0  11.0  11.0
+ 15.0  15.0  15.0  15.0
+ 19.0  19.0  19.0  19.0
+julia&gt; Lat3D
+ 3×4×3 Array{Float64, 3}:
+ [:, :, 1] =
+  1.0  4.0  7.0  10.0
+  1.0  4.0  7.0  10.0
+  1.0  4.0  7.0  10.0
+ 
+ [:, :, 2] =
+  1.0  4.0  7.0  10.0
+  1.0  4.0  7.0  10.0
+  1.0  4.0  7.0  10.0
+ 
+ [:, :, 3] =
+  1.0  4.0  7.0  10.0
+  1.0  4.0  7.0  10.0
+  1.0  4.0  7.0  10.0
+julia&gt; Depth3D
+  3×4×3 Array{Unitful.Quantity{Float64, 𝐋, Unitful.FreeUnits{(km,), 𝐋, nothing}}, 3}:
+  [:, :, 1] =
+   -20.0 km  -20.0 km  -20.0 km  -20.0 km
+   -20.0 km  -20.0 km  -20.0 km  -20.0 km
+   -20.0 km  -20.0 km  -20.0 km  -20.0 km
+  
+  [:, :, 2] =
+   -15.0 km  -15.0 km  -15.0 km  -15.0 km
+   -15.0 km  -15.0 km  -15.0 km  -15.0 km
+   -15.0 km  -15.0 km  -15.0 km  -15.0 km
+  
+  [:, :, 3] =
+   -10.0 km  -10.0 km  -10.0 km  -10.0 km
+   -10.0 km  -10.0 km  -10.0 km  -10.0 km
+   -10.0 km  -10.0 km  -10.0 km  -10.0 km
+julia&gt; Data        =   zeros(size(Lon3D));
+julia&gt; Data_set    =   GeophysicalModelGenerator.GeoData(Lon3D,Lat3D,Depth3D,(DataFieldName=Data,))   
+GeoData 
+  size  : (3, 4, 3)
+  lon   ϵ [ 11.0 : 19.0]
+  lat   ϵ [ 1.0 : 10.0]
+  depth ϵ [ -20.0 km : -10.0 km]
+  fields: (:DataFieldName,)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/c0a8553a69f97ca49631b8d7fa90903e43d10e4f/src/data_types.jl#L68-L146">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="GeophysicalModelGenerator.UTMData" href="#GeophysicalModelGenerator.UTMData"><code>GeophysicalModelGenerator.UTMData</code></a> — <span class="docstring-category">Type</span></header><section><div><pre><code class="language-julia">UTMData(EW::Any, NS:Any, depth::GeoUnit, UTMZone::Int, NorthernHemisphere=true, fields::NamedTuple)</code></pre><p>Data structure that holds one or several fields with UTM coordinates (east-west), (north-south) and depth information.</p><ul><li><code>depth</code> can have units of meters, kilometer or be unitless; it will be converted to meters (as UTMZ is usually in meters)</li><li><code>fields</code> should ideally be a NamedTuple which allows you to specify the names of each of the fields. </li><li>In case you only pass one array we will convert it to a NamedTuple with default name.</li><li>A single field should be added as <code>(DataFieldName=Data,)</code> (don&#39;t forget the comma at the end).</li><li>Multiple fields  can be added as well.</li><li>In case you want to display a vector field in paraview, add it as a tuple: <code>(Velocity=(Veast,Vnorth,Vup), Veast=Veast, Vnorth=Vnorth, Vup=Vup)</code>; we automatically apply a vector transformation when transforming this to a <code>ParaviewData</code> structure from which we generate Paraview output. As this changes the magnitude of the arrows, you will no longer see the <code>[Veast,Vnorth,Vup]</code> components in Paraview which is why it is a good ideas to store them as separate Fields.</li><li>Yet, there is one exception: if the name of the 3-component field is <code>colors</code>, we do not apply this vector transformation as this field is regarded to contain RGB colors. </li><li><code>Lat</code>,<code>Lon</code>,<code>Depth</code> should have the same size as the <code>Data</code> array. The ordering of the arrays is important. If they are 3D arrays, as in the example below, we assume that the first dimension corresponds to <code>lon</code>, second dimension to <code>lat</code> and third dimension to <code>depth</code> (which should be in km). See below for an example.</li></ul><p><strong>Example</strong></p><pre><code class="language-julia-repl">julia&gt; ew          =   422123.0:100:433623.0
+julia&gt; ns          =   4.514137e6:100:4.523637e6
+julia&gt; depth       =   -5400:250:600
+julia&gt; EW,NS,Depth =   XYZGrid(ew, ns, depth);
+julia&gt; Data        =   ustrip.(Depth);
+julia&gt; Data_set    =   UTMData(EW,NS,Depth,33, true, (FakeData=Data,Data2=Data.+1.))  
+UTMData 
+  UTM zone : 33-33 North
+    size   : (116, 96, 25)
+    EW     ϵ [ 422123.0 : 433623.0]
+    NS     ϵ [ 4.514137e6 : 4.523637e6]
+    depth  ϵ [ -5400.0 m : 600.0 m]
+    fields : (:FakeData, :Data2)</code></pre><p>If you wish, you can convert this from <code>UTMData</code> to <code>GeoData</code> with</p><pre><code class="language-julia-repl">julia&gt; Data_set1 =  convert(GeoData, Data_set)
+GeoData 
+  size  : (116, 96, 25)
+  lon   ϵ [ 14.075969111533457 : 14.213417764154963]
+  lat   ϵ [ 40.77452227533946 : 40.86110443583479]
+  depth ϵ [ -5.4 km : 0.6 km]
+  fields: (:FakeData, :Data2)</code></pre><p>which would allow visualizing this in paraview in the usual manner:</p><pre><code class="language-julia-repl">julia&gt; Write_Paraview(Data_set1, &quot;Data_set1&quot;)
+1-element Vector{String}:
+ &quot;Data_set1.vts&quot;</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/c0a8553a69f97ca49631b8d7fa90903e43d10e4f/src/data_types.jl#L283-L330">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="GeophysicalModelGenerator.ParaviewData" href="#GeophysicalModelGenerator.ParaviewData"><code>GeophysicalModelGenerator.ParaviewData</code></a> — <span class="docstring-category">Type</span></header><section><div><pre><code class="language-julia">ParaviewData(x::GeoUnit, y::GeoUnit, z::GeoUnit, values::NamedTuple)</code></pre><p>Cartesian data in <code>x/y/z</code> coordinates to be used with Paraview. This is usually generated automatically from the <code>GeoData</code> structure, but you can also invoke do this manually:</p><pre><code class="language-julia-repl">julia&gt; Data_set    =   GeophysicalModelGenerator.GeoData(1.0:10.0,11.0:20.0,(-20:-11)*km,(DataFieldName=(-20:-11),))   
+julia&gt; Data_cart = convert(ParaviewData, Data_set)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/c0a8553a69f97ca49631b8d7fa90903e43d10e4f/src/data_types.jl#L211-L221">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="GeophysicalModelGenerator.CartData" href="#GeophysicalModelGenerator.CartData"><code>GeophysicalModelGenerator.CartData</code></a> — <span class="docstring-category">Type</span></header><section><div><pre><code class="language-julia">CartData(x::Any, y::Any, z::GeoUnit, fields::NamedTuple)</code></pre><p>Data structure that holds one or several fields with with Cartesian x/y/z coordinates. Distances are in kilometers</p><ul><li><code>x</code>,<code>y</code>,<code>z</code> can have units of meters, kilometer or be unitless; they will be converted to kilometers</li><li><code>fields</code> should ideally be a NamedTuple which allows you to specify the names of each of the fields. </li><li>In case you only pass one array we will convert it to a NamedTuple with default name.</li><li>A single field should be added as <code>(DataFieldName=Data,)</code> (don&#39;t forget the comma at the end).</li><li>Multiple fields  can be added as well.</li><li>In case you want to display a vector field in paraview, add it as a tuple: <code>(Velocity=(Vx,Vnorth,Vup), Veast=Veast, Vnorth=Vnorth, Vup=Vup)</code>; we automatically apply a vector transformation when transforming this to a <code>ParaviewData</code> structure from which we generate Paraview output. As this changes the magnitude of the arrows, you will no longer see the <code>[Veast,Vnorth,Vup]</code> components in Paraview which is why it is a good ideas to store them as separate Fields.</li><li>Yet, there is one exception: if the name of the 3-component field is <code>colors</code>, we do not apply this vector transformation as this field is regarded to contain RGB colors. </li><li><code>x</code>,<code>y</code>,<code>z</code> should have the same size as the <code>Data</code> array. The ordering of the arrays is important. If they are 3D arrays, as in the example below, we assume that the first dimension corresponds to <code>x</code>, second dimension to <code>y</code> and third dimension to <code>z</code> (which should be in km). See below for an example.</li></ul><p><strong>Example</strong></p><pre><code class="language-julia-repl">julia&gt; x        =   0:2:10
+julia&gt; y        =   -5:5
+julia&gt; z        =   -10:2:2
+julia&gt; X,Y,Z    =   XYZGrid(x, y, z);
+julia&gt; Data     =   Z
+julia&gt; Data_set =   CartData(X,Y,Z, (FakeData=Data,Data2=Data.+1.))
+CartData 
+    size : (6, 11, 7)
+    x    ϵ [ 0.0 km : 10.0 km]
+    y    ϵ [ -5.0 km : 5.0 km]
+    z    ϵ [ -10.0 km : 2.0 km]
+    fields : (:FakeData, :Data2)</code></pre><p><code>CartData</code> is particularly useful in combination with cartesian geodynamic codes, such as LaMEM, which require cartesian grids. You can directly save your data to Paraview with</p><pre><code class="language-julia-repl">julia&gt; Write_Paraview(Data_set, &quot;Data_set&quot;)
+1-element Vector{String}:
+ &quot;Data_set.vts&quot;</code></pre><p>If you wish, you can convert this to <code>UTMData</code> (which will simply convert the )</p><pre><code class="language-julia-repl">julia&gt; Data_set1 =  convert(GeoData, Data_set)
+GeoData 
+  size  : (116, 96, 25)
+  lon   ϵ [ 14.075969111533457 : 14.213417764154963]
+  lat   ϵ [ 40.77452227533946 : 40.86110443583479]
+  depth ϵ [ -5.4 km : 0.6 km]
+  fields: (:FakeData, :Data2)</code></pre><p>which would allow visualizing this in paraview in the usual manner:</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/c0a8553a69f97ca49631b8d7fa90903e43d10e4f/src/data_types.jl#L488-L538">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="GeophysicalModelGenerator.LonLatDepthGrid" href="#GeophysicalModelGenerator.LonLatDepthGrid"><code>GeophysicalModelGenerator.LonLatDepthGrid</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">Lon, Lat, Depth = LonLatDepthGrid(Lon::Any, Lat::Any, Depth:Any)</code></pre><p>Creates 3D arrays of <code>Lon</code>, <code>Lat</code>, <code>Depth</code> from 1D vectors or numbers</p><p><strong>Example 1: Create 3D grid</strong></p><pre><code class="language-julia-repl">julia&gt; Lon,Lat,Depth =  LonLatDepthGrid(10:20,30:40,(-10:-1)km);
+julia&gt; size(Lon)
+(11, 11, 10)</code></pre><p><strong>Example 2: Create 2D lon/lat grid @ a given depth</strong></p><pre><code class="language-julia-repl">julia&gt; Lon,Lat,Depth =  LonLatDepthGrid(10:20,30:40,-50km);
+julia&gt; size(Lon)
+(11, 11)</code></pre><p><strong>Example 3: Create 2D lon/depth grid @ a given lat</strong></p><pre><code class="language-julia-repl">julia&gt; Lon,Lat,Depth =  LonLatDepthGrid(10:20,30,(-10:-1)km);
+julia&gt; size(Lon)
+(11, 11)</code></pre><p><strong>Example 4: Create 1D vertical line @ a given lon/lat point</strong></p><pre><code class="language-julia-repl">julia&gt; Lon,Lat,Depth =  LonLatDepthGrid(10,30,(-10:-1)km);
+julia&gt; size(Lon)
+(10, )</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/c0a8553a69f97ca49631b8d7fa90903e43d10e4f/src/data_types.jl#L653-L685">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="GeophysicalModelGenerator.XYZGrid" href="#GeophysicalModelGenerator.XYZGrid"><code>GeophysicalModelGenerator.XYZGrid</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">X,Y,Z = XYZGrid(X_vec::Any, Y_vec::Any, Z_vec::Any)</code></pre><p>Creates a <code>X,Y,Z</code> grid. It works just as <code>LonLatDepthGrid</code> apart from the better suited name.</p><p><strong>Example 1: Create 3D grid</strong></p><pre><code class="language-julia-repl">julia&gt; X,Y,Z =  XYZGrid(10:20,30:40,(-10:-1)km);
+julia&gt; size(X)
+(11, 11, 10)</code></pre><p>See <code>LonLatDepthGrid</code> for more examples.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/c0a8553a69f97ca49631b8d7fa90903e43d10e4f/src/data_types.jl#L721-L734">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="GeophysicalModelGenerator.ProjectionPoint" href="#GeophysicalModelGenerator.ProjectionPoint"><code>GeophysicalModelGenerator.ProjectionPoint</code></a> — <span class="docstring-category">Type</span></header><section><div><pre><code class="language-julia">ProjectionPoint
+struct ProjectionPoint
+    Lon     :: Float64
+    Lat     :: Float64
+    EW      :: Float64
+    NS      :: Float64
+    zone    :: Integer
+    isnorth :: Bool
+end</code></pre><p>Structure that holds the coordinates of a point that is used to project a data set from Lon/Lat to a Cartesian grid and vice-versa.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/c0a8553a69f97ca49631b8d7fa90903e43d10e4f/src/data_types.jl#L10-L22">source</a></section></article></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../installation/">« Installation</a><a class="docs-footer-nextpage" href="../dataimport/">Data Import »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 12 November 2021 14:03">Friday 12 November 2021</span>. Using Julia version 1.6.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
