@@ -463,8 +463,10 @@ function makeVolcTopo(Grid::LaMEM_grid;
             error("Size of background must be ", string(nx), "x", string(ny))
         end
     end
-    H[pos .>= 0 .&& pos .< 1] .= pos[pos .>= 0 .&& pos .< 1] .* (height-base) .+ base
-    H[pos .>= 1]              .= height
+    ind     = findall(x->0.0<=x<1.0, pos)
+    H[ind] .= pos[ind] .* (height-base) .+ base
+    ind     = findall(x->x>= 1.0, pos)
+    H[ind] .= height
     
     # dimensionalize
     Topo = dimensionalize(H, km, CharUnits)
