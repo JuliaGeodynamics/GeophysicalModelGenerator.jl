@@ -1,6 +1,12 @@
 # test LaMEM I/O routines
 using Test, GeophysicalModelGenerator
 
+# Load LaMEM input file with grid refinement:
+Grid        = ReadLaMEM_InputFile("test_files/non-uniform_grid.dat")
+@test Grid.X[2358] ≈  1.833333333333335
+@test Grid.Y[7741] ≈ -0.450000000000000
+@test Grid.Z[5195] ≈ -8.897114711471147
+
 # Load LaMEM input file:
 Grid        =   ReadLaMEM_InputFile("test_files/SaltModels.dat")
 @test Grid.X[10] ≈ -2.40625
@@ -87,3 +93,11 @@ AddCylinder!(Phases,Temp,Grid, base=(0,0,-5), cap=(3,3,-2), radius=1.5, phase=Co
 @test Phases[54,65,75] == 0
 @test Temp[55,46,45]   == 400.0
 @test Temp[55,45,45]   == 800.0
+
+# test adding generic volcano topography
+Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat");
+Topo = makeVolcTopo(Grid, center=[0.0,0.0], height=0.4, radius=1.5, crater=0.5, base=0.1);
+@test Topo.fields.Topography[13,13] ≈ 0.279583654km
+Topo = makeVolcTopo(Grid, center=[0.0,0.0], height=0.8, radius=0.5, crater=0.0, base=0.4, background=Topo.fields.Topography);
+@test Topo.fields.Topography[13,13] ≈ 0.279583654km
+@test Topo.fields.Topography[16,18] ≈ 0.619722436km

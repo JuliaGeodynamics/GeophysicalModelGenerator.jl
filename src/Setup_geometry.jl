@@ -9,6 +9,7 @@ using SpecialFunctions: erfc
 #
 
 export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!,
+        makeVolcTopo,
         ConstantTemp, LinearTemp, HalfspaceCoolingTemp, SpreadingRateTemp,
         ConstantPhase, LithosphericPhases, 
         Compute_ThermalStructure, Compute_Phase
@@ -362,6 +363,116 @@ function Rot3D!(X,Y,Z, StrikeAngle, DipAngle)
     end
 
     return nothing
+end
+
+"""
+makeVolcTopo(Grid::LaMEM_grid; center::Array{Float64, 1}, height::Float64, radius::Float64, crater::Float64,
+            base=0.0m, background=nothing)
+
+Creates a generic volcano topography (cones and truncated cones)
+
+
+Parameters
+====
+- Grid - LaMEM grid (created by ReadLaMEM_InputFile)
+- center - x- and -coordinates of center of volcano
+- height - height of volcano
+- radius - radius of volcano
+
+Optional Parameters
+====
+- crater - this will create a truncated cone and the option defines the radius of the flat top
+- base - this sets the flat topography around the volcano
+- background - this allows loading in a topography and only adding the volcano on top (also allows stacking of several cones to get a volcano with different slopes)
+
+
+Example
+========
+
+Cylinder with constant phase and temperature:
+```julia 
+julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
+LaMEM Grid: 
+  nel         : (32, 32, 32)
+  marker/cell : (3, 3, 3)
+  markers     : (96, 96, 96)
+  x           ϵ [-3.0 : 3.0]
+  y           ϵ [-2.0 : 2.0]
+  z           ϵ [-2.0 : 0.0]
+julia> Topo = makeVolcTopo(Grid, center=[0.0,0.0], height=0.4, radius=1.5, crater=0.5, base=0.1)
+CartData 
+    size    : (33, 33, 1)
+    x       ϵ [ -3.0 : 3.0]
+    y       ϵ [ -2.0 : 2.0]
+    z       ϵ [ 0.1 : 0.4]
+    fields  : (:Topography,)
+  attributes: ["note"]
+julia> Topo = makeVolcTopo(Grid, center=[0.0,0.0], height=0.8, radius=0.5, crater=0.0, base=0.4, background=Topo.fields.Topography)
+CartData 
+    size    : (33, 33, 1)
+    x       ϵ [ -3.0 : 3.0]
+    y       ϵ [ -2.0 : 2.0]
+    z       ϵ [ 0.1 : 0.8]
+    fields  : (:Topography,)
+  attributes: ["note"]
+julia> Write_Paraview(Topo,"VolcanoTopo")           # Save topography to paraview 
+Saved file: VolcanoTopo.vts  
+```
+"""
+function makeVolcTopo(Grid::LaMEM_grid; 
+    center::Array{Float64, 1}, 
+    height::Float64, 
+    radius::Float64, 
+    crater=0.0,
+    base=0.0,
+    background=nothing)
+
+    # create nondimensionalization object
+    CharUnits  = SI_units(length=1000m);
+
+    # get node grid
+    X    = Grid.Xn[:,:,1];
+    Y    = Grid.Yn[:,:,1];
+    nx   = size(X,1);
+    ny   = size(X,2);
+
+    # compute radial distance to volcano center
+    DX   = X .- center[1]
+    DY   = Y .- center[2]
+    RD   = (DX.^2 .+ DY.^2).^0.5
+
+    # get radial distance from crater rim
+    RD .-= crater
+    
+    # find position relative to crater rim
+    dr   = radius - crater
+    pos  = (-RD ./ dr .+ 1)
+
+    ## assign topography
+    H    = zeros(Float64, (nx,ny))
+    # check if there is a background supplied
+    if background === nothing
+        H     .= base
+    else
+        background = nondimensionalize(background, CharUnits)
+        if size(background) == size(X)
+            H .= background 
+        elseif size(background) == size(reshape(X,nx,ny,1))
+            H .= background[:,:,1]
+        else
+            error("Size of background must be ", string(nx), "x", string(ny))
+        end
+    end
+    ind     = findall(x->0.0<=x<1.0, pos)
+    H[ind] .= pos[ind] .* (height-base) .+ base
+    ind     = findall(x->x>= 1.0, pos)
+    H[ind] .= height
+    
+    # dimensionalize
+    Topo = dimensionalize(H, km, CharUnits)
+
+    # build and return CartData
+    return CartData(reshape(X,nx,ny,1), reshape(Y,nx,ny,1), reshape(Topo,nx,ny,1), (Topography=reshape(Topo,nx,ny,1),))
 end
 
 
