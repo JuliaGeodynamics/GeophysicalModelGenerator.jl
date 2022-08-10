@@ -991,6 +991,11 @@ An example with dimensional units:
 ```julia
 julia> CharDim = GEO_units()
 julia> Grid    = CreateCartGrid(size=(10,20),x=(0.0km, 10km), z=(-20km, 10km), CharDim=CharDim)
+CartGrid{Float64, 2} 
+           size: (10, 20) 
+         length: (0.01, 0.03) 
+         domain: x ∈ [0.0, 0.01], z ∈ [-0.02, 0.01] 
+ grid spacing Δ: (0.0011111111111111111, 0.0015789473684210528) 
 
 ```
 

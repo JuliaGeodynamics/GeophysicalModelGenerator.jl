@@ -151,8 +151,7 @@ Data     =   Z
 Data_setC =   CartData(X,Y,Z, (FakeData=Data,Data2=Data.+1.))
 @test sum(abs.(Value(Data_setC.x))) ≈ 2310.0km
 
-
-
+CharDim=GEO_units()
 
 
 # Convert from CartData -> UTMData
