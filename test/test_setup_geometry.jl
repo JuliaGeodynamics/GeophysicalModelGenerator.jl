@@ -79,6 +79,8 @@ Phases              =   Compute_Phase(Phases, Temp, Grid, LP);
 
 # test AboveSurface with the Grid object
 Grid        =   CreateCartGrid(size=(10,20,30),x=(0.,10), y=(0.,10), z=(-10.,2.))
+@test Grid.Δ[2] ≈ 0.5263157894736842
+
 Temp        =   ones(Float64, Grid.N...)*1350;
 Phases      =   zeros(Int32,  Grid.N...);
 
@@ -89,3 +91,8 @@ ind         =   AboveSurface(Grid, Topo_cart);
 
 ind         =   BelowSurface(Grid, Topo_cart);
 @test sum(ind[1,1,:]) == 25
+
+# Create Grid & nondimensionalize it
+CharDim     =   GEO_units();
+Grid        =   CreateCartGrid(size=(10,20,30),x=(0.0km,10km), y=(0.0km, 10km), z=(-10.0km, 2.0km), CharDim=CharDim)
+@test Grid.Δ[2] ≈ 0.0005263157894736842

@@ -151,6 +151,10 @@ Data     =   Z
 Data_setC =   CartData(X,Y,Z, (FakeData=Data,Data2=Data.+1.))
 @test sum(abs.(Value(Data_setC.x))) ≈ 2310.0km
 
+
+
+
+
 # Convert from CartData -> UTMData
 Data_set4 = Convert2UTMzone(Data_setC, proj)
 

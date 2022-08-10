@@ -962,28 +962,45 @@ end
 
 """
 
-Creates a 1D, 2D or 3D cartesian grid of given size. Grid can be created by defining the size and either the `extent` (length) of the grid in all directions, or by defining start & end points 
+    Grid = CreateCartGrid(; size=(), x = nothing, z = nothing, y = nothing, extent = nothing, CharDim = nothing)
 
-Spacing is assumed to be constant
+Creates a 1D, 2D or 3D cartesian grid of given size. Grid can be created by defining the size and either the `extent` (length) of the grid in all directions, or by defining start & end points (`x`,`y`,`z`). 
+If you specify `CharDim` (a structure with characteristic dimensions created with `GeoParams.jl`), we will nondimensionalize the grd before creating the struct.
 
-Note: since this is mostly for Solid Earth geoscience applications, the second dimension is called z (vertical)
+Spacing is assumed to be constant in a given direction
+
+This can also be used for staggered grids, as we also create 1D vectors for the central points. The points you indicate in `size` are the corner points.
+
+Note: since this is mostly for solid Earth geoscience applications, the second dimension is called z (vertical)
+
 
 # Examples
 ====
 
+A basic case with non-dimensional units:
 ```julia
-Grid = CreateCartGrid(size=(10,20),x=(0.,10), z=(2.,10))
+julia> Grid = CreateCartGrid(size=(10,20),x=(0.,10), z=(2.,10))
 Grid{Float64, 2} 
            size: (10, 20) 
          length: (10.0, 8.0) 
          domain: x ∈ [0.0, 10.0], z ∈ [2.0, 10.0] 
  grid spacing Δ: (1.1111111111111112, 0.42105263157894735) 
 ```
+
+An example with dimensional units:
+```julia
+julia> CharDim = GEO_units()
+julia> Grid    = CreateCartGrid(size=(10,20),x=(0.0km, 10km), z=(-20km, 10km), CharDim=CharDim)
+
+```
+
+
 """
 function CreateCartGrid(;
     size=(),
      x = nothing, z = nothing, y = nothing,
-     extent = nothing
+     extent = nothing,
+     CharDim = nothing
 )
     
     if isa(size, Number)
@@ -1023,6 +1040,18 @@ function CreateCartGrid(;
     end
     Xₙ  = X₁ .+ L  
     Δ   = L ./ (N .- 1)       
+    
+    # nondimensionalize 
+    if !isnothing(CharDim)
+        X₁, Xₙ, Δ, L    = GeoUnit.(X₁), GeoUnit.(Xₙ), GeoUnit.(Δ),  GeoUnit.(L)
+        
+        X₁              = ntuple( i -> nondimensionalize(X₁[i], CharDim), dim)
+        Xₙ              = ntuple( i -> nondimensionalize(Xₙ[i], CharDim), dim)
+        Δ               = ntuple( i -> nondimensionalize(Δ[i],  CharDim), dim)
+        L               = ntuple( i -> nondimensionalize(L[i],  CharDim), dim)
+
+        X₁, Xₙ, Δ, L    = NumValue.(X₁), NumValue.(Xₙ), NumValue.(Δ), NumValue.(L)
+    end
 
     # Generate 1D coordinate arrays of vertexes in all directions
     coord1D=()
@@ -1040,6 +1069,8 @@ function CreateCartGrid(;
     return CartGrid(ConstantΔ,N,Δ,L,X₁,Xₙ,coord1D, coord1D_cen)
 
 end
+
+
 
 # view grid object
 function show(io::IO, g::CartGrid{FT, DIM}) where {FT, DIM}
