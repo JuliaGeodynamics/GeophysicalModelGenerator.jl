@@ -9,8 +9,8 @@ X,Y,Z   =   XYZGrid(150:180, -15:2:15, 10:5:60) # Create mesh
 Phase = zeros(size(X));
 for i in eachindex(X)
 
-    inside = IsInsideClosedSTL(mesh, [X[i], Y[i], Z[i]]) 
-    if inside   
+    inside = IsInsideClosedSTL(mesh, [X[i], Y[i], Z[i]])
+    if inside
         Phase[i] = 1;
     end
 end

@@ -44,7 +44,7 @@ The first column gives us a temporal marker we can use to plot earthquakes in di
 julia> using DelimitedFiles, GeophysicalModelGenerator, Glob, GeoStats
 julia> data_80s            = readdlm("SeismicLocations/Seismicity_UTM_1983_1984.txt", '\t', skipstart=0, header=false);
 julia> data_00s            = readdlm("SeismicLocations/Seismicity_UTM_2005_2016.txt", ' ', skipstart=0, header=false);
-julia> data                = vcat(data_80s,data_00s)        
+julia> data                = vcat(data_80s,data_00s)
 julia> time                = data[:,1];
 julia> WE                  = data[:,2];
 julia> SN                  = data[:,3];

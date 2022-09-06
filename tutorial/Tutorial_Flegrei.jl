@@ -2,8 +2,8 @@
 This is Tutorial_Flegrei.jl. It contains all the necessary commands to import the data files from
 geophysical models at the volcano and represent them in cartesian and UTM coordinates.
 The following steps are performed:
-1. Export earthquake data with a time label in both formats. 
-2. Export a velocity models in both formats. 
+1. Export earthquake data with a time label in both formats.
+2. Export a velocity models in both formats.
 3. Scale and interpolate a shear-wave model and export in both formats.
 
 You will need to download the zipped folder containing all files from:
@@ -18,7 +18,7 @@ data_80s            = readdlm("SeismicLocations/Seismicity_UTM_1983_1984.txt", '
 data_00s            = readdlm("SeismicLocations/Seismicity_UTM_2005_2016.txt", ' ', skipstart=0, header=false);
 
 # 1.1 create a single file and detine the timing and locations
-data                = vcat(data_80s, data_00s)        
+data                = vcat(data_80s, data_00s)
 time                = data[:,1];
 WE                  = data[:,2];
 SN                  = data[:,3];

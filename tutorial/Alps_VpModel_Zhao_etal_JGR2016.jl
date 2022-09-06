@@ -1,4 +1,4 @@
-# This shows how to plot a 3D seismic tomography model 
+# This shows how to plot a 3D seismic tomography model
 # The paper that describes it is:
 #
 # Zhao, L., Paul, A., Malusà, M.G., Xu, X., Zheng, T., Solarino, S., Guillot, S., Schwartz, S., Dumont, T., Salimbeni, S., Aubert, C., Pondrelli, S., Wang, Q., Zhu, R., 2016. Continuity of the Alpine slab unraveled by high-resolution P wave tomography. Journal of Geophysical Research: Solid Earth 121, 8720–8737. doi:10.1002/2016JB013310
@@ -28,8 +28,8 @@ dVp_perc_3D  = reshape(dVp_perc, resolution);
 Data_set    =   GeoData(Lon,Lat,Depth,(dVp_Percentage=dVp_perc_3D,))
 Write_Paraview(Data_set, "Zhao_etal_2016_dVp_percentage")
 
-# extract cross-sections 
-Data_cross  =   CrossSection(Data_set, Depth_level=-100km)  
+# extract cross-sections
+Data_cross  =   CrossSection(Data_set, Depth_level=-100km)
 Write_Paraview(Data_cross, "Zhao_CrossSection_100km")
 
 Data_cross  =   CrossSection(Data_set, Lon_level=10)

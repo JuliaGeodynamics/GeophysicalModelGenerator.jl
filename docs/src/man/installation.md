@@ -7,7 +7,7 @@ In order to use then package you obviously need to install julia. We recommend d
 
 
 ### 2. Install Visual Studio Code
-The julia files itself are text files (just like matlab scripts). You may want to edit or modify them at some stage, for which you can use any text editor for that. We prefer to use the freely available [Visual Studio Code](https://code.visualstudio.com) as it has a build-in terminal and is the comes with the (official) julia debugger (install the Julia extension for that).
+The julia files itself are text files (just like matlab scripts). You may want to edit or modify them at some stage, for which you can use any text editor for that. We prefer to use the freely available [Visual Studio Code](https://code.visualstudio.com) as it has a built-in terminal and is the comes with the (official) julia debugger (install the Julia extension for that).
 
 ### 3. Getting started with julia
 You start julia on the command line with:
@@ -25,19 +25,19 @@ This will start the command-line interface of julia:
  _/ |\__'_|_|_|\__'_|  |  Official https://julialang.org/ release
 |__/                   |
 
-julia> 
+julia>
 ```
 
 From the julia prompt, you start the package manager by typing `]`:
 ```julia
-(@v1.6) pkg> 
+(@v1.6) pkg>
 ```
 And you return to the command line with a backspace.
 
-Also useful is that julia has a build-in terminal, which you can reach by typing `;` on the command line:
+Also useful is that julia has a built-in terminal, which you can reach by typing `;` on the command line:
 ```julia
 julia>;
-shell> 
+shell>
 ```
 In the shell, you can use the normal commands like listing the content of a directory, or the current path:
 ```julia
@@ -48,7 +48,7 @@ shell> pwd
 ```
 As before, return to the main command line (called `REPL`) with a backspace.
 
-If you want to see help information for any julia function, type `?` followed by the command. 
+If you want to see help information for any julia function, type `?` followed by the command.
 An example for `tan` is:
 ```julia
 help?> tan
@@ -73,7 +73,7 @@ search: tan tanh tand atan atanh atand instances transpose transcode contains Un
   2×2 Matrix{Float64}:
    -1.09252  -1.09252
    -1.09252  -1.09252
-``` 
+```
 
 If you are in a directory that has a julia file (which have the extension `*.jl`), you can open that file with Visual Studio Code:
 ```julia
@@ -115,17 +115,13 @@ julia> using GeophysicalModelGenerator
 ```
 
 ### 5. Other useful packages
-As you will work your way through the tutorials you will see that we often use external packages, for example to load ascii data files into julia. You will find detailed instructions in the respective tutorials. 
+As you will work your way through the tutorials you will see that we often use external packages, for example to load ascii data files into julia. You will find detailed instructions in the respective tutorials.
 
 If you already want to install some of those, here our favorites. Install them through the package manager:
 
-- [CSV](https://github.com/JuliaData/CSV.jl): Read comma-separated data files into julia.  
-- [Plots](https://github.com/JuliaPlots/Plots.jl): Create all kinds of plots in julia (quite an extensive package, but very useful to have). 
+- [CSV](https://github.com/JuliaData/CSV.jl): Read comma-separated data files into julia.
+- [Plots](https://github.com/JuliaPlots/Plots.jl): Create all kinds of plots in julia (quite an extensive package, but very useful to have).
 - [JLD2](https://github.com/JuliaIO/JLD2.jl): This allows saving julia objects (such as a tomographic model) to a binary file and load it again at a later stage.
 - [Geodesy](https://github.com/JuliaGeo/Geodesy.jl): Convert UTM coordinates to latitude/longitude/altitude.
 - [NetCDF](https://github.com/JuliaGeo/NetCDF.jl): Read NetCDF files.
 - [GMT](https://github.com/GenericMappingTools/GMT.jl): A julia interface to the Generic Mapping Tools (GMT), which is a highly popular package to create (geophysical) maps. Note that installing `GMT.jl` is more complicated than installing the other packages listed above, as you first need to have a working version of `GMT` on your machine (it is not yet installed automatically). Installation instructions for Windows/Linux are on their webpage. On a mac, we made the best experiences by downloading the binaries from their webpage and not using a package manager to install GMT.
-
-
-
-
