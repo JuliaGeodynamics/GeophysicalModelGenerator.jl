@@ -42,6 +42,7 @@ include("voxel_gravity.jl")
 include("LaMEM_io.jl")
 include("Setup_geometry.jl")
 include("stl.jl")
+include("DislocationModels/dislocation_models.jl")
 
 # Add optional routines (only activated when the packages are loaded)
 function __init__()

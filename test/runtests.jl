@@ -32,6 +32,10 @@ end
     include("test_stl.jl")
 end
 
+@testset "Dislocation Models" begin
+    include("test_dislocation_models.jl")
+end
+
 # Cleanup 
 foreach(rm, filter(endswith(".vts"), readdir()))
 foreach(rm, filter(endswith(".vtu"), readdir()))
