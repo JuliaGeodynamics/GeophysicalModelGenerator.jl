@@ -205,11 +205,6 @@ function AngSetupSurf(X::T,Y::T,bX::Float64,bY::Float64,bZ::Float64,PA::Vector{F
     eZ = [0.0; 0.0; 1.0];
     beta = acos(-SideVec'*eZ/norm(SideVec));
     
-    ue = zero(X)
-    un = zero(X)
-    uv = zero(X)
-
-    
     if (abs(beta)<eps()) || (abs(pi-beta)<eps())
         ue = zero(X)
         un = zero(X)
@@ -255,7 +250,7 @@ function AngSetupSurf(X::T,Y::T,bX::Float64,bY::Float64,bZ::Float64,PA::Vector{F
         v3 = v3B-v3A;
         
         # Transform total displacements from ADCS to EFCS
-     #   ue,un,uv = CoordTrans(v1,v2,v3,A');
+        ue,un,uv = CoordTrans(v1,v2,v3,A');
 
     end
 
