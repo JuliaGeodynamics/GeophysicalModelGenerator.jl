@@ -1,5 +1,7 @@
 using Base: Int64, Float64, NamedTuple
 using Printf
+using Glob
+using Interpolations
 
 # LaMEM I/O
 # 
@@ -7,40 +9,49 @@ using Printf
 # We also include routines with which we can read LaMEM *.pvtr files into julia 
 
 export LaMEM_grid, ReadLaMEM_InputFile
-export Save_LaMEMMarkersParallel, GetProcessorPartitioning, ReadData_VTR, ReadData_PVTR
+export Save_LaMEMMarkersParallel, Save_LaMEMTopography
+export GetProcessorPartitioning, ReadData_VTR, ReadData_PVTR, CreatePartitioningFile
 
 """
 Structure that holds information about the LaMEM grid (usually read from an input file).
 """
-struct LaMEM_grid
+struct LaMEM_grid <: AbstractGeneralGrid
+    # number of markers per element
     nmark_x :: Int64
     nmark_y :: Int64
     nmark_z :: Int64
+    # total number of markers
     nump_x  :: Int64 
     nump_y  :: Int64
     nump_z  :: Int64
-    
+    # total number of elements in grid
     nel_x   :: Int64
     nel_y   :: Int64
     nel_z   :: Int64
-
+    # exent of the grid
     W       ::  Float64
     L       ::  Float64
     H       ::  Float64
-
+    # start and end coordinates of grid segments
     coord_x 
     coord_y 
     coord_z
-
-    x1D_c
-    y1D_c
-    z1D_c
-
+    # 1D vectors with marker coordinates
+    x_vec
+    y_vec
+    z_vec
+    # grid with marker coordinates
     X 
     Y 
     Z
-
-   
+    # 1D vectors with node coordinates
+    xn_vec
+    yn_vec
+    zn_vec
+    # grid with node coordinates
+    Xn 
+    Yn 
+    Zn   
 end
 
 """ 
@@ -49,6 +60,31 @@ end
 Creates a `ParaviewData` struct from a LaMEM grid and from fields stored on that grid. Note that one needs to have a field `Phases` and optionally a field `Temp` to create LaMEM marker files.
 """
 ParaviewData(Grid::LaMEM_grid, fields::NamedTuple) = ParaviewData(Grid.X, Grid.Y, Grid.Z, fields)
+
+""" 
+    CartData(Grid::LaMEM_grid, fields::NamedTuple)
+
+Creates a `CartData` struct from a LaMEM grid and from fields stored on that grid. Note that one needs to have a field `Phases` and optionally a field `Temp` to create LaMEM marker files.
+"""
+CartData(Grid::LaMEM_grid, fields::NamedTuple) = CartData(Grid.X, Grid.Y, Grid.Z, fields)
+
+"""
+    Below = BelowSurface(Data_LaMEM::LaMEM_grid, DataSurface_Cart::CartData)
+
+Determines if points within the 3D `LaMEM_grid` structure are below the Cartesian surface DataSurface_Cart
+"""
+function BelowSurface(Grid::LaMEM_grid, DataSurface_Cart::CartData)
+    return AboveSurface(CartData(Grid,(Z=Grid.Z,)), DataSurface_Cart; above=false)
+end
+
+"""
+    Above = AboveSurface(Data_LaMEM::LaMEM_grid, DataSurface_Cart::CartData)
+
+Determines if points within the 3D `LaMEM_grid` structure are above the Cartesian surface DataSurface_Cart
+"""
+function AboveSurface(Grid::LaMEM_grid, DataSurface_Cart::CartData)
+    return AboveSurface(CartData(Grid,(Z=Grid.Z,)), DataSurface_Cart; above=true)
+end
 
 
 """
@@ -114,50 +150,175 @@ z           ϵ [-2.0 : 0.0]
 """
 function ReadLaMEM_InputFile(file)
 
-    nmark_x = ParseValue_LaMEM_InputFile(file,"nmark_x",Int64)
-    nmark_y = ParseValue_LaMEM_InputFile(file,"nmark_y",Int64)
-    nmark_z = ParseValue_LaMEM_InputFile(file,"nmark_z",Int64)
+    # read information from file
+    nmark_x   = ParseValue_LaMEM_InputFile(file,"nmark_x",Int64);
+    nmark_y   = ParseValue_LaMEM_InputFile(file,"nmark_y",Int64);
+    nmark_z   = ParseValue_LaMEM_InputFile(file,"nmark_z",Int64);
 
-    nel_x   = ParseValue_LaMEM_InputFile(file,"nel_x",Int64)
-    nel_y   = ParseValue_LaMEM_InputFile(file,"nel_y",Int64)
-    nel_z   = ParseValue_LaMEM_InputFile(file,"nel_z",Int64)
+    nel_x     = ParseValue_LaMEM_InputFile(file,"nel_x",Int64);
+    nel_y     = ParseValue_LaMEM_InputFile(file,"nel_y",Int64);
+    nel_z     = ParseValue_LaMEM_InputFile(file,"nel_z",Int64);
 
-    coord_x = ParseValue_LaMEM_InputFile(file,"coord_x",Float64)
-    coord_y = ParseValue_LaMEM_InputFile(file,"coord_y",Float64)
-    coord_z = ParseValue_LaMEM_InputFile(file,"coord_z",Float64)
+    coord_x   = ParseValue_LaMEM_InputFile(file,"coord_x",Float64);
+    coord_y   = ParseValue_LaMEM_InputFile(file,"coord_y",Float64);
+    coord_z   = ParseValue_LaMEM_InputFile(file,"coord_z",Float64);
 
-    if (length(coord_x)>2) || (length(coord_y)>2) || (length(coord_z)>2)
-        error("Routine currently not working for variable grid spacing")
+    # compute infromation from file
+    W         = coord_x[end]-coord_x[1];
+    L         = coord_y[end]-coord_y[1];
+    H         = coord_z[end]-coord_z[1];
+
+    nel_x_tot = sum(nel_x);
+    nel_y_tot = sum(nel_y);
+    nel_z_tot = sum(nel_z);
+
+    nump_x    = nel_x_tot*nmark_x;
+    nump_y    = nel_y_tot*nmark_y;
+    nump_z    = nel_z_tot*nmark_z;
+
+    # uniform spacing
+    if (length(coord_x)==2) && (length(coord_y)==2) && (length(coord_z)==2)
+        # node spacing
+        dx       = W / nel_x_tot;
+        dy       = L / nel_y_tot;
+        dz       = H / nel_z_tot;
+
+        # node coordinate vectors
+        xn       = coord_x[1] : dx : coord_x[end];
+        yn       = coord_y[1] : dy : coord_y[end];
+        zn       = coord_z[1] : dz : coord_z[end];
+
+        # node grid
+        Xn,Yn,Zn = XYZGrid(xn, yn, zn); 
+
+        # marker spacing
+        dx       = W / nump_x;
+        dy       = L / nump_y;
+        dz       = H / nump_z;
+
+        # marker coordinate vectors   
+        x        = coord_x[1]+dx/2 : dx : coord_x[end]-dx/2;
+        y        = coord_y[1]+dy/2 : dy : coord_y[end]-dy/2;
+        z        = coord_z[1]+dz/2 : dz : coord_z[end]-dz/2;
+
+        # marker grid
+        X,Y,Z    = XYZGrid(x, y, z);
+
+    # non-uniform spacing
+    else
+        # read missing information
+        nseg_x   = ParseValue_LaMEM_InputFile(file,"nseg_x",Int64);
+        nseg_y   = ParseValue_LaMEM_InputFile(file,"nseg_y",Int64);
+        nseg_z   = ParseValue_LaMEM_InputFile(file,"nseg_z",Int64);
+
+        bias_x   = ParseValue_LaMEM_InputFile(file,"bias_x",Float64);
+        bias_y   = ParseValue_LaMEM_InputFile(file,"bias_y",Float64);
+        bias_z   = ParseValue_LaMEM_InputFile(file,"bias_z",Float64);
+
+        ## Nodes
+        # make coordinate vectors
+        xn       = make1DCoords(nseg_x, nel_x, coord_x, bias_x);
+        yn       = make1DCoords(nseg_y, nel_y, coord_y, bias_y);
+        zn       = make1DCoords(nseg_z, nel_z, coord_z, bias_z);  
+
+        # node grid
+        Xn,Yn,Zn = XYZGrid(xn, yn, zn);
+
+        ## Markers
+        # make marker coordinate vectors
+        x        = make1DMarkerCoords(xn, nmark_x);
+        y        = make1DMarkerCoords(yn, nmark_y);
+        z        = make1DMarkerCoords(zn, nmark_z);
+
+        # marker grid
+        X, Y, Z  = XYZGrid(x, y, z);
     end
 
-    W       = coord_x[end]-coord_x[1];
-    L       = coord_y[end]-coord_y[1];
-    H       = coord_z[end]-coord_z[1];
-
-    nump_x  = nel_x*nmark_x;
-    nump_y  = nel_y*nmark_y;
-    nump_z  = nel_z*nmark_z;
-
-    dx      =   W/nump_x;
-    dy      =   L/nump_y;
-    dz      =   H/nump_z;
-
-    # these lines should be replaced with a separate routine for variable spacing   
-    x       =   coord_x[1]+dx/2: dx : coord_x[end]-dx/2;
-    y       =   coord_y[1]+dy/2: dy : coord_y[end]-dy/2;
-    z       =   coord_z[1]+dz/2: dz : coord_z[end]-dz/2;
-
-    X,Y,Z   =   XYZGrid(x,y,z); # create 3D grid using regular spacing
-    
+    # finish Grid
     Grid    =  LaMEM_grid(  nmark_x,    nmark_y,    nmark_z,
-                            nump_x,     nump_y,     nump_z,
-                            nel_x,      nel_y,      nel_z,    
-                            W,          L,          H,
-                            coord_x,    coord_y,    coord_z,
-                            x,          y,          z,
-                            X,          Y,          Z);
+    nump_x,     nump_y,     nump_z,
+    nel_x_tot,  nel_y_tot,  nel_z_tot,    
+    W,          L,          H,
+    coord_x,    coord_y,    coord_z,
+    x,          y,          z,
+    X,          Y,          Z,
+    xn,         yn,         zn,
+    Xn,         Yn,         Zn);
 
     return Grid
+end
+
+function make1DMarkerCoords(xn::Array{Float64, 1}, nmark::Int64)
+    # preallocate
+    nel  = length(xn) - 1
+    nump = nel * nmark;
+    x    = zeros(Float64, nump);
+
+    # compute coordinates
+    for i = 1 : nel
+        # start of cell
+        x0 = xn[i];
+        # markers spacing inside cell
+        dx = (xn[i+1] - x0) / nmark;
+
+        # compute position
+        for j = 1 : nmark
+            x[nmark*i-(nmark-j)] = x0 + dx/2 + (j-1)*dx;
+        end
+    end
+
+    return x
+end
+
+function make1DCoords(nseg::Int64, nel, coord::Array{Float64, 1}, bias)
+    # preallocate
+    nel_tot = sum(nel);
+    x       = zeros(Float64, nel_tot+1);
+
+    for i = 1 : nseg
+        # indices of this segment in the coordinate vector
+        if i == 1
+            indE = nel[1] + 1
+        else
+            indE = sum(nel[1:i]) + 1;
+        end
+        indS = indE - nel[i];
+
+        # compute coordinates
+        x[indS:indE] = makeCoordSegment(coord[i], coord[i+1], nel[i], bias[i]);
+    end
+
+    return x
+end
+
+function makeCoordSegment(xStart::Float64, xEnd::Float64, numCells::Int64, bias::Float64)
+    # average cell size
+    avgSize = (xEnd - xStart) / numCells;
+
+    # uniform case
+    if bias == 1.0
+        x = Array(xStart : avgSize : xEnd);
+    # non-uniform case
+    else
+        x = zeros(Float64, numCells+1)
+        # cell size limits
+        begSize = 2.0 * avgSize / (1.0 + bias);
+        endSize = bias * begSize;
+
+        # cell size increment (negative for bias < 1)
+        dx      = (endSize - begSize) / (numCells - 1);
+
+        # generate coordinates
+        x[1]    = xStart;
+        for i = 2 : numCells + 1
+            x[i] = x[i-1] + begSize + (i-2)*dx;
+        end
+
+        # overwrite last coordinate
+        x[end] = xEnd;
+    end
+
+    return x
 end
 
 # Print an overview of the LaMEM Grid struct:
@@ -165,16 +326,16 @@ function Base.show(io::IO, d::LaMEM_grid)
     println(io,"LaMEM Grid: ")
     println(io,"  nel         : ($(d.nel_x), $(d.nel_y), $(d.nel_z))")
     println(io,"  marker/cell : ($(d.nmark_x), $(d.nmark_y), $(d.nmark_z))")
-    println(io,"  markers     : ($(d.nump_x), $(d.nump_x), $(d.nump_x))")
-    println(io,"  x           ϵ [$(d.coord_x[1]) : $(d.coord_x[2])]")
-    println(io,"  y           ϵ [$(d.coord_y[1]) : $(d.coord_y[2])]")
-    println(io,"  z           ϵ [$(d.coord_z[1]) : $(d.coord_z[2])]")
+    println(io,"  markers     : ($(d.nump_x), $(d.nump_y), $(d.nump_z))")
+    println(io,"  x           ϵ [$(d.coord_x[1]) : $(d.coord_x[end])]")
+    println(io,"  y           ϵ [$(d.coord_y[1]) : $(d.coord_y[end])]")
+    println(io,"  z           ϵ [$(d.coord_z[1]) : $(d.coord_z[end])]")
 end
 
 """
-    Save_LaMEMMarkersParallel(Grid::ParaviewData; PartitioningFile=empty, directory="./markers", verbose=true)
+    Save_LaMEMMarkersParallel(Grid::CartData; PartitioningFile=empty, directory="./markers", verbose=true)
 
-Saves a LaMEM marker file from the ParaviewData structure `Grid`. It must have a field called `Phases`, holding phase information (as integers) and optionally a field `Temp` with temperature info. 
+Saves a LaMEM marker file from the `CartData` structure `Grid`. It must have a field called `Phases`, holding phase information (as integers) and optionally a field `Temp` with temperature info. 
 It is possible to provide a LaMEM partitioning file `PartitioningFile`. If not, output is assumed to be for one processor.
 
 The size of `Grid` should be consistent with what is provided in the LaMEM input file. In practice, the size of the mesh can be retrieved from a LaMEM input file using `ReadLaMEM_InputFile`.
@@ -185,7 +346,7 @@ The size of `Grid` should be consistent with what is provided in the LaMEM input
 julia> Grid    = ReadLaMEM_InputFile("LaMEM_input_file.dat")
 julia> Phases  = zeros(Int32,size(Grid.X));
 julia> Temp    = ones(Float64,size(Grid.X));
-julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp))
+julia> Model3D = CartData(Grid, (Phases=Phases,Temp=Temp))
 julia> Save_LaMEMMarkersParallel(Model3D)
 Writing LaMEM marker file -> ./markers/mdb.00000000.dat
 ```    
@@ -199,20 +360,20 @@ Writing LaMEM marker file -> ./markers/mdb.00000003.dat
 ```
 
 """
-function Save_LaMEMMarkersParallel(Grid::ParaviewData; PartitioningFile=empty, directory="./markers", verbose=true)
+function Save_LaMEMMarkersParallel(Grid::CartData; PartitioningFile=empty, directory="./markers", verbose=true)
 
     x = ustrip.(Grid.x.val[:,1,1]);
     y = ustrip.(Grid.y.val[1,:,1]);
     z = ustrip.(Grid.z.val[1,1,:]);
     
     if haskey(Grid.fields,:Phases)
-        Phases = Grid.fields[:Phases];
+        Phases = Grid.fields[:Phases];  
     else
         error("You must provide the field :Phases in the structure")
     end
     
     if haskey(Grid.fields,:Temp)
-        Temp = Grid.fields[:Temp];
+        Temp = Grid.fields[:Temp];      
     else
         if verbose
             println("Field :Temp is not provided; setting it to zero")
@@ -250,9 +411,9 @@ function Save_LaMEMMarkersParallel(Grid::ParaviewData; PartitioningFile=empty, d
     for n=1:Nproc
         # Extract coordinates for current processor
         
-        part_x   = Grid.x.val[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]];
-        part_y   = Grid.y.val[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]];
-        part_z   = Grid.z.val[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]];
+        part_x   = ustrip.(Grid.x.val[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]]);
+        part_y   = ustrip.(Grid.y.val[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]]);
+        part_z   = ustrip.(Grid.z.val[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]]);
         part_phs = Phases[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]];
         part_T   =   Temp[x_start[n]:x_end[n],y_start[n]:y_end[n],z_start[n]:z_end[n]];
         num_particles = size(part_x,1)* size(part_x,2) * size(part_x,3);
@@ -716,4 +877,100 @@ function  ReadData_PVTR(fname, dir)
     DataC       =   ParaviewData(X,Y,Z, fields);
 
     return DataC
+end
+
+"""
+    Save_LaMEMTopography(Topo::CartData, filename::String)
+
+This writes a topography file `Topo` for use in LaMEM, which should have size `(nx,ny,1)` and contain the field `:Topography` 
+"""
+function Save_LaMEMTopography(Topo::CartData, filename::String)
+
+    if (size(Topo.z.val,3) != 1)
+        error("Not a valid `CartData' Topography file (size in 3rd dimension should be 1)")
+    end
+    if !haskey(Topo.fields,:Topography)
+        error("The topography `CartData` structure requires a field :Topography")
+    end
+
+    # get grid properties
+    nx = Float64(size(Topo.fields.Topography,1));
+    ny = Float64(size(Topo.fields.Topography,2));
+    x0 = ustrip(Topo.x.val[1,1,1]);
+    y0 = ustrip(Topo.y.val[1,1,1]);
+
+    # LaMEM wants a uniform grid, so interpolate if necessary 
+    if length(unique(trunc.(diff(Topo.x.val[:,1,1]), digits=8))) > 1 || length(unique(trunc.(diff(Topo.y.val[1,:,1]), digits=8))) > 1
+        x1       = ustrip(Topo.x.val[end,1,1]);
+        y1       = ustrip(Topo.y.val[1,end,1]);
+        dx       = (x1-x0) / (nx-1);
+        dy       = (y1-y0) / (ny-1);
+  
+        itp      = LinearInterpolation((Topo.x.val[:,1,1], Topo.y.val[1,:,1]), ustrip.(Topo.fields.Topography[:,:,1]));
+        Topo_itp = [itp(x,y) for x in x0:dx:x1, y in y0:dy:y1];
+
+        # Code the topograhic data into a vector
+        Topo_vec = [ nx;ny;x0;y0;dx;dy; Topo_itp[:]]
+    else
+        dx = ustrip(Topo.x.val[2,2,1]) - x0
+        dy = ustrip(Topo.y.val[2,2,1]) - y0
+        # Code the topograhic data into a vector
+        Topo_vec = [ nx;ny;x0;y0;dx;dy; ustrip.(Topo.fields.Topography[:])]
+    end    
+
+    # Write as PetscBinary file
+    PetscBinaryWrite_Vec(filename, Topo_vec)
+
+    println("Written LaMEM topography file: $(filename)")
+
+    return nothing
+end
+
+"""
+    CreatePartitioningFile(LaMEM_input::String, NumProc::Int64; LaMEM_dir::String=pwd(), LaMEM_options::String="", MPI_dir="")
+
+This executes LaMEM for the input file `LaMEM_input` & creates a parallel partitioning file for `NumProc` processors.
+The directory where the LaMEM binary is can be specified; if not it is assumed to be in the current directory.
+Likewise for the `mpiexec` directory (if not specified it is assumed to be available on the command line).
+
+"""
+function CreatePartitioningFile(LaMEM_input::String,NumProc::Int64; LaMEM_dir::String=pwd(), LaMEM_options="", MPI_dir="")
+
+    # Create string to execute LaMEM
+    mpi_str     =  MPI_dir*"mpiexec -n $(NumProc) " 
+    LaMEM_str   =  LaMEM_dir*"/"*"LaMEM -ParamFile "*LaMEM_input*" -mode save_grid "
+    str         =  mpi_str*LaMEM_str
+    
+    println("Executing command: $str")
+    
+    # Run
+    exit=run(`sh -c $str`, wait=false);
+    
+    # Retrieve newest file
+    if success(exit)
+        files=readdir(glob"ProcessorPartitioning_*.bin")
+        time_modified = zeros(length(files))
+        for (i,file) in enumerate(files)
+            time_modified[i] = stat(file).mtime
+        end
+        id          = findall(time_modified.==maximum(time_modified))   # last modified
+        PartFile    = files[id]
+        
+        println("Successfuly generated PartitioningFile: $(PartFile[1])")
+    else
+        error("Something went wrong with executing command ")
+    end
+
+    return PartFile[1]
+
+end
+
+"""
+    X,Y,Z = coordinate_grids(Data::LaMEM_grid)
+
+Returns 3D coordinate arrays
+"""
+function coordinate_grids(Data::LaMEM_grid)
+
+    return Data.X, Data.Y, Data.Z
 end

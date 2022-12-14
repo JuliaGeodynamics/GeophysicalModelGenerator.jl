@@ -10,7 +10,7 @@ proj            =   ProjectionPoint(Lon=20,Lat=35)
 
 # Convert this 3D dataset to a Cartesian dataset (the grid will not be orthogonal)
 Data_set3D_Cart =   Convert2CartData(Data_set3D, proj)  
-@test sum(abs.(Data_set3D_Cart.x.val)) ≈ 5.293469089428514e6km
+@test sum(abs.(Value(Data_set3D_Cart.x))) ≈ 5.293469089428514e6km
 
 # Create Cartesian grid
 X,Y,Z           =   XYZGrid(-500:100:500,-900:200:900,(-500:100:0)km);
@@ -19,6 +19,7 @@ Data_Cart       =   CartData(X,Y,Z,(Z=Z,))
 # Project values of Data_set3D to the cartesian data
 Data_Cart       =   ProjectCartData(Data_Cart, Data_set3D, proj)
 @test sum(Data_Cart.fields.Depthdata) ≈ -316834.28716859705km
+#@test sum(Data_Cart.fields.Depthdata) ≈ -1.416834287168597e6km
 @test sum(Data_Cart.fields.LonData) ≈ 13165.712831402916
 
 
@@ -33,6 +34,16 @@ X,Y,Z           =   XYZGrid(-500:10:500,-900:20:900,0);
 Data_Cart       =   CartData(X,Y,Z,(Z=Z,))  
 
 Data_Cart       =   ProjectCartData(Data_Cart, Data_surf, proj)
-@test sum(Data_Cart.z.val) ≈ 1858.2487019158766km
+@test sum(Value(Data_Cart.z)) ≈ 1858.2487019158766km
 @test sum(Data_Cart.fields.Z) ≈ 1858.2487019158766
 
+
+# Cartesian surface when UTM data is used
+WE,SN,depth     =   XYZGrid(420000:1000:430000, 4510000:1000:4520000, 0);
+
+Data_surfUTM    =   UTMData(WE, SN, depth, 33, true, (Depth = WE,));
+Data_Cart       =   CartData(X,Y,Z,(Z=Z,))  
+Data_Cart       =   ProjectCartData(Data_Cart, Data_surfUTM, proj)
+
+@test sum(Value(Data_Cart.z)) ≈ 0.0km
+@test sum(Data_Cart.fields.Depth) ≈ 3.9046959539921126e9

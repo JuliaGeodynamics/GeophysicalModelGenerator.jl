@@ -28,27 +28,51 @@ using GeophysicalModelGenerator
 
 # test loading images (profiles & mapviews)
 
-# Extact & save profile
+# Extact & save profile in GeoData format
 filename            =   "test.png";             # fake png
 Corner_LowerLeft    =   (18.0, 51.0, -590.0)
 Corner_UpperRight   =   (9.0, 42.0,    0.0)
 data_Image          =   Screenshot_To_GeoData(filename,Corner_LowerLeft, Corner_UpperRight)
-@test data_Image.lon[1000]==17.592964824120603
-@test data_Image.lat[1000]==50.59296482412061
-@test data_Image.depth[1000]==-590km
-@test Write_Paraview(data_Image, "Profile_1")[1]=="Profile_1.vts"
+@test data_Image.lon[1000] ≈ 17.592964824120603
+@test data_Image.lat[1000] ≈ 50.59296482412061
+@test Value(data_Image.depth[1000])==-590km
+@test Write_Paraview(data_Image, "Profile_1")==nothing
 
-# Mapview (distorted)
+# Test in CartData
+data_Image          =   Screenshot_To_GeoData(filename,Corner_LowerLeft, Corner_UpperRight, Cartesian=true)
+@test Value(data_Image.x[22]) == 18.0km
+@test Value(data_Image.y[22]) == 51.0km
+@test Value(data_Image.z[22]) ≈ -125.15151515151516km
+
+
+# Test in UTM zone [note that depth should be in m]
+data_Image          =   Screenshot_To_GeoData(filename,Corner_LowerLeft, Corner_UpperRight, UTM=true, UTMzone=33, isnorth=true)
+@test data_Image.EW.val[22] == 18.0
+@test data_Image.NS.val[22] == 51.0
+@test Value(data_Image.depth[22]) ≈ -125.15151515151516m
+
+# Mapview (distorted) in GeoData format
 filename            =   "test.png";             # fake png
 Corner_LowerLeft    =   (2.0,  40.0, -15.0)
 Corner_UpperRight   =   (22.0, 51.0, -15.0)
 Corner_LowerRight   =   (20.0, 40.0, -15.0)
 Corner_UpperLeft    =   (0.0,  51.0, -15.0)
 data_Image          =   Screenshot_To_GeoData(filename,Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft)
-@test data_Image.lon[1000]==2.814070351758794
-@test data_Image.lat[1000]==40.00000000000001
-@test data_Image.depth[1000]==-15km
-@test Write_Paraview(data_Image, "MapView_1")[1] == "MapView_1.vts"
+@test data_Image.lon[1000]  ≈  2.814070351758794
+@test data_Image.lat[1000]  ≈ 40.00000000000001
+@test Value(data_Image.depth[1000])==-15km
+@test Write_Paraview(data_Image, "MapView_1") == nothing
 
+# MapView in CartData
+data_Image          =   Screenshot_To_CartData(filename,Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft)
+@test Value(data_Image.x[22]) ≈ 0.42424242424242425km
+@test Value(data_Image.y[22]) ≈ 48.666666666666664km
+@test Value(data_Image.z[22]) ≈ -15km
+
+# MapView in UTMData
+data_Image          =   Screenshot_To_UTMData(filename,Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, UTMzone=33, isnorth=true)
+@test data_Image.EW.val[22] ≈ 0.42424242424242425
+@test data_Image.NS.val[22] ≈ 48.666666666666664
+@test Value(data_Image.depth[22]) ≈ -15.0m
 
 

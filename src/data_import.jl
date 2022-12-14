@@ -4,7 +4,7 @@
 #
 # Author: Marcel Thielmann, 05/2021
 
-export Screenshot_To_GeoData, Screenshot_To_ParaviewData
+export Screenshot_To_GeoData, Screenshot_To_CartData, Screenshot_To_UTMData
 
 # import CSV data using standard library functions
 # here we assume that the data is indeed comma separated and that comments are preceded with a "#"
@@ -158,16 +158,17 @@ end
 
 
 """
-    Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing)
+    Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, Cartesian=false, UTM=false, UTMzone, isnorth=true)
 
-Take a screenshot of Georeferenced image (either a `lat/lon` map at a given depth or a profile) and converts it to a GeoData struct, which can be saved to Paraview
+Take a screenshot of Georeferenced image either a `lat/lon`, `x,y` (if `Cartesian=true`) or in UTM coordinates (if `UTM=true`) at a given depth or along profile and converts it to a `GeoData`, `CartData` or `UTMData` struct, which can be saved to Paraview
 
-The lower left and upper right coordinates of the image need to be specified in tuples of `(lon,lat,depth)`, where `depth` is negative in the Earth.
+The lower left and upper right coordinates of the image need to be specified in tuples of `(lon,lat,depth)` or `(UTM_ew, UTM_ns, depth)`, where `depth` is negative in the Earth (and in km).
 
 The lower right and upper left corners can be specified optionally (to take non-orthogonal images into account). If they are not specified, the image is considered orthogonal and the corners are computed from the other two.
 
+*Note*: if your data is in `UTM` coordinates you also need to provide the `UTMzone` and whether we are on the northern hemisphere or not (`isnorth`).
 """
-function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, Cart_Data_Type=false)
+function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, Cartesian=false, UTM=false, UTMzone=nothing, isnorth=true)
 
     img         =   load(filename)      # load image
 
@@ -192,14 +193,31 @@ function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperR
     end
 
     # Print overview of the 4 corners here:
-    if Cart_Data_Type
-        println("Extracting ParaviewData from: $(filename)")
+    if Cartesian
+        println("Extracting CartData from: $(filename)")
         println("           └ Corners:         x         y         z")
         println("              └ lower left  = ($(rpad( Corner_LowerLeft[1],7)), $(rpad( Corner_LowerLeft[2],7)),  $(rpad( Corner_LowerLeft[3],7)))")
         println("              └ lower right = ($(rpad(Corner_LowerRight[1],7)), $(rpad(Corner_LowerRight[2],7)),  $(rpad(Corner_LowerRight[3],7)))")
         println("              └ upper left  = ($(rpad( Corner_UpperLeft[1],7)), $(rpad( Corner_UpperLeft[2],7)),  $(rpad( Corner_UpperLeft[3],7)))")
         println("              └ upper right = ($(rpad(Corner_UpperRight[1],7)), $(rpad(Corner_UpperRight[2],7)),  $(rpad(Corner_UpperRight[3],7)))")
-    else
+    end
+    if UTM
+        if isnothing(UTMzone)
+            error("You need to specify UTMzone and isnorth if reading in UTM data.")
+        end
+        println("Extracting UTMData from: $(filename)")
+        if isnorth
+        println("       UTM Zone $(UTMzone) Northern Hemisphere")
+        else
+        println("       UTM Zone $(UTMzone) Southern Hemisphere")
+        end
+        println("           └ Corners:         E-W (x)  | N-S (y) | depth (z)")
+        println("              └ lower left  = ($(rpad( Corner_LowerLeft[1],7)), $(rpad( Corner_LowerLeft[2],7)),  $(rpad( Corner_LowerLeft[3],7)))")
+        println("              └ lower right = ($(rpad(Corner_LowerRight[1],7)), $(rpad(Corner_LowerRight[2],7)),  $(rpad(Corner_LowerRight[3],7)))")
+        println("              └ upper left  = ($(rpad( Corner_UpperLeft[1],7)), $(rpad( Corner_UpperLeft[2],7)),  $(rpad( Corner_UpperLeft[3],7)))")
+        println("              └ upper right = ($(rpad(Corner_UpperRight[1],7)), $(rpad(Corner_UpperRight[2],7)),  $(rpad(Corner_UpperRight[3],7)))")
+    end
+    if (!Cartesian) && (!UTM)
         println("Extracting GeoData from: $(filename)")
         println("           └ Corners:         lon       lat       depth")
         println("              └ lower left  = ($(rpad( Corner_LowerLeft[1],7)), $(rpad( Corner_LowerLeft[2],7)),  $(rpad( Corner_LowerLeft[3],7)))")
@@ -213,6 +231,11 @@ function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperR
     i = 2; Corners_lat     = [Corner_UpperLeft[i] Corner_UpperRight[i]; Corner_LowerLeft[i] Corner_LowerRight[i]; ]
     i = 3; Corners_depth   = [Corner_UpperLeft[i] Corner_UpperRight[i]; Corner_LowerLeft[i] Corner_LowerRight[i]; ]
 
+   # i = 1; Corners_lon     = [Corner_LowerLeft[i] Corner_LowerRight[i]; Corner_UpperLeft[i] Corner_UpperRight[i];]
+   # i = 2; Corners_lat     = [Corner_LowerLeft[i] Corner_LowerRight[i]; Corner_UpperLeft[i] Corner_UpperRight[i];]
+   # i = 3; Corners_depth   = [Corner_LowerLeft[i] Corner_LowerRight[i]; Corner_UpperLeft[i] Corner_UpperRight[i];]
+
+  
     # Extract the colors from the grid
     img_RGB     =   convert.(RGB, img)     # convert to  RGB data
 
@@ -231,14 +254,14 @@ function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperR
     xs                      =   [1,grid_size[1]];
     zs                      =   [1,grid_size[2]];
     interp_linear_lon       =   LinearInterpolation((xs, zs), Corners_lon)      # create interpolation object
-    interp_linear_lat       =   LinearInterpolation((xs, zs), Corners_lat)      # create interpolation object
-    interp_linear_depth     =   LinearInterpolation((xs, zs), Corners_depth)    # create interpolation object
+    interp_linear_lat       =   LinearInterpolation((xs, zs), Corners_lat)       # create interpolation object
+    interp_linear_depth     =   LinearInterpolation((xs, zs), Corners_depth)     # create interpolation object
 
     # Interpolate
-    Lon_int,Lat_int,Depth   =   LonLatDepthGrid(1:grid_size[1],1:grid_size[2],0)
-    Lon                     =   interp_linear_lon.(Lon_int,Lat_int);
-    Lat                     =   interp_linear_lat.(Lon_int,Lat_int);
-    Depth                   =   interp_linear_depth.(Lon_int,Lat_int);
+    X_int,Y_int,Depth       =   XYZGrid(1:grid_size[1],1:grid_size[2],0)
+    X                       =   interp_linear_lon.(X_int,   Y_int);
+    Y                       =   interp_linear_lat.(X_int,   Y_int);
+    Depth                   =   interp_linear_depth.(X_int, Y_int);
 
     # Transfer to 3D arrays (check if needed or not; if yes, redo error message in struct routin)
     red                     =   zeros(size(Depth)); red[:,:,1]   = r;
@@ -246,26 +269,46 @@ function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperR
     blue                    =   zeros(size(Depth)); blue[:,:,1]  = b;
 
     # Create GeoData structure - NOTE: RGB data must be 2D matrixes, not 3D!
-    if Cart_Data_Type==true
-        data_Image              =   ParaviewData(Lon, Lat, Depth,(colors=(red,green,blue),))
-    else
-        data_Image              =   GeoData(Lon, Lat, Depth, (colors=(red,green,blue),))
+    if Cartesian
+        data_Image              =   CartData(X, Y, Depth,(colors=(red,green,blue),))
+    end
+    if UTM
+        data_Image              =   UTMData(X, Y, Depth, UTMzone, isnorth, (colors=(red,green,blue),))
+    end
+    if (!Cartesian) && (!UTM)
+        data_Image              =   GeoData(X, Y, Depth, (colors=(red,green,blue),))
     end
     return data_Image
 end
 
 
 """
-    Data = Screenshot_To_ParaviewData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing)
+    Data = Screenshot_To_CartData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing)
 
-Does the same as `Screenshot_To_GeoData`, but returns a Cartesian data structure
+Does the same as `Screenshot_To_GeoData`, but returns a `CartData` structure
 """
-function Screenshot_To_ParaviewData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing)
+function Screenshot_To_CartData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing)
     
 
     # first create a GeoData struct
-    Data_Cart = Screenshot_To_GeoData(filename, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, Cart_Data_Type=true)
+    Data_Cart = Screenshot_To_GeoData(filename, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, Cartesian=true)
 
     return Data_Cart
 
 end
+
+"""
+    Data = Screenshot_To_UTMData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, UTMzone::Int64=nothing, isnorth::Bool=true)
+
+Does the same as `Screenshot_To_GeoData`, but returns for UTM data 
+Note that you have to specify the `UTMzone` and `isnorth`
+"""
+function Screenshot_To_UTMData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, UTMzone::Int64=nothing, isnorth::Bool=true)
+
+      # first create a GeoData struct
+      Data_UTM = Screenshot_To_GeoData(filename, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, Cartesian=false, UTM=true, UTMzone=UTMzone, isnorth=isnorth)
+
+      return Data_UTM
+
+end
+

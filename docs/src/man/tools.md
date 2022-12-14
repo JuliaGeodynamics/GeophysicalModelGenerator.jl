@@ -17,4 +17,6 @@ GeophysicalModelGenerator.Convert2UTMzone
 GeophysicalModelGenerator.Convert2CartData
 GeophysicalModelGenerator.ImportTopo
 GeophysicalModelGenerator.ProjectCartData
+GeophysicalModelGenerator.DrapeOnTopo
+GeophysicalModelGenerator.LithostaticPressure!
 ```

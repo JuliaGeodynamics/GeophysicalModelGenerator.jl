@@ -76,4 +76,4 @@ In the pipeline:
 - Provide tools to create and export 3D geodynamic model setups. 
  
 ## Funding
-Development of this software package was funded by the German Research Foundation (DFG grants TH2076/7-1 and KA3367/10-1), which are part of the [SPP 2017 4DMB project](http://www.spp-mountainbuilding.de) project as well as by the European Research Council under grant ERC CoG #771143 - [MAGMA](https://magma.uni-mainz.de).
+Development of this software package was funded by the German Research Foundation (DFG grants TH2076/7-1 and KA3367/10-1), which are part of the [SPP 2017 4DMB project](http://www.spp-mountainbuilding.de) project as well as by the European Research Council under grant ERC CoG #771143 - [MAGMA](https://magma.uni-mainz.de). The project was initiated at a [TeMaS](https://temas.uni-mainz.de) workshop with researchers from Frankfurt and Mainz where we realized that it is way too timeconsuming to collect available data of a certain region.

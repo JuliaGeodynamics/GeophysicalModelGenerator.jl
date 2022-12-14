@@ -1,4 +1,5 @@
 using GeophysicalModelGenerator
+using .GeophysicalModelGenerator
 using Documenter
 
 #DocMeta.setdocmeta!(GeophysicalModelGenerator, :DocTestSetup, :(using GeophysicalModelGenerator); recursive=true)
@@ -26,14 +27,18 @@ makedocs(;
             "Plot GPS vectors" =>  "man/tutorial_GPS.md",
             "Read UTM data" =>  "man/tutorial_UTM.md",
             "VoteMaps" =>  "man/Tutorial_Votemaps.md",      
-            "Kilometer-scale volcano" =>  "man/tutorial_local_Flegrei.md"
+            "Kilometer-scale volcano" =>  "man/tutorial_local_Flegrei.md",
+            "Generating LaMEM model" =>  "man/LaPalma_example.md",
+            "Create movies" =>  "man/tutorial_time_Seismicity.md"
         ],
         "User Guide" => Any[
             "Installation" =>  "man/installation.md",
             "Data Structures" =>  "man/datastructures.md",
             "Data Import" =>  "man/dataimport.md",
+            "Projection" =>  "man/projection.md",
             "Paraview output" => "man/paraview_output.md",
             "Tools" => "man/tools.md",
+            "Visualisation" => "man/visualise.md",
             "Gravity code" => "man/gravity_code.md",
             "LaMEM" => "man/lamem.md"
         ],

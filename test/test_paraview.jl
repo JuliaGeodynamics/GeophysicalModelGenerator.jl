@@ -8,33 +8,28 @@ using GeophysicalModelGenerator
 Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
 Data            =   Depth*2; # some data
 Data_set        =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon))  
-outfile         =   Write_Paraview(Data_set, "test_depth3D")
-@test outfile[1]    ==  "test_depth3D.vts"
+@test Write_Paraview(Data_set, "test_depth3D") == nothing
 
 # Horizontal profile @ 10 km height
 Lon,Lat,Depth     =   LonLatDepthGrid(10:20,30:40,10km);
 Depth[2:4,2:4,1] .= 25km     # add some fake topography
 
 Data_set2       =   GeoData(Lon,Lat,Depth,(Topography=Depth,))  
-outfile2       =   Write_Paraview(Data_set2, "test2")
-@test outfile2[1]    ==  "test2.vts"
+@test Write_Paraview(Data_set2, "test2")    ==  nothing
 
 # Cross sections
 Lon,Lat,Depth   =   LonLatDepthGrid(10:20,35,(-300:25:0)km);
 Data_set3       =   GeoData(Lon,Lat,Depth,(DataSet=Depth,))  
-outfile3        =   Write_Paraview(Data_set3, "test3")
-@test outfile3[1]    ==  "test3.vts"
+@test Write_Paraview(Data_set3, "test3")   ==  nothing
 
 
 Lon,Lat,Depth   =   LonLatDepthGrid(15,30:40,(-300:25:0)km);
 Data_set4       =   GeoData(Lon,Lat,Depth,(DataSet=Depth,))  
-outfile4        =   Write_Paraview(Data_set4, "test4")
-@test outfile4[1]    ==  "test4.vts"
+@test Write_Paraview(Data_set4, "test4")    ==  nothing
 
 Lon,Lat,Depth   =   LonLatDepthGrid(15,35,(-300:25:0)km);
 Data_set5       =   GeoData(Lon,Lat,Depth,(DataSet=Depth,))  
-outfile5        =   Write_Paraview(Data_set5, "test5")
-@test outfile5[1]    ==  "test5.vts"
+@test Write_Paraview(Data_set5, "test5")   ==  nothing
 
 
 # Test saving vectors 
@@ -44,14 +39,14 @@ Vn                      =   zeros(size(Depth));
 Vz                      =   zeros(size(Depth));
 Velocity                =   (copy(Ve),copy(Vn),copy(Vz))              # tuple with 3 values, which 
 Data_set_vel            =   GeoData(Lon,Lat,Depth,(Velocity=Velocity, Veast=Velocity[1]*cm/yr, Vnorth=Velocity[2]*cm/yr, Vup=Velocity[3]*cm/yr))  
-outfile_vel             =   Write_Paraview(Data_set_vel, "test_Vel")
+@test  Write_Paraview(Data_set_vel, "test_Vel") == nothing
 
 # Test saving colors
 red                     = zeros(size(Lon)); 
 green                   = zeros(size(Lon)); 
 blue                    = zeros(size(Lon)); 
 Data_set_color          =   GeoData(Lon, Lat, Depth, (Velocity=Velocity,colors=(red,green,blue),color2=(red,green,blue)))
-Write_Paraview(Data_set_color, "test_Color")
+@test Write_Paraview(Data_set_color, "test_Color") == nothing
 
 # Manually test the in-place conversion from spherical -> cartesian (done automatically when converting GeoData->ParaviewData  )
 Vel_Cart                =   (copy(Ve),copy(Vn),copy(Vz)) 
@@ -62,7 +57,6 @@ Velocity_SphericalToCartesian!(Data_set_vel, Vel_Cart);
 
 # Test saving unstructured point data (EQ, or GPS points)
 Data_set_VelPoints          =       GeoData(Lon[:],Lat[:],ustrip.(Depth[:]),(Velocity=(copy(Ve[:]),copy(Vn[:]),copy(Vz[:])), Veast=Ve[:]*mm/yr, Vnorth=Vn[:]*cm/yr, Vup=Vz[:]*cm/yr))  
-outfile_vel_pts             =       Write_Paraview(Data_set_VelPoints, "test_Vel_points", PointsData=true)
-@test outfile_vel_pts[1]    ==      "test_Vel_points.vtu"
+@test Write_Paraview(Data_set_VelPoints, "test_Vel_points", PointsData=true)    ==      nothing
 
 end
