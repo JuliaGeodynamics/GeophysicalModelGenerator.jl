@@ -765,7 +765,7 @@ function Convert2CartData(d::GeoData, proj::ProjectionPoint)
 
     d_UTM = Convert2UTMzone(d,proj)
     return CartData( (ustrip.(d_UTM.EW.val) .- proj.EW)./1e3, (ustrip.(d_UTM.NS.val) .- proj.NS)./1e3,
-                     ustrip.(d_UTM.depth.val)./1e3, d_UTM.fields,d_UTM.atts)
+                     ustrip.(d_UTM.depth.val), d_UTM.fields,d_UTM.atts)
 end
 
 """
