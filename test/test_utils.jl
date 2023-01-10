@@ -7,23 +7,23 @@ using GeophysicalModelGenerator
 Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,-50km);
 Data1           =   Depth*2;                # some data
 Vx1,Vy1,Vz1     =   Data1*3,Data1*4,Data1*5
-Data_set2D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data1,LonData1=Lon, Velocity=(Vx1,Vy1,Vz1)))  
+Data_set2D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data1,LonData1=Lon, Velocity=(Vx1,Vy1,Vz1)))
 @test_throws ErrorException CrossSection(Data_set2D, Depth_level=-10)
 
 # Create 3D volume with some fake data
 Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
 Data            =   Depth*2;                # some data
 Vx,Vy,Vz        =   ustrip(Data*3),ustrip(Data*4),ustrip(Data*5);
-Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)))  
+Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)))
 
 # Create 3D cartesian dataset
-Data_setCart3D  =   CartData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)))  
+Data_setCart3D  =   CartData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)))
 
 # Create 3D volume with some fake data
 Lon,Lat,Depth           =   LonLatDepthGrid(10:20,30:40,(0:-25:-300)km);
 Data                    =   Depth*2;                # some data
 Vx,Vy,Vz                =   ustrip(Data*3),ustrip(Data*4),ustrip(Data*5);
-Data_set3D_reverse      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)))  
+Data_set3D_reverse      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)))
 
 # Create cross-sections in various directions (no interpolation which is default)
 test_cross      =   CrossSection(Data_set3D, Depth_level=-100km)
@@ -105,16 +105,16 @@ Data_pert   =   SubtractHorizontalMean(Data, Percentage=true)            # 3D wi
 @test Data_pert[1000] == 0.0
 
 Data2D = Data[:,1,:];
-Data_pert   =   SubtractHorizontalMean(Data2D, Percentage=true)         # 2D version with units [dp the same along a vertical profile]    
+Data_pert   =   SubtractHorizontalMean(Data2D, Percentage=true)         # 2D version with units [dp the same along a vertical profile]
 
-Data_set2D  =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon,Pertdata=Data_pert ,Velocity=(Vx,Vy,Vz)))  
+Data_set2D  =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon,Pertdata=Data_pert ,Velocity=(Vx,Vy,Vz)))
 @test Data_set2D.fields[3][10,8,1] == 0
 
 
 # Create surface ("Moho")
 Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,-40km);
 Depth           =   Depth + Lon*km;     # some fake topography on Moho
-Data_Moho       =   GeoData(Lon,Lat,Depth,(MohoDepth=Depth,LonData=Lon))  
+Data_Moho       =   GeoData(Lon,Lat,Depth,(MohoDepth=Depth,LonData=Lon))
 
 
 # Test intersecting a surface with 2D or 3D data sets
@@ -140,7 +140,7 @@ Data_VoteMap = VoteMap(Data_set3D_reverse, "Depthdata<-560",dims=(10,10,10))
 @test Data_VoteMap.fields[:VoteMap][101]==0
 @test Data_VoteMap.fields[:VoteMap][100]==1
 
-# Combine 2 datasets 
+# Combine 2 datasets
 Data_VoteMap = VoteMap([Data_set3D_reverse, Data_set3D], ["Depthdata<-560","LonData>19"],dims=(10,10,10))
 @test Data_VoteMap.fields[:VoteMap][10,9,1]==2
 @test Data_VoteMap.fields[:VoteMap][9 ,9,1]==1
@@ -160,4 +160,4 @@ Data_C1 = RotateTranslateScale(Data_C, Scale=10, Rotate=10, Translate=(1,2,3));
 @test Data_C1.z.val[20] == -497.0
 
 
-# Test 
+# Test

@@ -1,12 +1,12 @@
 """
-This is Tutorial_TopoGeological_PNG.jl. It contains all the necessary commands to import the netCDF file from ETOPO1 and 
+This is Tutorial_TopoGeological_PNG.jl. It contains all the necessary commands to import the netCDF file from ETOPO1 and
 to convert it to the GeoData format. The, a png file with the geological map of the Alps. The following steps are performed:
 1. Read data from this file.
 2. Select a longitude and latitude range.
 3. Put the data in a GeoData format (this is the format that is used internally in the GMG).
 4. Export that data to a format readable by Paraview.
 
-ETOPO1 data files used in this example can be downloaded here:  
+ETOPO1 data files used in this example can be downloaded here:
 [https://ngdc.noaa.gov/mgg/global/global.html](https://ngdc.noaa.gov/mgg/global/global.html)
 """
 
@@ -40,7 +40,7 @@ DataPNG = Screenshot_To_GeoData(filename_geo, Corner_LowerLeft, Corner_UpperRigh
 
 # 4. interpolate geological map data colors onto topo grid using nearest neighbor interpolation
 
-# 4.1 set up the tree and determine nearest neighbors 
+# 4.1 set up the tree and determine nearest neighbors
 coord = [vec(DataPNG.lon.val)';vec(DataPNG.lat.val)'];
 kdtree = KDTree(coord; leafsize = 10);
 points = [vec(Lon)';vec(Lat)'];

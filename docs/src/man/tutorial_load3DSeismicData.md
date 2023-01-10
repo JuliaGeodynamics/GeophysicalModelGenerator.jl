@@ -2,17 +2,17 @@
 
 ## Goal
 This explains how to load a 3D P-wave model and plot it in Paraview as a 3D volumetric data set. It also shows how you can create horizontal or vertical cross-sections through the data in a straightforward manner and how you can extract subsets of the data;
-The example is the P-wave velocity model of the Alps as described in: 
+The example is the P-wave velocity model of the Alps as described in:
 
 Zhao, L., Paul, A., Malusà, M.G., Xu, X., Zheng, T., Solarino, S., Guillot, S., Schwartz, S., Dumont, T., Salimbeni, S., Aubert, C., Pondrelli, S., Wang, Q., Zhu, R., 2016. *Continuity of the Alpine slab unraveled by high-resolution P wave tomography*. Journal of Geophysical Research: Solid Earth 121, 8720–8737. [doi:10.1002/2016JB013310](https://doi.org/10.1002/2016JB013310)
 
 The data is given in ASCII format with longitude/latitude/depth/velocity anomaly (percentage) format.
 
 ## Steps
-#### 1. Download data 
+#### 1. Download data
 The data is can be downloaded from [https://seafile.rlp.net/d/a50881f45aa34cdeb3c0/](https://seafile.rlp.net/d/a50881f45aa34cdeb3c0/), where you should download the file `Zhao_etal_JGR_2016_Pwave_Alps_3D_k60.txt`. Do that and start julia from the directory where it was downloaded.
 #### 2. Read data into Julia
-The dataset has no comments, and the data values in every row are separated by a space. In order to read this into julia as a matrix, we can use the build-in julia package `DelimitedFiles`.    We want the resulting data to be stored as double precision values (`Float64`), and the end of every line is a linebreak (`\n`).
+The dataset has no comments, and the data values in every row are separated by a space. In order to read this into julia as a matrix, we can use the built-in julia package `DelimitedFiles`.    We want the resulting data to be stored as double precision values (`Float64`), and the end of every line is a linebreak (`\n`).
 ```julia
 julia> using DelimitedFiles
 julia> data=readdlm("Zhao_etal_JGR_2016_Pwave_Alps_3D_k60.txt",' ',Float64,'\n', skipstart=0,header=false)
@@ -23,7 +23,7 @@ julia> data=readdlm("Zhao_etal_JGR_2016_Pwave_Alps_3D_k60.txt",' ',Float64,'\n',
   0.45  38.0   -1001.0  -0.059
   0.6   38.0   -1001.0  -0.055
   0.75  38.0   -1001.0  -0.057
-  ⋮                     
+  ⋮
  17.25  51.95     -1.0  -0.01
  17.4   51.95     -1.0  -0.005
  17.55  51.95     -1.0   0.003
@@ -61,7 +61,7 @@ julia> Depth_vec = unique(depth)
     -1.0
 ```
 So the data has a vertical spacing of 10 km.
-Next, let's check if the data is spaced in a regular manner in Lon/Lat direction. 
+Next, let's check if the data is spaced in a regular manner in Lon/Lat direction.
 For that, we read the data at a given depth level (say -101km) and plot it using the `Plots` package (you may have to install that first on your machine).
 ```julia
 julia> using Plots
@@ -70,7 +70,7 @@ julia> scatter(lon[ind],lat[ind],marker_z=dVp_perc[ind], ylabel="latitude",xlabe
 ```
 ![DataPoints](../assets/img/Tutorial_Zhao_LatLon_data.png)
 
-Note that we employ the scientific colormap `roma` here. [This](https://docs.juliaplots.org/latest/generated/colorschemes/) gives an overview of available colormaps. You can download the colormaps for Paraview [here](https://www.fabiocrameri.ch/visualisation/).  
+Note that we employ the scientific colormap `roma` here. [This](https://docs.juliaplots.org/latest/generated/colorschemes/) gives an overview of available colormaps. You can download the colormaps for Paraview [here](https://www.fabiocrameri.ch/visualisation/).
 
 Clearly, the data is given as regular Lat/Lon points:
 
@@ -134,7 +134,7 @@ Next we create a paraview file:
 ```julia
 julia> using GeophysicalModelGenerator
 julia> Data_set    =   GeoData(Lon,Lat,Depth,(dVp_Percentage=dVp_perc_3D,))
-GeoData 
+GeoData
   size  : (121, 94, 101)
   lon   ϵ [ 0.0 - 18.0]
   lat   ϵ [ 38.0 - 51.95]
@@ -147,7 +147,7 @@ julia> Write_Paraview(Data_set, "Zhao_etal_2016_dVp_percentage")
 
 #### 4. Plotting data in Paraview
 In paraview you should open the `*.vts` file, and press `Apply` (left menu) after doing that. Once you did that you can select `dVp_Percentage` and `Surface` (see red ellipses below)/.
-In paraview you can open the file and visualize it. 
+In paraview you can open the file and visualize it.
 
 ![Paraview_1](../assets/img/Tutorial_Zhao_Paraview_1.png)
 
@@ -181,8 +181,8 @@ In many cases you would like to create cross-sections through the 3D data sets a
 There is a simple way to achieve this using the `CrossSection` function.
 To make a cross-section at a given depth:
 ```julia
-julia> Data_cross  =   CrossSection(Data_set, Depth_level=-100km)  
-GeoData 
+julia> Data_cross  =   CrossSection(Data_set, Depth_level=-100km)
+GeoData
   size  : (121, 94, 1)
   lon   ϵ [ 0.0 : 18.0]
   lat   ϵ [ 38.0 : 51.95]
@@ -196,12 +196,12 @@ julia> Write_Paraview(Data_cross, "Zhao_CrossSection_100km")
 Or at a specific longitude:
 ```julia
 julia> Data_cross  =   CrossSection(Data_set, Lon_level=10)
-GeoData 
+GeoData
   size  : (1, 94, 101)
   lon   ϵ [ 10.05 : 10.05]
   lat   ϵ [ 38.0 : 51.95]
   depth ϵ [ -1001.0 km : -1.0 km]
-  fields: (:dVp_Percentage,) 
+  fields: (:dVp_Percentage,)
 julia> Write_Paraview(Data_cross, "Zhao_CrossSection_Lon10")
 1-element Vector{String}:
  "Zhao_CrossSection_Lon10.vts"
@@ -211,7 +211,7 @@ As you see, this cross-section is not taken at exactly 10 degrees longitude. Tha
 If you wish to interpolate the data, specify `Interpolate=true`:
 ```julia
 julia> Data_cross  =   CrossSection(Data_set, Lon_level=10, Interpolate=true)
-GeoData 
+GeoData
   size  : (1, 100, 100)
   lon   ϵ [ 10.0 : 10.0]
   lat   ϵ [ 38.0 : 51.95]
@@ -224,7 +224,7 @@ as you see, this causes the data to be interpolated on a `(100,100)` grid (which
 We can also create a diagonal cut through the model:
 ```julia
 julia> Data_cross  =   CrossSection(Data_set, Start=(1.0,39), End=(18,50))
-GeoData 
+GeoData
   size  : (100, 100, 1)
   lon   ϵ [ 1.0 : 18.0]
   lat   ϵ [ 39.0 : 50.0]
@@ -233,7 +233,7 @@ GeoData
 julia> Write_Paraview(Data_cross, "Zhao_CrossSection_diagonal")
 ```
 
-Here an image that shows the resulting cross-sections: 
+Here an image that shows the resulting cross-sections:
 
 ![Paraview_7](../assets/img/Tutorial_Zhao_Paraview_7.png)
 
@@ -242,7 +242,7 @@ Sometimes, the data set covers a large region (e.g., the whole Earth), and you a
 
 ```julia
 julia> Data_subset     =   ExtractSubvolume(Data_set,Lon_level=(5,12), Lat_level=(40,45))
-GeoData 
+GeoData
   size  : (48, 35, 101)
   lon   ϵ [ 4.95 : 12.0]
   lat   ϵ [ 39.95 : 45.05]
@@ -257,7 +257,7 @@ By default, we extract the original data and do not interpolate it on a new grid
 In some cases, you will want to interpolate the data on a different grid. Use the `Interpolate=true` option for that:
 ```julia
 julia> Data_subset_interp     =   ExtractSubvolume(Data_set,Lon_level=(5,12), Lat_level=(40,45), Interpolate=true)
-GeoData 
+GeoData
   size  : (50, 50, 50)
   lon   ϵ [ 5.0 : 12.0]
   lat   ϵ [ 40.0 : 45.0]
@@ -266,7 +266,7 @@ GeoData
 julia> Write_Paraview(Data_subset, "Zhao_Subset_interp")
 ```
 ## Load and save data to disk
-It would be useful to save the 3D data set we just created to disk, such that we can easily load it again at a later stage and create cross-sections etc, or compare it with other models. 
+It would be useful to save the 3D data set we just created to disk, such that we can easily load it again at a later stage and create cross-sections etc, or compare it with other models.
 It is quite easy to do so with the [JLD2.jl](https://github.com/JuliaIO/JLD2.jl) package:
 ```julia
 julia> using JLD2
@@ -286,6 +286,3 @@ The full julia script that does it all is given [here](https://github.com/JuliaG
 ```julia
 julia> include("Alps_VpModel_Zhao_etal_JGR2016.jl")
 ```
-
-
-

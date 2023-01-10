@@ -98,4 +98,3 @@ Similarly, you could only look at a single model (even when that is perhaps easi
 ---
 
 *This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
-

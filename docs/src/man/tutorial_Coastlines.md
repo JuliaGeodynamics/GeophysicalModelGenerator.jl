@@ -1,8 +1,8 @@
-# Add coastlines 
+# Add coastlines
 
 ## Goal
 
-For orientation, it is often nice to add country borders and coastlines to your paraview plots. 
+For orientation, it is often nice to add country borders and coastlines to your paraview plots.
 
 ## Steps
 
@@ -24,7 +24,7 @@ julia> Lon,Lat,Depth    =   LonLatDepthGrid(lon[ind_lon],lat[ind_lat],0km);
 julia> data_surf        =   zeros(size(Lon));
 julia> data_surf[:,:,1] =   data[ind_lon,ind_lat]
 julia> data_surface     =   GeoData(Lon, Lat, Depth, (SurfaceType=data_surf,))
-julia> Write_Paraview(data_surface, "ContinentOcean") 
+julia> Write_Paraview(data_surface, "ContinentOcean")
 ```
 The result is shown here, together with Moho data
 

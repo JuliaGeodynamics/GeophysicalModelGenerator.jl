@@ -5,11 +5,11 @@ using .GMT
 export ImportTopo
 
 """
-    Topo = ImportTopo(limits; file::String="@earth_relief_01m.grd") 
-    
-Uses GMT to download the topography of a certain region, specified with limits=[lon_min, lon_max, lat_min, lat_max] 
+    Topo = ImportTopo(limits; file::String="@earth_relief_01m.grd")
 
-Note: 
+Uses GMT to download the topography of a certain region, specified with limits=[lon_min, lon_max, lat_min, lat_max]
+
+Note:
 ====
 - latitude values in the southern hemisphere should have a minus sign (e.g., -2.8)
 - longitude values that are "west" should *either* come with a minus sign *or* are defined by values >180
@@ -34,10 +34,10 @@ Note:
 
 *Note*: this routine is only available once the GMT.jl package is loaded on the REPL
 
-# Example 
+# Example
 ```julia-repl
 julia> Topo = ImportTopo([4,20,37,49]);
-GeoData 
+GeoData
   size  : (960, 720, 1)
   lon   ϵ [ 4.0 : 19.983333333333334]
   lat   ϵ [ 37.0 : 48.983333333333334]
@@ -54,14 +54,14 @@ julia> Write_Paraview(Topo,"Topo_Alps")
 function ImportTopo(limits; file::String="@earth_relief_01m.grd")
 
     # Correct if negative values are given (longitude coordinates that are west)
-    ind = findall(limits[1:2] .< 0); 
-    
+    ind = findall(limits[1:2] .< 0);
+
     if (limits[1] < 0) && (limits[2] < 0)
-      limits[ind] .= 360 .+ limits[ind]; 
-      limits[1:2] = sort(limits[1:2])   
+      limits[ind] .= 360 .+ limits[ind];
+      limits[1:2] = sort(limits[1:2])
     end
 
-    # Download topo file  
+    # Download topo file
     G               =   gmtread(file, limits=limits, grid=true);
 
     # Transfer to GeoData
@@ -69,7 +69,7 @@ function ImportTopo(limits; file::String="@earth_relief_01m.grd")
     Lon,Lat,Depth   =   LonLatDepthGrid(G.x[1:nx],G.y[1:ny],0);
     Depth[:,:,1]    =   1e-3*G.z';
     Topo            =   GeoData(Lon, Lat, Depth, (Topography=Depth*km,))
-    
+
     return Topo
 
 end

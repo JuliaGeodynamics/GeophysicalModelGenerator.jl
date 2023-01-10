@@ -17,7 +17,7 @@ Temp        =   zeros(Float64, size(Grid.X));
 Model3D     =   CartData(Grid, (Phases=Grid.Z,));
 @test  Value(Model3D.y[100])==-1.9375km
 
-# Read Partitioning file: 
+# Read Partitioning file:
 PartitioningFile = "test_files/ProcessorPartitioning_4cpu_1.2.2.bin"
 Nprocx,Nprocy,Nprocz, xc,yc,zc, nNodeX,nNodeY,nNodeZ = GetProcessorPartitioning(PartitioningFile)
 @test Nprocz==2
@@ -60,7 +60,7 @@ AddBox!(Phases,Temp,Grid, xlim=(0,500), zlim=(-500,-20), phase=LithosphericPhase
 @test sum(Temp) == 1.189394358568891e9
 
 Model3D     =   CartData(Grid, (Phases=Phases,Temp=Temp));
-Write_Paraview(Model3D,"LaMEM_ModelSetup")                  # Save model to paraview    
+Write_Paraview(Model3D,"LaMEM_ModelSetup")                  # Save model to paraview
 
 
 # Test writing a LaMEM topography file

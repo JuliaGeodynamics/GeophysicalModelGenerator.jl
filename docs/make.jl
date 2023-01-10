@@ -26,7 +26,7 @@ makedocs(;
             "ISC earthquake data" =>  "man/tutorial_ISC_data.md",
             "Plot GPS vectors" =>  "man/tutorial_GPS.md",
             "Read UTM data" =>  "man/tutorial_UTM.md",
-            "VoteMaps" =>  "man/Tutorial_Votemaps.md",      
+            "VoteMaps" =>  "man/Tutorial_Votemaps.md",
             "Kilometer-scale volcano" =>  "man/tutorial_local_Flegrei.md",
             "Generating LaMEM model" =>  "man/LaPalma_example.md",
             "Create movies" =>  "man/tutorial_time_Seismicity.md"
@@ -43,7 +43,7 @@ makedocs(;
             "LaMEM" => "man/lamem.md"
         ],
         "List of functions"  => "man/listfunctions.md"
-    ],  
+    ],
 )
 
 deploydocs(;
@@ -55,4 +55,3 @@ deploydocs(;
     forcepush=true,
     push_preview = true
 )
-

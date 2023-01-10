@@ -11,12 +11,12 @@ Spooner, Cameron; Scheck-Wenderoth, Magdalena; Götze, Hans-Jürgen; Ebbing, Jö
 
 ## Steps
 
-#### 1. Download and import UTM data: 
+#### 1. Download and import UTM data:
 Download the data file `2019-004_Spooner_Lithospheric Mantle.txt` from [http://doi.org/10.5880/GFZ.4.5.2019.004]() and make sure that you change to the directory using julia.
 If you open the data with a text editor, you'll see that it looks like:
 ```
-# These data are freely available under the Creative Commons Attribution 4.0 International Licence (CC BY 4.0)					
-# when using the data please cite as: 					
+# These data are freely available under the Creative Commons Attribution 4.0 International Licence (CC BY 4.0)
+# when using the data please cite as:
 # Spooner, Cameron; Scheck-Wenderoth, Magdalena; Götze, Hans-Jürgen; Ebbing, Jörg; Hetényi, György (2019): 3D Gravity Constrained Model of Density Distribution Across the Alpine Lithosphere. GFZ Data Services. http://doi.org/10.5880/GFZ.4.5.2019.004
 X COORD (UTM Zone 32N)	Y COORD (UTM Zone 32N)	TOP (m.a.s.l)	THICKNESS (m)	DENSITY (Kg/m3)
 286635	4898615	-24823.2533	70418.125	3305
@@ -39,30 +39,30 @@ julia> data=readdlm("2019-004_Spooner_Lithospheric Mantle.txt",skipstart=4)
  286635.0  4.91862e6  -25443.5  69410.0  3305.0
  286635.0  4.93862e6  -28025.2  66402.5  3305.0
  286635.0  4.95862e6  -32278.1  61663.5  3305.0
-      ⋮                                  
+      ⋮
  926635.0  5.45862e6  -35302.7  83215.6  3335.0
  926635.0  5.47862e6  -34908.6  84203.0  3335.0
  926635.0  5.49862e6  -34652.4  85398.3  3335.0
 ```
 We can read the numerical data from the file with:
-```julia    
+```julia
 julia> ew, ns, depth, thick, rho  =   data[:,1], data[:,2], data[:,3], data[:,4], data[:,5];
 ```
 
 #### 2. Check & reshape vertical velocity
 
-The data is initially available as 1D columns, which needs to be reshaped into 2D arrays. 
+The data is initially available as 1D columns, which needs to be reshaped into 2D arrays.
 We first reshape it into 2D arrays (using `reshape`). Yet, if we later want to visualize a perturbed surface in paraview, we need to save this as a 3D array (with 1 as 3rd dimension).
 
 ```julia
 julia> res = ( length(unique(ns)), length(unique(ew)), 1)
-julia> EW  =  reshape(ew,res) 
+julia> EW  =  reshape(ew,res)
 julia> NS  =  reshape(ns,res)
 julia> Depth =  reshape(depth,res)
 julia> T     =  reshape(thick,res)
 julia> Rho   =  reshape(rho,res)
 ```
-Next we can examine `EW`: 
+Next we can examine `EW`:
 ```julia
 julia> EW
 31×33×1 Array{Float64, 3}:
@@ -72,7 +72,7 @@ julia> EW
  286635.0  306635.0  326635.0  346635.0  366635.0  386635.0  406635.0     826635.0  846635.0  866635.0  886635.0  906635.0  926635.0
  286635.0  306635.0  326635.0  346635.0  366635.0  386635.0  406635.0     826635.0  846635.0  866635.0  886635.0  906635.0  926635.0
  286635.0  306635.0  326635.0  346635.0  366635.0  386635.0  406635.0     826635.0  846635.0  866635.0  886635.0  906635.0  926635.0
-      ⋮                                                 ⋮              ⋱                                     ⋮              
+      ⋮                                                 ⋮              ⋱                                     ⋮
  286635.0  306635.0  326635.0  346635.0  366635.0  386635.0  406635.0     826635.0  846635.0  866635.0  886635.0  906635.0  926635.0
  286635.0  306635.0  326635.0  346635.0  366635.0  386635.0  406635.0     826635.0  846635.0  866635.0  886635.0  906635.0  926635.0
  286635.0  306635.0  326635.0  346635.0  366635.0  386635.0  406635.0     826635.0  846635.0  866635.0  886635.0  906635.0  926635.0
@@ -80,11 +80,11 @@ julia> EW
 ```
 So, on fact, the EW array varies in the 2nd dimension. It should, however, vary in the first dimension which is why we need to apply a permutation & switch the first and second dimensions:
 ```julia
-julia> EW  =  permutedims(EW,[2 1 3]) 
-julia> NS  =  permutedims(NS,[2 1 3]) 
-julia> Depth =  permutedims(Depth,[2 1 3]) 
-julia> T     =  permutedims(T,[2 1 3]) 
-julia> Rho   =  permutedims(Rho,[2 1 3]) 
+julia> EW  =  permutedims(EW,[2 1 3])
+julia> NS  =  permutedims(NS,[2 1 3])
+julia> Depth =  permutedims(Depth,[2 1 3])
+julia> T     =  permutedims(T,[2 1 3])
+julia> Rho   =  permutedims(Rho,[2 1 3])
 ```
 
 
@@ -93,7 +93,7 @@ Next we can add the data to the `UTMData` structure. In this, we use the informa
 
 ```julia
 julia> Data_LM = UTMData(EW,NS,Depth,32, true, (Thickness=T/1e3*km, Density=Rho*kg/m^3 ))
-UTMData 
+UTMData
   UTM zone : 32-32 North
     size   : (33, 31, 1)
     EW     ϵ [ 286635.0 : 926635.0]
@@ -107,9 +107,9 @@ UTMData
 
 We can transfer this into a GeoData structure as:
 
-```julia 
+```julia
 julia> Data_LM_lonlat = convert(GeoData,Data_LM)
-GeoData 
+GeoData
   size  : (33, 31, 1)
   lon   ϵ [ 6.046903388679526 : 14.892535147436673]
   lat   ϵ [ 44.11618022783332 : 49.64004892531006]

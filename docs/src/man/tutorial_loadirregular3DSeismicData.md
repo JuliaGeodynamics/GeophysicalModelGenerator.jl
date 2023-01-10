@@ -9,11 +9,11 @@ As the data is not given in a regular lon/lat grid, we first interpolate it to a
 
 
 ## Steps
-#### 1. Download data 
+#### 1. Download data
 The data is can be downloaded from [https://www.seismologie.ifg.uni-kiel.de/en/research/research-data/mere2020model](https://www.seismologie.ifg.uni-kiel.de/en/research/research-data/mere2020model). Do that and start julia from the directory where it was downloaded.
 
 #### 2. Read data into Julia
-The main data-file, `El-Sharkawy-etal-G3.2020_MeRE2020_Mediterranean.csv`, has 23 lines of comments (indicated with `#`), after which the data starts. We can use the build-in package `DelimitedFiles` to read in the data, and tell it that the data is seperated by `|`. We also want the resulting data to be stored as double precision values (`Float64`), and the end of every line is a linebreak (`\n`).
+The main data-file, `El-Sharkawy-etal-G3.2020_MeRE2020_Mediterranean.csv`, has 23 lines of comments (indicated with `#`), after which the data starts. We can use the built-in package `DelimitedFiles` to read in the data, and tell it that the data is separated by `|`. We also want the resulting data to be stored as double precision values (`Float64`), and the end of every line is a linebreak (`\n`).
 ```julia-repl
 julia> using DelimitedFiles
 julia> data=readdlm("El-Sharkawy-etal-G3.2020_MeRE2020_Mediterranean.csv",'|',Float64,'\n', skipstart=23,header=false)
@@ -27,7 +27,7 @@ julia> data=readdlm("El-Sharkawy-etal-G3.2020_MeRE2020_Mediterranean.csv",'|',Fl
  40.26  -10.98   50.0  4.36
  42.19  -10.97   50.0  4.38
  44.1   -10.97   50.0  4.38
-  ⋮ 
+  ⋮
 ```
 Next, extract vectors from it:
 ```
@@ -55,7 +55,7 @@ The result looks like this:
 
 So this is somewhat regular but not entirely and in some areas data points are missing. It is possible to create a VTK mesh that exactly respects this data, but for that we need knowledge on how the points are connected in 3D. The comments in the file do not provide this information, which is why we interpolate it on a regular lon/lat grid here which uses the same depth levels as in the data.
 
-We extract the available depth levels with 
+We extract the available depth levels with
 ```julia
 julia> Depth_vec = unique(depth)
 301-element Vector{Float64}:
@@ -78,7 +78,7 @@ which shows that the data set goes from `[-350:1:-50]`.
 Let's create a regular grid, which describes a somewhat smaller area than the data-points to ensure that we can do an interpolation without having to extrapolate
 
 ```julia
-julia> using GeophysicalModelGenerator 
+julia> using GeophysicalModelGenerator
 julia> Lon,Lat,Depth     =   LonLatDepthGrid(-10:0.5:40,32:0.25:50,Depth_vec);
 julia> size(Lon)
 (101, 73, 301)
@@ -93,9 +93,9 @@ julia> scatter!(Lon[:,:,1],Lat[:,:,1],color=:white, markersize=1.5, markertype="
 
 #### 3.2 Interpolate to a regular grid
 
-Next, we need a method to interpolate the irregular datapoints @ a certain depth level to the white data points. 
+Next, we need a method to interpolate the irregular datapoints @ a certain depth level to the white data points.
 
-There are a number of ways to do this, for example by employing [GMT.jl](https://github.com/GenericMappingTools/GMT.jl), or by using [GeoStats.jl](https://juliaearth.github.io/GeoStats.jl/stable/index.html). 
+There are a number of ways to do this, for example by employing [GMT.jl](https://github.com/GenericMappingTools/GMT.jl), or by using [GeoStats.jl](https://juliaearth.github.io/GeoStats.jl/stable/index.html).
 In this example, we will employ GeoStats. If you haven't installed it yet, do that with
 ```julia
 julia> ]
@@ -132,10 +132,10 @@ julia> P = EstimationProblem(Geo, Cgrid, :Vs)
   data:      12278 MeshData{2,Float64}
   domain:    101×73 CartesianGrid{2,Float64}
   variables: Vs (Float64)
-julia> S   = IDW(:Vs => (distance=Euclidean(),neighbors=2)); 
+julia> S   = IDW(:Vs => (distance=Euclidean(),neighbors=2));
 julia> sol = solve(P, S)
 ```
-Here, we interpolated the data based on the Euclidean distance. Other methods, such as Kriging, can be used as well. 
+Here, we interpolated the data based on the Euclidean distance. Other methods, such as Kriging, can be used as well.
 Next, we can extract the data
 ```julia
 julia>  sol_Vs = values(sol).Vs
@@ -153,7 +153,7 @@ julia> for iz=1:size(Depth,3)
           coord = PointSet([lon[ind]'; lat[ind]'])
           Geo   = georef((Vs=Vs[ind],), coord)
           P     = EstimationProblem(Geo, Cgrid, :Vs)
-          S     = IDW(:Vs => (distance=Euclidean(),neighbors=2)); 
+          S     = IDW(:Vs => (distance=Euclidean(),neighbors=2));
           sol   = solve(P, S)
           sol_Vs= values(sol).Vs
           Vs_2D = reshape(sol_Vs, size(domain(sol)))
@@ -162,16 +162,16 @@ julia> for iz=1:size(Depth,3)
 ```
 
 #### 4. Generate Paraview file
-Once the 3D velocity matrix has been generated, producing a Paraview file is done with the following command 
+Once the 3D velocity matrix has been generated, producing a Paraview file is done with the following command
 ```julia
 julia> using GeophysicalModelGenerator
-julia> Data_set    =   GeoData(Lon,Lat,Depth,(Vs_km_s=Vs_3D,))   
-GeoData 
+julia> Data_set    =   GeoData(Lon,Lat,Depth,(Vs_km_s=Vs_3D,))
+GeoData
   size  : (101, 73, 301)
   lon   ϵ [ -10.0 - 40.0]
   lat   ϵ [ 32.0 - 50.0]
   depth ϵ [ -350.0 km - -50.0 km]
-  fields: (:Vs_km_s,) 
+  fields: (:Vs_km_s,)
 julia> Write_Paraview(Data_set, "MeRe_ElSharkawy")
 1-element Vector{String}:
  "MeRe_ElSharkawy.vts"
@@ -195,6 +195,3 @@ The full julia script that does it all is given [here](https://github.com/JuliaG
 ```julia
 julia> include("MeRe_ElSharkawy.jl")
 ```
-
-
-

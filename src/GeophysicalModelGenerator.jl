@@ -7,22 +7,22 @@ using Requires
 # Load & export some useful commands/functions from GeoParams:
 import GeoParams
 using .GeoParams
-export 
-        @u_str, uconvert, upreffered, unit, ustrip, NoUnits,  #  Units 
-        GeoUnit, GEO_units, SI_units, NO_units, AbstratGeoUnits, 
+export
+        @u_str, uconvert, upreffered, unit, ustrip, NoUnits,  #  Units
+        GeoUnit, GEO_units, SI_units, NO_units, AbstratGeoUnits,
         Nondimensionalize, Nondimensionalize!, Dimensionalize, Dimensionalize!,
-        superscript, upreferred, GEO, SI, NONE, isDimensional, 
+        superscript, upreferred, GEO, SI, NONE, isDimensional,
         km, m, cm, mm, Myrs, yr, s, MPa, Pa, Pas, K, C, kg, mol,
         isDimensional, Value, NumValue, Unit, UnitValue
 
 export ReadCSV_LatLon, meshgrid, voxGrav
 
-abstract type AbstractGeneralGrid end                                    # general grid types 
+abstract type AbstractGeneralGrid end                                    # general grid types
 
 export AbstractGeneralGrid
 
 # julia standard library packages
-using DelimitedFiles, Statistics            
+using DelimitedFiles, Statistics
 
 # other packages
 using   WriteVTK, Colors, MeshIO, FileIO, Interpolations, Geodesy
@@ -52,7 +52,7 @@ function __init__()
                 println("Loading GLMakie plotting routines within GMG")
                 @eval include("./Visualisation.jl")
         end
-        
+
 end
 
 

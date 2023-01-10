@@ -2,13 +2,13 @@
 
 ## Goal
 
-The aim of this tutorial is to show you how you can download and plot GPS data, which are vector data. 
+The aim of this tutorial is to show you how you can download and plot GPS data, which are vector data.
 The example is based on a paper by Sanchez et al. (2018) [https://essd.copernicus.org/articles/10/1503/2018/#section7](https://essd.copernicus.org/articles/10/1503/2018/#section7)
 
 
 ## Steps
 
-#### 1. Download and import GPS data: 
+#### 1. Download and import GPS data:
 
 The data related to the paper can be downloaded from: https://doi.pangaea.de/10.1594/PANGAEA.886889
 There you will find links to several data sets. Some are the data on the actual stations and some are interpolated data on a grid. Here, we will use the gridded data as an example (which interpolates the ), and will therefore download the following data sets:
@@ -37,7 +37,7 @@ julia> data_file =   CSV.File("ALPS2017_DEF_VT.GRD",datarow=18,header=false,deli
 ```
 We can read the numerical data from the file with:
 ```julia
-julia> data                    =   ParseColumns_CSV_File(data_file, 4);     
+julia> data                    =   ParseColumns_CSV_File(data_file, 4);
 julia> lon_Vz, lat_Vz, Vz_vec  =   data[:,1], data[:,2], data[:,3];
 ```
 
@@ -51,7 +51,7 @@ julia> Plots.scatter(lon_Vz,lat_Vz)
 ![Tutorial_GPS_1](../assets/img/Tutorial_GPS_1.png)
 
 So clearly, this is a fully regular grid.
-We can determine the size of the grid with 
+We can determine the size of the grid with
 ```julia
 julia> unique(lon_Vz)
 41-element Vector{Float64}:
@@ -113,7 +113,7 @@ julia> Plots.scatter(lon_Hz,lat_Hz)
 ```
 ![Tutorial_GPS_2](../assets/img/Tutorial_GPS_2.png)
 
-So it appears that the horizontal velocities are given on the same regular grid as well, but not in the water. 
+So it appears that the horizontal velocities are given on the same regular grid as well, but not in the water.
 This thus requires a bit more work. The strategy we take is to first define 2D matrixes with horizontal velocities with the same size as Vz which are initialized with `NaN` (not a number), which is treated specially by Paraview.
 
 ```julia
@@ -138,11 +138,11 @@ julia> Vn = Vn*1000;
 ```
 And the magnitude is:
 ```julia
-julia> Vmagnitude  =   sqrt.(Ve.^2 + Vn.^2 + Vz.^2);  
+julia> Vmagnitude  =   sqrt.(Ve.^2 + Vn.^2 + Vz.^2);
 ```
 
 #### 4. Interpolate topography on grid
-At this stage we have the 3D velocity components on a grid. Yet, we don't have information yet about the elevation of the stations (as the provided data set did not give this). 
+At this stage we have the 3D velocity components on a grid. Yet, we don't have information yet about the elevation of the stations (as the provided data set did not give this).
 We could ignore that and set the elevation to zero, which would allow saving the data directly to paraview.
 
 Yet, a better way is to load the topographic map of the area and interpolate the elevation to the velocity grid. We are using the `GMT.jl` to load the topographic data:
@@ -154,7 +154,7 @@ julia> Elevation =   gmtread("@earth_relief_01m.grd", limits=[3,17,42,50]);
 Next, we use the `Interpolations.jl` package to interpolate the topography:
 ```julia
 julia> using Interpolations
-julia> interpol = LinearInterpolation((Elevation.x[1:end-1], Elevation.y[1:end-1]), Elevation.z');    
+julia> interpol = LinearInterpolation((Elevation.x[1:end-1], Elevation.y[1:end-1]), Elevation.z');
 julia> height   = interpol.(lon,lat)/1e3;
 ```
 
@@ -163,7 +163,7 @@ At this stage, we have all we need. As the velocity is a vector field, we need t
 
 ```julia
 julia> GPS_Sanchez_grid = GeoData(lon,lat,height,(Velocity_mm_year=(Ve,Vn,Vz),V_north=Vn*mm/yr, V_east=Ve*mm/yr, V_vertical=Vz*mm/yr, Vmagnitude = Vmagnitude*mm/yr, Topography = height*km))
-GeoData 
+GeoData
   size  : (41, 31, 1)
   lon   ϵ [ 4.0 : 16.0]
   lat   ϵ [ 43.0 : 49.0]
@@ -182,4 +182,3 @@ In order to plot the velocities as arrows, you need to select the `Glyph` tool (
 ![Tutorial_GPS_4](../assets/img/Tutorial_GPS_4.png)
 
 The arrows can now be colored by the individual velocity components or its magnitude.
-

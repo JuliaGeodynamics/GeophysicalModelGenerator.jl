@@ -1,5 +1,5 @@
 """
-This is Tutorial_CSV.jl. It contains all the necessary commands to import a CSV file from a seismic tomography, 
+This is Tutorial_CSV.jl. It contains all the necessary commands to import a CSV file from a seismic tomography,
 to convert it to the GeoData format and to export it to a Paraview format. The following steps are performed:
 1. Read data from this file.
 2. Put the data in a GeoData format (this is the format that is used internally in the GMG).
@@ -36,7 +36,7 @@ for iz=1:size(Depth,3)
     coord = PointSet([lon[ind]'; lat[ind]'])
     Geo   = georef((Vs=Vs[ind],), coord)
     P     = EstimationProblem(Geo, Cgrid, :Vs)
-    S     = IDW(:Vs => (distance=Euclidean(),neighbors=2)); 
+    S     = IDW(:Vs => (distance=Euclidean(),neighbors=2));
     sol   = solve(P, S)
     sol_Vs= values(sol).Vs
     Vs_2D = reshape(sol_Vs, size(domain(sol)))

@@ -32,8 +32,7 @@ end
     include("test_stl.jl")
 end
 
-# Cleanup 
+# Cleanup
 foreach(rm, filter(endswith(".vts"), readdir()))
 foreach(rm, filter(endswith(".vtu"), readdir()))
 rm("./markers/",recursive=true)
-

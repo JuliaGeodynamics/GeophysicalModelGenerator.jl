@@ -15,7 +15,7 @@ Note that you may have to use `ProjectCartData` to project it to orthogonal cart
 function Visualise(Data; Topography=nothing, Topo_range=nothing)
 
 
-    axis_equal = false;  # in case we use x/y/z data in km, this is useful 
+    axis_equal = false;  # in case we use x/y/z data in km, this is useful
 
     if isa(Data,GeoData)
         x = Data.lon.val[:,1,1];    xlab = "lon"
@@ -23,7 +23,7 @@ function Visualise(Data; Topography=nothing, Topo_range=nothing)
         z = Data.depth.val[1,1,:];  zlab = "depth [km]"
         orthogonal = true;
     elseif isa(Data,CartData)
-        # Determine 
+        # Determine
         x = Data.x.val[:,1,1];    xlab = "X [km]"
         y = Data.y.val[1,:,1];    ylab = "Y [km]"
         z = Data.z.val[1,1,:];  zlab = "Z [km]"
@@ -39,7 +39,7 @@ function Visualise(Data; Topography=nothing, Topo_range=nothing)
     else
         error("not yet implemented ")
     end
-    
+
     if !axis_equal
         x_vec = 1:length(x)
         y_vec = 1:length(y)
@@ -53,31 +53,31 @@ function Visualise(Data; Topography=nothing, Topo_range=nothing)
     dx = (maximum(x) - minimum(x))/(length(x)-1);
     dy = (maximum(y) - minimum(y))/(length(y)-1);
     dz = (maximum(z) - minimum(z))/(length(z)-1);
-    
+
     if !isnothing(Topography)
         if isa(Topography,GeoData)
-            x_topo = (Topography.lon.val .- x[1])/dx; 
-            y_topo = (Topography.lat.val .- y[1])/dy; 
-            z_topo = (Topography.depth.val .- z[1])/dz; 
+            x_topo = (Topography.lon.val .- x[1])/dx;
+            y_topo = (Topography.lat.val .- y[1])/dy;
+            z_topo = (Topography.depth.val .- z[1])/dz;
         elseif isa(Topography,CartData)
-            x_topo = Topography.x.val; 
-            y_topo = Topography.y.val; 
-            z_topo = Topography.z.val; 
+            x_topo = Topography.x.val;
+            y_topo = Topography.y.val;
+            z_topo = Topography.z.val;
         end
 
         if isnothing(Topo_range)
-            # base 
+            # base
             topo_max = round(maximum(ustrip.(Topography.fields.Topography)),digits=1)
             Topo_range = (-topo_max, topo_max)
         end
 
     end
-    
+
     data_names  = keys(Data.fields)             # Names of the fields
     data_selected = Observable(Symbol(data_names[1]))
     data_string   = @lift String($data_selected)
     get_vol(f_name) = Data.fields[f_name]
-    vol = lift(get_vol, data_selected)              
+    vol = lift(get_vol, data_selected)
 
     fig = Figure(resolution = (2000,2000), fontsize=20)
     ax = LScene(fig[1, 1:2], scenekw = (camera = cam3d!, raw = false))
@@ -93,10 +93,10 @@ function Visualise(Data; Topography=nothing, Topo_range=nothing)
             format = v -> string(round((v-1)*dz + z[1], digits = 2))),
         (label = "Transparency topo", range = 0:.01:1),
     )
-    
+
     # Create dropdown menus
     menu_dataset  = Menu(fig, options = [String.(data_names)...], default=String(data_selected[]))
-    menu_colormap = Menu(fig, options = ["roma","romaO","vik","turku","davos","batlow","tab10","tab20","bone"], 
+    menu_colormap = Menu(fig, options = ["roma","romaO","vik","turku","davos","batlow","tab10","tab20","bone"],
                                default="roma")
 
     # Colorbar limits
@@ -104,14 +104,14 @@ function Visualise(Data; Topography=nothing, Topo_range=nothing)
     cmax = @lift round(maximum($vol), digits=2)
     cmin_str = @lift string($cmin)
     cmax_str = @lift string($cmax)
-    
+
     cmin_box    = Textbox(fig, stored_string = cmin_str,width = nothing)
     cmax_box    = Textbox(fig, stored_string = cmax_str,width = nothing)
 
     iso_level = Observable([1.7])
     iso_alpha = Observable(0.5);
     iso_box     = Textbox(fig, stored_string ="$(iso_level[][1])",width = nothing)
-    iso_toggle  = Toggle(fig, active = true); 
+    iso_toggle  = Toggle(fig, active = true);
     iso_slide   = Slider(fig, range = 0:.01:1)
     set_close_to!(iso_slide, iso_alpha[])
 
@@ -127,8 +127,8 @@ function Visualise(Data; Topography=nothing, Topo_range=nothing)
 
     lo = sgrid.layout
     nc = ncols(lo)
- 
-    # Note: volumeslices & GLMakie in general seems to have a bit of an issue with 
+
+    # Note: volumeslices & GLMakie in general seems to have a bit of an issue with
     # using real coordinates. In many cases the numerical values of lon/lat are much smaller than the depth values,
     # & not centered around zero.
     #
@@ -165,7 +165,7 @@ function Visualise(Data; Topography=nothing, Topo_range=nothing)
     ylabel!(ax.scene, ylab)
     zlabel!(ax.scene, zlab)
 
-    # 
+    #
     cb = Colorbar(fig[1, 3], plt, vertical = true, label=data_string, height = Relative(0.6))
 
     # connect sliders to `volumeslices` update methods
@@ -181,8 +181,8 @@ function Visualise(Data; Topography=nothing, Topo_range=nothing)
         set_close_to!(sl_xy, .5length(z_vec))
     end
     set_close_to!(sl_alpha_topo, .5)
-    
-    # change color limits 
+
+    # change color limits
     on(cmin_box.stored_string) do s
         ra = plt[:colorrange]
         plt[:colorrange] = (parse(Float64,s), ra.val[2])
@@ -192,7 +192,7 @@ function Visualise(Data; Topography=nothing, Topo_range=nothing)
         plt[:colorrange] = (ra.val[1], parse(Float64,s))
     end
 
-    # Change data 
+    # Change data
     on(menu_dataset.selection) do s
         data_selected[] = Symbol(s)
         plt[:colorrange] = (cmin[], cmax[])
@@ -203,20 +203,20 @@ function Visualise(Data; Topography=nothing, Topo_range=nothing)
         set_close_to!(sl_yz,  sl_yz.value[])
         set_close_to!(sl_xz,  sl_xz.value[])
         set_close_to!(sl_xy,  sl_xy.value[])
-        
+
     end
-    
-    # Change colormap 
+
+    # Change colormap
     on(menu_colormap.selection) do s
         plt.colormap = s
     end
 
-    # Create isosurface? 
+    # Create isosurface?
     on(iso_toggle.active) do s
         iso.visible = s
     end
     on(iso_box.stored_string) do s
-        iso_level[] = [parse(Float64,s)] 
+        iso_level[] = [parse(Float64,s)]
     end
     on(iso_slide.value) do v
         iso_alpha[] = v
@@ -252,6 +252,6 @@ function Visualise(Data; Topography=nothing, Topo_range=nothing)
 
 
     display(fig)
-    
+
     return nothing
 end

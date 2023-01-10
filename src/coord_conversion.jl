@@ -20,14 +20,14 @@ function ConvertGeo2Cart(inputdata::GeoData)
     depth = inputdata.depth.values
 
     R = rearth+inputdata.depth.values # radius from the center of the earth
-    
+
     # compute Cartesian coordinates and assign them to a ValueList variable
     X = ValueList("x",inputdata.depth.unit,R.*cosd(inputdata.lon.values).*cosd(inputdata.lat.values))
     Y = ValueList("y",inputdata.depth.unit,R.*sind(inputdata.lon.values).*cosd(inputdata.lat.values))
     Z = ValueList("z",inputdata.depth.unit,R.*sind(inputdata.lat.values))
 
     # assign all data to the respective struct
-    convdata = ParaviewData(X,Y,Z,inputdata.values) 
+    convdata = ParaviewData(X,Y,Z,inputdata.values)
 
    return convdata
 

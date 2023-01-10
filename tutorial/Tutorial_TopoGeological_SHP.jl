@@ -1,12 +1,12 @@
 """
-This is Tutorial_ETOPO1.jl. It contains all the necessary commands to import the netCDF file from ETOPO1, 
+This is Tutorial_ETOPO1.jl. It contains all the necessary commands to import the netCDF file from ETOPO1,
 to convert it to the GeoData format and to export it to a Paraview format. The following steps are performed:
 1. Read data from this file.
 2. Select a longitude and latitude range.
 3. Put the data in a GeoData format (this is the format that is used internally in the GMG).
 4. Export that data to a format readable by Paraview.
 
-ETOPO1 data files used in this example can be downloaded here:  
+ETOPO1 data files used in this example can be downloaded here:
 [https://ngdc.noaa.gov/mgg/global/global.html](https://ngdc.noaa.gov/mgg/global/global.html)
 
 doi:10.7289/V5C8276M
@@ -42,7 +42,7 @@ tectunits = unique(table.tect_unit); # get tectonic units
 
     for ishape = 1:length(table)
         phase = findall(==(0),cmp.(table.tect_unit[ishape], tectunits)); # assign a certain phase to the respective tectonic unit
-        
+
         #xv = zeros(length(table.geometry[ishape].points),1); # preallocate the vector to hold the different points
         #yv = zeros(length(table.geometry[ishape].points),1); # preallocate the vector to hold the different points
         xv = Vector{Float64}(undef,length(table.geometry[ishape].points));
@@ -52,7 +52,7 @@ tectunits = unique(table.tect_unit); # get tectonic units
             xv[ipoint] = table.geometry[ishape].points[ipoint].x;
             yv[ipoint] = table.geometry[ishape].points[ipoint].y;
         end
-    
+
         xa = vec(Lon);
         ya = vec(Lat);
 
@@ -60,13 +60,13 @@ tectunits = unique(table.tect_unit); # get tectonic units
         points  =  Point.(xa,ya);
 
         inside = [isinside(p, polygon; allowonedge=true) for p in points]
-        
+
         inside = inside .& (vec(TectUnitData).==0);
 
         TectUnitData[inside] .= phase;
     end
-    
-    
+
+
 # Set up the Data structure
 Data_set        =   GeoData(Lon, Lat, Depth, (Topography=Depth*km,tect_unit=TectUnitData))
 

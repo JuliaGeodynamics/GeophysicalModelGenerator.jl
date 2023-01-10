@@ -1,4 +1,4 @@
-# This shows how to  
+# This shows how to
 
 # You will need to download the data from:
 # https://www.seismologie.ifg.uni-kiel.de/en/research/research-data/mere2020model.
@@ -27,7 +27,7 @@ for iz=1:size(Depth,3)
     coord = PointSet([lon[ind]'; lat[ind]'])
     Geo   = georef((Vs=Vs[ind],), coord)
     P     = EstimationProblem(Geo, Cgrid, :Vs)
-    S     = IDW(:Vs => (distance=Euclidean(),neighbors=2)); 
+    S     = IDW(:Vs => (distance=Euclidean(),neighbors=2));
     sol   = solve(P, S)
     sol_Vs= values(sol).Vs
     Vs_2D = reshape(sol_Vs, size(domain(sol)))
@@ -35,5 +35,5 @@ for iz=1:size(Depth,3)
 end
 
 # Save data to paraview:
-Data_set    =   GeoData(Lon,Lat,Depth,(Vs_km_s=Vs_3D,))   
+Data_set    =   GeoData(Lon,Lat,Depth,(Vs_km_s=Vs_3D,))
 Write_Paraview(Data_set, "MeRe_ElSharkawy")

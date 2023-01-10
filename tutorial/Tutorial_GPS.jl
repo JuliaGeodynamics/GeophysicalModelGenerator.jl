@@ -7,8 +7,8 @@ using DataFrames, CSV
 
 # Read in coordinates of the grids (not stations as they are given in a different reference frame)
 #
-# Note: the Vz velocity is given on a fully regular grid; yet Ve/Vn only on on-land stations which makes this 
-# a bit tricky. 
+# Note: the Vz velocity is given on a fully regular grid; yet Ve/Vn only on on-land stations which makes this
+# a bit tricky.
 #
 # The approach we take here is to first read in the Vz data points & reshape it to 2D matrixes
 # Next, we read the Ve/Vn data and add them to the Vz grid
@@ -46,7 +46,7 @@ Vmagnitude          =   sqrt.(Ve.^2 + Vn.^2 + Vz.^2);  # velocity magnitude in m
 
 # Finally, it would be nice to put the data points on the topography.
 # The elevation of the points is not given in the GPS dataset, so we use GMT to extract a topographic grid
-# and interpolate the elevation on the GPS grid locations 
+# and interpolate the elevation on the GPS grid locations
 using GMT, Interpolations
 Elevation               =   gmtread("@earth_relief_01m.grd", limits=[3,17,42,50]);
 Lon_Topo,Lat_Topo,dummy =   LonLatDepthGrid(Elevation.x[1:end-1],Elevation.y[1:end-1],0);
