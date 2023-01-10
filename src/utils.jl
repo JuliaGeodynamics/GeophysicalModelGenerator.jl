@@ -215,7 +215,7 @@ function CrossSectionSurface(S::AbstractGeneralGrid; dims=(100,), Interpolate=tr
     interpol    =   LinearInterpolation((Lon_vec, Lat_vec), Z[:,:,1],extrapolation_bc=NaN);  # create interpolation object, fill with NaNs if outside
     data_intp   =   interpol.(Lon, Lat)
 
-    # create GeoData structure with
+    # create GeoData structure with the interpolated points
     Data_profile = GeoData(Lon, Lat, data_intp, (depth = data_intp,));
 
     return Data_profile
@@ -236,12 +236,12 @@ function CrossSectionPoints(P::GeoData; Depth_level=nothing, Lat_level=nothing, 
     end
 
     if !isnothing(Depth_level) 
-        ind = findall(-0.5*section_width .< (data.depth - DepthLevel) .< 0.5*section_width) # find all points around the desired depth level
+        ind = findall(-0.5*section_width .< (P.depth - DepthLevel) .< 0.5*section_width) # find all points around the desired depth level
 
         # create temporary variables
-        lon_tmp     = data.lon.val[ind]*data.lon.unit
-        lat_tmp     = data.lat.val[ind]*data.lat.unit
-        depth_tmp   = data.depth.val[ind]*data.depth.unit
+        lon_tmp     = P.lon.val[ind]*P.lon.unit
+        lat_tmp     = P.lat.val[ind]*P.lat.unit
+        depth_tmp   = P.depth.val[ind]*P.depth.unit
         depth_proj  = ones(size(depth_tmp))*DepthLevel
 
         # create GeoData structure with the selected data
@@ -250,9 +250,9 @@ function CrossSectionPoints(P::GeoData; Depth_level=nothing, Lat_level=nothing, 
 
     if !isnothing(Lat_level)   # vertical slice @ given latitude
 
-        p_Point = ProjectionPoint(Lat=Lat_level,Lon=sum(data.lon.val)/length(data.lon.val)) # define the projection point (lat/lon) as the latitude and the mean of the longitudes of the data
-        P_cart  = Convert2CartData(P,p_Point) # convert to CartData 
-        ind     = findall(-0.5*section_width .< (P_cart.y-0km) .< 0.5*section_width) # find all points around the desired latitude level, the -0km was a quick and dirty fix...
+        p_Point = ProjectionPoint(Lat=Lat_level,Lon=sum(P.lon.val)/length(P.lon.val)) # define the projection point (lat/lon) as the latitude and the mean of the longitudes of the data
+        P_UTM   = Convert2UTMzone(P, p_Point) # convert to UTM        
+        ind     = findall(-0.5*ustrip(uconvert(u"m",section_width)) .< (P_UTM.NS.val .- p_Point.NS) .< ustrip(uconvert(u"m",section_width))) # find all points around the desired latitude level
 
         # create temporary variables
         lon_tmp     = data.lon.val[ind]*data.lon.unit
@@ -267,8 +267,8 @@ function CrossSectionPoints(P::GeoData; Depth_level=nothing, Lat_level=nothing, 
 
     if !isnothing(Lon_level)   # vertical slice @ given longitude
         p_Point = ProjectionPoint(Lat=sum(data.lat.val)/length(data.lat.val),Lon=Lon_level) # define the projection point (lat/lon) as the latitude and the mean of the longitudes of the data
-        P_cart  = Convert2CartData(P,p_Point) # convert to CartData 
-        ind     = findall(-0.5*section_width .< (P_cart.x-0km) .< 0.5*section_width) # find all points around the desired latitude level, the -0km was a quick and dirty fix...
+        P_UTM   = Convert2UTMzone(P,p_Point) # convert to UTM
+        ind     = findall(-0.5*ustrip(uconvert(u"m",section_width)) .< (P_UTM.EW.val .- p_Point.EW) .< ustrip(uconvert(u"m",section_width))) # find all points around the desired longitude level
 
         # create temporary variables
         lon_tmp     = data.lon.val[ind]*data.lon.unit
@@ -289,11 +289,67 @@ function CrossSectionPoints(P::GeoData; Depth_level=nothing, Lat_level=nothing, 
             error("Also define End coordinates if you indicate starting lon/lat value")
         end
 
-        Lon = LinRange(Start[1], End[1], dims[1])
-        Lat = LinRange(Start[2], End[2], dims[1]);
+        # choose projection point based on Start and End coordinates of the profile
+        p_Point = ProjectionPoint(Lat=0.5*(Start[2]+End[2]),Lon=0.5*(Start[1]+End[1]))
+    
+        # convert P to UTM Data
+        P_UTM = Convert2UTMzone(P, p_Point) # convert to UTM
 
+        # create a GeoData set containing the points that create the profile plane (we need three points to uniquely define that plane)
+        # here, we define the points in a way that the angle between P1-P2 and P1-P3 vectors is 90° --> useful for the cross product
+        Profile     = GeoData([Start[1] Start[1]  End[1]], [Start[2]  Start[2] End[2]], [0 -200 0]*km, (depth = [0 -200 0]*km,))
+        Profile_UTM = Convert2UTMzone(Profile,p_Point) # convert to UTM
+
+        # compute the unit normal of the profile plane using the cross product
+        # ATTENTION: UTM COORDINATES ARE IN M, WHILE DEPTH IS IN KM !!!
+        a1 = Profile_UTM.EW.val[2]-Profile_UTM.EW.val[1]
+        a2 = Profile_UTM.NS.val[2]-Profile_UTM.NS.val[1]
+        a3 = (Profile_UTM.depth.val[2]- Profile_UTM.depth.val[1]) * 1e3
+
+        b1 = Profile_UTM.EW.val[3]- Profile_UTM.EW.val[1]
+        b2 = Profile_UTM.NS.val[3]- Profile_UTM.NS.val[1]
+        b3 = (Profile_UTM.depth.val[3]- Profile_UTM.depth.val[1]) * 1e3
+
+        nx = a2*b3 - a3*b2
+        ny = a3*b1 - a1*b3
+        nz = a1*b2 - a2*b1
+
+        t = (nx*Profile_UTM.EW.val[1] .- nx*P_UTM.EW.val .+ ny*Profile_UTM.NS.val[1] .- ny*P_UTM.NS.val .+ nz*Profile_UTM.depth.val[1]*1e3 .- nz*P_UTM.depth.val*1e3)/(nx*nx+ny*ny+nz*nz)
+
+        # compute the distance to the plane 
+        dist  = sqrt.((t.*nx).^2 + (t.*ny).^2 + (t.*nz).^2)
+
+        # find the points that are within the required window around the profile
+        ind     = findall(-0.5*ustrip(uconvert(u"m",section_width)) .< dist .< ustrip(uconvert(u"m",section_width))) # find all points around the desired latitude level (distance is treated in m)
+
+        # project the points on the plane (only the relevant ones)
+        px = P_UTM.EW.val[ind]           + t[ind].*nx
+        py = P_UTM.NS.val[ind]           + t[ind].*ny
+        pz = P_UTM.depth.val[ind]*1e3    + t[ind].*nz # convert depth to m
+
+        # the projected points are given in UTM coordinates and not in lon/lat/depth
+        # therefore we have to recompute the lat/lon/depth values of the projected points
+        # then we will return a GeoData structure with all information included
+        trans = LLAfromUTM(p_Point.zone, p_Point.isnorth, wgs84) # set up transformation
+
+        plon   = zeros(size(ind));
+        plat   = zeros(size(ind));
+        pdepth = zeros(size(ind));
+
+        for i in eachindex(ind)
+            utmi  = UTM(px[i],py[i],pz[i])
+            llai  = trans(utmi)
+
+            plon[i]     = llai.lon
+            plat[i]     = llai.lat
+            pdepth[i]   = llai.alt
+        end
+
+        Data_profile = GeoData(P.lon.val[ind],P.lat.val[ind],P.depth.val[ind],(depth=P.depth.val[ind],plon=plon,plat=plat,pdepth=pdepth/1e3))
+    
     end
 
+    return Data_profile
 end
 
 """
@@ -332,7 +388,7 @@ function CrossSection(DataSet::AbstractGeneralGrid; dims=(100,100), Interpolate=
     DataSetType = CheckDataSet(DataSet); # check which kind of data set we are dealing with
 
     if DataSetType==1 # points
-        
+        DataProfile = CrossSectionPoints(DataSet; Depth_level, Lat_level, Lon_level, Start, End, section_width)    
     elseif DataSetType==2 # surface
         DataProfile = CrossSectionSurface(DataSet; dims, Depth_level, Lat_level, Lon_level, Start, End)
     elseif DataSetType==3 # volume 
@@ -1380,66 +1436,4 @@ function LithostaticPressure!(Plithos::Array{T,N}, Density::Array{T,N}, dz::Numb
     Plithos[:] = reverse!(cumsum(reverse!(Plithos),dims=N))
     
     return nothing
-end
-
-
-
-"""
-    ComputeDistanceFromPlane(P::GeoData,Start=nothing,End=nothing)
-
-Computes the distance of points given in a GeoData dataset to a vertical plane given by  `Start=(lon,lat)` & `End=(lon,lat)` points.
-
-"""
-
-function ComputeDistanceFromPlane(P::GeoData,Start=nothing,End=nothing)
-
-    # choose projection point based on Start and End coordinates
-    p_Point = ProjectionPoint(Lat=0.5*(Start[2]+End[2]),Lon=0.5*(Start[1]+End[1]))
-
-    # convert P to CartData
-    P_cart  = Convert2CartData(P,p_Point) # convert to CartData
-
-    # create a GeoData set containing the points that create the profile plane (we need three points to uniquely define that plane)
-    # here, we define the points in a way that the angle between P1-P2 and P1-P3 vectors is 90° --> useful for the cross product
-    Profile         = GeoData([Start[1] Start[1]  End[1]], [Start[2]  Start[2] End[2]], [0 -200 0]*km, (depth = [0 -200 0]*km,))
-    Profile_cart    = Convert2CartData(Profile,p_Point) # convert to CartData
-
-    # compute the unit normal of the profile plane using the cross product
-    # HERE I ASSUME THAT UNITS ARE IN KM, I DON'T KNOW HOW VALID THIS ASSUMPTION IS
-    a1 = Profile_cart.x.val[2]- Profile_cart.x.val[1]
-    a2 = Profile_cart.y.val[2]- Profile_cart.y.val[1]
-    a3 = Profile_cart.z.val[2]- Profile_cart.z.val[1]
-
-    b1 = Profile_cart.x.val[3]- Profile_cart.x.val[1]
-    b2 = Profile_cart.y.val[3]- Profile_cart.y.val[1]
-    b3 = Profile_cart.z.val[3]- Profile_cart.z.val[1]
-
-    nx = a2*b3 - a3*b2
-    ny = a3*b1 - a1*b3
-    nz = a1*b2 - a2*b1
-    # normalize
-    dn = sqrt(nx*nx+ny*ny+nz*nz)*km
-    nx = nx/dn
-    ny = ny/dn
-    nz = nz/dn
-    
-    # compute the vector from each point to the start point
-    px = Profile_cart.x.val[1].-P_cart.x.val
-    py = Profile_cart.y.val[1].-P_cart.y.val
-    pz = Profile_cart.z.val[1].-P_cart.z.val
-
-    dist = px*nx + py*ny + pz*nz # distance from each point to the plane
-
-    # compute the distance to the plane 
-    dist = vx*nx + vy*ny + vz*nz;
-
-    # compute the projection point of the point on the plane 
-    px = P_cart.x.val - 
-    py = P_cart.y.val - 
-    pz = P_cart.z.val - 
-    projected_point = point - dist*normal;
-
-
-
-    return dist
 end
