@@ -253,9 +253,9 @@ function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperR
     grid_size               =   size(r)
     xs                      =   [1,grid_size[1]];
     zs                      =   [1,grid_size[2]];
-    interp_linear_lon       =   LinearInterpolation((xs, zs), Corners_lon)      # create interpolation object
-    interp_linear_lat       =   LinearInterpolation((xs, zs), Corners_lat)       # create interpolation object
-    interp_linear_depth     =   LinearInterpolation((xs, zs), Corners_depth)     # create interpolation object
+    interp_linear_lon       =   linear_interpolation((xs, zs), Corners_lon)      # create interpolation object
+    interp_linear_lat       =   linear_interpolation((xs, zs), Corners_lat)       # create interpolation object
+    interp_linear_depth     =   linear_interpolation((xs, zs), Corners_depth)     # create interpolation object
 
     # Interpolate
     X_int,Y_int,Depth       =   XYZGrid(1:grid_size[1],1:grid_size[2],0)
