@@ -1,6 +1,6 @@
 # few utils that are useful 
 
-export meshgrid, CrossSection, ExtractSubvolume, SubtractHorizontalMean
+export meshgrid, CrossSection, CrossSectionVolume, CrossSectionSurface, CrossSectionPoints, ExtractSubvolume, SubtractHorizontalMean
 export ParseColumns_CSV_File, AboveSurface, BelowSurface, VoteMap
 export InterpolateDataOnSurface, InterpolateDataFields2D, InterpolateDataFields
 export RotateTranslateScale
@@ -26,8 +26,8 @@ function meshgrid(vx::AbstractVector{T}, vy::AbstractVector{T},
     (vx[om, :, oo], vy[:, on, oo], vz[om, on, :])
 end
 
-"""
-    CrossSection(Volume::GeoData; dims=(100,100), Interpolate=false, Depth_level=nothing; Lat_level=nothing; Lon_level=nothing; Start=nothing, End=nothing )
+""" 
+CrossSectionVolume(Volume::GeoData; dims=(100,100), Interpolate=false, Depth_level=nothing; Lat_level=nothing; Lon_level=nothing; Start=nothing, End=nothing )
 
 Creates a cross-section through a volumetric (3D) `GeoData` object. 
 
@@ -41,7 +41,7 @@ julia> Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
 julia> Data            =   Depth*2;                # some data
 julia> Vx,Vy,Vz        =   ustrip(Data*3),ustrip(Data*4),ustrip(Data*5);
 julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz))); 
-julia> Data_cross      =   CrossSection(Data_set3D, Depth_level=-100km)  
+julia> Data_cross      =   CrossSectionVolume(Data_set3D, Depth_level=-100km)  
 GeoData 
   size  : (11, 11, 1)
   lon   ϵ [ 10.0 : 20.0]
@@ -50,10 +50,16 @@ GeoData
   fields: (:Depthdata, :LonData, :Velocity)
 ```
 
-"""
-function CrossSection(V::AbstractGeneralGrid; dims=(100,100), Interpolate=false, Depth_level=nothing, Lat_level=nothing, Lon_level=nothing, Start=nothing, End=nothing )
 
-    CheckIsVolume(V);       # Check if it is a volume
+
+"""
+function CrossSectionVolume(V::AbstractGeneralGrid; dims=(100,100), Interpolate=false, Depth_level=nothing, Lat_level=nothing, Lon_level=nothing, Start=nothing, End=nothing )
+
+    DataSetType = CheckDataSet(V);
+
+    if DataSetType != 3
+        error("CrossSectionVolume: the input data set has to be a volume!")
+    end
 
     X,Y,Z = coordinate_grids(V)
 
@@ -136,6 +142,324 @@ function CrossSection(V::AbstractGeneralGrid; dims=(100,100), Interpolate=false,
     return DataProfile
 
 end
+
+
+""" 
+CrossSectionSurface(Surface::GeoData; dims=(100,), Interpolate=false, Depth_level=nothing; Lat_level=nothing; Lon_level=nothing; Start=nothing, End=nothing )
+
+Creates a cross-section through a surface (2D) `GeoData` object.
+
+- Cross-sections can be horizontal (map view at a given depth), if `Depth_level` is specified
+- They can also be vertical, either by specifying `Lon_level` or `Lat_level` (for a fixed lon/lat), or by defining both `Start=(lon,lat)` & `End=(lon,lat)` points.
+
+- IMPORTANT: The surface to be extracted has to be given as a gridded GeoData object. It may also contain NaNs where it is not defined. Any points lying outside of the defined surface will be considered NaN.
+
+# Example:
+```julia-repl
+julia> Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,-50km);
+julia> Data            =   Depth*2;                # some data
+julia> Vx,Vy,Vz        =   ustrip(Data*3),ustrip(Data*4),ustrip(Data*5);
+julia> Data_set2D      =   GeoData(Lon,Lat,Depth,(Depth=Depth,)); 
+julia> Data_cross      =   CrossSectionSurface(Data_set2D, Lat_level =15)  
+GeoData 
+  size  : (11, 11, 1)
+  lon   ϵ [ 10.0 : 20.0]
+  lat   ϵ [ 30.0 : 40.0]
+  depth ϵ [ -100.0 km : -100.0 km]
+  fields: (:Depthdata, :LonData, :Velocity)
+```
+
+
+
+"""
+function CrossSectionSurface(S::AbstractGeneralGrid; dims=(100,), Interpolate=true, Depth_level=nothing, Lat_level=nothing, Lon_level=nothing, Start=nothing, End=nothing )
+
+    DataSetType = CheckDataSet(S);
+    if DataSetType != 2
+        error("CrossSectionSurface: the input data set has to be a surface!")
+    end
+
+    X,Y,Z = coordinate_grids(S)
+    
+    Lon_vec = X[:,1,1]
+    Lat_vec = Y[1,:,1]
+
+    if !isnothing(Depth_level)    # not working yet, as this requires the intersection of two interfaces
+        error(" horizontal cross sections not working yet with surface data!")
+    end
+
+    if !isnothing(Lat_level)   # vertical slice @ given latitude
+        # create a vector that spans the entire dataset @ a given latitutde
+        Lon = LinRange(minimum(Lon_vec), maximum(Lon_vec), dims[1])
+        Lat = ones(size(Lon))*Lat_level;
+    end
+
+    if !isnothing(Lon_level)   # vertical slice @ given longitude
+        # create a vector that spans the entire dataset @ a given longitude
+        Lat = LinRange(minimum(Lat_vec), maximum(Lat_vec), dims[1])
+        Lon = ones(size(Lat))*Lon_level
+    end
+
+    # diagonal profile defined by start and end lon/lat points
+    if !isnothing(Start)
+        if isnothing(End)
+            error("Also define End coordinates if you indicate starting lon/lat value")
+        end
+
+        Lon = LinRange(Start[1], End[1], dims[1])
+        Lat = LinRange(Start[2], End[2], dims[1]);
+
+    end
+
+    # now interpolate the depth information of the surface to the profile in question
+    interpol    =   linear_interpolation((Lon_vec, Lat_vec), Z[:,:,1],extrapolation_bc=NaN);  # create interpolation object, fill with NaNs if outside
+    depth_intp   =   interpol.(Lon, Lat)*km
+
+    # also interpolate any other data that is stored in the GeoData structure on the profile
+    fields_new  = S.fields;
+    field_names = keys(fields_new);
+    for i = 1:length(S.fields)
+        if typeof(S.fields[i]) <: Tuple
+            # vector or anything that contains more than 1 field
+            data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop 
+            data_array = zeros(size(Lon,1),size(Lon,2),length(data_tuple));     # create a 2D array that holds the 2D interpolated values
+            unit_array = zeros(size(data_array));
+
+            for j=1:length(data_tuple)
+                interpol    =   linear_interpolation((Lon_vec, Lat_vec), dropdims(ustrip.(data_tuple[j]),dims=3),extrapolation_bc = NaN);      # create interpolation object
+                data_array[:,:,j] =   interpol.(Lon, Lat);          
+            end
+            data_new    = tuple([data_array[:,:,c] for c in 1:size(data_array,3)]...)     # transform 3D matrix to tuple, do not add unit, as this creates an error in GMG (Issue), to add the unit: *unit(S.fields[i][1][1])
+
+        else
+            # scalar field
+            interpol    =   linear_interpolation((Lon_vec, Lat_vec), dropdims(ustrip.(S.fields[i]),dims=3), extrapolation_bc = NaN);
+            data_new    =   interpol.(Lon, Lat)*unit(S.fields[i][1]);                                                 # interpolate data field
+        end
+        
+        # replace the field 
+        new_field   =   NamedTuple{(field_names[i],)}((data_new,))                          # Create a tuple with same name and unit
+        fields_new  =   merge(fields_new, new_field);                                       # replace the field in fields_new
+        
+    end
+
+    # create GeoData structure with the interpolated points
+    Data_profile = GeoData(Lon, Lat, depth_intp, (fields_new));
+
+    return Data_profile
+end
+
+
+"""
+    function CrossSectionPoints(P::GeoData; Depth_level=nothing, Lat_level=nothing, Lon_level=nothing, Start=nothing, End=nothing, section_width=50 )
+    
+Creates a projection of separate points (saved as a GeoData object) onto a chosen plane. Only points with a maximum distance of section_width are taken into account
+
+"""
+function CrossSectionPoints(P::GeoData; Depth_level=nothing, Lat_level=nothing, Lon_level=nothing, Start=nothing, End=nothing, section_width = 10km)
+    
+    DataSetType = CheckDataSet(P);
+    if DataSetType != 1
+        error("CrossSectionPoints: the input data set has to be a pointwise data set!")
+    end
+
+    if !isnothing(Depth_level) 
+        ind = findall(-0.5*section_width .< (P.depth - Depth_level) .< 0.5*section_width) # find all points around the desired depth level, both units shoud be in km, so no unit transformation required
+
+        # create temporary variables
+        lon_tmp     = P.lon.val[ind]*P.lon.unit
+        lat_tmp     = P.lat.val[ind]*P.lat.unit
+        depth_tmp   = P.depth.val[ind]*P.depth.unit
+        depth_proj  = ones(size(depth_tmp))*Depth_level
+
+        # create fields that will be stored additionally on the GeoData structure
+        field_tmp = (depth_proj=depth_proj,lat_proj=lat_tmp,lon_proj=lon_tmp) # these are the projected points
+
+    end
+
+    if !isnothing(Lat_level)   # vertical slice @ given latitude
+
+        p_Point = ProjectionPoint(Lat=Lat_level,Lon=sum(P.lon.val)/length(P.lon.val)) # define the projection point (lat/lon) as the latitude and the mean of the longitudes of the data
+        P_UTM   = Convert2UTMzone(P, p_Point) # convert to UTM        
+        ind     = findall(-0.5*ustrip(uconvert(u"m",section_width)) .< (P_UTM.NS.val .- p_Point.NS) .< 0.5*ustrip(uconvert(u"m",section_width))) # find all points around the desired latitude level, UTM is in m, so we have to convert the section width
+
+        # create temporary variables
+        lon_tmp     = P.lon.val[ind]*P.lon.unit
+        lat_tmp     = P.lat.val[ind]*P.lat.unit
+        depth_tmp   = P.depth.val[ind]*P.depth.unit
+        lat_proj    = ones(size(depth_tmp))*Lat_level
+
+        # data to be stored on the new GeoData structure
+        field_tmp = (depth_proj=depth_tmp,lat_proj=lat_proj,lon_proj=lon_tmp) # these are the projected points
+
+    end
+
+    if !isnothing(Lon_level)   # vertical slice @ given longitude
+        p_Point = ProjectionPoint(Lat=sum(P.lat.val)/length(P.lat.val),Lon=Lon_level) # define the projection point (lat/lon) as the latitude and the mean of the longitudes of the data
+        P_UTM   = Convert2UTMzone(P,p_Point) # convert to UTM
+        ind     = findall(-0.5*ustrip(uconvert(u"m",section_width)) .< (P_UTM.EW.val .- p_Point.EW) .< 0.5*ustrip(uconvert(u"m",section_width))) # find all points around the desired longitude level, UTM is in m, so we have to convert the section width
+
+        # create temporary variables
+        lon_tmp     = P.lon.val[ind]*P.lon.unit
+        lat_tmp     = P.lat.val[ind]*P.lat.unit
+        depth_tmp   = P.depth.val[ind]*P.depth.unit
+        lon_proj    = ones(size(depth_tmp))*Lon_level
+
+        # create fields that will be stored on the GeoData structure
+        field_tmp = (depth_proj=depth_tmp,lat_proj=lat_tmp,lon_proj=lon_proj) # these are the projected points
+
+    end
+
+    # vertical profile defined by start and end lon/lat points
+    # here we need to compute the distance to a distance_to_plane
+    # also, we need to project the points on the profile plane for later plotting
+    if !isnothing(Start)
+        if isnothing(End)
+            error("Also define End coordinates if you indicate starting lon/lat value")
+        end
+
+        # choose projection point based on Start and End coordinates of the profile
+        p_Point = ProjectionPoint(Lat=0.5*(Start[2]+End[2]),Lon=0.5*(Start[1]+End[1]))
+    
+        # convert P to UTM Data
+        P_UTM = Convert2UTMzone(P, p_Point) # convert to UTM
+
+        # create a GeoData set containing the points that create the profile plane (we need three points to uniquely define that plane)
+        # here, we define the points in a way that the angle between P1-P2 and P1-P3 vectors is 90° --> useful for the cross product
+        Profile     = GeoData([Start[1] Start[1]  End[1]], [Start[2]  Start[2] End[2]], [0 -200 0]*km, (depth = [0 -200 0]*km,))
+        Profile_UTM = Convert2UTMzone(Profile,p_Point) # convert to UTM
+
+        # compute the unit normal of the profile plane using the cross product
+        # ATTENTION: UTM COORDINATES ARE IN M, WHILE DEPTH IS IN KM !!!
+        a1 = Profile_UTM.EW.val[2]-Profile_UTM.EW.val[1]
+        a2 = Profile_UTM.NS.val[2]-Profile_UTM.NS.val[1]
+        a3 = (Profile_UTM.depth.val[2]- Profile_UTM.depth.val[1]) * 1e3
+
+        b1 = Profile_UTM.EW.val[3]- Profile_UTM.EW.val[1]
+        b2 = Profile_UTM.NS.val[3]- Profile_UTM.NS.val[1]
+        b3 = (Profile_UTM.depth.val[3]- Profile_UTM.depth.val[1]) * 1e3
+
+        nx = a2*b3 - a3*b2
+        ny = a3*b1 - a1*b3
+        nz = a1*b2 - a2*b1
+
+        t = (nx*Profile_UTM.EW.val[1] .- nx*P_UTM.EW.val .+ ny*Profile_UTM.NS.val[1] .- ny*P_UTM.NS.val .+ nz*Profile_UTM.depth.val[1]*1e3 .- nz*P_UTM.depth.val*1e3)/(nx*nx+ny*ny+nz*nz)
+
+        # compute the distance to the plane 
+        dist  = sqrt.((t.*nx).^2 + (t.*ny).^2 + (t.*nz).^2)
+
+        # find the points that are within the required window around the profile
+        ind     = findall(-0.5*ustrip(uconvert(u"m",section_width)) .< dist .< 0.5*ustrip(uconvert(u"m",section_width))) # find all points around the profile (distance is treated in m)
+
+        # project the points on the plane (only the relevant ones)
+        px = P_UTM.EW.val[ind]           + t[ind].*nx
+        py = P_UTM.NS.val[ind]           + t[ind].*ny
+        pz = P_UTM.depth.val[ind]*1e3    + t[ind].*nz # convert depth to m
+
+        # the projected points are given in UTM coordinates and not in lon/lat/depth
+        # therefore we have to recompute the lat/lon/depth values of the projected points
+        # then we will return a GeoData structure with all information included
+        trans = LLAfromUTM(p_Point.zone, p_Point.isnorth, wgs84) # set up transformation
+
+        plon   = zeros(size(ind));
+        plat   = zeros(size(ind));
+        pdepth = zeros(size(ind));
+
+        for i in eachindex(ind)
+            utmi  = UTM(px[i],py[i],pz[i])
+            llai  = trans(utmi)
+
+            plon[i]     = llai.lon
+            plat[i]     = llai.lat
+            pdepth[i]   = llai.alt
+        end
+
+        # data to be stored in the GeoData structure
+        field_tmp = (depth_proj=pdepth/1e3,lat_proj=plat,lon_proj=plon) # these are the projected points
+    end
+
+    # also transfer any other data that is stored in the GeoData structure
+    fields_new  = P.fields;
+    field_names = keys(fields_new);
+    for i = 1:length(P.fields)
+        if typeof(P.fields[i]) <: Tuple
+            # vector or anything that contains more than 1 field
+            data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop 
+            data_array = zeros(size(ind,1),length(data_tuple));     # create a 2D array that holds the chosen values
+
+            for j=1:length(data_tuple)
+                data_array[:,j] = ustrip.(data_tuple[i][ind])          
+            end
+            data_new    = tuple([data_array[:,:,c] for c in 1:size(data_array,3)]...)     # transform 2D matrix to tuple, do not consider the unit as it creates an error in GMG (Issue), to add the unit: *unit.(P.fields[i][1][1]
+    
+        else
+            # scalar field
+            data_new    =   fields_new[i][ind];                                                 # interpolate data field
+        end
+            
+        # replace the field 
+        new_field   =   NamedTuple{(field_names[i],)}((data_new,))                          # Create a tuple with same name and unit
+        fields_new  =   merge(fields_new, new_field);                                       # replace the field in fields_new
+            
+    end
+    
+    # merge old and new fields
+    fields_new = merge(fields_new,field_tmp);
+
+    # create a GeoData structure to return
+    Data_profile = GeoData(P.lon.val[ind],P.lat.val[ind],P.depth.val[ind],(fields_new))
+
+
+    return Data_profile
+end
+
+"""
+    CrossSection(DataSet::GeoData; dims=(100,100), Interpolate=false, Depth_level=nothing; Lat_level=nothing; Lon_level=nothing; Start=nothing, End=nothing )
+
+Creates a cross-section through a `GeoData` object. 
+
+- Cross-sections can be horizontal (map view at a given depth), if `Depth_level` is specified
+- They can also be vertical, either by specifying `Lon_level` or `Lat_level` (for a fixed lon/lat), or by defining both `Start=(lon,lat)` & `End=(lon,lat)` points.
+- Depending on the type of input data (volume, surface or point data), cross sections will be created in a different manner:
+1. Volume data: data will be interpolated or directly extracted from the data set.
+2. Surface data: surface data will be interpolated or directly extracted from the data set
+3. Point data: data will be projected to the chosen profile. Only data within a chosen distance (default is 50 km) will be used
+
+- `Interpolate` indicates whether we want to simply extract the data from the data set (default) or whether we want to linearly interpolate it on a new grid, which has dimensions as specified in `dims` NOTE: THIS ONLY APPLIES TO VOLUMETRIC aND SURFACE DATA SETS
+- 'section_width' indicates the maximal distance within which point data will be projected to the profile
+
+# Example:
+```julia-repl
+julia> Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
+julia> Data            =   Depth*2;                # some data
+julia> Vx,Vy,Vz        =   ustrip(Data*3),ustrip(Data*4),ustrip(Data*5);
+julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz))); 
+julia> Data_cross      =   CrossSection(Data_set3D, Depth_level=-100km)  
+GeoData 
+  size  : (11, 11, 1)
+  lon   ϵ [ 10.0 : 20.0]
+  lat   ϵ [ 30.0 : 40.0]
+  depth ϵ [ -100.0 km : -100.0 km]
+  fields: (:Depthdata, :LonData, :Velocity)
+```
+
+"""
+function CrossSection(DataSet::AbstractGeneralGrid; dims=(100,100), Interpolate=false, Depth_level=nothing, Lat_level=nothing, Lon_level=nothing, Start=nothing, End=nothing, section_width=50km)
+
+    DataSetType = CheckDataSet(DataSet); # check which kind of data set we are dealing with
+
+    if DataSetType==1 # points
+        DataProfile = CrossSectionPoints(DataSet; Depth_level, Lat_level, Lon_level, Start, End, section_width)    
+    elseif DataSetType==2 # surface
+        DataProfile = CrossSectionSurface(DataSet; dims, Depth_level, Lat_level, Lon_level, Start, End)
+    elseif DataSetType==3 # volume 
+        DataProfile = CrossSectionVolume(DataSet; dims, Interpolate, Depth_level, Lat_level, Lon_level, Start, End)
+    end
+
+    return DataProfile
+
+end
+
 
 
 """
@@ -238,15 +562,28 @@ function CheckBounds(Data::AbstractArray, Data_Cross)
     end
 end
 
-function CheckIsVolume(Volume::GeoData)
-    if any(size(Volume.lon).==1)
-        error("It appears your GeoData structure is not a volume; can't compute a cross-section")
+# CHECKS FOR VOLUME, SURFACE OR POINTS
+function CheckDataSet(DataSet::GeoData)
+    if length(size(DataSet.lon)) == 1 # scattered points
+        return 1
+    else 
+        if any(size(DataSet.lon).==1) # surface data
+            return 2
+        else # volume data
+            return 3
+        end
     end
 end
 
-function CheckIsVolume(Volume::CartData)
-    if any(size(Volume.x).==1)
-        error("It appears your GeoData structure is not a volume; can't compute a cross-section")
+function CheckDataSet(DataSet::CartData)
+    if length(size(DataSet.x)) == 1 # scattered points
+        return 1
+    else 
+        if any(size(DataSet.x).==1) # surface data
+            return 2
+        else # volume data
+            return 3
+        end
     end
 end
 
@@ -302,9 +639,9 @@ function InterpolateDataFields(V::AbstractGeneralGrid, Lon, Lat, Depth)
             for j=1:length(data_tuple)
                 if ReverseData
                     ndim        =   length(size(data_tuple[j]))
-                    interpol    =   LinearInterpolation((Lon_vec, Lat_vec, reverse(Depth_vec)), reverse(ustrip.(data_tuple[j]), dims=ndim) ,extrapolation_bc = Flat());      # create interpolation object
+                    interpol    =   linear_interpolation((Lon_vec, Lat_vec, reverse(Depth_vec)), reverse(ustrip.(data_tuple[j]), dims=ndim) ,extrapolation_bc = Flat());      # create interpolation object
                 else
-                    interpol    =   LinearInterpolation((Lon_vec, Lat_vec, Depth_vec), ustrip.(data_tuple[j]),extrapolation_bc = Flat());      # create interpolation object
+                    interpol    =   linear_interpolation((Lon_vec, Lat_vec, Depth_vec), ustrip.(data_tuple[j]),extrapolation_bc = Flat());      # create interpolation object
                 end
                 data_array[:,:,:,j] =   interpol.(Lon, Lat, ustrip.(Depth));          
             end
@@ -314,9 +651,9 @@ function InterpolateDataFields(V::AbstractGeneralGrid, Lon, Lat, Depth)
             # scalar field
             if ReverseData
                 ndim        =   length(size(V.fields[i]))
-                interpol    =   LinearInterpolation((Lon_vec, Lat_vec, reverse(Depth_vec)), reverse(V.fields[i], dims=ndim), extrapolation_bc = Flat(),);            # create interpolation object
+                interpol    =   linear_interpolation((Lon_vec, Lat_vec, reverse(Depth_vec)), reverse(V.fields[i], dims=ndim), extrapolation_bc = Flat(),);            # create interpolation object
             else
-                interpol    =   LinearInterpolation((Lon_vec, Lat_vec, Depth_vec), V.fields[i], extrapolation_bc = Flat());            # create interpolation object
+                interpol    =   linear_interpolation((Lon_vec, Lat_vec, Depth_vec), V.fields[i], extrapolation_bc = Flat());            # create interpolation object
             end
             data_new    =   interpol.(Lon, Lat, ustrip.(Depth));                                                 # interpolate data field
         end
@@ -368,9 +705,9 @@ function InterpolateDataFields(V::UTMData, EW, NS, Depth)
             for j=1:length(data_tuple)
                 if ReverseData
                     ndim        =   length(size(data_tuple[j]))
-                    interpol    =   LinearInterpolation((EW_vec, NS_vec, reverse(Depth_vec)), reverse(ustrip.(data_tuple[j]), dims=ndim) ,extrapolation_bc = Flat());      # create interpolation object
+                    interpol    =   linear_interpolation((EW_vec, NS_vec, reverse(Depth_vec)), reverse(ustrip.(data_tuple[j]), dims=ndim) ,extrapolation_bc = Flat());      # create interpolation object
                 else
-                    interpol    =   LinearInterpolation((EW_vec, NS_vec, Depth_vec), ustrip.(data_tuple[j]),extrapolation_bc = Flat());      # create interpolation object
+                    interpol    =   linear_interpolation((EW_vec, NS_vec, Depth_vec), ustrip.(data_tuple[j]),extrapolation_bc = Flat());      # create interpolation object
                 end
                 data_array[:,:,:,j] =   interpol.(EW, NS, Depth);          
             end
@@ -380,9 +717,9 @@ function InterpolateDataFields(V::UTMData, EW, NS, Depth)
             # scalar field
             if ReverseData
                 ndim        =   length(size(V.fields[i]))
-                interpol    =   LinearInterpolation((EW_vec, NS_vec, reverse(Depth_vec)), reverse(V.fields[i], dims=ndim), extrapolation_bc = Flat(),);            # create interpolation object
+                interpol    =   linear_interpolation((EW_vec, NS_vec, reverse(Depth_vec)), reverse(V.fields[i], dims=ndim), extrapolation_bc = Flat(),);            # create interpolation object
             else
-                interpol    =   LinearInterpolation((EW_vec, NS_vec, Depth_vec), V.fields[i], extrapolation_bc = Flat());            # create interpolation object
+                interpol    =   linear_interpolation((EW_vec, NS_vec, Depth_vec), V.fields[i], extrapolation_bc = Flat());            # create interpolation object
             end
             data_new    =   interpol.(EW, NS, Depth);                                                 # interpolate data field
         end
@@ -421,9 +758,9 @@ function InterpolateDataFields2D(V::GeoData, Lon, Lat)
 
             for j=1:length(data_tuple)
                 if length(size(data_tuple[j]))==3
-                    interpol    =   LinearInterpolation((Lon_vec, Lat_vec), ustrip.(data_tuple[j][:,:,1]),extrapolation_bc = Flat());      # create interpolation object
+                    interpol    =   linear_interpolation((Lon_vec, Lat_vec), ustrip.(data_tuple[j][:,:,1]),extrapolation_bc = Flat());      # create interpolation object
                 else
-                    interpol    =   LinearInterpolation((Lon_vec, Lat_vec), ustrip.(data_tuple[j]),extrapolation_bc = Flat());      # create interpolation object
+                    interpol    =   linear_interpolation((Lon_vec, Lat_vec), ustrip.(data_tuple[j]),extrapolation_bc = Flat());      # create interpolation object
                 end
                 data_array[:,:,1,j] =   interpol.(Lon, Lat);          
             end
@@ -435,9 +772,9 @@ function InterpolateDataFields2D(V::GeoData, Lon, Lat)
         else
             # scalar field
             if length(size(V.fields[i]))==3
-                interpol    =   LinearInterpolation((Lon_vec, Lat_vec), V.fields[i][:,:,1], extrapolation_bc = Flat());            # create interpolation object
+                interpol    =   linear_interpolation((Lon_vec, Lat_vec), V.fields[i][:,:,1], extrapolation_bc = Flat());            # create interpolation object
             else
-                interpol    =   LinearInterpolation((Lon_vec, Lat_vec), V.fields[i], extrapolation_bc = Flat());            # create interpolation object
+                interpol    =   linear_interpolation((Lon_vec, Lat_vec), V.fields[i], extrapolation_bc = Flat());            # create interpolation object
             end
 
             data_new    =   interpol.(Lon, Lat);                                                 # interpolate data field
@@ -451,9 +788,9 @@ function InterpolateDataFields2D(V::GeoData, Lon, Lat)
 
     # Interpolate z-coordinate as well
     if length(size(V.lon))==3
-        interpol    =   LinearInterpolation((Lon_vec, Lat_vec), V.depth.val[:,:,1], extrapolation_bc = Flat());            # create interpolation object
+        interpol    =   linear_interpolation((Lon_vec, Lat_vec), V.depth.val[:,:,1], extrapolation_bc = Flat());            # create interpolation object
     else
-        interpol    =   LinearInterpolation((Lon_vec, Lat_vec), V.depth.val, extrapolation_bc = Flat());            # create interpolation object
+        interpol    =   linear_interpolation((Lon_vec, Lat_vec), V.depth.val, extrapolation_bc = Flat());            # create interpolation object
     end
     depth_new =  interpol.(Lon, Lat);    
     
@@ -484,7 +821,7 @@ function InterpolateDataFields2D(V::UTMData, EW, NS)
             unit_array = zeros(size(data_array));
 
             for j=1:length(data_tuple)
-                interpol    =   LinearInterpolation((EW_vec, NS_vec), ustrip.(data_tuple[j]),extrapolation_bc = Flat());      # create interpolation object
+                interpol    =   linear_interpolation((EW_vec, NS_vec), ustrip.(data_tuple[j]),extrapolation_bc = Flat());      # create interpolation object
                 data_array[:,:,1,j] =   interpol.(EW, NS);          
             end
             data_new    = tuple([data_array[:,:,1,c] for c in 1:size(data_array,4)]...)     # transform 3D matrix to tuple
@@ -492,9 +829,9 @@ function InterpolateDataFields2D(V::UTMData, EW, NS)
         else
             # scalar field
             if length(size(V.fields[i]))==3
-                interpol    =   LinearInterpolation((EW_vec, NS_vec), V.fields[i][:,:,1], extrapolation_bc = Flat());            # create interpolation object
+                interpol    =   linear_interpolation((EW_vec, NS_vec), V.fields[i][:,:,1], extrapolation_bc = Flat());            # create interpolation object
             else
-                interpol    =   LinearInterpolation((EW_vec, NS_vec), V.fields[i], extrapolation_bc = Flat());            # create interpolation object
+                interpol    =   linear_interpolation((EW_vec, NS_vec), V.fields[i], extrapolation_bc = Flat());            # create interpolation object
             end
 
             data_new    =   interpol.(EW, NS);                                                 # interpolate data field
@@ -508,9 +845,9 @@ function InterpolateDataFields2D(V::UTMData, EW, NS)
 
     # Interpolate z-coordinate as well
     if length(size(V.depth))==3
-        interpol    =   LinearInterpolation((EW_vec, NS_vec), V.depth.val[:,:,1], extrapolation_bc = Flat());            # create interpolation object
+        interpol    =   linear_interpolation((EW_vec, NS_vec), V.depth.val[:,:,1], extrapolation_bc = Flat());            # create interpolation object
     else
-        interpol    =   LinearInterpolation((EW_vec, NS_vec), V.depth.val, extrapolation_bc = Flat());            # create interpolation object
+        interpol    =   linear_interpolation((EW_vec, NS_vec), V.depth.val, extrapolation_bc = Flat());            # create interpolation object
     end
     depth_new =  interpol.(EW, NS);    
     
@@ -792,7 +1129,7 @@ function AboveSurface(Data::GeoData, DataSurface::GeoData; above=true)
     # Create interpolation object for surface
     Lon_vec     =  DataSurface.lon.val[:,1,1];
     Lat_vec     =  DataSurface.lat.val[1,:,1];
-    interpol    =  LinearInterpolation((Lon_vec, Lat_vec), ustrip.(DataSurface.depth.val[:,:,1]));            # create interpolation object
+    interpol    =  linear_interpolation((Lon_vec, Lat_vec), ustrip.(DataSurface.depth.val[:,:,1]));            # create interpolation object
 
     DepthSurface = interpol.(Data.lon.val,Data.lat.val);
     DepthSurface = DepthSurface*unit(DataSurface.depth.val[1])
@@ -1182,3 +1519,4 @@ function LithostaticPressure!(Plithos::Array{T,N}, Density::Array{T,N}, dz::Numb
     
     return nothing
 end
+
