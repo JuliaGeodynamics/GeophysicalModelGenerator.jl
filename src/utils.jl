@@ -460,7 +460,41 @@ function CrossSection(DataSet::AbstractGeneralGrid; dims=(100,100), Interpolate=
 
 end
 
+"""
+    FlattenCrossSection(V::CartData)
+Takes a diagonal 3D CrossSection and flattens it to be converted to a 2D Grid by CreateCartGrid
+# Example
+```julia
+Grid                    = CreateCartGrid(size=(100,100,100), x=(0.0km, 99.9km), y=(-10.0km, 20.0km), z=(-40km,4km));
+X,Y,Z                   = XYZGrid(Grid.coord1D...);
+DataSet                = CartData(X,Y,Z,(Depthdata=Z,));
 
+Data_Cross              = CrossSection(DataSet, dims=(100,100), Interpolate=true, Start=(ustrip(Grid.min[1]),ustrip(Grid.max[2])), End=(ustrip(Grid.max[1]), ustrip(Grid.min[2])))
+
+endpoints = extrema(sqrt.(Data_Cross.x.val.^2 + Data_Cross.y.val.^2))
+x_new = sqrt.(Data_Cross.x.val.^2 + Data_Cross.y.val.^2)
+x_new .-= minimum(x_new);
+Data_Cross_2D = CartData(x_new,Data_Cross.y.val.*0.0, Data_Cross.z.val, Data_Cross.fields)
+CartData 
+    size    : (100, 100, 1)
+    x       ϵ [ 0.0 : 81.24430879030079]
+    y       ϵ [ -0.0 : 0.0]
+    z       ϵ [ -40.0 : 4.0]
+    fields  : (:Depthdata,)
+  attributes: ["note"]
+
+```
+"""
+function FlattenCrossSection(V::CartData)
+ 
+  x_new   = sqrt.(V.x.val.^2 + V.y.val.^2)
+  x_new .-= minimum(x_new);
+
+  Data_Cross_2D = CartData(x_new,V.y.val.*0.0, V.z.val, V.fields)
+
+  return Data_Cross_2D
+
+end
 
 """
     ExtractSubvolume(V::GeoData; Interpolate=false, Lon_level=nothing, Lat_level=nothing, Depth_level=nothing, dims=(50,50,50))
