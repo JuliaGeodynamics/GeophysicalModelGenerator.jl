@@ -491,16 +491,17 @@ DataSet                = CartData(X,Y,Z,(Depthdata=Z,));
 
 Data_Cross              = CrossSection(DataSet, dims=(100,100), Interpolate=true, Start=(ustrip(Grid.min[1]),ustrip(Grid.max[2])), End=(ustrip(Grid.max[1]), ustrip(Grid.min[2])))
 
-endpoints = extrema(sqrt.(Data_Cross.x.val.^2 + Data_Cross.y.val.^2))
-x_new = sqrt.(Data_Cross.x.val.^2 + Data_Cross.y.val.^2)
-x_new .-= minimum(x_new);
-Data_Cross_2D = CartData(x_new,Data_Cross.y.val.*0.0, Data_Cross.z.val, Data_Cross.fields)
+x_new = FlattenCrossSection(Data_Cross)
+
+This flattened CrossSection can be added to original Data_Cross by AddField()
+
+Data_Cross = AddField(Data_Cross,"FlatCrossSection", x_new)
 CartData 
     size    : (100, 100, 1)
-    x       ϵ [ 0.0 : 81.24430879030079]
-    y       ϵ [ -0.0 : 0.0]
+    x       ϵ [ 0.0 : 99.9]
+    y       ϵ [ -10.0 : 20.0]
     z       ϵ [ -40.0 : 4.0]
-    fields  : (:Depthdata,)
+    fields  : (:Depthdata, :FlatCrossSection)
   attributes: ["note"]
 
 ```
