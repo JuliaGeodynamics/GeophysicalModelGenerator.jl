@@ -208,7 +208,6 @@ function CrossSectionSurface(S::AbstractGeneralGrid; dims=(100,), Interpolate=tr
 
         Lon = LinRange(Start[1], End[1], dims[1])
         Lat = LinRange(Start[2], End[2], dims[1]);
-
     end
 
     # now interpolate the depth information of the surface to the profile in question
@@ -242,7 +241,7 @@ function CrossSectionSurface(S::AbstractGeneralGrid; dims=(100,), Interpolate=tr
         fields_new  =   merge(fields_new, new_field);                                       # replace the field in fields_new
         
     end
-
+    
     # create GeoData structure with the interpolated points
     Data_profile = GeoData(Lon, Lat, depth_intp, (fields_new));
 
@@ -368,14 +367,13 @@ function CrossSectionPoints(P::GeoData; Depth_level=nothing, Lat_level=nothing, 
         for i in eachindex(ind)
             utmi  = UTM(px[i],py[i],pz[i])
             llai  = trans(utmi)
-
             plon[i]     = llai.lon
             plat[i]     = llai.lat
             pdepth[i]   = llai.alt
         end
 
-        # data to be stored in the GeoData structure
-        field_tmp = (depth_proj=pdepth/1e3,lat_proj=plat,lon_proj=plon) # these are the projected points
+        # data to be stored in the GeoData structure --> projected lon/lat, but also UTM coordinates
+        field_tmp = (depth_proj=pdepth/1e3,lat_proj=plat,lon_proj=plon) # these are the projected points, depth is in km!!!
     end
 
     # also transfer any other data that is stored in the GeoData structure
@@ -1227,8 +1225,10 @@ end
 Creates a Vote map which shows consistent features in different 2D/3D tomographic datasets.
 
 The way it works is:
-- Find a common region between the different GeoData sets (overlapping lon/lat/depth regions)
+- define whether VoteMaps should be created using only overlapping regions, the maximum extent of all tomographies or in a costom range:
+    -> 'overlapping', 'maximum' or a Dictionary with entries 'lon','lat','depth'
 - Interpolate the fields of all DataSets to common coordinates
+
 - Filter data points in one model (e.g., areas with a velocity anomaly > 2 percent). Set everything that satisfies this criteria to 1 and everything else to 0.
 - Sum the results of the different datasets
 
@@ -1343,6 +1343,140 @@ end
 function VoteMap(DataSets::GeoData, criteria::String; dims=(50,50,50))
     VoteMap([DataSets], [criteria]; dims=dims)
 end
+
+
+"""
+This is a modified vote map algorithm provided by E. Kaestle 
+A more detailed help will follow
+
+Example: 
+```julia
+julia> Pwave_Zhao = load("./Zhao2016/Zhao_Pwave.jld2","Data_set_Zhao2016_Vp")
+julia> Pwave_Paffrath = load("./Paffrath2021/Paffrath2021.jld2","Data_set")
+julia> Pwave_Rappisi  = load("./Rappisi2022/Rappisi2022.jld2","Data_set")
+julia > Data_VoteMap = VoteMapNew( [Pwave_Paffrath, Pwave_Zhao,Pwave_Rappisi],
+                        ["dVp_perc","dVp_Percentage","dVp_perc"], dims=(100,100,100),
+                        threshold_stadev=1.5,meancorrection=true,modelsize="maximum",votes="relative",mindepth=100.)
+
+
+```
+
+"""
+
+function VoteMapKaestle(DataSets::Vector{GeoData}, elements::Vector{String};
+    dims=(50,50,50), threshold_stadev=1.0, meancorrection=true,
+    modelsize="overlapping",votes="absolute",mindepth=0.)
+
+    numDataSets = length(DataSets)
+
+    if length(elements) != numDataSets
+        error("Need the same number of elements as the number of data sets")
+    end
+    
+    # Determine the available lon/lat/depth regions of all datasets
+    lon_limits  = [minimum(DataSets[1].lon.val);        maximum(DataSets[1].lon.val)];
+    lat_limits  = [minimum(DataSets[1].lat.val);        maximum(DataSets[1].lat.val)];
+    z_limits    = [minimum(DataSets[1].depth.val);      maximum(DataSets[1].depth.val)];
+    if modelsize == "overlapping"
+        for i=1:numDataSets
+            lon_limits[1]   =   maximum([lon_limits[1]  minimum(DataSets[i].lon.val)]);
+            lon_limits[2]   =   minimum([lon_limits[2]  maximum(DataSets[i].lon.val)]);
+    
+            lat_limits[1]   =   maximum([lat_limits[1]  minimum(DataSets[i].lat.val)]);
+            lat_limits[2]   =   minimum([lat_limits[2]  maximum(DataSets[i].lat.val)]);
+     
+            z_limits[1]     =   maximum([z_limits[1]    minimum(DataSets[i].depth.val)]);
+            z_limits[2]     =   minimum([z_limits[2]    maximum(DataSets[i].depth.val)]);
+        end
+    elseif modelsize == "maximum"
+        for i=1:numDataSets
+            lon_limits[1]   =   minimum([lon_limits[1]  minimum(DataSets[i].lon.val)]);
+            lon_limits[2]   =   maximum([lon_limits[2]  maximum(DataSets[i].lon.val)]);
+
+            lat_limits[1]   =   minimum([lat_limits[1]  minimum(DataSets[i].lat.val)]);
+            lat_limits[2]   =   maximum([lat_limits[2]  maximum(DataSets[i].lat.val)]);
+
+            z_limits[1]     =   minimum([z_limits[1]    minimum(DataSets[i].depth.val)]);
+            z_limits[2]     =   maximum([z_limits[2]    maximum(DataSets[i].depth.val)]);
+        end
+    elseif isa(modelsize, Dict)
+        lon_limits[1] = minimum(modelsize["lon"])
+        lon_limits[2] = maximum(modelsize["lon"])
+        lat_limits[1] = minimum(modelsize["lat"])
+        lat_limits[2] = maximum(modelsize["lat"])
+        z_limits[1] = minimum(-modelsize["depth"])
+        z_limits[2] = maximum(-modelsize["depth"])
+    else
+        error("modelsize argument should bei either 'overlapping', 'maximum' or a Dictionary with entries 'lon','lat','depth'.")
+    end
+
+    # Loop over all datasets, and interpolate the data set to the new (usually smaller) domain
+    if votes == "relative"
+        VoteMap         =   zeros(dims)
+    else
+        VoteMap         =   zeros(Int64,dims)
+    end
+    ValidCounts         =   zeros(Int64,dims) # counts the number of models that have data coverage at each gridpoint
+    for i=1:numDataSets
+        VoteMap_Local   =   zeros(Int64,dims)
+        
+        # Interpolate data set to new domain (can be smaller or larger)
+        # if the region is larger than the origional model domain, it performs a nearest neighor interpolation
+        DataSet         =   ExtractSubvolume(DataSets[i]; Interpolate=true, Lon_level=lon_limits, Lat_level=lat_limits, Depth_level=z_limits, dims=dims);
+
+        # these are the original model boundaries
+        lon0,lon1  = [minimum(DataSets[i].lon.val);        maximum(DataSets[i].lon.val)];
+        lat0,lat1  = [minimum(DataSets[i].lat.val);        maximum(DataSets[i].lat.val)];
+        z0,z1    =   [minimum(DataSets[i].depth.val);      maximum(DataSets[i].depth.val)];  
+        X,Y,Z = coordinate_grids(DataSet)
+
+        # Extract the relevant array (e.g. dVp_Percentage))
+        expr            =   Meta.parse(elements[i]);
+        Array3D         =   ustrip.(DataSet.fields[expr[1]]);                  # strip units, just in case
+
+        # Set all values to zero that are outside the original model area
+        Array3D[(X.>lon1).+(X.<lon0).+(Y.>lat1).+(Y.<lat0).+(Z.>z1).+(Z.<z0) .!= 0] .= 0.
+
+        # assuming all arrays have negative depth values, make sure that the input mindepth is also negative
+        if mindepth > 0.
+            mindepth = -mindepth
+        end
+        # To calculate mean and std, make sure that the data behaves well
+        # 1) 0-values are often just dummyvalues for parts of the model that are outside the map region
+        # 2) at shallow depths, <100km, P-traveltime tomography models are unreliable
+        # 3) remove outliers > 5 stadev
+        idx_valid = (Array3D .!= 0.)
+        ValidCounts[idx_valid] .+= 1
+        idx_valid = idx_valid .* (Z .< mindepth)
+        idx_valid = idx_valid .* (abs.(Array3D) .< 5*std(Array3D[idx_valid]))
+        # histogram(vcat(Array3D[idx_valid]...))
+        if meancorrection # if meancorrection=true, correct for the mean
+            Array3Dcorr = Array3D.-mean(Array3D[idx_valid]);
+        else
+            Array3Dcorr = Array3D
+        end
+
+        if threshold_stadev > 0.
+            ind             = Array3Dcorr .> threshold_stadev*std(Array3Dcorr[idx_valid]);    # evaluate
+        else
+            ind             = Array3Dcorr .< threshold_stadev*std(Array3Dcorr[idx_valid]);    # evaluate
+            VoteMap_Local[ind] .= 1;                 # assign vote-map
+        end
+        VoteMap = VoteMap + VoteMap_Local;       # Sum 
+    end
+    if votes == "relative"
+        idx_valid = ValidCounts .> 0 # avoid division by zero
+        VoteMap[idx_valid] ./= ValidCounts[idx_valid]
+    end
+
+    DataSet     =   ExtractSubvolume(DataSets[1], Interpolate=true, Lon_level=lon_limits, Lat_level=lat_limits, Depth_level=z_limits, dims=dims);
+
+    # Construct GeoData set that holds the VoteMap (makes it easier to write paraview files)
+    VoteData    =   GeoData(DataSet.lon.val,DataSet.lat.val,DataSet.depth.val, (VoteMap=VoteMap,));
+
+    return VoteData
+end
+
 
 """
     Data_R = RotateTranslateScale(Data::ParaviewData; Rotate=0, Translate=(0,0,0), Scale=(1.0,1.0,1.0))
