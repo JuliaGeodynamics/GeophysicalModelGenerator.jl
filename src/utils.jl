@@ -5,6 +5,8 @@ export ParseColumns_CSV_File, AboveSurface, BelowSurface, VoteMap
 export InterpolateDataOnSurface, InterpolateDataFields2D, InterpolateDataFields
 export RotateTranslateScale
 export DrapeOnTopo, LithostaticPressure!
+export FlattenCrossSection
+export AddField
 
 using NearestNeighbors
 
@@ -25,6 +27,24 @@ function meshgrid(vx::AbstractVector{T}, vy::AbstractVector{T},
     oo = ones(Int, o)
     (vx[om, :, oo], vy[:, on, oo], vz[om, on, :])
 end
+"""
+Add Fields Data to GeoData or CartData 
+
+"""
+
+function AddField(V::AbstractGeneralGrid,field_name::String,data::Any)
+    fields_new  = V.fields;     new_field   =   NamedTuple{(Symbol(field_name),)}((data,));
+    fields_new  =   merge(fields_new, new_field); # replace the field in fields_new 
+
+    if isa(V,GeoData) 
+        V = GeoData(V.lon.val,V.lat.val,V.depth.val,fields_new)
+    elseif isa(V,CartData)
+        V = CartData(V.x.val,V.y.val,V.z.val,fields_new)
+    else
+        error("AddField is only implemented for GeoData and CartData")
+    end      
+        return V 
+    end
 
 """ 
 CrossSectionVolume(Volume::GeoData; dims=(100,100), Interpolate=false, Depth_level=nothing; Lat_level=nothing; Lon_level=nothing; Start=nothing, End=nothing )
@@ -460,7 +480,45 @@ function CrossSection(DataSet::AbstractGeneralGrid; dims=(100,100), Interpolate=
 
 end
 
+"""
+    FlattenCrossSection(V::CartData)
+Takes a diagonal 3D CrossSection and flattens it to be converted to a 2D Grid by CreateCartGrid
+# Example
+```julia
+Grid                    = CreateCartGrid(size=(100,100,100), x=(0.0km, 99.9km), y=(-10.0km, 20.0km), z=(-40km,4km));
+X,Y,Z                   = XYZGrid(Grid.coord1D...);
+DataSet                = CartData(X,Y,Z,(Depthdata=Z,));
 
+Data_Cross              = CrossSection(DataSet, dims=(100,100), Interpolate=true, Start=(ustrip(Grid.min[1]),ustrip(Grid.max[2])), End=(ustrip(Grid.max[1]), ustrip(Grid.min[2])))
+
+x_new = FlattenCrossSection(Data_Cross)
+
+This flattened CrossSection can be added to original Data_Cross by AddField()
+
+Data_Cross = AddField(Data_Cross,"FlatCrossSection", x_new)
+CartData 
+    size    : (100, 100, 1)
+    x       ϵ [ 0.0 : 99.9]
+    y       ϵ [ -10.0 : 20.0]
+    z       ϵ [ -40.0 : 4.0]
+    fields  : (:Depthdata, :FlatCrossSection)
+  attributes: ["note"]
+
+```
+"""
+function FlattenCrossSection(V::CartData)
+ 
+    x_new = sqrt.((V.x.val.-V.x.val[1,1,1]).^2 .+ (V.y.val.-V.y.val[1,1,1]).^2)
+
+
+    #  Data_Cross_2D = CartData(x_new,V.y.val.*0.0, V.z.val, V.fields)
+
+  return x_new
+
+end
+
+
+  
 
 """
     ExtractSubvolume(V::GeoData; Interpolate=false, Lon_level=nothing, Lat_level=nothing, Depth_level=nothing, dims=(50,50,50))
