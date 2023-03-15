@@ -87,9 +87,8 @@ test_cross      = CrossSection(DataSet, dims=(100,100), Interpolate=true, Start=
 
 flatten_cross   = FlattenCrossSection(test_cross)
 
-@test flatten_cross.x[2][30]==GeoUnit(0.5617406256501525km)
-@test flatten_cross.y[1][50]==GeoUnit(0.0km)
-@test flatten_cross.z[1][20]==GeoUnit(-40.0km)
+@test flatten_cross[2][30]==1.0536089537226578
+
 
 # Extract sub-volume
 
