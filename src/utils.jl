@@ -508,7 +508,7 @@ CartData
 """
 function FlattenCrossSection(V::CartData)
  
-    x_new = sqrt.((V.x.val.-V.x.val[1,1,1]).^2 .+ (V.y.val.-V.y.val[1,1,1]).^2)
+    x_new = sqrt.((V.x.val.-V.x.val[1,1,1]).^2 .+ (V.y.val.-V.y.val[1,1,1]).^2) # NOTE: the result is in km, as V.x and V.y are stored in km
 
 
     #  Data_Cross_2D = CartData(x_new,V.y.val.*0.0, V.z.val, V.fields)
@@ -517,8 +517,31 @@ function FlattenCrossSection(V::CartData)
 
 end
 
+"""
+    FlattenCrossSection(V::GeoData)
+    This function takes a 3D cross section through a GeoData structure and computes the distance along the cross section for later 2D processing/plotting
+    ```julia-repl
+    julia> Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
+    julia> Data            =   Depth*2;                # some data
+    julia> Vx,Vy,Vz        =   ustrip(Data*3),ustrip(Data*4),ustrip(Data*5);
+    julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz))); 
+    julia> Data_cross      =   CrossSection(Data_set3D, Start=(10,30),End=(20,40)) 
+    julia> x_profile       =   FlattenCrossSection(Data_cross) 
+    julia> Data_cross      =   AddField(Data_cross,"x_profile",x_profile)
 
-  
+    ```
+"""
+function FlattenCrossSection(V::GeoData)
+
+    x_new  = zeros(size(V.lon));
+
+    lla_start = LLA(V.lat.val[1][1][1],V.lon.val[1][1][1],0.0) # start point, at the surface
+    for i in eachindex(x_new)
+        x_new[i] = euclidean_distance(LLA(V.lat.val[i],V.lon.val[i],0.0), lla_start) /1e3 # compute distance as if points were at the surface, CONVERTED TO KM !!!
+    end
+
+    return x_new
+end
 
 """
     ExtractSubvolume(V::GeoData; Interpolate=false, Lon_level=nothing, Lat_level=nothing, Depth_level=nothing, dims=(50,50,50))
