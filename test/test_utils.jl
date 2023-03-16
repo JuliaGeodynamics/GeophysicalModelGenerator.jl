@@ -76,7 +76,7 @@ test_cross      =   CrossSection(Data_setCart3D, Lon_level=15, dims=(50,100), In
 @test size(test_cross.fields[3][2])==(1,50,100)
 @test test_cross.x[1,2,3]==GeoUnit(15km)
 
-# Flatten diagonal 3D CrossSection
+# Flatten diagonal 3D CrossSection with CartData
 
 # Create 3D volume with some fake data
 Grid            = CreateCartGrid(size=(100,100,100), x=(0.0km, 99.9km), y=(-10.0km, 20.0km), z=(-40km,4km));
@@ -88,6 +88,15 @@ test_cross      = CrossSection(DataSet, dims=(100,100), Interpolate=true, Start=
 flatten_cross   = FlattenCrossSection(test_cross)
 
 @test flatten_cross[2][30]==1.0536089537226578
+
+# Flatten 3D CrossSection with GeoData
+Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
+Data            =   Depth*2;                # some data
+Data_set        =   GeoData(Lon,Lat,Depth,(Depthdata=Data,));
+Data_cross      =   CrossSection(Data_set, Start=(10,39),End=(10,40))
+x_profile       =   FlattenCrossSection(Data_cross)
+
+@test x_profile[100][100][1]==111.02363637836613
 
 
 # Extract sub-volume
