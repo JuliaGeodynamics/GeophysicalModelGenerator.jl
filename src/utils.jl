@@ -531,11 +531,15 @@ end
 
     ```
 """
-function FlattenCrossSection(V::GeoData)
+function FlattenCrossSection(V::GeoData; Start=nothing)
 
+    if isnothing(Start)
+        lla_start = LLA(V.lat.val[1][1][1],V.lon.val[1][1][1],0.0) # start point, at the surface
+    else
+        lla_start = LLA(Start[2],Start[1],0.0);
+    end
     x_new  = zeros(size(V.lon));
 
-    lla_start = LLA(V.lat.val[1][1][1],V.lon.val[1][1][1],0.0) # start point, at the surface
     for i in eachindex(x_new)
         x_new[i] = euclidean_distance(LLA(V.lat.val[i],V.lon.val[i],0.0), lla_start) /1e3 # compute distance as if points were at the surface, CONVERTED TO KM !!!
     end
