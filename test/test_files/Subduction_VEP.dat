@@ -1,0 +1,273 @@
+#===============================================================================
+# Scaling
+#===============================================================================
+
+	units = geo
+
+	unit_temperature = 1000
+	unit_length      = 1e6
+	unit_viscosity   = 1e20
+	unit_stress      = 1e10
+
+#===============================================================================
+# Time stepping parameters
+#===============================================================================
+
+	dt        = 0.001 # time step
+	dt_max    = 0.03  # maximum time step
+	dt_min    = 0.0
+
+	nstep_max = 4     # maximum allowed number of steps (lower bound: time_end/dt_max)
+	nstep_out = 1     # save output every n steps
+
+#===============================================================================
+# Grid & discretization parameters
+#===============================================================================
+
+# Number of segments
+
+	nseg_x = 1
+	nseg_y = 1
+	nseg_z = 3
+
+# Number of cells for all segments
+
+	nel_x = 64
+	nel_y = 3
+	nel_z = 33 90 5
+
+# Coordinates of all segments (including start and end points)
+
+	coord_x = -1000 1000
+	coord_y = -30   30
+	coord_z = -660 -400 0 20
+
+#===============================================================================
+# Free surface
+#===============================================================================
+
+	surf_use        = 1  # free surface activation flag
+	surf_level      = 0  # initial level
+	surf_air_phase  = 0  # phase ID of sticky air layer
+
+#===============================================================================
+# Boundary conditions
+#===============================================================================
+
+	<BCBlockStart>
+		npath =  2                              # Number of path points of Bezier curve (path-points only!)
+		theta =  0 0                            # Orientation angles at path points (counter-clockwise positive)
+		time  =  0 0.3                          # Times at path points
+		path  =  0 0 -15 0                      # Path points x-y coordinates
+		npoly =  4                              # Number of polygon vertices
+		poly  =  790 -31 910 -31 910 31 790 31  # Polygon x-y coordinates at initial time
+		bot   =  -70                            # Polygon bottom coordinate
+		top   =  20                             # Polygon top coordinate
+	<BCBlockEnd>
+
+	open_top_bound = 1
+
+# Temperature on the top and bottom boundaries
+
+	temp_top = 0
+	temp_bot = 1478;
+
+#===============================================================================
+# Solution parameters & controls
+#===============================================================================
+
+	gravity        = 0.0 0.0 -10.0  # gravity vector
+	FSSA           = 1.0            # free surface stabilization parameter [0 - 1]
+	shear_heat_eff = 0.0            # shear heating efficiency parameter   [0 - 1]
+	act_temp_diff  = 1              # temperature diffusion activation flag
+	init_guess     = 1              # initial guess flag
+#	p_lim_plast    = 1              # limit pressure at first iteration for plasticity
+	eta_min        = 1e18           # viscosity upper bound
+	eta_max        = 1e24           # viscosity lower limit
+	eta_ref        = 1e22           # reference viscosity (initial guess)
+
+#===============================================================================
+# Model setup & advection
+#===============================================================================
+
+	msetup         = files             # setup type
+	nmark_x        = 3                 # markers per cell in x-direction
+	nmark_y        = 3                 # ...                 y-direction
+	nmark_z        = 3                 # ...                 z-direction
+	mark_load_file = ./markers/mdb  # marker input file (extension is .xxxxxxxx.dat)
+	advect         = basic               # advection scheme
+	interp         = stag            # velocity interpolation scheme
+	mark_ctrl      = subgrid
+#	nmark_lim      = 16 100            # min/max number per cell
+
+#===============================================================================
+# Output
+#===============================================================================
+
+# Grid output options (output is always active)
+
+	out_file_name       = subduction # output file name
+	out_pvd             = 1          # activate writing .pvd file
+	out_phase           = 1
+	out_density         = 1
+	out_visc_total      = 1
+	out_visc_creep      = 1
+	out_velocity        = 1
+	out_pressure        = 1
+	out_temperature     = 1
+	out_dev_stress      = 1
+	out_j2_dev_stress   = 1
+	out_strain_rate     = 1
+	out_j2_strain_rate  = 1
+	out_plast_strain    = 1
+	out_tot_displ       = 1
+	out_moment_res      = 1
+	out_cont_res        = 1
+	out_energ_res       = 1
+
+# Free surface output options
+
+	out_surf            = 1 # activate surface output
+	out_surf_pvd        = 1 # activate writing .pvd file
+	out_surf_velocity   = 1
+	out_surf_topography = 1
+	out_surf_amplitude  = 1
+
+#===============================================================================
+# Material phase parameters
+#===============================================================================
+
+	# ------------------- water -------------------
+	<MaterialStart>
+		ID   = 0
+		rho  = 100
+		eta  = 1e18
+		Cp   = 1e6
+		k    = 100
+	<MaterialEnd>
+
+	# ------------------- Mantle -------------------
+	<MaterialStart>
+		ID    = 1
+		rho   = 3300
+		disl_prof = Dry_Olivine_disl_creep-Hirth_Kohlstedt_2003
+		diff_prof = Dry_Olivine_diff_creep-Hirth_Kohlstedt_2003
+		G     = 7.4e10
+		ch    = 20e6  # cohesion [Pa]
+		fr    = 30    # friction angle [deg]
+		Cp    =   1.2e3 # heat capacity
+		k     =   2.5
+		alpha =   1e-5
+	<MaterialEnd>
+
+	# ------------------- Weak channel -------------------
+	<MaterialStart>
+		ID    = 2
+		rho   = 3200
+		disl_prof = Wet_Olivine-Ranalli_1995
+		G     = 7.4e10
+		ch    = 10e6   # cohesion [Pa]
+		fr    = 5      # friction angle [deg]
+		Cp    = 1.2e3  # heat capacity
+		k     = 2.5
+		alpha = 1e-5
+	<MaterialEnd>
+
+	# ------------------- Oceanic crust -------------------
+	<MaterialStart>
+		ID    = 3
+		rho   = 2900
+		disl_prof = Wet_Quarzite-Ranalli_1995
+		G     = 3.6e10
+		ch    = 20e6  # cohesion [Pa]
+		fr    = 5     # friction angle [deg]
+		Cp    = 1.2e3 # heat capacity
+		k     = 2.5
+		alpha = 1e-5
+	<MaterialEnd>
+
+	# ------------------- Subducting plate -------------------
+	<MaterialStart>
+		ID    = 4
+		rho   = 3300
+		disl_prof = Dry_Olivine_disl_creep-Hirth_Kohlstedt_2003
+		G     = 7.4e10
+		ch    = 20e6  # cohesion [Pa]
+		fr    = 30    # friction angle [deg]
+		Cp    = 1.2e3 # heat capacity
+		k     = 2.5
+		alpha = 1e-5
+	<MaterialEnd>
+
+	# ------------------- Overriding plate -------------------
+	<MaterialStart>
+		ID    = 5
+		rho   = 3300
+		disl_prof = Dry_Olivine_disl_creep-Hirth_Kohlstedt_2003
+		G     = 7.4e10
+		ch    = 20e6  # cohesion [Pa]
+		fr    = 30    # friction angle [deg]
+		Cp    = 1.2e3 # heat capacity
+		k     = 2.5
+		alpha = 1e-5
+	<MaterialEnd>
+
+#===============================================================================
+# PETSc options
+#===============================================================================
+
+<PetscOptionsStart>
+
+# SNES
+	-snes_monitor
+	-snes_atol 1e-4
+	-snes_rtol 1e-8
+	-snes_stol 1e-16
+	-snes_max_it 50
+	-snes_max_funcs 500000
+	-snes_max_linear_solve_fail 10000
+
+	-snes_Picard_max_it 10
+	-snes_PicardSwitchToNewton_rtol 1e-2
+	-snes_NewtonSwitchToPicard_it   5
+	-snes_NewtonSwitchToPicard_rtol 1.1
+
+	-snes_linesearch_monitor
+	-snes_linesearch_type l2
+	-snes_linesearch_maxstep 1.1
+
+# Jacobian solver
+
+	-js_ksp_type fgmres
+	-js_ksp_max_it 40
+	-js_ksp_converged_reason
+	-js_ksp_monitor
+	-js_ksp_rtol 1e-6
+	-js_ksp_atol 1e-8
+
+# Preconditioner
+
+	-pcmat_type mono
+	-jp_type mg
+	-gmg_pc_type mg
+	-gmg_pc_mg_levels 3
+	-gmg_pc_mg_galerkin
+	-gmg_pc_mg_type multiplicative
+	-gmg_pc_mg_cycle_type v
+	-gmg_mg_levels_ksp_type richardson
+	-gmg_mg_levels_ksp_richardson_scale 0.5
+	-gmg_mg_levels_ksp_max_it 20
+	-gmg_mg_levels_pc_type jacobi
+	-crs_ksp_type preonly
+	-crs_pc_type lu
+	-crs_pc_factor_mat_solver_package mumps
+
+# 2D Multigrid !!!
+
+	-da_refine_y 1
+
+	-objects_dump
+
+<PetscOptionsEnd>
+
+#===============================================================================
