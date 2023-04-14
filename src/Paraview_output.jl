@@ -5,9 +5,9 @@ export Write_Paraview, Movie_Paraview
 
 
 """
-    pvd = Write_Paraview(DataSet::ParaviewData, filename="test"; PointsData=false, pvd=nothing, time=nothing, directory=nothing)
+    pvd = Write_Paraview(DataSet::ParaviewData, filename="test"; PointsData=false, pvd=nothing, time=nothing, directory=nothing, verbose=true)
 
-Writes a structure with `Geodata`` to a paraview (or VTK) file. If you have unstructured points (e.g., earthquake data), set `PointsData=true`.
+Writes a structure with `Geodata` to a paraview (or VTK) file. If you have unstructured points (e.g., earthquake data), set `PointsData=true`.
 In case you want to create a movie in Paraview, and this is a timestep of that movie you also have to pass `time` and `pvd`
 
 # Example 1: Write a 3D volume 
@@ -63,7 +63,7 @@ julia> Write_Paraview(Data_set, "test_Points", PointsData=true)
 ```
 
 """
-function Write_Paraview(DataSet::ParaviewData, filename="test"; PointsData=false, pvd=nothing, time=nothing, directory=nothing)
+function Write_Paraview(DataSet::ParaviewData, filename="test"; PointsData=false, pvd=nothing, time=nothing, directory=nothing, verbose=true)
 
     # Error checking
     if !(length(size(DataSet.x))==length(size(DataSet.y))==length(size(DataSet.z)))
@@ -117,8 +117,9 @@ function Write_Paraview(DataSet::ParaviewData, filename="test"; PointsData=false
         end
     end
     outfiles = vtk_save(vtkfile);
-    println("Saved file: $(outfiles[1])")
-
+    if verbose
+        println("Saved file: $(outfiles[1])")
+    end
     if !isnothing(pvd)
         # Write movie 
         pvd[time] = vtkfile
@@ -131,28 +132,28 @@ end
 Write_Paraview(DataSet::GeoData,  filename::Any; PointsData=false, pvd=nothing, time=nothing, directory=nothing) = Write_Paraview(convert(ParaviewData,DataSet), filename, PointsData=PointsData, pvd=pvd, time=time, directory=directory);
 
 """
-    Write_Paraview(DataSet::UTMData, filename::Any; PointsData=false, pvd=nothing, time=nothing, directory=nothing) 
+    Write_Paraview(DataSet::UTMData, filename::Any; PointsData=false, pvd=nothing, time=nothing, directory=nothing, verbose=true) 
 
 Writes a `UTMData` structure to paraview. Note that this data is *not* transformed into an Earth-like framework, but remains cartesian instead. 
 """
-function Write_Paraview(DataSet::UTMData, filename::Any; PointsData=false, pvd=nothing, time=nothing, directory=nothing) 
+function Write_Paraview(DataSet::UTMData, filename::Any; PointsData=false, pvd=nothing, time=nothing, directory=nothing, verbose=true) 
     
     PVData = ParaviewData(DataSet.EW, DataSet.NS, DataSet.depth.val, DataSet.fields)
 
-    outfiles = Write_Paraview(PVData, filename, PointsData=PointsData, pvd=pvd, time=time, directory=directory);
+    outfiles = Write_Paraview(PVData, filename, PointsData=PointsData, pvd=pvd, time=time, directory=directory, verbose=verbose);
     return outfiles
 end
 
 """
-    Write_Paraview(DataSet::CartData, filename::Any; PointsData=false, pvd=nothing, time=nothing, directory=nothing) 
+    Write_Paraview(DataSet::CartData, filename::Any; PointsData=false, pvd=nothing, time=nothing, directory=nothing, verbose=true) 
 
 Writes a `CartData` structure to paraview. 
 """
-function Write_Paraview(DataSet::CartData, filename::Any; PointsData=false, pvd=nothing, time=nothing, directory=nothing) 
+function Write_Paraview(DataSet::CartData, filename::Any; PointsData=false, pvd=nothing, time=nothing, directory=nothing, verbose=true) 
     
     PVData = ParaviewData(DataSet.x.val, DataSet.y.val, DataSet.z.val, DataSet.fields)
 
-    outfiles = Write_Paraview(PVData, filename, PointsData=PointsData, pvd=pvd, time=time, directory=directory);
+    outfiles = Write_Paraview(PVData, filename, PointsData=PointsData, pvd=pvd, time=time, directory=directory, verbose=verbose);
     return outfiles
 end
 
