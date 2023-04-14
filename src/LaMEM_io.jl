@@ -163,6 +163,14 @@ function ReadLaMEM_InputFile(file)
     coord_y   = ParseValue_LaMEM_InputFile(file,"coord_y",Float64);
     coord_z   = ParseValue_LaMEM_InputFile(file,"coord_z",Float64);
 
+    nseg_x   = ParseValue_LaMEM_InputFile(file,"nseg_x",Int64);
+    nseg_y   = ParseValue_LaMEM_InputFile(file,"nseg_y",Int64);
+    nseg_z   = ParseValue_LaMEM_InputFile(file,"nseg_z",Int64);
+
+    bias_x   = ParseValue_LaMEM_InputFile(file,"bias_x",Float64);
+    bias_y   = ParseValue_LaMEM_InputFile(file,"bias_y",Float64);
+    bias_z   = ParseValue_LaMEM_InputFile(file,"bias_z",Float64);
+
     # compute infromation from file
     W         = coord_x[end]-coord_x[1];
     L         = coord_y[end]-coord_y[1];
@@ -176,64 +184,17 @@ function ReadLaMEM_InputFile(file)
     nump_y    = nel_y_tot*nmark_y;
     nump_z    = nel_z_tot*nmark_z;
 
-    # uniform spacing
-    if (length(coord_x)==2) && (length(coord_y)==2) && (length(coord_z)==2)
-        # node spacing
-        dx       = W / nel_x_tot;
-        dy       = L / nel_y_tot;
-        dz       = H / nel_z_tot;
+    # Create 1D coordinate vectors (either regular or refined)
+    xn, x = Create1D_grid_vector(coord_x, nel_x, nmark_x, nseg_x, bias_x)
+    yn, y = Create1D_grid_vector(coord_y, nel_y, nmark_y, nseg_y, bias_y)
+    zn, z = Create1D_grid_vector(coord_z, nel_z, nmark_z, nseg_z, bias_z)
 
-        # node coordinate vectors
-        xn       = coord_x[1] : dx : coord_x[end];
-        yn       = coord_y[1] : dy : coord_y[end];
-        zn       = coord_z[1] : dz : coord_z[end];
+    # node grid
+    Xn,Yn,Zn = XYZGrid(xn, yn, zn); 
 
-        # node grid
-        Xn,Yn,Zn = XYZGrid(xn, yn, zn); 
-
-        # marker spacing
-        dx       = W / nump_x;
-        dy       = L / nump_y;
-        dz       = H / nump_z;
-
-        # marker coordinate vectors   
-        x        = coord_x[1]+dx/2 : dx : coord_x[end]-dx/2;
-        y        = coord_y[1]+dy/2 : dy : coord_y[end]-dy/2;
-        z        = coord_z[1]+dz/2 : dz : coord_z[end]-dz/2;
-
-        # marker grid
-        X,Y,Z    = XYZGrid(x, y, z);
-
-    # non-uniform spacing
-    else
-        # read missing information
-        nseg_x   = ParseValue_LaMEM_InputFile(file,"nseg_x",Int64);
-        nseg_y   = ParseValue_LaMEM_InputFile(file,"nseg_y",Int64);
-        nseg_z   = ParseValue_LaMEM_InputFile(file,"nseg_z",Int64);
-
-        bias_x   = ParseValue_LaMEM_InputFile(file,"bias_x",Float64);
-        bias_y   = ParseValue_LaMEM_InputFile(file,"bias_y",Float64);
-        bias_z   = ParseValue_LaMEM_InputFile(file,"bias_z",Float64);
-
-        ## Nodes
-        # make coordinate vectors
-        xn       = make1DCoords(nseg_x, nel_x, coord_x, bias_x);
-        yn       = make1DCoords(nseg_y, nel_y, coord_y, bias_y);
-        zn       = make1DCoords(nseg_z, nel_z, coord_z, bias_z);  
-
-        # node grid
-        Xn,Yn,Zn = XYZGrid(xn, yn, zn);
-
-        ## Markers
-        # make marker coordinate vectors
-        x        = make1DMarkerCoords(xn, nmark_x);
-        y        = make1DMarkerCoords(yn, nmark_y);
-        z        = make1DMarkerCoords(zn, nmark_z);
-
-        # marker grid
-        X, Y, Z  = XYZGrid(x, y, z);
-    end
-
+    # marker grid
+    X,Y,Z    = XYZGrid(x, y, z);
+    
     # finish Grid
     Grid    =  LaMEM_grid(  nmark_x,    nmark_y,    nmark_z,
     nump_x,     nump_y,     nump_z,
@@ -246,6 +207,34 @@ function ReadLaMEM_InputFile(file)
     Xn,         Yn,         Zn);
 
     return Grid
+end
+
+"""
+Returns 1D coordinate vectors of grid points and of marker locations for a regular spacing
+"""
+function Create1D_grid_vector(coord::Vector{Float64}, nel::Int64, nmark::Int64, nseg::Union{Nothing, Int64}, bias::Union{Nothing, Float64})
+    W  = coord[end] - coord[1] 
+    Δ  = W / nel;                    
+    xn = coord[1] : Δ : coord[end]; 
+
+    nump = nmark*nel
+    Δ_m = W / nump;                    
+    x   = coord[1] + Δ_m/2  : Δ_m : coord[end] - Δ_m/2; 
+    return xn, x
+end
+
+"""
+Returns 1D coordinate vectors of grid points and of marker locations for a regular spacing
+"""
+function Create1D_grid_vector(coord::Vector{T}, nel::Vector{I}, nmark::I, nseg::I, bias::Union{Nothing, T, Vector{T}}) where {T<:Float64, I<:Int64}
+    if isnothing(bias)
+        bias = ones(length(nel))
+    end
+
+    xn  = make1DCoords(nseg, nel, coord, bias);
+    x   = make1DMarkerCoords(xn, nmark);
+
+    return xn, x
 end
 
 function make1DMarkerCoords(xn::Array{Float64, 1}, nmark::Int64)

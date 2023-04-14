@@ -7,6 +7,13 @@ Grid        = ReadLaMEM_InputFile("test_files/non-uniform_grid.dat")
 @test Grid.Y[7741] ≈ -0.450000000000000
 @test Grid.Z[5195] ≈ -8.897114711471147
 
+# Non-uniform grid in z-direction (taken from LaMEM test suite)
+Grid        = ReadLaMEM_InputFile("test_files/Subduction_VEP.dat")
+@test maximum(diff(Grid.z_vec)) ≈ 2.626262626262701
+@test minimum(diff(Grid.z_vec)) ≈ 1.3333333333333321
+@test maximum(diff(Grid.x_vec)) ≈ 10.4166666666667
+@test minimum(diff(Grid.x_vec)) ≈ 10.4166666666667
+
 # Load LaMEM input file:
 Grid        =   ReadLaMEM_InputFile("test_files/SaltModels.dat")
 @test Grid.X[10] ≈ -2.40625
