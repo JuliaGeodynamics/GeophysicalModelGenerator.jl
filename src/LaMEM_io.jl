@@ -916,22 +916,23 @@ function Save_LaMEMTopography(Topo::CartData, filename::String)
 end
 
 """
-    CreatePartitioningFile(LaMEM_input::String, NumProc::Int64; LaMEM_dir::String=pwd(), LaMEM_options::String="", MPI_dir="")
+    CreatePartitioningFile(LaMEM_input::String, NumProc::Int64; LaMEM_dir::String=pwd(), LaMEM_options::String="", MPI_dir="", verbose=true)
 
 This executes LaMEM for the input file `LaMEM_input` & creates a parallel partitioning file for `NumProc` processors.
 The directory where the LaMEM binary is can be specified; if not it is assumed to be in the current directory.
 Likewise for the `mpiexec` directory (if not specified it is assumed to be available on the command line).
 
 """
-function CreatePartitioningFile(LaMEM_input::String,NumProc::Int64; LaMEM_dir::String=pwd(), LaMEM_options="", MPI_dir="")
+function CreatePartitioningFile(LaMEM_input::String,NumProc::Int64; LaMEM_dir::String=pwd(), LaMEM_options="", MPI_dir="", verbose=true)
 
     # Create string to execute LaMEM
     mpi_str     =  MPI_dir*"mpiexec -n $(NumProc) " 
     LaMEM_str   =  LaMEM_dir*"/"*"LaMEM -ParamFile "*LaMEM_input*" -mode save_grid "
     str         =  mpi_str*LaMEM_str
     
-    println("Executing command: $str")
-    
+    if verbose==true
+        println("Executing command: $str")
+    end
     # Run
     exit=run(`sh -c $str`, wait=false);
     
@@ -944,8 +945,9 @@ function CreatePartitioningFile(LaMEM_input::String,NumProc::Int64; LaMEM_dir::S
         end
         id          = findall(time_modified.==maximum(time_modified))   # last modified
         PartFile    = files[id]
-        
-        println("Successfuly generated PartitioningFile: $(PartFile[1])")
+        if verbose==true
+            println("Successfuly generated PartitioningFile: $(PartFile[1])")
+        end
     else
         error("Something went wrong with executing command ")
     end
