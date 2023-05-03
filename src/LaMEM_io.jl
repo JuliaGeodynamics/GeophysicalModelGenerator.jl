@@ -88,16 +88,23 @@ end
 
 
 """
-    value = ParseValue_LaMEM_InputFile(file,keyword,type)
+    value = ParseValue_LaMEM_InputFile(file,keyword,type; args::String=nothing)
 
-Extracts a certain `keyword` from a LaMEM input `file` and convert it to a certain type 
+Extracts a certain `keyword` from a LaMEM input `file` and convert it to a certain type.
+Optionally, you can also pass command-line arguments which will override the value read from the input file.
 
-# Example
+# Example 1:
 ```julia
 julia> nmark_z = ParseValue_LaMEM_InputFile("SaltModels.dat","nmark_z",Int64)
 ```
+
+# Example 2:
+```julia
+julia> nmark_z = ParseValue_LaMEM_InputFile("SaltModels.dat","nmark_z",Int64, args="-nel_x 128 -coord_x -4,4")
+```
+
 """
-function ParseValue_LaMEM_InputFile(file,keyword,type)
+function ParseValue_LaMEM_InputFile(file,keyword,type; args::Union{String,Nothing}=nothing)
     value = nothing
     for line in eachline(file)
         line_strip = lstrip(line)       # strip leading tabs/spaces
@@ -123,20 +130,42 @@ function ParseValue_LaMEM_InputFile(file,keyword,type)
                 end
             end
         end
-        
+    end
+
+    # parse command-line arguments
+    if !isnothing(args)
+        value = ParseValue_CommandLineArgs(args, keyword, type, value)
     end
 
     return value
 end
 
 
+"""
+    This parses a LaMEM command line argument string and checks if tyhe keyword exists there
+"""
+function ParseValue_CommandLineArgs(args,keyword,type, value)
+    args_vec = split(args,"-"*keyword)
+    
+    if length(args_vec)==2  
+        # we found the keyword
+        args_vec_keyword = split(args_vec[2])   
+        str = args_vec_keyword[1]               # first block after keyword is what we want
+        str_strip = replace(str, "," => " ")    # in case we have an array of values
+        value = parse.(type, split(str_strip))  # puts an array of values in a vector
+    end
+
+    return value
+end
+
 
 """
-    Grid::LaMEM_grid = ReadLaMEM_InputFile(file) 
+    Grid::LaMEM_grid = ReadLaMEM_InputFile(file, args::Union{String,Nothing}=nothing) 
 
 Parses a LaMEM input file and stores grid information in the `Grid` structure.
+Optionally, you can pass LaMEM command-line arguments as well. 
 
-# Example
+# Example 1
 ```julia
 julia> Grid = ReadLaMEM_InputFile("SaltModels.dat") 
 LaMEM Grid: 
@@ -147,29 +176,42 @@ x           ϵ [-3.0 : 3.0]
 y           ϵ [-2.0 : 2.0]
 z           ϵ [-2.0 : 0.0]
 ```
+
+# Example 2 (with command-line arguments)
+```julia
+julia> Grid = ReadLaMEM_InputFile("SaltModels.dat", args="-nel_x 64 -coord_x -4,4") 
+LaMEM Grid: 
+  nel         : (64, 32, 32)
+  marker/cell : (3, 3, 3)
+  markers     : (192, 96, 96)
+  x           ϵ [-4.0 : 4.0]
+  y           ϵ [-2.0 : 2.0]
+  z           ϵ [-2.0 : 0.0]
+```
+
 """
-function ReadLaMEM_InputFile(file)
+function ReadLaMEM_InputFile(file; args::Union{String,Nothing}=nothing )
 
     # read information from file
-    nmark_x   = ParseValue_LaMEM_InputFile(file,"nmark_x",Int64);
-    nmark_y   = ParseValue_LaMEM_InputFile(file,"nmark_y",Int64);
-    nmark_z   = ParseValue_LaMEM_InputFile(file,"nmark_z",Int64);
+    nmark_x   = ParseValue_LaMEM_InputFile(file,"nmark_x",Int64, args=args);
+    nmark_y   = ParseValue_LaMEM_InputFile(file,"nmark_y",Int64, args=args);
+    nmark_z   = ParseValue_LaMEM_InputFile(file,"nmark_z",Int64, args=args);
 
-    nel_x     = ParseValue_LaMEM_InputFile(file,"nel_x",Int64);
-    nel_y     = ParseValue_LaMEM_InputFile(file,"nel_y",Int64);
-    nel_z     = ParseValue_LaMEM_InputFile(file,"nel_z",Int64);
+    nel_x     = ParseValue_LaMEM_InputFile(file,"nel_x",Int64, args=args);
+    nel_y     = ParseValue_LaMEM_InputFile(file,"nel_y",Int64, args=args);
+    nel_z     = ParseValue_LaMEM_InputFile(file,"nel_z",Int64, args=args);
 
-    coord_x   = ParseValue_LaMEM_InputFile(file,"coord_x",Float64);
-    coord_y   = ParseValue_LaMEM_InputFile(file,"coord_y",Float64);
-    coord_z   = ParseValue_LaMEM_InputFile(file,"coord_z",Float64);
+    coord_x   = ParseValue_LaMEM_InputFile(file,"coord_x",Float64, args=args);
+    coord_y   = ParseValue_LaMEM_InputFile(file,"coord_y",Float64, args=args);
+    coord_z   = ParseValue_LaMEM_InputFile(file,"coord_z",Float64, args=args);
 
-    nseg_x   = ParseValue_LaMEM_InputFile(file,"nseg_x",Int64);
-    nseg_y   = ParseValue_LaMEM_InputFile(file,"nseg_y",Int64);
-    nseg_z   = ParseValue_LaMEM_InputFile(file,"nseg_z",Int64);
+    nseg_x   = ParseValue_LaMEM_InputFile(file,"nseg_x",Int64, args=args);
+    nseg_y   = ParseValue_LaMEM_InputFile(file,"nseg_y",Int64, args=args);
+    nseg_z   = ParseValue_LaMEM_InputFile(file,"nseg_z",Int64, args=args);
 
-    bias_x   = ParseValue_LaMEM_InputFile(file,"bias_x",Float64);
-    bias_y   = ParseValue_LaMEM_InputFile(file,"bias_y",Float64);
-    bias_z   = ParseValue_LaMEM_InputFile(file,"bias_z",Float64);
+    bias_x   = ParseValue_LaMEM_InputFile(file,"bias_x",Float64, args=args);
+    bias_y   = ParseValue_LaMEM_InputFile(file,"bias_y",Float64, args=args);
+    bias_z   = ParseValue_LaMEM_InputFile(file,"bias_z",Float64, args=args);
 
     # compute infromation from file
     W         = coord_x[end]-coord_x[1];
