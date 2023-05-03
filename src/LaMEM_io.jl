@@ -153,6 +153,10 @@ function ParseValue_CommandLineArgs(args,keyword,type, value)
         str = args_vec_keyword[1]               # first block after keyword is what we want
         str_strip = replace(str, "," => " ")    # in case we have an array of values
         value = parse.(type, split(str_strip))  # puts an array of values in a vector
+
+        if length(value)==1
+            value=value[1];
+        end
     end
 
     return value

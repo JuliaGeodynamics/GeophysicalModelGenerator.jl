@@ -15,7 +15,7 @@ Grid        = ReadLaMEM_InputFile("test_files/Subduction_VEP.dat")
 @test minimum(diff(Grid.x_vec)) ≈ 10.4166666666667
 
 # Add command-line arguments
-args = "-coord_z -660,-300,5,25 -nel_z 36,90,5"
+args = "-coord_z -660,-300,5,25 -nel_z 36,90,5 -nel_x 32"
 coord_z = GeophysicalModelGenerator.ParseValue_LaMEM_InputFile("test_files/Subduction_VEP.dat","coord_z",Float64, args=args)
 nel_z = GeophysicalModelGenerator.ParseValue_LaMEM_InputFile("test_files/Subduction_VEP.dat","nel_z",Int64, args=args)
 @test coord_z ≈  [-660.0, -300.0, 5.0, 25.0]
