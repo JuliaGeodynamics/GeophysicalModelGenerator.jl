@@ -1,6 +1,5 @@
 # NOTE: these are useful routines that are only loaded when the GMT package is already loaded in the REPL
-
-using .GMT
+using GMT
 
 export ImportTopo
 
