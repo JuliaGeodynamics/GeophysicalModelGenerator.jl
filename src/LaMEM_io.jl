@@ -368,10 +368,10 @@ function Base.show(io::IO, d::LaMEM_grid)
 end
 
 """
-    Save_LaMEMMarkersParallel(Grid::CartData; PartitioningFile=empty, directory="./markers", verbose=true)
+    Save_LaMEMMarkersParallel(Grid::CartData; PartitioningFile=empty, directory="./markers", verbose=true, is64bit=false)
 
 Saves a LaMEM marker file from the `CartData` structure `Grid`. It must have a field called `Phases`, holding phase information (as integers) and optionally a field `Temp` with temperature info. 
-It is possible to provide a LaMEM partitioning file `PartitioningFile`. If not, output is assumed to be for one processor.
+It is possible to provide a LaMEM partitioning file `PartitioningFile`. If not, output is assumed to be for one processor. By default it is assumed that the partitioning file was generated on a 32bit PETSc installation. If `Int64` was used instead, set the flag.
 
 The size of `Grid` should be consistent with what is provided in the LaMEM input file. In practice, the size of the mesh can be retrieved from a LaMEM input file using `ReadLaMEM_InputFile`.
 
@@ -395,7 +395,7 @@ Writing LaMEM marker file -> ./markers/mdb.00000003.dat
 ```
 
 """
-function Save_LaMEMMarkersParallel(Grid::CartData; PartitioningFile=empty, directory="./markers", verbose=true)
+function Save_LaMEMMarkersParallel(Grid::CartData; PartitioningFile=empty, directory="./markers", verbose=true, is64bit=false)
 
     x = ustrip.(Grid.x.val[:,1,1]);
     y = ustrip.(Grid.y.val[1,:,1]);
@@ -425,7 +425,7 @@ function Save_LaMEMMarkersParallel(Grid::CartData; PartitioningFile=empty, direc
     else
         Nprocx,Nprocy,Nprocz, 
         xc,yc,zc, 
-        nNodeX,nNodeY,nNodeZ = GetProcessorPartitioning(PartitioningFile)
+        nNodeX,nNodeY,nNodeZ = GetProcessorPartitioning(PartitioningFile, is64bit=is64bit)
     end
 
     Nproc                       =   Nprocx*Nprocy*Nprocz;
@@ -554,26 +554,33 @@ function PetscBinaryWrite_Vec(filename, A)
 end
 
 """
-    nProcX,nProcY,nProcZ, xc,yc,zc, nNodeX,nNodeY,nNodeZ = GetProcessorPartitioning(filename)
+    nProcX,nProcY,nProcZ, xc,yc,zc, nNodeX,nNodeY,nNodeZ = GetProcessorPartitioning(filename; is64bit=false)
 
-Reads a LaMEM processor partitioning file, used to create marker files, and returns the parallel layout 
+Reads a LaMEM processor partitioning file, used to create marker files, and returns the parallel layout.
+By default this is done for a 32bit PETSc installation, which will fail if you actually use a 64bit version. 
 
 """
-function GetProcessorPartitioning(filename)
+function GetProcessorPartitioning(filename; is64bit=false)
 
+    if is64bit
+        typ=Int64
+    else
+        typ=Int32
+    end
     io = open(filename, "r")
     
-    nProcX = ntoh(read(io,Int32))
-    nProcY = ntoh(read(io,Int32))
-    nProcZ = ntoh(read(io,Int32))
 
-    nNodeX = ntoh(read(io,Int32))
-    nNodeY = ntoh(read(io,Int32))
-    nNodeZ = ntoh(read(io,Int32))
+    nProcX = ntoh(read(io,typ))
+    nProcY = ntoh(read(io,typ))
+    nProcZ = ntoh(read(io,typ))
 
-    iX = [ntoh(read(io,Int32)) for i=1:nProcX+1];
-    iY = [ntoh(read(io,Int32)) for i=1:nProcY+1];
-    iZ = [ntoh(read(io,Int32)) for i=1:nProcZ+1];
+    nNodeX = ntoh(read(io,typ))
+    nNodeY = ntoh(read(io,typ))
+    nNodeZ = ntoh(read(io,typ))
+
+    iX = [ntoh(read(io,typ)) for i=1:nProcX+1];
+    iY = [ntoh(read(io,typ)) for i=1:nProcY+1];
+    iZ = [ntoh(read(io,typ)) for i=1:nProcZ+1];
 
     CharLength = ntoh(read(io,Float64))
     xcoor = [ntoh(read(io,Float64)) for i=1:nNodeX].*CharLength;
