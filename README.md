@@ -8,14 +8,16 @@ Creating consistent 3D images of geophysical and geological datasets and turning
 
 ![README_img](./docs/src/assets/img/Readme_pic.png)
 ### Contents
-* [Main features](#main-features) 
-* [Usage](#usage)
-* [Installation](#installation)
-* [Dependencies](#dependencies)
-* [Alpine Data](#visualising-alpine-data)
-* [Contributing](#contributing)
-* [Development roadmap](#development-roadmap)
-* [Funding](#funding)
+- [Geophysical Model Generator](#geophysical-model-generator)
+    - [Contents](#contents)
+  - [Main features](#main-features)
+  - [Usage](#usage)
+  - [Installation](#installation)
+  - [Dependencies](#dependencies)
+  - [Visualising Alpine data](#visualising-alpine-data)
+  - [Contributing](#contributing)
+  - [Development roadmap](#development-roadmap)
+  - [Funding](#funding)
 
 ## Main features
 Some of the key features are:
@@ -69,11 +71,7 @@ You are very welcome to request new features and point out bugs by opening an is
 
 ## Development roadmap
 In the pipeline: 
-- More tutorials
-- Add more import tools.
-- Compute gravity anomalies for lon/lat datasets, rather than just x/y/z.
-- Provide an interface to [geomIO](https://bitbucket.org/geomio/geomio/wiki/Home) (currently being translated from MATLAB to python) in order to allow creating 3D geometric model setups by drawing in Inkscape. 
-- Provide tools to create and export 3D geodynamic model setups. 
- 
+- Create an interactive tool to visualize data and to interpret datasets, based on [GLMakie](https://docs.makie.org/stable/)
+
 ## Funding
 Development of this software package was funded by the German Research Foundation (DFG grants TH2076/7-1 and KA3367/10-1), which are part of the [SPP 2017 4DMB project](http://www.spp-mountainbuilding.de) project as well as by the European Research Council under grant ERC CoG #771143 - [MAGMA](https://magma.uni-mainz.de). The project was initiated at a [TeMaS](https://temas.uni-mainz.de) workshop with researchers from Frankfurt and Mainz where we realized that it is way too timeconsuming to collect available data of a certain region.
