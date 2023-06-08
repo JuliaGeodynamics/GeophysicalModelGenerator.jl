@@ -850,9 +850,9 @@ function InterpolateDataFields2D(V::GeoData, Lon, Lat)
 
             for j=1:length(data_tuple)
                 if length(size(data_tuple[j]))==3
-                    interpol    =   linear_interpolation((Lon_vec, Lat_vec), ustrip.(data_tuple[j][:,:,1]),extrapolation_bc = NaN);      # create interpolation object
+                    interpol    =   linear_interpolation((Lon_vec, Lat_vec), ustrip.(data_tuple[j][:,:,1]),extrapolation_bc = Flat());      # create interpolation object
                 else
-                    interpol    =   linear_interpolation((Lon_vec, Lat_vec), ustrip.(data_tuple[j]),extrapolation_bc = NaN);      # create interpolation object
+                    interpol    =   linear_interpolation((Lon_vec, Lat_vec), ustrip.(data_tuple[j]),extrapolation_bc = Flat());      # create interpolation object
                 end
                 data_array[:,:,1,j] =   interpol.(Lon, Lat);          
             end
@@ -864,9 +864,9 @@ function InterpolateDataFields2D(V::GeoData, Lon, Lat)
         else
             # scalar field
             if length(size(V.fields[i]))==3
-                interpol    =   linear_interpolation((Lon_vec, Lat_vec), V.fields[i][:,:,1], extrapolation_bc = NaN);            # create interpolation object
+                interpol    =   linear_interpolation((Lon_vec, Lat_vec), V.fields[i][:,:,1], extrapolation_bc = Flat());            # create interpolation object
             else
-                interpol    =   linear_interpolation((Lon_vec, Lat_vec), V.fields[i], extrapolation_bc = NaN);            # create interpolation object
+                interpol    =   linear_interpolation((Lon_vec, Lat_vec), V.fields[i], extrapolation_bc = Flat());            # create interpolation object
             end
 
             data_new    =   interpol.(Lon, Lat);                                                 # interpolate data field
@@ -880,9 +880,9 @@ function InterpolateDataFields2D(V::GeoData, Lon, Lat)
 
     # Interpolate z-coordinate as well
     if length(size(V.lon))==3
-        interpol    =   linear_interpolation((Lon_vec, Lat_vec), V.depth.val[:,:,1], extrapolation_bc = NaN);            # create interpolation object
+        interpol    =   linear_interpolation((Lon_vec, Lat_vec), V.depth.val[:,:,1], extrapolation_bc = Flat());            # create interpolation object
     else
-        interpol    =   linear_interpolation((Lon_vec, Lat_vec), V.depth.val, extrapolation_bc = NaN);            # create interpolation object
+        interpol    =   linear_interpolation((Lon_vec, Lat_vec), V.depth.val, extrapolation_bc = Flat());            # create interpolation object
     end
     depth_new =  interpol.(Lon, Lat);    
     
@@ -913,7 +913,7 @@ function InterpolateDataFields2D(V::UTMData, EW, NS)
             unit_array = zeros(size(data_array));
 
             for j=1:length(data_tuple)
-                interpol    =   linear_interpolation((EW_vec, NS_vec), ustrip.(data_tuple[j]),extrapolation_bc = NaN);      # create interpolation object
+                interpol    =   linear_interpolation((EW_vec, NS_vec), ustrip.(data_tuple[j]),extrapolation_bc = Flat());      # create interpolation object
                 data_array[:,:,1,j] =   interpol.(EW, NS);          
             end
             data_new    = tuple([data_array[:,:,1,c] for c in 1:size(data_array,4)]...)     # transform 3D matrix to tuple
@@ -921,9 +921,9 @@ function InterpolateDataFields2D(V::UTMData, EW, NS)
         else
             # scalar field
             if length(size(V.fields[i]))==3
-                interpol    =   linear_interpolation((EW_vec, NS_vec), V.fields[i][:,:,1], extrapolation_bc = NaN);            # create interpolation object
+                interpol    =   linear_interpolation((EW_vec, NS_vec), V.fields[i][:,:,1], extrapolation_bc = Flat());            # create interpolation object
             else
-                interpol    =   linear_interpolation((EW_vec, NS_vec), V.fields[i], extrapolation_bc = NaN);            # create interpolation object
+                interpol    =   linear_interpolation((EW_vec, NS_vec), V.fields[i], extrapolation_bc = Flat());            # create interpolation object
             end
 
             data_new    =   interpol.(EW, NS);                                                 # interpolate data field
@@ -937,9 +937,9 @@ function InterpolateDataFields2D(V::UTMData, EW, NS)
 
     # Interpolate z-coordinate as well
     if length(size(V.depth))==3
-        interpol    =   linear_interpolation((EW_vec, NS_vec), V.depth.val[:,:,1], extrapolation_bc = NaN);            # create interpolation object
+        interpol    =   linear_interpolation((EW_vec, NS_vec), V.depth.val[:,:,1], extrapolation_bc = Flat());            # create interpolation object
     else
-        interpol    =   linear_interpolation((EW_vec, NS_vec), V.depth.val, extrapolation_bc = NaN);            # create interpolation object
+        interpol    =   linear_interpolation((EW_vec, NS_vec), V.depth.val, extrapolation_bc = Flat());            # create interpolation object
     end
     depth_new =  interpol.(EW, NS);    
     
