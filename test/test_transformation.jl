@@ -13,21 +13,21 @@ Data_set3D_Cart =   Convert2CartData(Data_set3D, proj)
 @test sum(abs.(Value(Data_set3D_Cart.x))) ≈ 5.293469089428514e6km
 
 # Create Cartesian grid
-X,Y,Z           =   XYZGrid(-500:100:500,-900:200:900,(-500:100:0)km);
+X,Y,Z           =   XYZGrid(-400:100:400,-500:200:500,(-1300:100:0)km);
 Data_Cart       =   CartData(X,Y,Z,(Z=Z,))  
 
 # Project values of Data_set3D to the cartesian data
 Data_Cart       =   ProjectCartData(Data_Cart, Data_set3D, proj)
-@test sum(Data_Cart.fields.Depthdata) ≈ -316834.28716859705km
+@test sum(Data_Cart.fields.Depthdata) ≈ -967680.9136292854km
 #@test sum(Data_Cart.fields.Depthdata) ≈ -1.416834287168597e6km
-@test sum(Data_Cart.fields.LonData) ≈ 13165.712831402916
+@test sum(Data_Cart.fields.LonData) ≈ 15119.086370714615
 
 
 # Next, 3D surface (like topography)
 Lon,Lat,Depth   =   LonLatDepthGrid(5:25,20:50,0);
-Depth           =   cos.(Lon/5).*sin.(Lat)*10
-Data_surf       =   GeoData(Lon,Lat,Depth,(Z=Depth,))  
-Data_surf_Cart  =   Convert2CartData(Data_surf, proj)  
+Depth           =   cos.(Lon/5).*sin.(Lat)*10;
+Data_surf       =   GeoData(Lon,Lat,Depth,(Z=Depth,));  
+Data_surf_Cart  =   Convert2CartData(Data_surf, proj); 
 
 # Cartesian surface
 X,Y,Z           =   XYZGrid(-500:10:500,-900:20:900,0);
