@@ -2,14 +2,13 @@
 # this is ProfileProcessing.jl
 # It contains functions and type definitions to gather selected data for given profiles
 
-export ProfileData, ExtractProfileData
+export ProfileData, ExtractProfileData, CreateProfileData
 
 # load packages
-using GeophysicalModelGenerator
 using DelimitedFiles
 using JLD2
-using Geodesy
-using GeoStats
+#using Geodesy
+#using GeoStats
 
 """
     struct ProfileData
@@ -216,16 +215,16 @@ function CreateProfileData(file_profiles,file_datasets,Depth_extent=(-300,0),Dim
     for iprofile = 1:length(ProfileNumber)
 
         # 2. process the profiles
-        ExtractedData = ExtractProfileData(ProfileCoordFile,ProfileNumber[iprofile],DataSetName,DataSetFile,DataSetType,DimsVolCross,Depth_extent,DimsSurfCross,WidthPointProfile)
+        ExtractedData = ExtractProfileData(file_profiles,ProfileNumber[iprofile],DataSetName,DataSetFile,DataSetType,DimsVolCross,Depth_extent,DimsSurfCross,WidthPointProfile)
     
         # 3. save data as MATLAB for usage with the qad data picker
         fn = "Profile"*string(ProfileNumber[iprofile])
         jldsave(fn*".jld2";ExtractedData)
 
-        if SaveMatlab
-            write_matfile(fn*".mat"; ProfileData=ExtractedData,)
-        end
-
+        #if SaveMatlab
+        #    using MATLAB
+        #    write_matfile(fn*".mat"; ProfileData=ExtractedData,)
+        #end
     
     end
 
@@ -239,15 +238,15 @@ function SaveProfileData(Profile,ProfileNumber)
     return
 end
 
-function SaveProfileDataMATLAB(Profile,ProfileNumber)
-    using MATLAB
-    # save as matlab --> convert to array of structures --> is done automatically by MATLAB.jl
-    # in the saving process, the information about the data set names is lost for surface data and point data
-    # this is why we added that to the attributes
-    # for volume data, it is not possible like that, but the field names are conserved
-    # it's ugly though
-    write_matfile(fn*".mat"; ProfileData=ExtractedData,)
-
-    return
-end
+# function SaveProfileDataMATLAB(Profile,ProfileNumber)
+#    using MATLAB
+#    # save as matlab --> convert to array of structures --> is done automatically by MATLAB.jl
+#    # in the saving process, the information about the data set names is lost for surface data and point data
+#    # this is why we added that to the attributes
+#    # for volume data, it is not possible like that, but the field names are conserved
+#    # it's ugly though
+#    write_matfile(fn*".mat"; ProfileData=ExtractedData,)
+#
+#    return
+#end
 
