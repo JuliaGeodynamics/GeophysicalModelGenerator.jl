@@ -160,7 +160,7 @@ function CreateProfilePoint!(Profile,DataSetName,DataSetFile,WidthPointProfile)
     return 
 end
 
-### wrapper function to process everything
+### wrapper function to extract data for a single profile
 function ExtractProfileData(ProfileCoordFile,ProfileNumber,DataSetName,DataSetFile,DataSetType,DimsVolCross,DepthVol,DimsSurfCross,WidthPointProfile)
 
     # start and end points are saved in a text file
@@ -197,28 +197,50 @@ function ExtractProfileData(ProfileCoordFile,ProfileNumber,DataSetName,DataSetFi
     return Profile
 end
 
+### wrapper function to read the profile numbers+coordinates from a text file, the dataset names+locations+types from another text file
+### once this is done, the different datasets are projected onto the profiles
+function CreateProfileData(file_profiles,file_datasets,Depth_extent=(-300,0),DimsVolCross=(500,300),DimsSurfCross = (100,),WidthPointProfile = 20km,SaveMatlab = false)
+    # get the number of profiles
+    profile_data = readdlm(file_profiles,skipstart=1,',')
+    NUM          = convert.(Int,profile_data[:,1]);
 
-### add 
+    ProfileNumber = NUM; # profile number, can also be a sequence of numbers
+
+    # get dataset info
+    datasets = readdlm("/Users/mthiel/PROJECTS/CURRENT/SPP2017/TomographyProcessing/FinalDatasets/Datasets.txt",',',skipstart =1); # read information on datasets to be used from text file
+
+    DataSetName = rstrip.(datasets[:,1]);
+    DataSetFile = rstrip.(datasets[:,2]);
+    DataSetType = rstrip.(datasets[:,3]);
+
+    for iprofile = 1:length(ProfileNumber)
+
+        # 2. process the profiles
+        ExtractedData = ExtractProfileData(ProfileCoordFile,ProfileNumber[iprofile],DataSetName,DataSetFile,DataSetType,DimsVolCross,Depth_extent,DimsSurfCross,WidthPointProfile)
+    
+        # 3. save data as MATLAB for usage with the qad data picker
+        fn = "Profile"*string(ProfileNumber[iprofile])
+        jldsave(fn*".jld2";ExtractedData)
+
+        if SaveMatlab
+            write_matfile(fn*".mat"; ProfileData=ExtractedData,)
+        end
+
+    
+    end
+
+end
+
 
 ### save everything --> also as mat file for potential processing with MATLAB
 function SaveProfileData(Profile,ProfileNumber)
     # save as jld2
     save("Profile"*string(ProfileNumber),Profile)
-    # save for paraview
-    # TODO
-
-    # save as matlab --> convert to array of structures --> is done automatically by MATLAB.jl
-    # in the saving process, the information about the data set names is lost for surface data and point data
-    # this is why we added that to the attributes
-    # for volume data, it is not possible like that, but the field names are conserved
-    # it's ugly though
-    write_matfile(fn*".mat"; ProfileData=ExtractedData,)
     return
 end
 
 function SaveProfileDataMATLAB(Profile,ProfileNumber)
     using MATLAB
-
     # save as matlab --> convert to array of structures --> is done automatically by MATLAB.jl
     # in the saving process, the information about the data set names is lost for surface data and point data
     # this is why we added that to the attributes
