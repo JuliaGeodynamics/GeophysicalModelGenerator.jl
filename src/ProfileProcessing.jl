@@ -206,7 +206,7 @@ function CreateProfileData(file_profiles,file_datasets,Depth_extent=(-300,0),Dim
     ProfileNumber = NUM; # profile number, can also be a sequence of numbers
 
     # get dataset info
-    datasets = readdlm("/Users/mthiel/PROJECTS/CURRENT/SPP2017/TomographyProcessing/FinalDatasets/Datasets.txt",',',skipstart =1); # read information on datasets to be used from text file
+    datasets = readdlm(file_datasets,',',skipstart =1); # read information on datasets to be used from text file
 
     DataSetName = rstrip.(datasets[:,1]);
     DataSetFile = rstrip.(datasets[:,2]);
