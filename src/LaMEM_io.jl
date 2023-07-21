@@ -261,11 +261,11 @@ Returns 1D coordinate vectors of grid points and of marker locations for a regul
 function Create1D_grid_vector(coord::Vector{Float64}, nel::Int64, nmark::Int64, nseg::Union{Nothing, Int64}, bias::Union{Nothing, Float64})
     W  = coord[end] - coord[1] 
     Δ  = W / nel;                    
-    xn = coord[1] : Δ : coord[end]; 
-
+    xn = range(coord[1], coord[end], length=nel+1);   # coordinates of the normals to the cells
+    
     nump = nmark*nel
     Δ_m = W / nump;                    
-    x   = coord[1] + Δ_m/2  : Δ_m : coord[end] - Δ_m/2; 
+    x  = range(coord[1]+ Δ_m/2, coord[end] - Δ_m/2, length=nump);  
     return xn, x
 end
 
