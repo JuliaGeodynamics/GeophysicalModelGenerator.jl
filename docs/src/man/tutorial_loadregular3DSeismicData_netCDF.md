@@ -19,6 +19,7 @@ julia> Pkg.add("NetCDF")
 First, let us have a look at the contents of this file (assuming that you are in the same directory where the file is located):
  ```julia-repl
 julia> using NetCDF
+julia> filename = ("El-Sharkawy-etal-G3.2020-MeRE2020-Mediterranean-0.0.nc")
 julia> ncinfo("El-Sharkawy-etal-G3.2020-MeRE2020-Mediterranean-0.0.nc")
 ##### NetCDF File #####
 
@@ -105,13 +106,13 @@ Note that we multiplied depth with -1. This is necessary to make depth to be neg
 #### 3. Reformat the coordinate data
 In the netCDF file, coordinates are given as 1D vectors denoting the location of nodes in a regular grid. However, `GeophysicalModelGenerator.jl` expects true 3D data, where each data point is assigned a latitude,longitude, depth and the respective property (here: Vs). To generate this full regular 3D grid, do the following:
 ```julia-repl
+julia> using GeophysicalModelGenerator
 Lon3D,Lat3D,Depth3D = LonLatDepthGrid(lon, lat, depth);
 ```
 #### 4. Generate Paraview file
 Once the 3D coordinate matrix has been generated, producing a Paraview file is done with the following command 
 ```julia
-julia> using GeophysicalModelGenerator
-julia> Data_set    =   GeoData(Lon,Lat,Depth,(Vs_km_s=Vs_3D,))   
+julia> Data_set    =   GeoData(Lon3D,Lat3D,Depth3D,(Vs_km_s=Vs_3D,))   
 GeoData 
   size  : (100, 100, 301)
   lon   ϵ [ 29.0 - 51.0]
