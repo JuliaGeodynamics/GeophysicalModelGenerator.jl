@@ -6,9 +6,6 @@ export ProfileData, ExtractProfileData, CreateProfileData
 
 # load packages
 using DelimitedFiles
-using JLD2
-#using Geodesy
-#using GeoStats
 
 """
     struct ProfileData
@@ -196,6 +193,7 @@ function ExtractProfileData(ProfileCoordFile,ProfileNumber,DataSetName,DataSetFi
     return Profile
 end
 
+#= 
 ### wrapper function to read the profile numbers+coordinates from a text file, the dataset names+locations+types from another text file
 ### once this is done, the different datasets are projected onto the profiles
 function CreateProfileData(file_profiles,file_datasets,Depth_extent=(-300,0),DimsVolCross=(500,300),DimsSurfCross = (100,),WidthPointProfile = 20km,SaveMatlab = false)
@@ -217,36 +215,12 @@ function CreateProfileData(file_profiles,file_datasets,Depth_extent=(-300,0),Dim
         # 2. process the profiles
         ExtractedData = ExtractProfileData(file_profiles,ProfileNumber[iprofile],DataSetName,DataSetFile,DataSetType,DimsVolCross,Depth_extent,DimsSurfCross,WidthPointProfile)
     
-        # 3. save data as MATLAB for usage with the qad data picker
+        # 3. save data 
         fn = "Profile"*string(ProfileNumber[iprofile])
         jldsave(fn*".jld2";ExtractedData)
-
-        #if SaveMatlab
-        #    using MATLAB
-        #    write_matfile(fn*".mat"; ProfileData=ExtractedData,)
-        #end
     
     end
 
 end
-
-
-### save everything --> also as mat file for potential processing with MATLAB
-function SaveProfileData(Profile,ProfileNumber)
-    # save as jld2
-    save("Profile"*string(ProfileNumber),Profile)
-    return
-end
-
-# function SaveProfileDataMATLAB(Profile,ProfileNumber)
-#    using MATLAB
-#    # save as matlab --> convert to array of structures --> is done automatically by MATLAB.jl
-#    # in the saving process, the information about the data set names is lost for surface data and point data
-#    # this is why we added that to the attributes
-#    # for volume data, it is not possible like that, but the field names are conserved
-#    # it's ugly though
-#    write_matfile(fn*".mat"; ProfileData=ExtractedData,)
-#
-#    return
-#end
+ =#
 
