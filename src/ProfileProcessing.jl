@@ -193,10 +193,9 @@ function ExtractProfileData(ProfileCoordFile,ProfileNumber,DataSetName,DataSetFi
     return Profile
 end
 
-#= 
 ### wrapper function to read the profile numbers+coordinates from a text file, the dataset names+locations+types from another text file
 ### once this is done, the different datasets are projected onto the profiles
-function CreateProfileData(file_profiles,file_datasets,Depth_extent=(-300,0),DimsVolCross=(500,300),DimsSurfCross = (100,),WidthPointProfile = 20km,SaveMatlab = false)
+function CreateProfileData(file_profiles,file_datasets;Depth_extent=(-300,0),DimsVolCross=(500,300),DimsSurfCross = (100,),WidthPointProfile = 20km)
     # get the number of profiles
     profile_data = readdlm(file_profiles,skipstart=1,',')
     NUM          = convert.(Int,profile_data[:,1]);
@@ -222,5 +221,5 @@ function CreateProfileData(file_profiles,file_datasets,Depth_extent=(-300,0),Dim
     end
 
 end
- =#
+
 
