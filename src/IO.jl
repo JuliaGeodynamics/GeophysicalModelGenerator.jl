@@ -46,16 +46,6 @@ Example 2 - remote download
 ```julia
 julia> url  = "https://seafile.rlp.net/f/10f867e410bb4d95b3fe/?dl=1"
 julia> load_GMG(url)
-┌ Info: Downloading
-│   source = "https://seafile.rlp.net/f/10f867e410bb4d95b3fe/?dl=1"
-│   dest = "/var/folders/8g/m1k97pb96r76xpr3n9k947rh0000gr/Ttest.jld2"
-│   progress = 1.0
-│   time_taken = "0.19 s"
-│   time_remaining = "0.0 s"
-│   average_speed = "5.817 MiB/s"
-│   downloaded = "1.111 MiB"
-│   remaining = "0 bytes"
-└   total = "1.111 MiB"
 GeoData 
   size      : (149, 242, 1)
   lon       ϵ [ -24.875 : 35.375]
@@ -70,7 +60,7 @@ function load_GMG(filename::String, dir=pwd())
 
     if contains(filename,"http")
         #download remote file to a local temporary directory
-        file_ext = Downloads.download(filename, tempdir()*"test.jld2")
+        file_ext = Downloads.download(filename, pwd()*"download_GMG_temp.jld2")
     else
         # local file
         file_ext = joinpath(dir,filename*".jld2")
