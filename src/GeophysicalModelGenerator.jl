@@ -43,6 +43,7 @@ include("LaMEM_io.jl")
 include("Setup_geometry.jl")
 include("stl.jl")
 include("ProfileProcessing.jl")
+include("IO.jl")
 
 # Add optional routines (only activated when the packages are loaded)
 function __init__()
