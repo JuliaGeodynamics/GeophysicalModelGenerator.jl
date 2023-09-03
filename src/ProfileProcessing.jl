@@ -4,28 +4,30 @@
 
 export ProfileData, ExtractProfileData, CreateProfileData
 
-# load packages
-using DelimitedFiles
 
 """
     struct ProfileData
-        lon_start::Float64
-        lat_start::Float64
-        lon_end::Float64
-        lon_end::Float64
-        VolData::GeoData
+        profile_type::Bool # vertical:true, horizontal:false
+        start_point::Union{Nothing,Tuple{Float64,Float64}}
+        end_point::Union{Nothing,Tuple{Float64,Float64}}
+        depth::Union{Nothing,Float64}
+        VolData::GeophysicalModelGenerator.GeoData
         SurfData::Vector{GeophysicalModelGenerator.GeoData}
         PointData::Vector{GeophysicalModelGenerator.GeoData}
+        ScreenshotData::Union{Nothing,Vector{GeophysicalModelGenerator.GeoData}}
     end
 
     Structure to store cross section data
 """
 mutable struct ProfileData
-    start_point::Tuple{Float64,Float64}
-    end_point::Tuple{Float64,Float64}
-    VolData::GeophysicalModelGenerator.GeoData
-    SurfData::Vector{GeophysicalModelGenerator.GeoData}
-    PointData::Vector{GeophysicalModelGenerator.GeoData}
+    profile_type::Bool # vertical:true, horizontal:false
+    start_point::Union{Nothing,Tuple{Float64,Float64}}
+    end_point::Union{Nothing,Tuple{Float64,Float64}}
+    depth::Union{Nothing,Float64}
+    VolData::Union{Nothing,GeophysicalModelGenerator.GeoData}
+    SurfData::Union{Vector{GeophysicalModelGenerator.GeoData}}
+    PointData::Union{Vector{GeophysicalModelGenerator.GeoData}}
+    ScreenshotData::Union{Nothing,Vector{GeophysicalModelGenerator.GeoData}}
 
     function ProfileData(;kwargs...) # this constructor allows to define only certain fields and leave the others blank
         K = new()
@@ -43,7 +45,62 @@ mutable struct ProfileData
     end
 end
 
-### function to process volume data
+"""
+    struct DataSet
+        Name::Vector{String}
+        Type::Vector{String}
+        Location::Vector{String}
+        GeoData::Vector{GeophysicalModelGenerator.GeoData}
+    end
+
+    Structure to store all datasets
+"""
+mutable struct DataSet
+    Name::Vector{String}
+    Type::Vector{String}
+    Location::Vector{String}
+    GeoData::Vector{GeophysicalModelGenerator.GeoData}
+
+    function DataSet(num_datasets;kwargs...) # this constructor allows to define only certain fields and leave the others blank
+        K = new()
+        Name                = Vector{GeophysicalModelGenerator.GeoData}(undef,num_datasets)
+        Type                = Vector{GeophysicalModelGenerator.GeoData}(undef,num_datasets)
+        Location            = Vector{GeophysicalModelGenerator.GeoData}(undef,num_datasets)
+        tmp                 = Vector{GeophysicalModelGenerator.GeoData}(undef,num_datasets)
+        for (key, value) in kwargs
+                setfield!(K, key, value)
+        end
+        return K
+    end
+end
+
+
+
+### function to load all datasets and put them in a GeoData vector
+function MergeDataSets()
+    # get dataset info
+    datasets    = readdlm(file_datasets,',',skipstart =1); # read information on datasets to be used from text file
+    DataSetName = rstrip.(datasets[:,1]);
+    DataSetFile = rstrip.(datasets[:,2]);
+    DataSetType = rstrip.(datasets[:,3]);
+
+    num_datasets = length(DataSetName)
+
+    # preallocate vector 
+     = Vector{GeophysicalModelGenerator.GeoData}(undef,num_datasets)
+    # loop over all datasets and load them in a single Vector
+    for idata = 1:num_datasets
+        println("processing ",DataSetFile[idata],"...")
+        tmp_load = load(DataSetFile[idata])  # this gives us a dict with a key that is the name if the data set and the values as the GeoData structure
+        tmp_load = collect(values(tmp_load))      # this gives us a vector with a single GeoData entry
+        data_tmp = tmp_load[1]               # and now we extract that entry...
+    end
+
+    return GeoDataVector
+
+end
+
+### function to process volume data --> load datasets from disk
 function CreateProfileVolume!(Profile,DataSetName,DataSetFile,DimsVolCross,DepthVol)
     num_datasets = length(DataSetName)
     fields_vol = NamedTuple()
@@ -59,7 +116,16 @@ function CreateProfileVolume!(Profile,DataSetName,DataSetFile,DimsVolCross,Depth
         tmp_load = load(DataSetFile[idata])  # this gives us a dict with a key that is the name if the data set and the values as the GeoData structure
         tmp_load = collect(values(tmp_load))      # this gives us a vector with a single GeoData entry
         data_tmp = tmp_load[1]               # and now we extract that entry...
-        cross_tmp = CrossSection(data_tmp,dims=DimsVolCross,Start=Profile.start_point,End=Profile.end_point,Depth_extent=DepthVol)        # create the cross section
+        
+        if Profile.profile_type # if this field is true, we create a vertical profile
+            # take a vertical cross section
+            cross_tmp = CrossSection(data_tmp,dims=DimsVolCross,Start=Profile.start_point,End=Profile.end_point,Depth_extent=DepthVol)        # create the cross section
+        else
+            error("horizontal profiles not yet implemented")
+        end
+        
+        # IT MAY BE THAT THE LINES BELOW EQUALLY WORK FOR HORIZONTAL PROFILES, SO THEY ARE NOT IN THE CONDITIONAL LOOP ABOVE
+        # THIS HAS TO BE TESTED THOUGH
 
         # store profile coordinates and field data on first go
         if idata==1
@@ -69,6 +135,7 @@ function CreateProfileVolume!(Profile,DataSetName,DataSetFile,DimsVolCross,Depth
             lat_vol = cross_tmp.lat.val
             depth_vol = cross_tmp.depth.val # this will be in km
             
+            # MERGE FIELDS
             # extract fields
             tmp_fields  = cross_tmp.fields;
             tmp_key     = keys(cross_tmp.fields) # get the key of all the fields
@@ -106,6 +173,83 @@ function CreateProfileVolume!(Profile,DataSetName,DataSetFile,DimsVolCross,Depth
     return
 end
 
+### function to process volume data --> datasets are given as a large vector
+function CreateProfileVolume!(Profile,DataSet,DataSetFile,DimsVolCross,DepthVol)
+    num_datasets = length(DataSet)
+    fields_vol = NamedTuple()
+    local lon_vol
+    local lat_vol
+    local depth_vol
+
+    println("Number of volume datasets ", num_datasets)
+    for idata = 1:num_datasets
+        # load data set --> each data set should have been saved in a single GeoData structure, so we'll only have to get the respective key to load the correct type
+        println("processing ",DataSetFile[idata],"...")
+        
+        tmp_load = load(DataSetFile[idata])  # this gives us a dict with a key that is the name if the data set and the values as the GeoData structure
+        tmp_load = collect(values(tmp_load))      # this gives us a vector with a single GeoData entry
+        data_tmp = tmp_load[1]               # and now we extract that entry...
+        
+        if Profile.profile_type # if this field is true, we create a vertical profile
+            # take a vertical cross section
+            cross_tmp = CrossSection(data_tmp,dims=DimsVolCross,Start=Profile.start_point,End=Profile.end_point,Depth_extent=DepthVol)        # create the cross section
+        else
+            error("horizontal profiles not yet implemented")
+        end
+        
+        # IT MAY BE THAT THE LINES BELOW EQUALLY WORK FOR HORIZONTAL PROFILES, SO THEY ARE NOT IN THE CONDITIONAL LOOP ABOVE
+        # THIS HAS TO BE TESTED THOUGH
+
+        # store profile coordinates and field data on first go
+        if idata==1
+            # get lon,lat and depth
+            # as these are in GeoUnits and our GeoData structure does not take them as input, we need to only take the value
+            lon_vol = cross_tmp.lon.val
+            lat_vol = cross_tmp.lat.val
+            depth_vol = cross_tmp.depth.val # this will be in km
+            
+            # MERGE FIELDS
+            # extract fields
+            tmp_fields  = cross_tmp.fields;
+            tmp_key     = keys(cross_tmp.fields) # get the key of all the fields
+
+            # create a named tuple to store the fields with changed field name
+            fieldname   = DataSetName[idata]*"_"*String(tmp_key[1])
+            fielddata   = cross_tmp.fields[1]
+            fields_vol = NamedTuple{(Symbol(fieldname),)}((fielddata,))
+
+            for ifield = 2:length(tmp_fields) 
+                fieldname   = DataSetName[idata]*"_"*String(tmp_key[ifield])
+                fielddata   = cross_tmp.fields[ifield]
+                new_field   = NamedTuple{(Symbol(fieldname),)}((fielddata,))
+                fields_vol = merge(fields_vol,new_field) # add to the existing NamedTuple
+            end
+        else # only store fields
+            tmp_fields  = cross_tmp.fields;
+            tmp_key     = keys(cross_tmp.fields) # get the key of all the fields
+            for ifield = 1:length(tmp_fields) 
+                fieldname   = DataSetName[idata]*"_"*String(tmp_key[ifield])
+                fielddata   = cross_tmp.fields[ifield]
+                new_field   = NamedTuple{(Symbol(fieldname),)}((fielddata,))
+                fields_vol = merge(fields_vol,new_field) # add to the existing NamedTuple
+            end
+        end
+
+    end
+
+    tmp = GeophysicalModelGenerator.GeoData(lon_vol,lat_vol,depth_vol,fields_vol)
+    # flatten cross section and add this data to the structure
+    x_profile = FlattenCrossSection(tmp,Start=Profile.start_point)
+    tmp = AddField(tmp,"x_profile",x_profile)
+
+    Profile.VolData = tmp # assign to Profile data structure
+    return
+end
+
+
+
+
+
 ### function to process surface data - contrary to the volume data, we here have to save lon/lat/depth pairs for every surface data set, so we create a vector of GeoData data sets
 function CreateProfileSurface!(Profile,DataSetName,DataSetFile,DimsSurfCross)
     num_datasets = length(DataSetName)
@@ -119,12 +263,19 @@ function CreateProfileSurface!(Profile,DataSetName,DataSetFile,DimsSurfCross)
         tmp_load = load(DataSetFile[idata])  # this gives us a dict with a key that is the name if the data set and the values as the GeoData structure
         tmp_load = collect(values(tmp_load))      # this gives us a vector with a single GeoData entry
         data_tmp = tmp_load[1]               # and now we extract that entry...
-        tmp[idata] = CrossSection(data_tmp, dims=DimsSurfCross,Start=Profile.start_point,End=Profile.end_point)        # create the cross section
-        # flatten cross section and add this data to the structure
-        x_profile = FlattenCrossSection(tmp[idata],Start=Profile.start_point)
-        tmp[idata]      = AddField(tmp[idata],"x_profile",x_profile)
-        # add the data set name as an attribute (not required if there is proper metadata, but odds are that there is not)
-        tmp[idata].atts["dataset"] = DataSetName[idata]
+
+        if profile_type # if this field is true, we create a vertical profile
+            # take a vertical cross section
+            tmp[idata] = CrossSection(data_tmp, dims=DimsSurfCross,Start=Profile.start_point,End=Profile.end_point)        # create the cross section
+            # flatten cross section and add this data to the structure
+            x_profile = FlattenCrossSection(tmp[idata],Start=Profile.start_point)
+            tmp[idata]      = AddField(tmp[idata],"x_profile",x_profile)
+            # add the data set name as an attribute (not required if there is proper metadata, but odds are that there is not)
+            tmp[idata].atts["dataset"] = DataSetName[idata]
+        else
+            error("horizontal profiles not yet implemented")
+        end
+
     end
 
     Profile.SurfData = tmp # assign to profile data structure
@@ -195,6 +346,16 @@ end
 
 ### wrapper function to read the profile numbers+coordinates from a text file, the dataset names+locations+types from another text file
 ### once this is done, the different datasets are projected onto the profiles
+
+### currently, the function is quite slow, as we have to reload the entire 3D dataset to create the final dataset
+
+# now, we do it in the following way:
+# load the dataset
+# interpolate the data to each profile
+# go on to the next dataset
+
+# 
+
 function CreateProfileData(file_profiles,file_datasets;Depth_extent=(-300,0),DimsVolCross=(500,300),DimsSurfCross = (100,),WidthPointProfile = 20km)
     # get the number of profiles
     profile_data = readdlm(file_profiles,skipstart=1,',')
@@ -214,7 +375,7 @@ function CreateProfileData(file_profiles,file_datasets;Depth_extent=(-300,0),Dim
         # 2. process the profiles
         ExtractedData = ExtractProfileData(file_profiles,ProfileNumber[iprofile],DataSetName,DataSetFile,DataSetType,DimsVolCross,Depth_extent,DimsSurfCross,WidthPointProfile)
     
-        # 3. save data 
+        # 3. save data as JLD2
         fn = "Profile"*string(ProfileNumber[iprofile])
         jldsave(fn*".jld2";ExtractedData)
     

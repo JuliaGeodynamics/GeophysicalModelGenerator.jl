@@ -1,6 +1,6 @@
 # Profile Processing
 ## Goal
-This tutorial explains how to generate several vertical profiles from different existing data sets. Profile data will be merged onto a single 
+This tutorial explains how to generate a vertical profiles through different existing data sets. Profile data will be merged in a single data structure. There are two 
 
 
 Spada, M., Bianchi, I., Kissling, E., Agostinetti, N.P., Wiemer, S., 2013. *Combining controlled-source seismology and receiver function information to derive 3-D Moho topography for Italy.* Geophysical Journal International 194, 1050–1068. [doi:10.1093/gji/ggt148](https://doi.org/10.1093/gji/ggt148)
@@ -10,8 +10,6 @@ Spada, M., Bianchi, I., Kissling, E., Agostinetti, N.P., Wiemer, S., 2013. *Comb
 
 ## Steps
 #### 1. Download data 
-The data is available as digital dataset on the researchgate page of Prof. Edi Kissling
-[https://www.researchgate.net/publication/322682919_Moho_Map_Data-WesternAlps-SpadaETAL2013](https://www.researchgate.net/publication/322682919_Moho_Map_Data-WesternAlps-SpadaETAL2013)
 
 We have also uploaded it here:
 [https://seafile.rlp.net/d/a50881f45aa34cdeb3c0/](https://seafile.rlp.net/d/a50881f45aa34cdeb3c0/)
@@ -21,24 +19,24 @@ The full data set actually includes 3 different Moho's (Europe, Adria, Tyrrhenia
 Please download the files `Moho_Map_Data-WesternAlps-SpadaETAL2013_Moho1.txt`, `Moho_Map_Data-WesternAlps-SpadaETAL2013_Moho2.txt` and `Moho_Map_Data-WesternAlps-SpadaETAL2013_Moho3.txt`
 
 
-#### Process all profiles
 
 
-### wrapper function to read the profile numbers+coordinates from a text file, the dataset names+locations+types from another text file
-### once this is done, the different datasets are projected onto the profiles
+
+#### Process a given profile
+To extract all the data from a single profile, you first have to 
+
+
+If you not only want to process a single profile, it is ad
 
 ```julia
 julia> file_profiles = "profiles_text.txt";
 julia> file_datasets = "datasets_test.txt";
 julia> profile_data  = readdlm(file_profiles,skipstart=1,',') # import the text file with the profile information
 julia> ProfileNumber  = convert.(Int,profile_data[:,1]);  # get the number of profiles
-
 julia> datasets = readdlm(file_datasets,',',skipstart =1); # read information on datasets to be used from text file
-
 julia> DataSetName = rstrip.(datasets[:,1]);
 julia> DataSetFile = rstrip.(datasets[:,2]);
 julia> DataSetType = rstrip.(datasets[:,3]);
-
 julia> for iprofile = 1:length(ProfileNumber)
 julia> ExtractedData = ExtractProfileData(file_profiles,ProfileNumber[iprofile],DataSetName,DataSetFile,DataSetType,DimsVolCross,Depth_extent,DimsSurfCross,WidthPointProfile); # process the profiles
 julia> fn = "Profile"*string(ProfileNumber[iprofile]) # define filename for saving
