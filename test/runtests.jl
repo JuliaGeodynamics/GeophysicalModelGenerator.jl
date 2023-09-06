@@ -32,6 +32,11 @@ end
     include("test_stl.jl")
 end
 
+@testset "IO" begin
+    include("test_IO.jl")
+end
+
+
 # Cleanup 
 foreach(rm, filter(endswith(".vts"), readdir()))
 foreach(rm, filter(endswith(".vtu"), readdir()))

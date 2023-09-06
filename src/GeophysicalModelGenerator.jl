@@ -42,6 +42,8 @@ include("voxel_gravity.jl")
 include("LaMEM_io.jl")
 include("Setup_geometry.jl")
 include("stl.jl")
+include("ProfileProcessing.jl")
+include("IO.jl")
 
 # Add optional routines (only activated when the packages are loaded)
 function __init__()
@@ -52,11 +54,6 @@ function __init__()
         @require GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a" begin
                 println("Loading GLMakie plotting routines within GMG")
                 @eval include("./Visualisation.jl")
-        end
-
-        @require JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819" begin
-                println("Loading profile processing routines")
-                @eval include("ProfileProcessing.jl")
         end
 end
 
