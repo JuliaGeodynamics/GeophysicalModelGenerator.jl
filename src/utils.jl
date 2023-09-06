@@ -6,7 +6,7 @@ export InterpolateDataOnSurface, InterpolateDataFields2D, InterpolateDataFields
 export RotateTranslateScale
 export DrapeOnTopo, LithostaticPressure!
 export FlattenCrossSection
-export AddField
+export AddField, RemoveField
 
 using NearestNeighbors
 
@@ -27,11 +27,13 @@ function meshgrid(vx::AbstractVector{T}, vy::AbstractVector{T},
     oo = ones(Int, o)
     (vx[om, :, oo], vy[:, on, oo], vz[om, on, :])
 end
+
 """
+    V = AddField(V::AbstractGeneralGrid,field_name::String,data::Any)
+
 Add Fields Data to GeoData or CartData 
 
 """
-
 function AddField(V::AbstractGeneralGrid,field_name::String,data::Any)
     fields_new  = V.fields;     new_field   =   NamedTuple{(Symbol(field_name),)}((data,));
     fields_new  =   merge(fields_new, new_field); # replace the field in fields_new 
@@ -41,10 +43,40 @@ function AddField(V::AbstractGeneralGrid,field_name::String,data::Any)
     elseif isa(V,CartData)
         V = CartData(V.x.val,V.y.val,V.z.val,fields_new)
     else
-        error("AddField is only implemented for GeoData and CartData")
-    end      
-        return V 
+        error("AddField is only implemented for GeoData and CartData structures")
     end
+    
+    return V 
+end
+
+# this function is taken from @JeffreySarnoff  
+function dropnames(namedtuple::NamedTuple, names::Tuple{Vararg{Symbol}}) 
+    keepnames = Base.diff_names(Base._nt_names(namedtuple), names)
+   return NamedTuple{keepnames}(namedtuple)
+end
+
+"""
+    V = RemoveField(V::AbstractGeneralGrid,field_name::String)
+
+Removes the field with name `field_name` from the GeoData or CartData dataset
+
+"""
+function RemoveField(V::AbstractGeneralGrid,field_name::String)
+    fields_new  = V.fields;    
+    fields_new  = dropnames(fields_new, (Symbol(field_name),))
+    
+    if isa(V,GeoData) 
+        V = GeoData(V.lon.val,V.lat.val,V.depth.val,fields_new)
+    elseif isa(V,CartData)
+        V = CartData(V.x.val,V.y.val,V.z.val,fields_new)
+    else
+        error("RemoveField is only implemented for GeoData and CartData structures")
+    end
+    
+    return V 
+end
+
+
 
 """ 
 CrossSectionVolume(Volume::GeoData; dims=(100,100), Interpolate=false, Depth_level=nothing; Lat_level=nothing; Lon_level=nothing; Start=nothing, End=nothing, Depth_extent=nothing )
@@ -160,7 +192,7 @@ function CrossSectionVolume(V::AbstractGeneralGrid; dims=(100,100), Interpolate=
 
     if Interpolate
         # Interpolate data on profile
-        DataProfile = InterpolateDataFields(V, Lon, Lat, Depth);    
+        DataProfile = InterpolateDataFields(V, Lon, Lat, NumValue(Depth));    
     else
         # extract data (no interpolation)
         DataProfile = ExtractDataSets(V, iLon, iLat, iDepth);
@@ -441,7 +473,7 @@ function CrossSectionPoints(P::GeoData; Depth_level=nothing, Lat_level=nothing, 
 end
 
 """
-    CrossSection(DataSet::GeoData; dims=(100,100), Interpolate=false, Depth_level=nothing; Lat_level=nothing; Lon_level=nothing; Start=nothing, End=nothing )
+    CrossSection(DataSet::AbstractGeneralGrid; dims=(100,100), Interpolate=false, Depth_level=nothing, Lat_level=nothing, Lon_level=nothing, Start=nothing, End=nothing, Depth_extent=nothing, section_width=50km)
 
 Creates a cross-section through a `GeoData` object. 
 
@@ -452,7 +484,7 @@ Creates a cross-section through a `GeoData` object.
 2. Surface data: surface data will be interpolated or directly extracted from the data set
 3. Point data: data will be projected to the chosen profile. Only data within a chosen distance (default is 50 km) will be used
 
-- `Interpolate` indicates whether we want to simply extract the data from the data set (default) or whether we want to linearly interpolate it on a new grid, which has dimensions as specified in `dims` NOTE: THIS ONLY APPLIES TO VOLUMETRIC aND SURFACE DATA SETS
+- `Interpolate` indicates whether we want to simply extract the data from the data set (default) or whether we want to linearly interpolate it on a new grid, which has dimensions as specified in `dims` NOTE: THIS ONLY APPLIES TO VOLUMETRIC AND SURFACE DATA SETS
 - 'section_width' indicates the maximal distance within which point data will be projected to the profile
 
 # Example:
@@ -710,9 +742,9 @@ function InterpolateDataFields(V::AbstractGeneralGrid, Lon, Lat, Depth)
 
     X,Y,Z = coordinate_grids(V)
 
-    Lon_vec     =  X[:,1,1];
-    Lat_vec     =  Y[1,:,1];
-    Depth_vec   =  Z[1,1,:];
+    Lon_vec     =  NumValue(X[:,1,1]);
+    Lat_vec     =  NumValue(Y[1,:,1]);
+    Depth_vec   =  NumValue(Z[1,1,:]);
     if Depth_vec[1]>Depth_vec[end]
         ReverseData = true
     else
@@ -747,7 +779,7 @@ function InterpolateDataFields(V::AbstractGeneralGrid, Lon, Lat, Depth)
             else
                 interpol    =   linear_interpolation((Lon_vec, Lat_vec, Depth_vec), V.fields[i], extrapolation_bc = NaN);            # create interpolation object
             end
-            data_new    =   interpol.(Lon, Lat, ustrip.(Depth));                                                 # interpolate data field
+            data_new    =   interpol.(Lon, Lat, NumValue(Depth));                                                 # interpolate data field
         end
         
         # replace the one 

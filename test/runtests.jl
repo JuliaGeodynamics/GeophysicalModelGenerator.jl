@@ -36,6 +36,11 @@ end
     include("test_IO.jl")
 end
 
+@testset "ProfileProcessing" begin
+    include("test_IO.jl")
+end
+
+
 
 # Cleanup 
 foreach(rm, filter(endswith(".vts"), readdir()))

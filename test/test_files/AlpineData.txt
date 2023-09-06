@@ -1,0 +1,24 @@
+Name,Location,Type, [Active]
+AlpArray,./Seismicity/ALPARRAY/AlpArraySeis.jld2,Point,true
+INGV,./Seismicity/CLASS/class_seis_alps.jld2,Point
+ISC,./Seismicity/ISC/isc_seis_alps.jld2,Point
+EUCrust07,./Moho/EUCrust07/EUCrust07_Moho.jld2,Surface
+GradEtAl2007,./Moho/GradEtAl2007/Grad07_EU.jld2,Surface
+SpadaEtAl2013_EU,./Moho/SpadaEtAl2013/Spada_Moho_Europe_Grid.jld2,Surface
+SpadaEtAl2013_AD,./Moho/SpadaEtAl2013/Spada_Moho_Adria_Grid.jld2,Surface
+SpadaEtAl2013_TY,./Moho/SpadaEtAl2013/Spada_Moho_Tyrrhenia_Grid.jld2,Surface
+MroczekEtAl2022_EU,./Moho/Mroczek2022/Mrozek_Moho_Grid_EU.jld2,Surface
+MroczekEtAl2022_PA,./Moho/Mroczek2022/Mrozek_Moho_Grid_PA.jld2,Surface
+MroczekEtAl2022_AD,./Moho/Mroczek2022/Mrozek_Moho_Grid_AD.jld2,Surface
+Hua2017,./Vp/Hua2017/Hua2017.jld2,Volume
+Lippitsch2003,./Vp/Lippitsch2003/Lippitsch2003_gridded.jld2,Volume
+Paffrath2021,./Vp/Paffrath2021/Paffrath2021.jld2,Volume
+Mitterbauer2011,./Vp/Mitterbauer2011/Mitterbauer2011.jld2,Volume
+Piromallo2003,./Vp/Piromallo2003/Piromallo2003.jld2,Volume
+Plomerova2022,./Vp/Plomerova2022/Plomerova2022.jld2,Volume
+Zhao2016,./Vp/Zhao2016/Zhao_Pwave.jld2,Volume
+Zhu2015,./Vp/Zhu2015/Zhu2015.jld2,Volume
+Kaestle2018,./Vs/Kaestle/Kaestle2018.jld2,Volume
+Koulakov2015,./Vs/Koulakov2009/Koulakov_Europe.jld2,Volume 
+ElSharkawy2020,./Vs/ElSharkawy2020/MeRe_ElSharkawy.jld2,Volume 
+CSEM,./Vs/CSEM_FullWaveformInversion/Fichtner_CSEM.jld2,Volume 
