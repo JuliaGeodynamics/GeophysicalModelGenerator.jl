@@ -53,11 +53,47 @@ VolData_combined3 = combine_VolData(VolData, lon=(1,22), lat=(40,52), dims=(50,5
 # Define horizonal & vertical profiles
 prof1 = ProfileData(start_lonlat=(5,45), end_lonlat=(15,49))
 prof2 = ProfileData(depth = -100)
+prof3 = ProfileData(start_lonlat=(5,45), end_lonlat=(5,49))
+prof4 = ProfileData(depth = -20)
 
-
-# test internal routines 2 intersect profile with volumetric data
+# test internal routines to intersect profile with volumetric data:
 GeophysicalModelGenerator.CreateProfileVolume!(prof1, VolData_combined1)
 @test prof1.VolData.fields.Hua2017_Vp[30,40] ≈ 9.141520976523731
 
 GeophysicalModelGenerator.CreateProfileVolume!(prof2, VolData_combined1)
 @test prof2.VolData.fields.Hua2017_Vp[30,40] ≈ 8.177263544536272
+
+GeophysicalModelGenerator.CreateProfileVolume!(prof1, VolData_combined1,  Depth_extent=(-300, -100))
+@test extrema(prof1.VolData.depth.val) == (-300.0, -100.0)
+
+# Intersect surface data:
+GeophysicalModelGenerator.CreateProfileSurface!(prof1,SurfData)
+@test prof1.SurfData[1].fields.MohoDepth[80] ≈ -37.58791461075397km
+
+# dito with EQ data:
+GeophysicalModelGenerator.CreateProfilePoint!(prof1,PointData, section_width=5km)
+GeophysicalModelGenerator.CreateProfilePoint!(prof4,PointData, section_width=10km)
+@test  length(prof1.PointData[1].lon) == 13
+@test  length(prof4.PointData[1].lon) == 445
+
+
+# Test the main profile extraction routines:
+ExtractProfileData!(prof1, VolData_combined1, SurfData, PointData)
+ExtractProfileData!(prof2, VolData_combined1, SurfData, PointData)
+ExtractProfileData!(prof3, VolData_combined1, SurfData, PointData)
+ExtractProfileData!(prof4, VolData_combined1, SurfData, PointData)
+
+ExtractProfileData!(prof1, VolData_combined2, SurfData, PointData)
+ExtractProfileData!(prof2, VolData_combined2, SurfData, PointData)
+ExtractProfileData!(prof3, VolData_combined2, SurfData, PointData)
+ExtractProfileData!(prof4, VolData_combined2, SurfData, PointData)
+
+ExtractProfileData!(prof1, VolData_combined3, SurfData, PointData)
+ExtractProfileData!(prof2, VolData_combined3, SurfData, PointData)
+ExtractProfileData!(prof3, VolData_combined3, SurfData, PointData)
+ExtractProfileData!(prof4, VolData_combined3, SurfData, PointData)
+
+@test prof1.SurfData[1].fields[1][80] ≈ -37.58791461075397km
+@test isempty(prof2.SurfData)
+@test isnan(prof3.SurfData[1].fields[1][80])
+@test isempty(prof4.SurfData)
