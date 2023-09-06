@@ -45,6 +45,9 @@ mutable struct ProfileData
     end
 end
 
+
+##### THE STRUCUTRE BELOW MAY BE REPLACED WITH E.G. THE NAMED TUPLE THAT IS USED IN 
+
 """
     struct DataSet
         Name::Vector{String}
@@ -55,7 +58,7 @@ end
 
     Structure to store all datasets
 """
-mutable struct DataSet
+mutable struct GeoDataSet
     Name::Vector{String}
     Type::Vector{String}
     Location::Vector{String}
@@ -86,17 +89,19 @@ function MergeDataSets()
 
     num_datasets = length(DataSetName)
 
-    # preallocate vector 
-     = Vector{GeophysicalModelGenerator.GeoData}(undef,num_datasets)
+    # preallocate data set
+    DataSet = GeoDataSet ## DEFINE A CONSTRUCTOR FIRST ABOVE!!!
     # loop over all datasets and load them in a single Vector
     for idata = 1:num_datasets
         println("processing ",DataSetFile[idata],"...")
         tmp_load = load(DataSetFile[idata])  # this gives us a dict with a key that is the name if the data set and the values as the GeoData structure
         tmp_load = collect(values(tmp_load))      # this gives us a vector with a single GeoData entry
         data_tmp = tmp_load[1]               # and now we extract that entry...
+
+        ### PUT THE DATA SET IN THE GLOBAL DATA SET STRUCTURE
     end
 
-    return GeoDataVector
+    return DataSet
 
 end
 
@@ -173,7 +178,7 @@ function CreateProfileVolume!(Profile,DataSetName,DataSetFile,DimsVolCross,Depth
     return
 end
 
-### function to process volume data --> datasets are given as a large vector
+### function to process volume data --> datasets are given as GeoDataSet
 function CreateProfileVolume!(Profile,DataSet,DataSetFile,DimsVolCross,DepthVol)
     num_datasets = length(DataSet)
     fields_vol = NamedTuple()
@@ -245,10 +250,6 @@ function CreateProfileVolume!(Profile,DataSet,DataSetFile,DimsVolCross,DepthVol)
     Profile.VolData = tmp # assign to Profile data structure
     return
 end
-
-
-
-
 
 ### function to process surface data - contrary to the volume data, we here have to save lon/lat/depth pairs for every surface data set, so we create a vector of GeoData data sets
 function CreateProfileSurface!(Profile,DataSetName,DataSetFile,DimsSurfCross)
@@ -347,14 +348,8 @@ end
 ### wrapper function to read the profile numbers+coordinates from a text file, the dataset names+locations+types from another text file
 ### once this is done, the different datasets are projected onto the profiles
 
-### currently, the function is quite slow, as we have to reload the entire 3D dataset to create the final dataset
-
-# now, we do it in the following way:
-# load the dataset
-# interpolate the data to each profile
-# go on to the next dataset
-
-# 
+### currently, the function is quite slow, as the different data sets are reloaded for each profile. 
+### a faster way would be to load one data set and create the profiles from it and then move on to the next one. However, this would require to hold all the profile data in memory, which may be a bit much...
 
 function CreateProfileData(file_profiles,file_datasets;Depth_extent=(-300,0),DimsVolCross=(500,300),DimsSurfCross = (100,),WidthPointProfile = 20km)
     # get the number of profiles
