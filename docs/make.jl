@@ -40,7 +40,7 @@ makedocs(;
             "Tools" => "man/tools.md",
             "Visualisation" => "man/visualise.md",
             "Gravity code" => "man/gravity_code.md",
-            "LaMEM" => "man/lamem.md"
+            "LaMEM" => "man/lamem.md",
             "Profile Processing" => "man/profile_processing.md"
         ],
         "List of functions"  => "man/listfunctions.md"
