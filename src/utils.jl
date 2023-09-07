@@ -6,7 +6,7 @@ export InterpolateDataOnSurface, InterpolateDataFields2D, InterpolateDataFields
 export RotateTranslateScale
 export DrapeOnTopo, LithostaticPressure!
 export FlattenCrossSection
-export AddField
+export AddField, RemoveField
 
 using NearestNeighbors
 
@@ -27,11 +27,13 @@ function meshgrid(vx::AbstractVector{T}, vy::AbstractVector{T},
     oo = ones(Int, o)
     (vx[om, :, oo], vy[:, on, oo], vz[om, on, :])
 end
+
 """
+    V = AddField(V::AbstractGeneralGrid,field_name::String,data::Any)
+
 Add Fields Data to GeoData or CartData 
 
 """
-
 function AddField(V::AbstractGeneralGrid,field_name::String,data::Any)
     fields_new  = V.fields;     new_field   =   NamedTuple{(Symbol(field_name),)}((data,));
     fields_new  =   merge(fields_new, new_field); # replace the field in fields_new 
@@ -41,10 +43,40 @@ function AddField(V::AbstractGeneralGrid,field_name::String,data::Any)
     elseif isa(V,CartData)
         V = CartData(V.x.val,V.y.val,V.z.val,fields_new)
     else
-        error("AddField is only implemented for GeoData and CartData")
-    end      
-        return V 
+        error("AddField is only implemented for GeoData and CartData structures")
     end
+    
+    return V 
+end
+
+# this function is taken from @JeffreySarnoff  
+function dropnames(namedtuple::NamedTuple, names::Tuple{Vararg{Symbol}}) 
+    keepnames = Base.diff_names(Base._nt_names(namedtuple), names)
+   return NamedTuple{keepnames}(namedtuple)
+end
+
+"""
+    V = RemoveField(V::AbstractGeneralGrid,field_name::String)
+
+Removes the field with name `field_name` from the GeoData or CartData dataset
+
+"""
+function RemoveField(V::AbstractGeneralGrid,field_name::String)
+    fields_new  = V.fields;    
+    fields_new  = dropnames(fields_new, (Symbol(field_name),))
+    
+    if isa(V,GeoData) 
+        V = GeoData(V.lon.val,V.lat.val,V.depth.val,fields_new)
+    elseif isa(V,CartData)
+        V = CartData(V.x.val,V.y.val,V.z.val,fields_new)
+    else
+        error("RemoveField is only implemented for GeoData and CartData structures")
+    end
+    
+    return V 
+end
+
+
 
 """ 
 CrossSectionVolume(Volume::GeoData; dims=(100,100), Interpolate=false, Depth_level=nothing; Lat_level=nothing; Lon_level=nothing; Start=nothing, End=nothing, Depth_extent=nothing )
@@ -55,6 +87,7 @@ Creates a cross-section through a volumetric (3D) `GeoData` object.
 - They can also be vertical, either by specifying `Lon_level` or `Lat_level` (for a fixed lon/lat), or by defining both `Start=(lon,lat)` & `End=(lon,lat)` points.
 - When both `Start=(lon,lat)` & `End=(lon,lat)` are given, one can also provide a the depth extent of the profile by providing Depth_extent=(depth_min,depth_max)
 - `Interpolate` indicates whether we want to simply extract the data from the 3D volume (default) or whether we want to linearly interpolate it on a new grid, which has dimensions as specified in `dims`
+- `Depth_extent` is an optional parameter that can indicate the depth extent over which you want to interpolate the vertical cross-section. Default is the full vertical extent of the 3D dataset
 
 # Example:
 ```julia-repl
@@ -92,7 +125,7 @@ function CrossSectionVolume(V::AbstractGeneralGrid; dims=(100,100), Interpolate=
                                                 LinRange(minimum(Y), maximum(Y), dims[2]),
                                                 Depth_level)
         else
-            ind_z   =   argmin(abs.(NumValue(Z[1,1,:]) .- Depth_level.val))
+            ind_z   =   argmin(abs.(NumValue(Z[1,1,:]) .- ustrip(Depth_level)))
             iDepth  =   ind_z:ind_z;
             iLon    =   1:size(NumValue(X),1);
             iLat    =   1:size(NumValue(Y),2);
@@ -136,6 +169,11 @@ function CrossSectionVolume(V::AbstractGeneralGrid; dims=(100,100), Interpolate=
 
         # if the depth extent is given, modify the Z values to take this into account
         if !isnothing(Depth_extent)
+            if length(Depth_extent) != 2
+                error("Depth_extent should have length 2")
+            end
+        end
+        if !isnothing(Depth_extent)
             Z = [Depth_extent[1] Depth_extent[2]];
         end
 
@@ -160,7 +198,7 @@ function CrossSectionVolume(V::AbstractGeneralGrid; dims=(100,100), Interpolate=
 
     if Interpolate
         # Interpolate data on profile
-        DataProfile = InterpolateDataFields(V, Lon, Lat, Depth);    
+        DataProfile = InterpolateDataFields(V, Lon, Lat, NumValue(Depth));    
     else
         # extract data (no interpolation)
         DataProfile = ExtractDataSets(V, iLon, iLat, iDepth);
@@ -189,14 +227,13 @@ julia> Vx,Vy,Vz        =   ustrip(Data*3),ustrip(Data*4),ustrip(Data*5);
 julia> Data_set2D      =   GeoData(Lon,Lat,Depth,(Depth=Depth,)); 
 julia> Data_cross      =   CrossSectionSurface(Data_set2D, Lat_level =15)  
 GeoData 
-  size  : (11, 11, 1)
-  lon   ϵ [ 10.0 : 20.0]
-  lat   ϵ [ 30.0 : 40.0]
-  depth ϵ [ -100.0 km : -100.0 km]
-  fields: (:Depthdata, :LonData, :Velocity)
+  size      : (100,)
+  lon       ϵ [ 10.0 : 20.0]
+  lat       ϵ [ 15.0 : 15.0]
+  depth     ϵ [ NaN : NaN]
+  fields    : (:Depth,)
+  attributes: ["note"]
 ```
-
-
 
 """
 function CrossSectionSurface(S::AbstractGeneralGrid; dims=(100,), Interpolate=true, Depth_level=nothing, Lat_level=nothing, Lon_level=nothing, Start=nothing, End=nothing )
@@ -240,7 +277,7 @@ function CrossSectionSurface(S::AbstractGeneralGrid; dims=(100,), Interpolate=tr
 
     # now interpolate the depth information of the surface to the profile in question
     interpol    =   linear_interpolation((Lon_vec, Lat_vec), Z[:,:,1],extrapolation_bc=NaN);  # create interpolation object, fill with NaNs if outside
-    depth_intp   =   interpol.(Lon, Lat)*km
+    depth_intp   =  interpol.(Lon, Lat)*km
 
     # also interpolate any other data that is stored in the GeoData structure on the profile
     fields_new  = S.fields;
@@ -291,17 +328,16 @@ function CrossSectionPoints(P::GeoData; Depth_level=nothing, Lat_level=nothing, 
     end
 
     if !isnothing(Depth_level) 
-        ind = findall(-0.5*section_width .< (P.depth - Depth_level) .< 0.5*section_width) # find all points around the desired depth level, both units shoud be in km, so no unit transformation required
+        ind = findall(-0.5*ustrip(section_width) .< (NumValue(P.depth) .- ustrip(Depth_level)) .< 0.5*ustrip(section_width)) # find all points around the desired depth level, both units shoud be in km, so no unit transformation required
 
         # create temporary variables
-        lon_tmp     = P.lon.val[ind]*P.lon.unit
-        lat_tmp     = P.lat.val[ind]*P.lat.unit
-        depth_tmp   = P.depth.val[ind]*P.depth.unit
+        lon_tmp     = NumValue(P.lon.val[ind])
+        lat_tmp     = NumValue(P.lat.val[ind])
+        depth_tmp   = NumValue(P.depth.val[ind])
         depth_proj  = ones(size(depth_tmp))*Depth_level
 
         # create fields that will be stored additionally on the GeoData structure
         field_tmp = (depth_proj=depth_proj,lat_proj=lat_tmp,lon_proj=lon_tmp) # these are the projected points
-
     end
 
     if !isnothing(Lat_level)   # vertical slice @ given latitude
@@ -311,9 +347,9 @@ function CrossSectionPoints(P::GeoData; Depth_level=nothing, Lat_level=nothing, 
         ind     = findall(-0.5*ustrip(uconvert(u"m",section_width)) .< (P_UTM.NS.val .- p_Point.NS) .< 0.5*ustrip(uconvert(u"m",section_width))) # find all points around the desired latitude level, UTM is in m, so we have to convert the section width
 
         # create temporary variables
-        lon_tmp     = P.lon.val[ind]*P.lon.unit
-        lat_tmp     = P.lat.val[ind]*P.lat.unit
-        depth_tmp   = P.depth.val[ind]*P.depth.unit
+        lon_tmp     = NumValue(P.lon.val[ind])
+        lat_tmp     = NumValue(P.lat.val[ind])
+        depth_tmp   = NumValue(P.depth.val[ind])
         lat_proj    = ones(size(depth_tmp))*Lat_level
 
         # data to be stored on the new GeoData structure
@@ -327,9 +363,9 @@ function CrossSectionPoints(P::GeoData; Depth_level=nothing, Lat_level=nothing, 
         ind     = findall(-0.5*ustrip(uconvert(u"m",section_width)) .< (P_UTM.EW.val .- p_Point.EW) .< 0.5*ustrip(uconvert(u"m",section_width))) # find all points around the desired longitude level, UTM is in m, so we have to convert the section width
 
         # create temporary variables
-        lon_tmp     = P.lon.val[ind]*P.lon.unit
-        lat_tmp     = P.lat.val[ind]*P.lat.unit
-        depth_tmp   = P.depth.val[ind]*P.depth.unit
+        lon_tmp     = NumValue(P.lon.val[ind])
+        lat_tmp     = NumValue(P.lat.val[ind])
+        depth_tmp   = NumValue(P.depth.val[ind])
         lon_proj    = ones(size(depth_tmp))*Lon_level
 
         # create fields that will be stored on the GeoData structure
@@ -434,14 +470,19 @@ function CrossSectionPoints(P::GeoData; Depth_level=nothing, Lat_level=nothing, 
     fields_new = merge(fields_new,field_tmp);
 
     # create a GeoData structure to return
-    Data_profile = GeoData(P.lon.val[ind],P.lat.val[ind],P.depth.val[ind],(fields_new))
+    if length(ind)>0
+        Data_profile = GeoData(P.lon.val[ind],P.lat.val[ind],P.depth.val[ind],(fields_new))
+    else
+        Data_profile = nothing
+    end
+
 
 
     return Data_profile
 end
 
 """
-    CrossSection(DataSet::GeoData; dims=(100,100), Interpolate=false, Depth_level=nothing; Lat_level=nothing; Lon_level=nothing; Start=nothing, End=nothing )
+    CrossSection(DataSet::AbstractGeneralGrid; dims=(100,100), Interpolate=false, Depth_level=nothing, Lat_level=nothing, Lon_level=nothing, Start=nothing, End=nothing, Depth_extent=nothing, section_width=50km)
 
 Creates a cross-section through a `GeoData` object. 
 
@@ -452,7 +493,7 @@ Creates a cross-section through a `GeoData` object.
 2. Surface data: surface data will be interpolated or directly extracted from the data set
 3. Point data: data will be projected to the chosen profile. Only data within a chosen distance (default is 50 km) will be used
 
-- `Interpolate` indicates whether we want to simply extract the data from the data set (default) or whether we want to linearly interpolate it on a new grid, which has dimensions as specified in `dims` NOTE: THIS ONLY APPLIES TO VOLUMETRIC aND SURFACE DATA SETS
+- `Interpolate` indicates whether we want to simply extract the data from the data set (default) or whether we want to linearly interpolate it on a new grid, which has dimensions as specified in `dims` NOTE: THIS ONLY APPLIES TO VOLUMETRIC AND SURFACE DATA SETS
 - 'section_width' indicates the maximal distance within which point data will be projected to the profile
 
 # Example:
@@ -494,7 +535,7 @@ Takes a diagonal 3D CrossSection and flattens it to be converted to a 2D Grid by
 ```julia
 Grid                    = CreateCartGrid(size=(100,100,100), x=(0.0km, 99.9km), y=(-10.0km, 20.0km), z=(-40km,4km));
 X,Y,Z                   = XYZGrid(Grid.coord1D...);
-DataSet                = CartData(X,Y,Z,(Depthdata=Z,));
+DataSet                 = CartData(X,Y,Z,(Depthdata=Z,));
 
 Data_Cross              = CrossSection(DataSet, dims=(100,100), Interpolate=true, Start=(ustrip(Grid.min[1]),ustrip(Grid.max[2])), End=(ustrip(Grid.max[1]), ustrip(Grid.min[2])))
 
@@ -710,8 +751,8 @@ function InterpolateDataFields(V::AbstractGeneralGrid, Lon, Lat, Depth)
 
     X,Y,Z = coordinate_grids(V)
 
-    Lon_vec     =  X[:,1,1];
-    Lat_vec     =  Y[1,:,1];
+    Lon_vec     =  NumValue(X[:,1,1]);
+    Lat_vec     =  NumValue(Y[1,:,1]);
     Depth_vec   =  Z[1,1,:];
     if Depth_vec[1]>Depth_vec[end]
         ReverseData = true

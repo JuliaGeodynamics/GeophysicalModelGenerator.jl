@@ -1,7 +1,6 @@
 # List of all functions
 
-This page details the some of the guidelines that should be followed when contributing to this package.
-
+Here an overview of all functions:
 ```@index
 ```
 

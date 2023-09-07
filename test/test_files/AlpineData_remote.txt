@@ -1,0 +1,5 @@
+Name,Location,Type, [Active]
+Mrozek_Moho_Grid_EU,https://seafile.rlp.net/f/483d9c7c808a4087ba9e/?dl=1,Surface,true
+AlpArraySeis,https://seafile.rlp.net/f/87d565882eda40689666/?dl=1,Point,true
+Hua2017,https://seafile.rlp.net/f/1fb68b74e5d742d39e62/?dl=1,Volume,true
+Plomerova2022,https://seafile.rlp.net/f/abccb8d3302b4ef5af17/?dl=1,Volume,true
