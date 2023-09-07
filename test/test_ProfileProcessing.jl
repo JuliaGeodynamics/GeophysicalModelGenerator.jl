@@ -37,17 +37,17 @@ Datasets_temp = Load_Dataset_file("test_files/AlpineData.txt")
 @test Datasets_temp[2].DirName == GMG_Dataset("INGV","Point","./Seismicity/CLASS/class_seis_alps.jld2", true).DirName
 
 # Load data of all Datasets & split them in type of data
-DataVol, DataSurf, DataPoint, DataScreenshot, DataTopo = load_GMG(Datasets)
-@test keys(DataVol) == (:Hua2017, :Plomerova2022)
+Data = load_GMG(Datasets)
+@test keys(Data.Volume) == (:Hua2017, :Plomerova2022)
 
 # Combine volumetric datasets into one
-VolData_combined1 = combine_VolData(VolData)
+VolData_combined1 = combine_VolData(Data.Volume)
 @test keys(VolData_combined1.fields) == (:Hua2017_Vp, :Hua2017_dVp_perc, :Plomerova2022_Vp, :Plomerova2022_dVp)
 
-VolData_combined2 = combine_VolData(VolData, dims=(50,51,52))
+VolData_combined2 = combine_VolData(Data.Volume, dims=(50,51,52))
 @test VolData_combined2.fields.Hua2017_Vp[1000] ≈ 10.6904
 
-VolData_combined3 = combine_VolData(VolData, lon=(1,22), lat=(40,52), dims=(50,51,52))
+VolData_combined3 = combine_VolData(Data.Volume, lon=(1,22), lat=(40,52), dims=(50,51,52))
 @test isnan(VolData_combined3.fields.Hua2017_Vp[1000])
 
 # Define horizonal & vertical profiles
@@ -67,35 +67,35 @@ GeophysicalModelGenerator.CreateProfileVolume!(prof1, VolData_combined1,  Depth_
 @test extrema(prof1.VolData.depth.val) == (-300.0, -100.0)
 
 # Intersect surface data:
-GeophysicalModelGenerator.CreateProfileSurface!(prof1,SurfData)
+GeophysicalModelGenerator.CreateProfileSurface!(prof1,Data.Surface)
 @test prof1.SurfData[1].fields.MohoDepth[80] ≈ -37.58791461075397km
 
 # dito with EQ data:
-GeophysicalModelGenerator.CreateProfilePoint!(prof1,PointData, section_width=5km)
-GeophysicalModelGenerator.CreateProfilePoint!(prof4,PointData, section_width=10km)
+GeophysicalModelGenerator.CreateProfilePoint!(prof1,Data.Point, section_width=5km)
+GeophysicalModelGenerator.CreateProfilePoint!(prof4,Data.Point, section_width=10km)
 @test  length(prof1.PointData[1].lon) == 13
 @test  length(prof4.PointData[1].lon) == 445
 
 
 # Test the main profile extraction routines:
-ExtractProfileData!(prof1, VolData_combined1, SurfData, PointData)
-ExtractProfileData!(prof2, VolData_combined1, SurfData, PointData)
-ExtractProfileData!(prof3, VolData_combined1, SurfData, PointData)
-ExtractProfileData!(prof4, VolData_combined1, SurfData, PointData)
+ExtractProfileData!(prof1, VolData_combined1, Data.Surface, Data.Point)
+ExtractProfileData!(prof2, VolData_combined1, Data.Surface, Data.Point)
+ExtractProfileData!(prof3, VolData_combined1, Data.Surface, Data.Point)
+ExtractProfileData!(prof4, VolData_combined1, Data.Surface, Data.Point)
 
-ExtractProfileData!(prof1, VolData_combined2, SurfData, PointData)
-ExtractProfileData!(prof2, VolData_combined2, SurfData, PointData)
-ExtractProfileData!(prof3, VolData_combined2, SurfData, PointData)
-ExtractProfileData!(prof4, VolData_combined2, SurfData, PointData)
+ExtractProfileData!(prof1, VolData_combined2, Data.Surface, Data.Point)
+ExtractProfileData!(prof2, VolData_combined2, Data.Surface, Data.Point)
+ExtractProfileData!(prof3, VolData_combined2, Data.Surface, Data.Point)
+ExtractProfileData!(prof4, VolData_combined2, Data.Surface, Data.Point)
 
-ExtractProfileData!(prof1, VolData_combined3, SurfData, PointData)
-ExtractProfileData!(prof2, VolData_combined3, SurfData, PointData)
-ExtractProfileData!(prof3, VolData_combined3, SurfData, PointData)
-ExtractProfileData!(prof4, VolData_combined3, SurfData, PointData)
+ExtractProfileData!(prof1, VolData_combined3, Data.Surface, Data.Point)
+ExtractProfileData!(prof2, VolData_combined3, Data.Surface, Data.Point)
+ExtractProfileData!(prof3, VolData_combined3, Data.Surface, Data.Point)
+ExtractProfileData!(prof4, VolData_combined3, Data.Surface, Data.Point)
 
 # Test that it works if only EQ's are provided:
 prof4 = ProfileData(depth = -20)
-ExtractProfileData!(prof4, nothing, NamedTuple(), PointData)
+ExtractProfileData!(prof4, nothing, NamedTuple(), Data.Point)
 @test isnothing(prof4.VolData)
 @test isempty(prof4.SurfData)
 @test length(prof4.PointData[1].depth) == 3280

@@ -39,9 +39,9 @@ julia> Datasets    = [data_Vol1,data_Vol2, data_Surf, data_EQ, data_SS]
 
 Next you can load the data and split them into different datasets:
 ```julia
-VolData, SurfData, PointData, ScreenshotData, TopoData = load_GMG(Datasets)
+julia> Data = load_GMG(Datasets)
+julia> keys(Data)
 ```
-
 
 If you want to compare different tomographic datasets with each other, and create votemaps, for example you can merge them all into a single dataset:
 ```julia

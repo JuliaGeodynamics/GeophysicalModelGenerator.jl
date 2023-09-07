@@ -61,13 +61,13 @@ function show(io::IO, g::ProfileData)
         println(io, "  depth      : $(g.depth) ")
     end
     if !isnothing(g.VolData)
-        println(io, "  # VolData  : $(keys(g.VolData.fields)) ")
+        println(io, "    VolData  : $(keys(g.VolData.fields)) ")
     end
     if !isnothing(g.SurfData)
-        println(io, "  # SurfData : $(keys(g.SurfData)) ")
+        println(io, "    SurfData : $(keys(g.SurfData)) ")
     end
     if !isnothing(g.PointData)
-        println(io, "  # PointData: $(keys(g.PointData)) ")
+        println(io, "    PointData: $(keys(g.PointData)) ")
     end
     
     return nothing
@@ -171,13 +171,14 @@ function Load_Dataset_file(file_datasets::String)
 end
 
 """ 
-    DataVol, DataSurf, DataPoint, DataScreenshot, DataTopo = load_GMG(Datasets::Vector{GMG_Dataset})
+    Data = load_GMG(Datasets::Vector{GMG_Dataset})
 
-This loads all the active datasets in `Datasets`, and returns named tuples with Volumetric, Surface, Point, Screenshot or Topography data
+This loads all the active datasets in `Datasets`, and returns a NamedTuple with Volume, Surface, Point, Screenshot and Topography data
 
 """
 function load_GMG(Datasets::Vector{GMG_Dataset})
 
+   
     DataPoint       =   NamedTuple();
     DataSurf        =   NamedTuple();
     DataScreenshot  =   NamedTuple();
@@ -201,7 +202,9 @@ function load_GMG(Datasets::Vector{GMG_Dataset})
         end
     end
 
-    return DataVol, DataSurf, DataPoint, DataScreenshot, DataTopo
+    Data = (Volume=DataVol, Surface=DataSurf, Point=DataPoint, Screenhot=DataScreenshot, Topography=DataTopo)
+
+    return Data
 end
 
 """
