@@ -93,6 +93,13 @@ ExtractProfileData!(prof2, VolData_combined3, SurfData, PointData)
 ExtractProfileData!(prof3, VolData_combined3, SurfData, PointData)
 ExtractProfileData!(prof4, VolData_combined3, SurfData, PointData)
 
+# Test that it works if only EQ's are provided:
+prof4 = ProfileData(depth = -20)
+ExtractProfileData!(prof4, nothing, NamedTuple(), PointData)
+@test isnothing(prof4.VolData)
+@test isempty(prof4.SurfData)
+@test length(prof4.PointData[1].depth) == 3280
+
 @test prof1.SurfData[1].fields[1][80] ≈ -37.58791461075397km
 @test isempty(prof2.SurfData)
 @test isnan(prof3.SurfData[1].fields[1][80])

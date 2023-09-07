@@ -350,9 +350,11 @@ end
 
 Extracts data along a vertical or horizontal profile
 """
-function ExtractProfileData!(Profile::ProfileData,VolData::GeoData, SurfData::NamedTuple, PointData::NamedTuple; DimsVolCross=(100,100),Depth_extent=nothing,DimsSurfCross=(100,),section_width=50km)
+function ExtractProfileData!(Profile::ProfileData,VolData::Union{Nothing,GeoData}=nothing, SurfData::NamedTuple=NamedTuple(), PointData::NamedTuple=NamedTuple(); DimsVolCross=(100,100),Depth_extent=nothing,DimsSurfCross=(100,),section_width=50km)
 
-    CreateProfileVolume!(Profile, VolData; DimsVolCross=DimsVolCross, Depth_extent=Depth_extent)
+    if !isnothing(VolData)
+        CreateProfileVolume!(Profile, VolData; DimsVolCross=DimsVolCross, Depth_extent=Depth_extent)
+    end
     CreateProfileSurface!(Profile, SurfData, DimsSurfCross=DimsSurfCross)
     CreateProfilePoint!(Profile, PointData, section_width=section_width)
 
