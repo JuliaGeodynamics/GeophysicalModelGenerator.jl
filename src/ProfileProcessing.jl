@@ -67,7 +67,7 @@ function show(io::IO, g::ProfileData)
         println(io, "    SurfData : $(keys(g.SurfData)) ")
     end
     if !isnothing(g.PointData)
-        println(io, "    PointData: $(keys(g.PointData)) ")
+        println(io, "        PointData: $(keys(g.PointData)) ")
     end
     
     return nothing
@@ -202,7 +202,7 @@ function load_GMG(Datasets::Vector{GMG_Dataset})
         end
     end
 
-    Data = (Volume=DataVol, Surface=DataSurf, Point=DataPoint, Screenhot=DataScreenshot, Topography=DataTopo)
+    Data = (Volume=DataVol, Surface=DataSurf, Point=DataPoint, Screenshot=DataScreenshot, Topography=DataTopo)
 
     return Data
 end
