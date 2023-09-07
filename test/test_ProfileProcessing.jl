@@ -97,3 +97,18 @@ ExtractProfileData!(prof4, VolData_combined3, SurfData, PointData)
 @test isempty(prof2.SurfData)
 @test isnan(prof3.SurfData[1].fields[1][80])
 @test isempty(prof4.SurfData)
+
+# Read profiles from file
+profile_list = ReadPickedProfiles("test_files/PickedProfiles.txt")
+@test profile_list[5].start_lonlat == ProfileData(start_lonlat=(9.40627872242647, 45.5128223429144), end_lonlat=(7.85480813419117, 47.8635353553922)).start_lonlat
+
+# Try the convenience function
+DepthVol=nothing
+DimsVolCross=(100,100)
+Depth_extent=nothing
+DimsSurfCross=(100,)
+section_width=50km
+
+profile_backwards_compat = ExtractProfileData("test_files/PickedProfiles.txt",1,"test_files/AlpineData_remote.txt",DimsVolCross=DimsVolCross,DepthVol=Depth_extent,DimsSurfCross=DimsSurfCross,WidthPointProfile=section_width)
+
+@test length(profile_backwards_compat.PointData[1].lon) == 440

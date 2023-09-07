@@ -3,7 +3,7 @@
 # It contains functions and type definitions to gather selected data for given profiles
 
 export ProfileData, ExtractProfileData, CreateProfileData, GMG_Dataset, Load_Dataset_file, combine_VolData
-export ExtractProfileData!
+export ExtractProfileData!, ReadPickedProfiles
 import Base: show
 
 """
@@ -358,6 +358,59 @@ function ExtractProfileData!(Profile::ProfileData,VolData::GeoData, SurfData::Na
 
     return nothing
 end
+
+"""
+This reads the picked profiles from disk and returns a vector of ProfileData
+"""
+function ReadPickedProfiles(ProfileCoordFile::String)
+
+    profiles = Vector{ProfileData}()
+    profile_data = readdlm(ProfileCoordFile,skipstart=1,',')
+
+    for i=1:size(profile_data,1)
+        start_lonlat = (profile_data[i,2:3]...,)
+        end_lonlat   = (profile_data[i,4:5]...,)
+        profile      = ProfileData(start_lonlat=start_lonlat, end_lonlat=end_lonlat)
+        push!(profiles,profile)
+    end
+
+    return profiles
+end
+
+# this is mostly for backwards compatibility
+"""
+    ExtractProfileData(ProfileCoordFile::String,ProfileNumber::Int64,DataSetFile::String; DimsVolCross=(100,100),DepthVol=nothing,DimsSurfCross=(100,),WidthPointProfile=50km)
+
+This is a convenience function (mostly for backwards compatibility with the MATLAB GUI) that loads the data from file & projects it onto a profile
+"""
+function ExtractProfileData(ProfileCoordFile::String,ProfileNumber::Int64,DataSetFile::String; DimsVolCross=(100,100),DepthVol=nothing,DimsSurfCross=(100,),WidthPointProfile=50km)
+
+    # read profile
+    profile_list = ReadPickedProfiles(ProfileCoordFile)
+    profile = profile_list[ProfileNumber]
+
+    println("lon start ",   profile.start_lonlat[1])
+    println("lat start ",   profile.start_lonlat[2])
+    println("lon end ",     profile.end_lonlat[1])
+    println("lat end ",     profile.end_lonlat[2])
+
+    # read all datasets:
+    Datasets_all = Load_Dataset_file(DataSetFile)
+
+    # load all Data
+    VolData, SurfData, PointData, ScreenshotData, TopoData = load_GMG(Datasets_all)
+    
+    # merge VolData:
+    VolData_combined = combine_VolData(VolData)
+
+    # project data onto profile:
+    ExtractProfileData!(profile, VolData_combined, SurfData, PointData,
+                        DimsVolCross=DimsVolCross, DimsSurfCross=DimsSurfCross,
+                        Depth_extent=DepthVol, section_width=WidthPointProfile)
+
+    return profile
+end
+
 
 #=
 
