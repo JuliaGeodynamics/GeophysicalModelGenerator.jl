@@ -37,7 +37,7 @@ end
 end
 
 @testset "ProfileProcessing" begin
-    include("test_IO.jl")
+    include("test_ProfileProcessing.jl")
 end
 
 
