@@ -93,6 +93,7 @@ ExtractProfileData!(prof2, VolData_combined3, Data.Surface, Data.Point)
 ExtractProfileData!(prof3, VolData_combined3, Data.Surface, Data.Point)
 ExtractProfileData!(prof4, VolData_combined3, Data.Surface, Data.Point)
 
+
 # Test that it works if only EQ's are provided:
 prof4 = ProfileData(depth = -20)
 ExtractProfileData!(prof4, nothing, NamedTuple(), Data.Point)
