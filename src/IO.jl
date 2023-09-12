@@ -60,7 +60,7 @@ function load_GMG(filename::String, dir=pwd())
 
     if contains(filename,"http")
         #download remote file to a local temporary directory
-        file_ext = Downloads.download(filename, pwd()*"download_GMG_temp.jld2")
+        file_ext = Downloads.download(filename, joinpath(pwd(),"download_GMG_temp.jld2"))
     else
         # local file
         file_ext = joinpath(dir,filename*".jld2")
