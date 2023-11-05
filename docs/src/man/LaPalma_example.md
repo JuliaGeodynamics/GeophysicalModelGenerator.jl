@@ -38,22 +38,22 @@ GeoData
 
 !!! note
 
-  In case you did not manage that, we have prepared a JLD2 file [here](https://seafile.rlp.net/f/64e0b0a6b1e941b7bba5/?dl=1). Download it, and doublecheck that you are in the same directory as the data file with:
-  ````julia
-    pwd()
-    "/Users/kausb/.julia/dev/GeophysicalModelGenerator/docs/src/scripts"
-  ````
-  Load the data with:
-  ````julia
-julia> Topo=load_GMG("Topo_LaPalma")
-GeoData 
-  size      : (1921, 1441, 1)
-  lon       ϵ [ 341.3 : 342.9]
-  lat       ϵ [ 28.0 : 29.2]
-  depth     ϵ [ -4.090296875 : 0.0]
-  fields    : (:Topography,)
-  attributes: ["note"]
-  ````
+    In case you did not manage that, we have prepared a JLD2 file [here](https://seafile.rlp.net/f/64e0b0a6b1e941b7bba5/?dl=1). Download it, and doublecheck that you are in the same directory as the data file with:
+    ````julia
+      pwd()
+      "/Users/kausb/.julia/dev/GeophysicalModelGenerator/docs/src/scripts"
+    ````
+    Load the data with:
+    ````julia
+      julia> Topo=load_GMG("Topo_LaPalma")
+      GeoData 
+        size      : (1921, 1441, 1)
+        lon       ϵ [ 341.3 : 342.9]
+        lat       ϵ [ 28.0 : 29.2]
+        depth     ϵ [ -4.090296875 : 0.0]
+        fields    : (:Topography,)
+        attributes: ["note"]
+    ````
 
 Next, lets load the seismicity. We have prepared a file with earthquake locations up to early November (from [https://www.ign.es/web/ign/portal/vlc-catalogo](https://www.ign.es/web/ign/portal/vlc-catalogo)).
 Download that [here](https://seafile.rlp.net/f/64e0b0a6b1e941b7bba5/?dl=1)
@@ -179,7 +179,6 @@ In a next step we need to give each of these points a `Phase` number (which is a
 ````julia
 Phases  = ones(Int32,size(Grid.X))*2;
 Temp    = ones(Float64,size(Grid.X));
-nothing #hide
 ````
 
 In this example we set the temperature based on the depth, assuming a constant geotherm. Depth is given in kilometers
