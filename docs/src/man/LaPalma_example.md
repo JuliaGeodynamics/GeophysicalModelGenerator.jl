@@ -34,64 +34,48 @@ GeoData
   lat   ϵ [ 28.0 : 29.2]
   depth ϵ [ -4.38297802734375 km : 2.414 km]
   fields: (:Topography,)
-
 ````
 
-In case you did not manage that, we have prepared a JLD2 file [here](https://seafile.rlp.net/f/03286a46a9f040a69b0f/?dl=1).
-Download it, and doublecheck that you are in the same directory as the data file with:
+!!! note
 
-````julia
-pwd()
-````
-
-````
-"/Users/kausb/.julia/dev/GeophysicalModelGenerator/docs/src/scripts"
-````
-
-Load the data:
-
-````julia
-Topo=load("Topo_LaPalma.jld2","Topo")
-````
-
-````
+  In case you did not manage that, we have prepared a JLD2 file [here](https://seafile.rlp.net/f/64e0b0a6b1e941b7bba5/?dl=1). Download it, and doublecheck that you are in the same directory as the data file with:
+  ````julia
+    pwd()
+    "/Users/kausb/.julia/dev/GeophysicalModelGenerator/docs/src/scripts"
+  ````
+  Load the data with:
+  ````julia
+julia> Topo=load_GMG("Topo_LaPalma")
 GeoData 
-  size  : (1921, 1441, 1)
-  lon   ϵ [ 341.3 : 342.9]
-  lat   ϵ [ 28.0 : 29.2]
-  depth ϵ [ -4.38297802734375 km : 2.414 km]
-  fields: (:Topography,)
-
-````
+  size      : (1921, 1441, 1)
+  lon       ϵ [ 341.3 : 342.9]
+  lat       ϵ [ 28.0 : 29.2]
+  depth     ϵ [ -4.090296875 : 0.0]
+  fields    : (:Topography,)
+  attributes: ["note"]
+  ````
 
 Next, lets load the seismicity. We have prepared a file with earthquake locations up to early November (from [https://www.ign.es/web/ign/portal/vlc-catalogo](https://www.ign.es/web/ign/portal/vlc-catalogo)).
-Download that [here](https://seafile.rlp.net/f/03286a46a9f040a69b0f/?dl=1)
+Download that [here](https://seafile.rlp.net/f/64e0b0a6b1e941b7bba5/?dl=1)
 
 ````julia
-data_all_EQ = load("EQ_Data.jld2","data_all_EQ")
-````
-
-````
+data_all_EQ = load_GMG("EQ_Data")
 GeoData 
-  size  : (6045,)
-  lon   ϵ [ -18.0341 : -17.6671]
-  lat   ϵ [ 28.3102 : 28.8144]
-  depth ϵ [ NaN km : NaN km]
-  fields: (:Magnitude, :TimeSinceJan1_2021)
-
+  size      : (6045,)
+  lon       ϵ [ -17.841 : -17.8268]
+  lat       ϵ [ 28.5717 : 28.573]
+  depth     ϵ [ -29.0 : -11.0]
+  fields    : (:Magnitude, :TimeSinceJan1_2021)
+  attributes: ["note"]
 ````
 
 Write the data to paraview with
-
 ````julia
-Write_Paraview(data_all_EQ,"data_all_EQ",PointsData=true)
-Write_Paraview(Topo,"Topo")
-````
-
-````
+julia> Write_Paraview(data_all_EQ,"data_all_EQ",PointsData=true)
 Saved file: data_all_EQ.vtu
-Saved file: Topo.vts
 
+julia> Write_Paraview(Topo,"Topo")
+Saved file: Topo.vts
 ````
 
 As earthquakes are point-wise data, you have to specify this.
