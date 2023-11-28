@@ -3,6 +3,7 @@
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev/)
 [![Build Status](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/workflows/CI/badge.svg)](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/actions)
+[![DOI](https://zenodo.org/badge/366377223.svg)](https://zenodo.org/doi/10.5281/zenodo.8074345)
 
 ![GMG_LogoWide](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/assets/1148509/0fa80120-0f99-4eb2-bb00-60551ea3b6c4)
 
