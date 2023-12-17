@@ -522,6 +522,9 @@ function CrossSection(DataSet::AbstractGeneralGrid; dims=(100,100), Interpolate=
         DataProfile = CrossSectionSurface(DataSet; dims, Depth_level, Lat_level, Lon_level, Start, End)
     elseif DataSetType==3 # volume 
         DataProfile = CrossSectionVolume(DataSet; dims, Interpolate, Depth_level, Lat_level, Lon_level, Start, End, Depth_extent)
+
+        # add field that has coordinates along the profile
+        DataProfile =   AddField(DataProfile,"FlatCrossSection", FlattenCrossSection(DataProfile))
     end
 
     return DataProfile
@@ -679,6 +682,183 @@ function ExtractSubvolume(V::GeoData; Interpolate=false, Lon_level=nothing, Lat_
 end
 
 
+"""
+    ExtractSubvolume(V::CartData; Interpolate=false, X_level=nothing, Y_level=nothing, Z_level=nothing, dims=(50,50,50))
+
+Extract or "cuts-out" a piece of a 2D or 3D GeoData set, defined by `Lon`, `Lat` and `Depth` coordinates.
+
+This is useful if you are only interested in a part of a much bigger larger data set.
+
+- `Lon_level`,`Lat_level` and `Depth_level` should be tuples that indicate `(minimum_value, maximum_value)` along the respective direction. If not specified we use the full range. 
+- By default, `Interpolate=false` and we find the closest indices within the data set (so your new data set will not go exactly from minimum to maximum).
+- Alternatively, if `Interpolate=true` we interpolate the data onto a new grid that has dimensions `dims`. This can be useful to compare data sets that are originally given in different resolutions.
+
+# 3D Example with no interpolation:
+```julia-repl
+julia> Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
+julia> Data            =   Depth*2;                # some data
+julia> Vx,Vy,Vz        =   ustrip(Data*3),ustrip(Data*4),ustrip(Data*5);
+julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)))
+GeoData 
+  size  : (11, 11, 13)
+  lon   ϵ [ 10.0 : 20.0]
+  lat   ϵ [ 30.0 : 40.0]
+  depth ϵ [ -300.0 km : 0.0 km]
+  fields: (:Depthdata, :LonData, :Velocity)
+julia> Data_extracted = ExtractSubvolume(Data_set3D,Lon_level=(10,12),Lat_level=(35,40))
+GeoData 
+  size  : (3, 6, 13)
+  lon   ϵ [ 10.0 : 12.0]
+  lat   ϵ [ 35.0 : 40.0]
+  depth ϵ [ -300.0 km : 0.0 km]
+  fields: (:Depthdata, :LonData, :Velocity)
+```
+By default it extracts the data points closest to the area defined by Lon_level/Lat_level/Depth_level.
+
+    
+# 2D Example along a cross-section through 3D data:
+```julia-repl   
+julia> X,Y,Z = XYZGrid(10:20,30:40,-300:25:0);
+julia> Data = Z.*2
+julia> Data_Int = Int64.(Data)
+julia> DataSet_Cart = CartData(X,Y,Z,(Data=Data,Data_Int=Data_Int, Velocity=(X,Y,Z)))
+
+julia> Data_cross = CrossSection(DataSet_Cart, Start=(11.0,35), End=(19, 39.0))
+CartData 
+    size    : (100, 100, 1)
+    x       ϵ [ 11.0 : 19.0]
+    y       ϵ [ 35.0 : 39.0]
+    z       ϵ [ -300.0 : 0.0]
+    fields  : (:Data, :Data_Int, :Velocity, :FlatCrossSection)
+  attributes: ["note"]
+
+julia> Data_extracted = ExtractSubvolume(Data_cross, X_level=(1,7), Z_level=(-200,-100))
+  CartData 
+      size    : (50, 50, 1)
+      x       ϵ [ 11.894427190999917 : 17.260990336999413]
+      y       ϵ [ 35.44721359549995 : 38.130495168499706]
+      z       ϵ [ -200.0 : -100.0]
+      fields  : (:FlatCrossSection, :Data, :Data_Int, :Velocity)
+    attributes: ["note"]
+julia> typeof(Data_extracted.fields.Data_Int)
+    Array{Int64, 3}    
+```
+
+"""
+function ExtractSubvolume(V::CartData; 
+                    Interpolate=true, 
+                    X_level=nothing, 
+                    X_cross=nothing,
+                    Y_level=nothing, 
+                    Z_level=nothing, 
+                    dims=(50,50,50))
+
+    if isnothing(X_level)
+        X_level = (minimum(V.x.val), maximum(V.x.val))
+    end
+    if isnothing(Y_level)
+        Y_level = (minimum(V.y.val), maximum(V.y.val))
+    end
+    if isnothing(Z_level)
+        Z_level = (minimum(V.z.val), maximum(V.z.val))
+    end
+
+    if Interpolate==true && size(V.x.val)[3]>1
+        X,Y,Z   = LonLatDepthGrid(  LinRange(X_level[1], X_level[2], dims[1]),
+                                    LinRange(Y_level[1], Y_level[2], dims[2]),
+                                    LinRange(Z_level[1], Z_level[2], dims[3]) );
+                                    
+        Data_extract    =   InterpolateDataFields(V, X, Y, Z)
+
+    elseif size(V.x.val)[3]==1
+        # we are dealing with a vertical cross-section through a 3D dataset computed with CrossSection(V,Start=.., End=...)
+        Xcross=V.fields.FlatCrossSection;
+        dims_cross=(dims[1],dims[2],1);
+
+        # we need to interpolate the data onto a new grid given by X_level and Z_level
+        X_level_cross = X_level;
+        
+        interpol_x =   linear_interpolation(Xcross[:,1,1], V.x.val[:,1,1],extrapolation_bc = NaN);      # create interpolation object
+        interpol_y =   linear_interpolation(Xcross[:,1,1], V.y.val[:,1,1],extrapolation_bc = NaN);      # create interpolation object
+
+        X_level =  interpol_x.(X_level_cross)
+        Y_level =  interpol_y.(X_level_cross)
+        x = LinRange(X_level_cross[1], X_level_cross[2], dims_cross[1])
+        z = LinRange(Z_level[1], Z_level[2], dims_cross[2])
+
+        X,Y,Z = zeros(dims[1],dims[2],1), zeros(dims[1],dims[2],1), zeros(dims[1],dims[2],1)
+        X_cross = zero(X)
+        for (i,x_val) in enumerate(x), (j,z_val) in enumerate(z)
+            X[i,j,1] = interpol_x(x_val)
+            Y[i,j,1] = interpol_y(x_val)
+            Z[i,j,1] = z_val
+            X_cross[i,j,1] = x_val
+        end
+
+        Data_extract = InterpolateDataFields_CrossSection(V, X, Y, Z, X_cross);
+
+    else
+        # Don't interpolate
+        i_s, i_e    =   argmin(abs.(V.x.val[:,1,1] .- X_level[1])), argmin(abs.(V.x.val[:,1,1] .- X_level[2]))
+        iLon        =   i_s:i_e;
+        
+        i_s, i_e    =   argmin(abs.(V.y.val[1,:,1] .- Y_level[1])), argmin(abs.(V.y.val[1,:,1] .- Y_level[2]))
+        iLat        =   i_s:i_e;
+        
+        i_s, i_e    =   argmin(abs.(V.z.val[1,1,:] .- ustrip(Z_level[1]))), argmin(abs.(V.z.val[1,1,:] .- ustrip(Z_level[2])))
+        step        =   1;
+        if i_e<i_s
+            step=-1
+        end
+        iDepth      =   i_s:step:i_e;
+        Data_extract =  ExtractDataSets(V, iLon, iLat, iDepth);
+    end
+
+    return Data_extract
+end
+
+
+"""
+    InterpolateDataFields_CrossSection(V::CartData, X,Y,Z,Xcross)
+
+Interpolates data fields along a cross-section defined by `Xcross` and `Z`
+"""
+function InterpolateDataFields_CrossSection(V::CartData, X,Y,Z, X_cross)
+
+    Data_extract = CartData(X,Y,Z, (FlatCrossSection=X_cross,))
+
+    fields_new  = V.fields;
+    field_names = keys(fields_new);
+    for i = 1:length(V.fields)
+        if typeof(V.fields[i]) <: Tuple
+            # vector or anything that contains more than 1 field
+            data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop 
+            data_array = zeros(size(Data_extract.x)...,length(data_tuple));     # create a 3D array that holds the 2D interpolated values
+            unit_array = zeros(size(data_array));
+
+            for j=1:length(data_tuple)
+                interpol    =   linear_interpolation((V.fields.FlatCrossSection[:,1,1], V.z.val[1,:,1]), ustrip.(data_tuple[j][:,:,1]),extrapolation_bc = NaN);      # create interpolation object
+                data_array[:,:,:,j] =   interpol.(X_cross, Z);          
+            end
+            data_new    = tuple([data_array[:,:,:,c] for c in 1:size(data_array,4)]...)     # transform 3D matrix to tuple
+
+        else
+            # scalar field
+            interpol    =   linear_interpolation((V.fields.FlatCrossSection[:,1,1], V.z.val[1,:,1]), V.fields[i][:,:,1], extrapolation_bc = NaN);            # create interpolation object
+            data_new    =   interpol.(X_cross, Z);                                                 # interpolate data field
+
+            if isa( V.fields[i][1], Int64)
+                data_new = round.(Int64,data_new)
+            end
+        end
+        Data_extract = AddField(Data_extract,String(field_names[i]),data_new)
+    end
+    
+    return Data_extract
+
+end
+
+
 function CheckBounds(Data::GeoUnit, Data_Cross)
     
     min_Data, max_Data = NumValue(minimum(Data.val)), NumValue(maximum(Data.val));
@@ -789,6 +969,9 @@ function InterpolateDataFields(V::AbstractGeneralGrid, Lon, Lat, Depth)
                 interpol    =   linear_interpolation((Lon_vec, Lat_vec, Depth_vec), V.fields[i], extrapolation_bc = NaN);            # create interpolation object
             end
             data_new    =   interpol.(Lon, Lat, ustrip.(Depth));                                                 # interpolate data field
+            if isa(V.fields[i][1],Int64)
+                data_new = round.(Int64,data_new)
+            end
         end
         
         # replace the one 
@@ -933,6 +1116,8 @@ function InterpolateDataFields2D(V::GeoData, Lon, Lat)
 
     return depth_new, fields_new
 end
+
+
 
 """
     InterpolateDataFields2D(V::UTMData, EW, NS)
