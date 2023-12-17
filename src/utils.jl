@@ -771,8 +771,13 @@ function ExtractSubvolume(V::CartData;
         Data_extract    =   InterpolateDataFields(V, X, Y, Z)
 
     elseif size(V.x.val)[3]==1
+        
         # we are dealing with a vertical cross-section through a 3D dataset computed with CrossSection(V,Start=.., End=...)
         Xcross=V.fields.FlatCrossSection;
+        if isnothing(X_level)
+            X_level = extrema(Xcross)
+        end
+
         dims_cross=(dims[1],dims[2],1);
 
         # we need to interpolate the data onto a new grid given by X_level and Z_level
