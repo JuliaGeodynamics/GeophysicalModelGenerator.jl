@@ -312,3 +312,46 @@ function Screenshot_To_UTMData(filename::String, Corner_LowerLeft, Corner_UpperR
 
 end
 
+
+"""
+    DataTopo = LoadETOPOgeotiff(inputfilename::String;Save=false,SaveParaview=false,outputfilename::String)
+
+Loads a geotiff with ETOPO data that has been created using the GridExtract tool (https://www.ncei.noaa.gov/maps/grid-extract/) and returns a GeoData structure that contains the topographic information.
+Optionally, one can save this data either in JLD2 format or Parview format by setting Save=true or SaveParaview=true. In both cases, an additional argument can be provided to set the name of the output file.
+
+"""
+
+function LoadETOPOgeotiff(inputfilename::String;Save=false,SaveParaview=false,outputfilename=nothing)
+# define the location of the ETOPO1 geotiff file
+inputfilename = "/Users/mthiel/DATA/ETOPO1/HinduKush.tiff";
+
+# load
+TopoData = Raster(inputfilename)
+
+# get longitude and latitude
+lon = lookup(TopoData, X) # if X is longitude
+lat = lookup(TopoData, Y) # if Y is latitude
+
+# convert to GeoData format
+Lon,Lat,Depth    =   LonLatDepthGrid(lon.data,lat.data,0);
+numel_topo       =   prod(size(Lon));
+Depth[:,:,1]     =   1e-3*TopoData.data; # convert to km
+DataTopo         =   GeophysicalModelGenerator.GeoData(Lon, Lat, Depth, (Topography=Depth*km,))
+
+
+# set outputfilename if it is not provided
+if isnothing(outputfilename)
+    outputfilename = "ETOPO";
+end
+
+# save jld2 file
+if Save
+    save_GMG(outputfilename,DataTopo)
+end
+
+# save Paraview file
+if SaveParaview
+    Write_Paraview(DataTopo, "ETOPO1")
+end
+
+return DataTopo
