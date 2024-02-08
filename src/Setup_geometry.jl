@@ -8,7 +8,7 @@ using SpecialFunctions: erfc
 # These are routines that help to create input geometries, such as slabs with a given angle
 #
 
-export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!,
+export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!, AddLayer!, 
         makeVolcTopo,
         ConstantTemp, LinearTemp, HalfspaceCoolingTemp, SpreadingRateTemp,
         ConstantPhase, LithosphericPhases, 
@@ -117,6 +117,107 @@ function AddBox!(Phase, Temp, Grid::AbstractGeneralGrid;                 # requi
     
     return nothing
 end
+
+
+"""
+    AddLayer!(Phase, Temp, Grid::AbstractGeneralGrid; xlim=Tuple{2}, [ylim=Tuple{2}], zlim=Tuple{2},
+            phase = ConstantPhase(1),
+            T=nothing )
+
+Adds a layer with phase & temperature structure to a 3D model setup. The most common use would be to add a lithospheric layer to a model setup. 
+This simplifies creating model geometries in geodynamic models
+
+
+Parameters
+====
+- Phase - Phase array (consistent with Grid)
+- Temp  - Temperature array (consistent with Grid)
+- Grid -  grid structure (usually obtained with ReadLaMEM_InputFile, but can also be other grid types)
+- xlim -  left/right coordinates of box
+- ylim -  front/back coordinates of box
+- zlim -  bottom/top coordinates of box
+- phase - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()` 
+- T - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()` 
+
+
+Examples
+========
+
+Example 1) Layer with constant phase and temperature
+```julia 
+julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
+LaMEM Grid: 
+  nel         : (32, 32, 32)
+  marker/cell : (3, 3, 3)
+  markers     : (96, 96, 96)
+  x           ϵ [-3.0 : 3.0]
+  y           ϵ [-2.0 : 2.0]
+  z           ϵ [-2.0 : 0.0]
+julia> Phases = zeros(Int32,   size(Grid.X));
+julia> Temp   = zeros(Float64, size(Grid.X));
+julia> AddLayer!(Phases,Temp,Grid, zlim=(-50,0), phase=ConstantPhase(3), T=ConstantTemp(1000))
+julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
+julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview 
+1-element Vector{String}:
+ "LaMEM_ModelSetup.vts"   
+```
+
+Example 2) Box with halfspace cooling profile
+```julia 
+julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
+julia> Phases = zeros(Int32,   size(Grid.X));
+julia> Temp   = zeros(Float64, size(Grid.X));
+julia> AddLayer!(Phases,Temp,Grid, zlim=(-50,0), phase=ConstantPhase(3), T=HalfspaceCoolingTemp())
+julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
+julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview 
+1-element Vector{String}:
+ "LaMEM_ModelSetup.vts"   
+```
+"""
+function AddLayer!(Phase, Temp, Grid::AbstractGeneralGrid;      # required input
+                xlim=nothing, ylim=nothing, zlim=nothing,       # limits of the layer
+                phase = ConstantPhase(1),                       # Sets the phase number(s) in the box
+                T=nothing )                                     # Sets the thermal structure (various fucntions are available)
+    
+    # Retrieve 3D data arrays for the grid
+    X,Y,Z = coordinate_grids(Grid)
+
+    # Limits of block       
+    if isnothing(xlim)==isnothing(ylim)==isnothing(zlim)
+        error("You need to specify at least one of the limits (xlim, ylim, zlim)") 
+    end
+    
+    if isnothing(xlim)
+        xlim = (minimum(X), maximum(X)) 
+    end
+    if isnothing(ylim)
+        ylim = (minimum(Y), maximum(Y)) 
+    end
+    if isnothing(zlim)
+        zlim = (minimum(Z), maximum(Z)) 
+    end
+
+    # Set phase number & thermal structure in the full domain
+    ind = findall(  (X .>= (xlim[1])) .& (X .<= (xlim[2])) .&  
+                    (Y .>= (ylim[1])) .& (Y .<= (ylim[2])) .&  
+                    (Z .>= (zlim[1])) .& (Z .<= (zlim[2]))
+                )
+    
+
+    # Compute thermal structure accordingly. See routines below for different options
+    if !isnothing(T) 
+        Temp[ind] = Compute_ThermalStructure(Temp[ind], X[ind], Y[ind], Z[ind], T)
+    end
+
+    # Set the phase. Different routines are available for that - see below.
+    Phase[ind] = Compute_Phase(Phase[ind], Temp[ind], X[ind], Y[ind], Z[ind], phase)
+    
+    return nothing
+end
+
+
+
+
 
 """
     AddSphere!(Phase, Temp, Grid::AbstractGeneralGrid; cen=Tuple{3}, radius=Tuple{1},
