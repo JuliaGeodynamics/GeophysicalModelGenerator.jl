@@ -1,6 +1,9 @@
 using Test
 using GeophysicalModelGenerator
 
+pkg_dir = pkgdir(GeophysicalModelGenerator)
+cd(joinpath(pkg_dir,"test"))
+
 # Test profile processing dataset routines
 data_Surf = GMG_Dataset("Mrozek_Moho_Grid_EU","Surface","https://seafile.rlp.net/f/483d9c7c808a4087ba9e/?dl=1", true)
 @test data_Surf.DirName == "https://seafile.rlp.net/f/483d9c7c808a4087ba9e/?dl=1"
@@ -19,6 +22,7 @@ data_Vol2   = GMG_Dataset("Plomerova2022","Volume","https://seafile.rlp.net/f/ab
 #data_Vol2   = GMG_Dataset("Zhao2016","Volume","https://seafile.rlp.net/f/e81a6d075f6746609973/?dl=1", true)
 
 # Now load these datasets into NamedTuples 
+
 SurfData        =   load_GMG(data_Surf)
 PointData       =   load_GMG(data_EQ)
 ScreenshotData  =   load_GMG(data_SS)
