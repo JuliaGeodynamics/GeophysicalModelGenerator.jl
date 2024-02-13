@@ -1,4 +1,4 @@
-using Test
+using Test, Logging
 using GeophysicalModelGenerator
 
 # Create 1D dataset with lat/lon/depth
@@ -80,7 +80,11 @@ Data_set1       =   GeoData(Lon,Lat,Depth,(FakeData=Data,Data2=Data.+1.))
 @test Value(Data_set1.depth[1,2,3])==-8.0km
 
 # double-check that giving 3D arrays in the wrong ordering triggers a warning message
-@test_throws ErrorException("It appears that the lon array has a wrong ordering")    GeoData(Lat,Lon,Depth,(FakeData=Data,Data2=Data.+1.))  
+test_logger = TestLogger(); # create a test logger
+with_logger(test_logger) do
+    GeoData(Lat,Lon,Depth,(FakeData=Data,Data2=Data.+1.))  
+end
+@test (test_logger.logs[1].level==Warn && test_logger.logs[1].message=="It appears that the lon array has a wrong ordering")
 
 # Create 2D arrays & convert them 
 Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,-50km);
