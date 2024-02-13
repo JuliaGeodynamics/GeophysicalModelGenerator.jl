@@ -1,4 +1,5 @@
 /test/*.vts
 /test/*.vtu
 .DS_Store
+Manifest.toml
 /docs/build
