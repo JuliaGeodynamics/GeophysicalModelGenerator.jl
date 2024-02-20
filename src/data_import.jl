@@ -158,17 +158,17 @@ end
 
 
 """
-    Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, Cartesian=false, UTM=false, UTMzone, isnorth=true)
+    Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, Cartesian=false, UTM=false, UTMzone, isnorth=true, fieldname::Symbol=:colors)
 
 Take a screenshot of Georeferenced image either a `lat/lon`, `x,y` (if `Cartesian=true`) or in UTM coordinates (if `UTM=true`) at a given depth or along profile and converts it to a `GeoData`, `CartData` or `UTMData` struct, which can be saved to Paraview
 
-The lower left and upper right coordinates of the image need to be specified in tuples of `(lon,lat,depth)` or `(UTM_ew, UTM_ns, depth)`, where `depth` is negative in the Earth (and in km).
+The lower left and upper right coordinates of the image need to be specified in tuples of `(lon,lat,depth)` or `(UTM_ew, UTM_ns, depth)`, where `depth` is negative inside the Earth (and in km).
 
 The lower right and upper left corners can be specified optionally (to take non-orthogonal images into account). If they are not specified, the image is considered orthogonal and the corners are computed from the other two.
 
 *Note*: if your data is in `UTM` coordinates you also need to provide the `UTMzone` and whether we are on the northern hemisphere or not (`isnorth`).
 """
-function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, Cartesian=false, UTM=false, UTMzone=nothing, isnorth=true)
+function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, Cartesian=false, UTM=false, UTMzone=nothing, isnorth::Bool=true, fieldname::Symbol=:colors)
 
     img         =   load(filename)      # load image
 
@@ -269,14 +269,16 @@ function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperR
     blue                    =   zeros(size(Depth)); blue[:,:,1]  = b;
 
     # Create GeoData structure - NOTE: RGB data must be 2D matrixes, not 3D!
+    color_data = NamedTuple{(fieldname,)}(((red,green,blue),));
+
     if Cartesian
-        data_Image              =   CartData(X, Y, Depth,(colors=(red,green,blue),))
+        data_Image              =   CartData(X, Y, Depth, color_data)
     end
     if UTM
-        data_Image              =   UTMData(X, Y, Depth, UTMzone, isnorth, (colors=(red,green,blue),))
+        data_Image              =   UTMData(X, Y, Depth, UTMzone, isnorth, color_data)
     end
     if (!Cartesian) && (!UTM)
-        data_Image              =   GeoData(X, Y, Depth, (colors=(red,green,blue),))
+        data_Image              =   GeoData(X, Y, Depth, color_data)
     end
     return data_Image
 end
@@ -287,26 +289,26 @@ end
 
 Does the same as `Screenshot_To_GeoData`, but returns a `CartData` structure
 """
-function Screenshot_To_CartData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing)
+function Screenshot_To_CartData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, fieldname::Symbol=:colors)
     
 
     # first create a GeoData struct
-    Data_Cart = Screenshot_To_GeoData(filename, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, Cartesian=true)
+    Data_Cart = Screenshot_To_GeoData(filename, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, Cartesian=true, fieldname=fieldname)
 
     return Data_Cart
 
 end
 
 """
-    Data = Screenshot_To_UTMData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, UTMzone::Int64=nothing, isnorth::Bool=true)
+    Data = Screenshot_To_UTMData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, UTMzone::Int64=nothing, isnorth::Bool=true, fieldname=:colors)
 
 Does the same as `Screenshot_To_GeoData`, but returns for UTM data 
 Note that you have to specify the `UTMzone` and `isnorth`
 """
-function Screenshot_To_UTMData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, UTMzone::Int64=nothing, isnorth::Bool=true)
+function Screenshot_To_UTMData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, UTMzone::Int64=nothing, isnorth::Bool=true, fieldname::Symbol=:colors)
 
       # first create a GeoData struct
-      Data_UTM = Screenshot_To_GeoData(filename, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, Cartesian=false, UTM=true, UTMzone=UTMzone, isnorth=isnorth)
+      Data_UTM = Screenshot_To_GeoData(filename, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, Cartesian=false, UTM=true, UTMzone=UTMzone, isnorth=isnorth, fieldname=fieldname)
 
       return Data_UTM
 
