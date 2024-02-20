@@ -38,6 +38,10 @@ data_Image          =   Screenshot_To_GeoData(filename,Corner_LowerLeft, Corner_
 @test Value(data_Image.depth[1000])==-590km
 @test Write_Paraview(data_Image, "Profile_1")==nothing
 
+# test if we use a different name for the color dataset
+data_Image_newfieldname  =   Screenshot_To_GeoData(filename,Corner_LowerLeft, Corner_UpperRight, fieldname=:fake)
+@test  keys(data_Image_newfieldname.fields)[1] == :fake
+
 # Test in CartData
 data_Image          =   Screenshot_To_GeoData(filename,Corner_LowerLeft, Corner_UpperRight, Cartesian=true)
 @test Value(data_Image.x[22]) == 18.0km
