@@ -158,7 +158,7 @@ end
 
 
 """
-    Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, Cartesian=false, UTM=false, UTMzone, isnorth=true, fieldname=:colors)
+    Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, Cartesian=false, UTM=false, UTMzone, isnorth=true, fieldname::Symbol=:colors)
 
 Take a screenshot of Georeferenced image either a `lat/lon`, `x,y` (if `Cartesian=true`) or in UTM coordinates (if `UTM=true`) at a given depth or along profile and converts it to a `GeoData`, `CartData` or `UTMData` struct, which can be saved to Paraview
 
@@ -168,7 +168,7 @@ The lower right and upper left corners can be specified optionally (to take non-
 
 *Note*: if your data is in `UTM` coordinates you also need to provide the `UTMzone` and whether we are on the northern hemisphere or not (`isnorth`).
 """
-function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, Cartesian=false, UTM=false, UTMzone=nothing, isnorth=true, fieldname=:colors)
+function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, Cartesian=false, UTM=false, UTMzone=nothing, isnorth::Bool=true, fieldname::Symbol=:colors)
 
     img         =   load(filename)      # load image
 
@@ -289,7 +289,7 @@ end
 
 Does the same as `Screenshot_To_GeoData`, but returns a `CartData` structure
 """
-function Screenshot_To_CartData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, fieldname=:colors)
+function Screenshot_To_CartData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, fieldname::Symbol=:colors)
     
 
     # first create a GeoData struct
@@ -305,7 +305,7 @@ end
 Does the same as `Screenshot_To_GeoData`, but returns for UTM data 
 Note that you have to specify the `UTMzone` and `isnorth`
 """
-function Screenshot_To_UTMData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, UTMzone::Int64=nothing, isnorth::Bool=true, fieldname=:colors)
+function Screenshot_To_UTMData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, UTMzone::Int64=nothing, isnorth::Bool=true, fieldname::Symbol=:colors)
 
       # first create a GeoData struct
       Data_UTM = Screenshot_To_GeoData(filename, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, Cartesian=false, UTM=true, UTMzone=UTMzone, isnorth=isnorth, fieldname=fieldname)
