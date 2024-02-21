@@ -50,8 +50,9 @@ include("IO.jl")
 """
 Optional routine that imports topography. It requires you to load `GMT`
 """
-function ImportTopo() end
-export ImportTopo
+function ImportTopo end
+function ImportGeoTIFF end
+export ImportTopo, ImportGeoTIFF
 
 # GLMakie routines
 
@@ -59,7 +60,7 @@ export ImportTopo
 Interactive widget that allows you to explore a 3D data set `DataSet` in an interactive manner.
 It requires you to load `GLMakie`
 """
-function Visualise() end        
+function Visualise end        
 export Visualise
 
 

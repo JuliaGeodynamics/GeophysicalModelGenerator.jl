@@ -1,9 +1,18 @@
 # NOTE: these are useful routines that are only made available when the GMT package is already loaded in the REPL
 module GMT_utils
 
-using GMT
+import GeophysicalModelGenerator: ImportTopo
 
-export ImportTopo
+# We do not check `isdefined(Base, :get_extension)` as recommended since
+# Julia v1.9.0 does not load package extensions when their dependency is
+# loaded from the main environment.
+if VERSION >= v"1.9.1"
+  using GMT
+else
+  using ..GMT
+end
+
+using GeophysicalModelGenerator: LonLatDepthGrid, GeoData, km
 
 println("Loading GMT routines within GMG")
 
@@ -95,6 +104,15 @@ julia> Topo = ImportTopo(lon=(-50, -40), lat=(-10,-5), file="@earth_relief_30s.g
 
 """
 ImportTopo(; lat=[37,49], lon=[4,20], file::String="@earth_relief_01m.grd") = ImportTopo([lon[1],lon[2], lat[1], lat[2]], file=file)
+
+
+"""
+
+Thhis imports a GeoTIFF datasets using GMT
+"""
+function ImportGeoTIFF()
+
+end
 
 
 end

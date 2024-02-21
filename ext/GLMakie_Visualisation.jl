@@ -1,9 +1,21 @@
 module GLMakie_Visualisation
 # This contains visualisation widgets which are optionally made available when GLMakie is loaded along with GMG
 
-using GLMakie, Statistics
+using Statistics
+using GeophysicalModelGenerator: LonLatDepthGrid, GeoData, CartData, km
+
+# We do not check `isdefined(Base, :get_extension)` as recommended since
+# Julia v1.9.0 does not load package extensions when their dependency is
+# loaded from the main environment.
+if VERSION >= v"1.9.1"
+    using GLMakie
+else
+    using ..GLMakie
+end
 
 export Visualise
+
+println("Loading GLMakie extensions for GMG")
 
 """
     Visualise(DataSet; Topography=Topo_Data, Topo_range=nothing)
