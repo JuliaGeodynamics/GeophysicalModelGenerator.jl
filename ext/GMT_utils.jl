@@ -110,7 +110,8 @@ ImportTopo(; lat=[37,49], lon=[4,20], file::String="@earth_relief_01m.grd") = Im
   data_GMT = ImportGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=true)
 
 This imports a GeoTIFF dataset (usually containing a surface of some sort) using GMT.
-We try to determine if this is in `UTM` coordinates or 
+The file should either have `UTM` coordinates of `longlat` coordinates. If it doesn't, you can 
+use QGIS to convert it to `longlat` coordinates.
 
 Optional keywords:
 - `fieldname` : name of the field (default=:layer1)
@@ -146,15 +147,16 @@ function ImportGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=tr
   data_field  = NamedTuple{(fieldname,)}((data,));
 
   if contains(G.proj4,"utm")
-    
     zone = parse(Int64,split.(split(G.proj4,"zone=")[2]," ")[1]); # retrieve UTM zone
     data_GMT    = UTMData(Lon, Lat, Depth, zone, NorthernHemisphere, data_field)
   
-  elseif contains(G.proj4,"longlat") || contains(G.proj4,"somerc")
+  elseif contains(G.proj4,"longlat") 
     data_GMT    = GeoData(Lon, Lat, Depth, data_field)
 
   else
-    error("I'm sorry, I don't know how to handle this projection yet: $(G.proj4)")
+    error("I'm sorry, I don't know how to handle this projection yet: $(G.proj4)\n
+           We recommend that you transfer your GeoTIFF to longlat by using QGIS \n
+           Open the GeoTIFF there and Export -> Save As , while selecting \"EPSG:4326 - WGS 84\" projection.")
   end
 
 
