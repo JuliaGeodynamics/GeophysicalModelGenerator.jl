@@ -1,7 +1,7 @@
 # NOTE: these are useful routines that are only made available when the GMT package is already loaded in the REPL
 module GMT_utils
 
-import GeophysicalModelGenerator: ImportTopo
+import GeophysicalModelGenerator: ImportTopo, ImportGeoTIFF
 
 # We do not check `isdefined(Base, :get_extension)` as recommended since
 # Julia v1.9.0 does not load package extensions when their dependency is
@@ -107,11 +107,37 @@ ImportTopo(; lat=[37,49], lon=[4,20], file::String="@earth_relief_01m.grd") = Im
 
 
 """
+  data_GMT = ImportGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=true)
 
-Thhis imports a GeoTIFF datasets using GMT
+This imports a GeoTIFF dataset (usually containing a surface of some sort) using GMT
+
+Optional keywords:
+- `fieldname` : name of the field (default=:layer1)
+- `negative`  : if true, the depth is multiplied by -1 (default=false)
+- `iskm`      : if true, the depth is multiplied by 1e-3 (default=true)
+
 """
-function ImportGeoTIFF()
+function ImportGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=true)
+  G = gmtread(fname);
 
+  # Transfer to GeoData
+  nx,ny           =   size(G.z,2), size(G.z,1)
+  Lon,Lat,Depth   =   LonLatDepthGrid(G.x[1:nx],G.y[1:ny],0);
+
+  Depth[:,:,1]    =   G.z';
+  if negative
+    Depth[:,:,1]    =   -G.z';
+  end
+  if iskm
+    Depth    *=   1e-3*km;
+  end
+
+  # Create GeoData structure - NOTE: RGB data must be 2D matrixes, not 3D!
+  data_field  = NamedTuple{(fieldname,)}((Depth,));
+
+  data_GMT    = GeoData(Lon, Lat, Depth, data_field)
+  
+  return data_GMT
 end
 
 
