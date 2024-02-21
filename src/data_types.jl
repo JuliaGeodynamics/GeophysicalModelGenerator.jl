@@ -223,10 +223,26 @@ function Base.show(io::IO, d::GeoData)
     println(io,"  size      : $(size(d.lon))")
     println(io,"  lon       ϵ [ $(first(d.lon.val)) : $(last(d.lon.val))]")
     println(io,"  lat       ϵ [ $(first(d.lat.val)) : $(last(d.lat.val))]")
-    println(io,"  depth     ϵ [ $(first(d.depth.val)) : $(last(d.depth.val))]")
+    if  any(isnan.(NumValue(d.depth)))
+        z_vals = extrema(d.depth.val[isnan.(d.depth.val).==false])
+        println(io,"  depth     ϵ [ $(first(z_vals)) : $(last(z_vals))]; has NaN's")
+    else
+        z_vals = extrema(d.depth.val[isnan.(d.depth.val).==false])
+        println(io,"  depth     ϵ [ $(first(d.depth.val)) : $(last(d.depth.val))]")
+    end
     println(io,"  fields    : $(keys(d.fields))")
+
+    # Only print attributes if we have non-default attributes
     if any( propertynames(d) .== :atts)
-        println(io,"  attributes: $(keys(d.atts))")
+        show_atts = true
+        if haskey(d.atts,"note") 
+            if d.atts["note"]=="No attributes were given to this dataset"
+                show_atts = false
+            end
+        end
+        if show_atts
+         println(io,"  attributes: $(keys(d.atts))")
+        end
     end
 end
 
@@ -256,8 +272,30 @@ function Base.show(io::IO, d::ParaviewData)
     println(io,"  size  : $(size(d.x))")
     println(io,"  x     ϵ [ $(first(d.x.val)) : $(last(d.x.val))]")
     println(io,"  y     ϵ [ $(first(d.y.val)) : $(last(d.y.val))]")
-    println(io,"  z     ϵ [ $(first(d.z.val)) : $(last(d.z.val))]")
+    
+    if  any(isnan.(NumValue(d.depth)))
+        z_vals = extrema(d.depth.val[isnan.(d.depth.val).==false])
+        println(io,"  depth     ϵ [ $(first(z_vals)) : $(last(z_vals))]; has NaN's")
+    else
+        z_vals = extrema(d.depth.val[isnan.(d.depth.val).==false])
+        println(io,"  depth     ϵ [ $(first(d.depth.val)) : $(last(d.depth.val))]")
+    end
+
     println(io,"  fields: $(keys(d.fields))")
+
+    # Only print attributes if we have non-default attributes
+    if any( propertynames(d) .== :atts)
+        show_atts = true
+        if haskey(d.atts,"note") 
+            if d.atts["note"]=="No attributes were given to this dataset"
+                show_atts = false
+            end
+        end
+        if show_atts
+         println(io,"  attributes: $(keys(d.atts))")
+        end
+    end
+
 end
 
 # conversion function from GeoData -> ParaviewData
@@ -439,10 +477,27 @@ function Base.show(io::IO, d::UTMData)
     println(io,"    size    : $(size(d.EW))")
     println(io,"    EW      ϵ [ $(first(d.EW.val)) : $(last(d.EW.val))]")
     println(io,"    NS      ϵ [ $(first(d.NS.val)) : $(last(d.NS.val))]")
-    println(io,"    depth   ϵ [ $(first(d.depth.val)) : $(last(d.depth.val))]")
+    
+    if  any(isnan.(NumValue(d.depth)))
+        z_vals = extrema(d.depth.val[isnan.(d.depth.val).==false])
+        println(io,"  depth     ϵ [ $(first(z_vals)) : $(last(z_vals))]; has NaN's")
+    else
+        z_vals = extrema(d.depth.val[isnan.(d.depth.val).==false])
+        println(io,"  depth     ϵ [ $(first(d.depth.val)) : $(last(d.depth.val))]")
+    end
     println(io,"    fields  : $(keys(d.fields))")
+
+    # Only print attributes if we have non-default attributes
     if any( propertynames(d) .== :atts)
-        println(io,"  attributes: $(keys(d.atts))")
+        show_atts = true
+        if haskey(d.atts,"note") 
+            if d.atts["note"]=="No attributes were given to this dataset"
+                show_atts = false
+            end
+        end
+        if show_atts
+         println(io,"  attributes: $(keys(d.atts))")
+        end
     end
 end
 
@@ -701,9 +756,28 @@ function Base.show(io::IO, d::CartData)
     println(io,"    x       ϵ [ $(minimum(d.x.val)) : $(maximum(d.x.val))]")
     println(io,"    y       ϵ [ $(minimum(d.y.val)) : $(maximum(d.y.val))]")
     println(io,"    z       ϵ [ $(minimum(d.z.val)) : $(maximum(d.z.val))]")
+     
+    if  any(isnan.(NumValue(d.z)))
+        z_vals = extrema(d.depth.val[isnan.(d.z.val).==false])
+        println(io,"    z       ϵ [ $(first(d.z.val)) : $(last(d.z.val))]; has NaN's")
+    else
+        z_vals = extrema(d.z.val[isnan.(d.z.val).==false])
+        println(io,"    z       ϵ [ $(first(d.z.val)) : $(last(d.z.val))]")
+    end
+
     println(io,"    fields  : $(keys(d.fields))")
+
+    # Only print attributes if we have non-default attributes
     if any( propertynames(d) .== :atts)
+        show_atts = true
+        if haskey(d.atts,"note") 
+            if d.atts["note"]=="No attributes were given to this dataset"
+                show_atts = false
+            end
+        end
+        if show_atts
         println(io,"  attributes: $(keys(d.atts))")
+        end
     end
 end
 
