@@ -40,6 +40,9 @@ end
     include("test_ProfileProcessing.jl")
 end
 
+@testset "GMT integration" begin
+    include("test_GMT.jl")
+end
 
 
 # Cleanup 

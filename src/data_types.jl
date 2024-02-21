@@ -225,10 +225,10 @@ function Base.show(io::IO, d::GeoData)
     println(io,"  lat       ϵ [ $(first(d.lat.val)) : $(last(d.lat.val))]")
     if  any(isnan.(NumValue(d.depth)))
         z_vals = extrema(d.depth.val[isnan.(d.depth.val).==false])
-        println(io,"  depth     ϵ [ $(first(z_vals)) : $(last(z_vals))]; has NaN's")
+        println(io,"  depth     ϵ [ $(z_vals[1]) : $(z_vals[2])]; has NaN's")
     else
-        z_vals = extrema(d.depth.val[isnan.(d.depth.val).==false])
-        println(io,"  depth     ϵ [ $(first(d.depth.val)) : $(last(d.depth.val))]")
+        z_vals = extrema(d.depth.val)
+        println(io,"  depth     ϵ [ $(z_vals[1]) : $(z_vals[2])]")
     end
     println(io,"  fields    : $(keys(d.fields))")
 
@@ -272,13 +272,12 @@ function Base.show(io::IO, d::ParaviewData)
     println(io,"  size  : $(size(d.x))")
     println(io,"  x     ϵ [ $(first(d.x.val)) : $(last(d.x.val))]")
     println(io,"  y     ϵ [ $(first(d.y.val)) : $(last(d.y.val))]")
-    
-    if  any(isnan.(NumValue(d.depth)))
-        z_vals = extrema(d.depth.val[isnan.(d.depth.val).==false])
-        println(io,"  depth     ϵ [ $(first(z_vals)) : $(last(z_vals))]; has NaN's")
+    if  any(isnan.(NumValue(d.z)))
+        z_vals = extrema(d.z.val[isnan.(d.z.val).==false])
+        println(io,"  z     ϵ [ $(z_vals[1]) : $(z_vals[2])]; has NaN's")
     else
-        z_vals = extrema(d.depth.val[isnan.(d.depth.val).==false])
-        println(io,"  depth     ϵ [ $(first(d.depth.val)) : $(last(d.depth.val))]")
+        z_vals = extrema(d.z.val)
+        println(io,"  z     ϵ [ $(z_vals[1]) : $(z_vals[2])]")
     end
 
     println(io,"  fields: $(keys(d.fields))")
@@ -477,14 +476,15 @@ function Base.show(io::IO, d::UTMData)
     println(io,"    size    : $(size(d.EW))")
     println(io,"    EW      ϵ [ $(first(d.EW.val)) : $(last(d.EW.val))]")
     println(io,"    NS      ϵ [ $(first(d.NS.val)) : $(last(d.NS.val))]")
-    
+
     if  any(isnan.(NumValue(d.depth)))
         z_vals = extrema(d.depth.val[isnan.(d.depth.val).==false])
-        println(io,"  depth     ϵ [ $(first(z_vals)) : $(last(z_vals))]; has NaN's")
+        println(io,"  depth     ϵ [ $(z_vals[1]) : $(z_vals[2])]; has NaNs")
     else
-        z_vals = extrema(d.depth.val[isnan.(d.depth.val).==false])
-        println(io,"  depth     ϵ [ $(first(d.depth.val)) : $(last(d.depth.val))]")
+        z_vals = extrema(d.depth.val)
+        println(io,"  depth     ϵ [ $(z_vals[1]) : $(z_vals[2])]")
     end
+
     println(io,"    fields  : $(keys(d.fields))")
 
     # Only print attributes if we have non-default attributes
@@ -758,12 +758,13 @@ function Base.show(io::IO, d::CartData)
     println(io,"    z       ϵ [ $(minimum(d.z.val)) : $(maximum(d.z.val))]")
      
     if  any(isnan.(NumValue(d.z)))
-        z_vals = extrema(d.depth.val[isnan.(d.z.val).==false])
-        println(io,"    z       ϵ [ $(first(d.z.val)) : $(last(d.z.val))]; has NaN's")
-    else
         z_vals = extrema(d.z.val[isnan.(d.z.val).==false])
-        println(io,"    z       ϵ [ $(first(d.z.val)) : $(last(d.z.val))]")
+        println(io,"    z       ϵ [ $(z_vals[1]) : $(z_vals[2])]; has NaN's")
+    else
+        z_vals = extrema(d.z.val)
+        println(io,"    z       ϵ [ $(z_vals[1]) : $(z_vals[2])]")
     end
+
 
     println(io,"    fields  : $(keys(d.fields))")
 

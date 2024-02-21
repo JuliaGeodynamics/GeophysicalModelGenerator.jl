@@ -12,7 +12,7 @@ else
   using ..GMT
 end
 
-using GeophysicalModelGenerator: LonLatDepthGrid, GeoData, km
+using GeophysicalModelGenerator: LonLatDepthGrid, GeoData, UTMData, km
 
 println("Loading GMT routines within GMG")
 
@@ -109,34 +109,56 @@ ImportTopo(; lat=[37,49], lon=[4,20], file::String="@earth_relief_01m.grd") = Im
 """
   data_GMT = ImportGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=true)
 
-This imports a GeoTIFF dataset (usually containing a surface of some sort) using GMT
+This imports a GeoTIFF dataset (usually containing a surface of some sort) using GMT.
+We try to determine if this is in `UTM` coordinates or 
 
 Optional keywords:
 - `fieldname` : name of the field (default=:layer1)
 - `negative`  : if true, the depth is multiplied by -1 (default=false)
 - `iskm`      : if true, the depth is multiplied by 1e-3 (default=true)
-
+- `NorthernHemisphere`: if true, the UTM zone is set to be in the northern hemisphere (default=true); only relevant if the data uses UTM projection
 """
-function ImportGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=true)
+function ImportGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=true, NorthernHemisphere=true)
   G = gmtread(fname);
 
   # Transfer to GeoData
-  nx,ny           =   size(G.z,2), size(G.z,1)
+  nx,ny = length(G.x)-1, length(G.y)-1
   Lon,Lat,Depth   =   LonLatDepthGrid(G.x[1:nx],G.y[1:ny],0);
-
-  Depth[:,:,1]    =   G.z';
-  if negative
-    Depth[:,:,1]    =   -G.z';
+  if  hasfield(typeof(G),:z)
+    Depth[:,:,1]    =   G.z';
+    if negative
+      Depth[:,:,1]  =   -G.z';
+    end
+    if iskm
+      Depth    *=   1e-3*km;
+    end
   end
-  if iskm
-    Depth    *=   1e-3*km;
-  end
 
-  # Create GeoData structure - NOTE: RGB data must be 2D matrixes, not 3D!
-  data_field  = NamedTuple{(fieldname,)}((Depth,));
-
-  data_GMT    = GeoData(Lon, Lat, Depth, data_field)
+  # Create GeoData structure
+  data = zero(Lon)
+  if hasfield(typeof(G),:z)
+    data = Depth
   
+  elseif hasfield(typeof(G),:image)
+    data[:,:,1] = G.image'
+
+  end
+  data_field  = NamedTuple{(fieldname,)}((data,));
+
+  if contains(G.proj4,"utm")
+    
+    zone = parse(Int64,split.(split(G.proj4,"zone=")[2]," ")[1]); # retrieve UTM zone
+    data_GMT    = UTMData(Lon, Lat, Depth, zone, NorthernHemisphere, data_field)
+  
+  elseif contains(G.proj4,"longlat") || contains(G.proj4,"somerc")
+    data_GMT    = GeoData(Lon, Lat, Depth, data_field)
+
+  else
+    error("I'm sorry, I don't know how to handle this projection yet: $(G.proj4)")
+  end
+
+
+
   return data_GMT
 end
 
