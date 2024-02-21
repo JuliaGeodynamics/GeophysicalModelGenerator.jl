@@ -1,8 +1,6 @@
 module GeophysicalModelGenerator
 
 using Base: String, show_index, Tuple, FieldDescStorage
-using Requires
-
 
 # Load & export some useful commands/functions from GeoParams:
 import GeoParams
@@ -46,17 +44,23 @@ include("ProfileProcessing.jl")
 include("IO.jl")
 
 # Add optional routines (only activated when the packages are loaded)
-function __init__()
-        @require GMT = "5752ebe1-31b9-557e-87aa-f909b540aa54" begin
-                println("Loading GMT routines within GMG")
-                @eval include("./GMT_utils.jl")
-        end
-        @require GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a" begin
-                println("Loading GLMakie plotting routines within GMG")
-                @eval include("./Visualisation.jl")
-        end
-end
 
+# GMT routines
+
+"""
+Optional routine that imports topography. It requires you to load `GMT`
+"""
+function ImportTopo() end
+export ImportTopo
+
+# GLMakie routines
+
+"""
+Interactive widget that allows you to explore a 3D data set `DataSet` in an interactive manner.
+It requires you to load `GLMakie`
+"""
+function Visualise() end        
+export Visualise
 
 
 end

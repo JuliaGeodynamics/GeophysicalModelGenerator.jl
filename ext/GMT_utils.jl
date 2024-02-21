@@ -1,12 +1,17 @@
-# NOTE: these are useful routines that are only loaded when the GMT package is already loaded in the REPL
-using .GMT
+# NOTE: these are useful routines that are only made available when the GMT package is already loaded in the REPL
+module GMT_utils
+
+using GMT
 
 export ImportTopo
+
+println("Loading GMT routines within GMG")
+
 
 """
     Topo = ImportTopo(limits; file::String="@earth_relief_01m.grd") 
     
-Uses GMT to download the topography of a certain region, specified with limits=[lon_min, lon_max, lat_min, lat_max] 
+Uses `GMT` to download the topography of a certain region, specified with limits=[lon_min, lon_max, lat_min, lat_max] 
 
 Note: 
 ====
@@ -31,7 +36,7 @@ Note:
 | "@earth\\_relief\\_30m"	|  30 arc min	 | ETOPO1 after Gaussian spherical filtering (55 km fullwidth) |
 | "@earth\\_relief\\_60m"	|  60 arc min	 | ETOPO1 after Gaussian spherical filtering (111 km fullwidth)|
 
-*Note*: this routine is only available once the GMT.jl package is loaded on the REPL
+*Note*: this routine is only available once the GMT.jl package is loaded in the REPL
 
 # Example 
 ```julia-repl
@@ -90,3 +95,6 @@ julia> Topo = ImportTopo(lon=(-50, -40), lat=(-10,-5), file="@earth_relief_30s.g
 
 """
 ImportTopo(; lat=[37,49], lon=[4,20], file::String="@earth_relief_01m.grd") = ImportTopo([lon[1],lon[2], lat[1], lat[2]], file=file)
+
+
+end

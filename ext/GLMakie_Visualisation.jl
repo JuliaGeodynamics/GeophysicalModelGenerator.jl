@@ -1,5 +1,7 @@
+module GLMakie_Visualisation
 # This contains visualisation widgets which are optionally made available when GLMakie is loaded along with GMG
-using .GLMakie, Statistics
+
+using GLMakie, Statistics
 
 export Visualise
 
@@ -254,4 +256,7 @@ function Visualise(Data; Topography=nothing, Topo_range=nothing)
     display(fig)
     
     return nothing
+end
+
+
 end
