@@ -126,7 +126,7 @@ function ImportGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=tr
   # Transfer to GeoData
   nx,ny = length(G.x)-1, length(G.y)-1
   Lon,Lat,Depth   =   LonLatDepthGrid(G.x[1:nx],G.y[1:ny],0);
-  if  hasfield(typeof(G),:z) & !constantDepth
+  if  hasfield(typeof(G),:z) 
     Depth[:,:,1]    =   G.z';
     if negative
       Depth[:,:,1]  =   -G.z';
@@ -150,6 +150,11 @@ function ImportGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=tr
 
   end
   data_field  = NamedTuple{(fieldname,)}((data,));
+
+  if constantDepth
+    Depth = zero(Lon)
+  end
+
 
   if contains(G.proj4,"utm")
     zone = parse(Int64,split.(split(G.proj4,"zone=")[2]," ")[1]); # retrieve UTM zone
