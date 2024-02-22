@@ -907,7 +907,7 @@ end
 
 
 """
-    InterpolateDataFields(V::AbstractGeneralGrid, Lon, Lat, Depth)
+    Data_interp = InterpolateDataFields(V::AbstractGeneralGrid, Lon, Lat, Depth)
 
 Interpolates a data field `V` on a grid defined by `Lon,Lat,Depth`
 
@@ -1123,21 +1123,40 @@ function InterpolateDataFields2D(V::GeoData, Lon, Lat)
 end
 
 
-
 """
     InterpolateDataFields2D(V::UTMData, EW, NS)
 
 Interpolates a data field `V` on a 2D grid defined by `UTM`. Typically used for horizontal surfaces
 """
 function InterpolateDataFields2D(V::UTMData, EW, NS)
-
     EW_vec      =  V.EW.val[:,1,1];
     NS_vec      =  V.NS.val[1,:,1];
-   
-    fields_new  = V.fields;
+    return InterpolateDataFields2D_vecs(EW_vec, NS_vec, V.depth, V.fields, EW, NS)
+end
+
+"""
+    InterpolateDataFields2D(V::CartData, X, Y)
+
+Interpolates a data field `V` on a 2D CartData grid defined. Typically used for horizontal surfaces
+"""
+function InterpolateDataFields2D(V::CartData, X, Y)
+    X_vec      =  V.x.val[:,1,1];
+    Y_vec      =  V.y.val[1,:,1];
+    return InterpolateDataFields2D_vecs(X_vec, Y_vec, V.depth, V.fields, X, Y)
+end
+
+
+"""
+    InterpolateDataFields2D_vecs(x_vec, y_vec, depth, fields_new, X, Y)
+
+Interpolates a data field `V` on a 2D grid defined by `UTM`. Typically used for horizontal surfaces
+"""
+function InterpolateDataFields2D_vecs(EW_vec, NS_vec, depth, fields_new, EW, NS)
+
+   # fields_new  = V.fields;
     field_names = keys(fields_new);
-    for i = 1:length(V.fields)
-        if typeof(V.fields[i]) <: Tuple
+    for i = 1:length(fields_new)
+        if typeof(fields_new[i]) <: Tuple
             # vector or anything that contains more than 1 field
             data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop 
             data_array = zeros(size(EW,1),size(EW,2),size(EW,3),length(data_tuple));     # create a 3D array that holds the 2D interpolated values
@@ -1151,10 +1170,10 @@ function InterpolateDataFields2D(V::UTMData, EW, NS)
 
         else
             # scalar field
-            if length(size(V.fields[i]))==3
-                interpol    =   linear_interpolation((EW_vec, NS_vec), V.fields[i][:,:,1], extrapolation_bc = Flat());            # create interpolation object
+            if length(size(fields_new[i]))==3
+                interpol    =   linear_interpolation((EW_vec, NS_vec), fields_new[i][:,:,1], extrapolation_bc = Flat());            # create interpolation object
             else
-                interpol    =   linear_interpolation((EW_vec, NS_vec), V.fields[i], extrapolation_bc = Flat());            # create interpolation object
+                interpol    =   linear_interpolation((EW_vec, NS_vec), fields_new[i], extrapolation_bc = Flat());            # create interpolation object
             end
 
             data_new    =   interpol.(EW, NS);                                                 # interpolate data field
@@ -1167,10 +1186,10 @@ function InterpolateDataFields2D(V::UTMData, EW, NS)
     end
 
     # Interpolate z-coordinate as well
-    if length(size(V.depth))==3
-        interpol    =   linear_interpolation((EW_vec, NS_vec), V.depth.val[:,:,1], extrapolation_bc = Flat());            # create interpolation object
+    if length(size(depth))==3
+        interpol    =   linear_interpolation((EW_vec, NS_vec), depth.val[:,:,1], extrapolation_bc = Flat());            # create interpolation object
     else
-        interpol    =   linear_interpolation((EW_vec, NS_vec), V.depth.val, extrapolation_bc = Flat());            # create interpolation object
+        interpol    =   linear_interpolation((EW_vec, NS_vec), depth.val, extrapolation_bc = Flat());            # create interpolation object
     end
     depth_new =  interpol.(EW, NS);    
     
@@ -1185,7 +1204,7 @@ end
 """
     Surf_interp = InterpolateDataOnSurface(V::ParaviewData, Surf::ParaviewData)
 
-Interpolates a 3D data set `V` on a surface defined by `Surf`. nex
+Interpolates a 3D data set `V` on a surface defined by `Surf`. 
 # Example
 ```julia
 julia> Data
@@ -1227,6 +1246,21 @@ function InterpolateDataOnSurface(V::ParaviewData, Surf::ParaviewData)
 
 end
 
+function InterpolateDataOnSurface(V::CartData, Surf::CartData)
+    
+    # Create GeoData structure:
+    V_geo               =   GeoData(V.x.val, V.y.val, V.z.val, V.fields)
+    V_geo.depth.val     =   ustrip(V_geo.depth.val);
+
+    Surf_geo            =   GeoData(Surf.x.val, Surf.y.val, Surf.z.val, Surf.fields)
+    Surf_geo.depth.val  =   ustrip(Surf_geo.depth.val);
+
+    Surf_interp_geo     =   InterpolateDataOnSurface(V_geo, Surf_geo)
+    Surf_interp         =   CartData(Surf_interp_geo.lon.val, Surf_interp_geo.lat.val, ustrip.(Surf_interp_geo.depth.val), Surf_interp_geo.fields)
+
+    return Surf_interp
+
+end
 
 """
     Surf_interp = InterpolateDataOnSurface(V::GeoData, Surf::GeoData)
@@ -1705,7 +1739,7 @@ function RotateTranslateScale(Data::Union{ParaviewData, CartData}; Rotate=0, Tra
 
     # 1) Scaling
     if length(Scale)==1
-        Scale = (Scale, Scale, Scale);
+        Scale = [Scale, Scale, Scale];
     end
     Xr .*= Scale[1];
     Yr .*= Scale[2];
