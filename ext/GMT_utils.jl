@@ -141,7 +141,11 @@ function ImportGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=tr
     data = Depth
   
   elseif hasfield(typeof(G),:image)
-    data[:,:,1] = G.image'
+    if length(size(G.image)) == 3
+      data = permutedims(G.image,[2, 1, 3]);
+    elseif length(size(G.image)) == 2
+      data[:,:,1] = G.image'
+    end
 
   end
   data_field  = NamedTuple{(fieldname,)}((data,));
@@ -158,8 +162,6 @@ function ImportGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=tr
            We recommend that you transfer your GeoTIFF to longlat by using QGIS \n
            Open the GeoTIFF there and Export -> Save As , while selecting \"EPSG:4326 - WGS 84\" projection.")
   end
-
-
 
   return data_GMT
 end
