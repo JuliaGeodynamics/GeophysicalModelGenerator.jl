@@ -1700,12 +1700,12 @@ ParaviewData
 """
 function RotateTranslateScale(Data::Union{ParaviewData, CartData}; Rotate=0, Translate=(0,0,0), Scale=(1.0,1.0,1.0))
 
-    X,Y,Z       = Data.x.val,   Data.y.val,     Data.z.val;         # Extract coordinates
-    Xr,Yr,Zr    = X,Y,Z;                                            # Rotated coordinates 
+    X,Y,Z       = copy(Data.x.val), copy(Data.y.val), copy(Data.z.val);     # Extract coordinates
+    Xr,Yr,Zr    = X,Y,Z;                                                    # Rotated coordinates 
 
     # 1) Scaling
     if length(Scale)==1
-        Scale = [Scale Scale Scale];
+        Scale = (Scale, Scale, Scale);
     end
     Xr .*= Scale[1];
     Yr .*= Scale[2];
@@ -1731,8 +1731,14 @@ function RotateTranslateScale(Data::Union{ParaviewData, CartData}; Rotate=0, Tra
     #Data.x.val = Xr;
     #Data.y.val = Yr;
     #Data.z.val = Zr;
+    if isa(Data, ParaviewData)
+        Data_r =  ParaviewData(Xr,Yr,Zr, Data.fields)   
+    else
+        Data_r =  CartData(Xr,Yr,Zr, Data.fields)   
+    end
+
     
-    return ParaviewData(Xr,Yr,Zr, Data.fields)
+    return Data_r
 end
 
 
