@@ -107,7 +107,7 @@ ImportTopo(; lat=[37,49], lon=[4,20], file::String="@earth_relief_01m.grd") = Im
 
 
 """
-  data_GMT = ImportGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=true)
+  data_GMT = ImportGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=true, NorthernHemisphere=true, constantDepth=false)
 
 This imports a GeoTIFF dataset (usually containing a surface of some sort) using GMT.
 The file should either have `UTM` coordinates of `longlat` coordinates. If it doesn't, you can 
@@ -118,14 +118,15 @@ Optional keywords:
 - `negative`  : if true, the depth is multiplied by -1 (default=false)
 - `iskm`      : if true, the depth is multiplied by 1e-3 (default=true)
 - `NorthernHemisphere`: if true, the UTM zone is set to be in the northern hemisphere (default=true); only relevant if the data uses UTM projection
+- `constantDepth`: if true we will not warp the surface by z-values, but use a constant value instead
 """
-function ImportGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=true, NorthernHemisphere=true)
+function ImportGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=true, NorthernHemisphere=true, constantDepth=false)
   G = gmtread(fname);
 
   # Transfer to GeoData
   nx,ny = length(G.x)-1, length(G.y)-1
   Lon,Lat,Depth   =   LonLatDepthGrid(G.x[1:nx],G.y[1:ny],0);
-  if  hasfield(typeof(G),:z)
+  if  hasfield(typeof(G),:z) & !constantDepth
     Depth[:,:,1]    =   G.z';
     if negative
       Depth[:,:,1]  =   -G.z';

@@ -755,8 +755,7 @@ function Base.show(io::IO, d::CartData)
     println(io,"    size    : $(size(d.x))")
     println(io,"    x       ϵ [ $(minimum(d.x.val)) : $(maximum(d.x.val))]")
     println(io,"    y       ϵ [ $(minimum(d.y.val)) : $(maximum(d.y.val))]")
-    println(io,"    z       ϵ [ $(minimum(d.z.val)) : $(maximum(d.z.val))]")
-     
+
     if  any(isnan.(NumValue(d.z)))
         z_vals = extrema(d.z.val[isnan.(d.z.val).==false])
         println(io,"    z       ϵ [ $(z_vals[1]) : $(z_vals[2])]; has NaN's")
