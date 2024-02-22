@@ -225,7 +225,7 @@ function checkInput(X, Y, Z, RHO, refMod, lengthUnit, rhoTol, Topo, outName, pri
             RefMod = RHO[1,1,:]
         elseif refMod == "NW"
             RefMod = RHO[1,end,:]
-        elseif refMode == "AVG"
+        elseif refMod == "AVG"
             RefMod = !mean([1.,1.,1.],RHO)
         else
             error("RefMod should be NE, SE, SW, NW, AVG or a vector with one value for each depth.")
