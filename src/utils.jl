@@ -1668,7 +1668,7 @@ function VoteMap(DataSets::GeoData, criteria::String; dims=(50,50,50))
 end
 
 """
-    Data_R = RotateTranslateScale(Data::ParaviewData; Rotate=0, Translate=(0,0,0), Scale=(1.0,1.0,1.0))
+    Data_R = RotateTranslateScale(Data::Union{ParaviewData, CartData}; Rotate=0, Translate=(0,0,0), Scale=(1.0,1.0,1.0))
 
 Does an in-place rotation, translation and scaling of the Cartesian dataset `Data`. 
 
@@ -1698,7 +1698,7 @@ ParaviewData
   fields: (:Depth,)
 ```
 """
-function RotateTranslateScale(Data::ParaviewData; Rotate=0, Translate=(0,0,0), Scale=(1.0,1.0,1.0))
+function RotateTranslateScale(Data::Union{ParaviewData, CartData}; Rotate=0, Translate=(0,0,0), Scale=(1.0,1.0,1.0))
 
     X,Y,Z       = Data.x.val,   Data.y.val,     Data.z.val;         # Extract coordinates
     Xr,Yr,Zr    = X,Y,Z;                                            # Rotated coordinates 
