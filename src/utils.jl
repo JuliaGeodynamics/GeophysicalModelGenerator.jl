@@ -7,6 +7,7 @@ export RotateTranslateScale
 export DrapeOnTopo, LithostaticPressure!
 export FlattenCrossSection
 export AddField, RemoveField
+export SubtractSurfaces!, AddSurfaces!
 
 using NearestNeighbors
 
@@ -1933,3 +1934,57 @@ function LithostaticPressure!(Plithos::Array{T,N}, Density::Array{T,N}, dz::Numb
     return nothing
 end
 
+
+"""
+    AddSurfaces!(Surface1::Union{GeoData,UTMData}, Surface2::Union{GeoData,UTMData})
+
+Adds `Surface2` to `Surface1`. The addition happens on the `Surface1.depth`; the fields remain unchanged
+
+"""
+function AddSurfaces!(Surface1::Union{GeoData,UTMData}, Surface2::Union{GeoData,UTMData})
+    
+    Surface1.depth.val .=  Surface1.depth.val + Surface2.depth.val
+
+    return nothing
+end
+
+"""
+    AddSurfaces!(Surface1::Union{CartData,ParaviewData}, Surface2::Union{CartData,ParaviewData})
+
+Adds `Surface2` to `Surface1`. The addition happens on the `Surface1.z`; the fields remain unchanged
+
+"""
+function AddSurfaces!(Surface1::Union{CartData,ParaviewData}, Surface2::Union{CartData,ParaviewData})
+    
+    Surface1.z.val .=  Surface1.z.val + Surface2.z.val
+
+    return nothing
+end
+
+
+"""
+    SubtractSurfaces!(Surface1::Union{GeoData,UTMData}, Surface2::Union{GeoData,UTMData})
+
+Subtracts `Surface2` to `Surface1`. The addition happens on the `Surface1.depth`; the fields remain unchanged
+
+"""
+function SubtractSurfaces!(Surface1::Union{GeoData,UTMData}, Surface2::Union{GeoData,UTMData})
+    
+    Surface1.depth.val .=  Surface1.depth.val - Surface2.depth.val
+
+    return nothing
+end
+
+
+"""
+    SubtractSurfaces!(Surface1::Union{CartData,ParaviewData}, Surface2::Union{CartData,ParaviewData})
+
+Subtracts `Surface2` to `Surface1`. The addition happens on the `Surface1.z`; the fields remain unchanged
+
+"""
+function SubtractSurfaces!(Surface1::Union{CartData,ParaviewData}, Surface2::Union{CartData,ParaviewData})
+    
+    Surface1.z.val .=  Surface1.z.val - Surface2.z.val
+
+    return nothing
+end
