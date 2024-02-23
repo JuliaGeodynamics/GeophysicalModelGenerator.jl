@@ -1137,12 +1137,40 @@ end
 """
     InterpolateDataFields2D(V::CartData, X, Y)
 
-Interpolates a data field `V` on a 2D CartData grid defined. Typically used for horizontal surfaces
+Interpolates a data field `V` on a 2D CartData grid defined by `X`,`Y`. Typically used for horizontal surfaces
 """
 function InterpolateDataFields2D(V::CartData, X, Y)
     X_vec      =  V.x.val[:,1,1];
     Y_vec      =  V.y.val[1,:,1];
-    return InterpolateDataFields2D_vecs(X_vec, Y_vec, V.depth, V.fields, X, Y)
+    return InterpolateDataFields2D_vecs(X_vec, Y_vec, V.z, V.fields, X, Y)
+end
+
+"""
+    InterpolateDataFields2D(Original::CartData, New::CartData; Rotate=0.0, Translate=(0,0,0), Scale=(1.0,1.0,1.0))
+
+Interpolates a data field `Original` on a 2D CartData grid `New`. 
+Typically used for horizontal surfaces.
+
+Note: `Original` should have orthogonal coordinates. If it has not, e.g., because it was rotated, you'll have to specify the angle `Rotate` that it was rotated by
+
+"""
+function InterpolateDataFields2D(Original::CartData, New::CartData; Rotate=0.0, Translate=(0.0,0.0,0.0), Scale=(1.0,1.0,1.0))
+    if (Rotate!=0.0) || Any(Translate .!= (0,0,0)) || Any(Scale .!= (1.0,1.0,1.0))
+        Original_r  = RotateTranslateScale(Original, Rotate = -1.0*Rotate, Translate = -1.0.*Translate, Scale=-1.0.*Scale);
+        New_r       = RotateTranslateScale(New, Rotate = -1.0*Rotate, Translate = -1.0.*Translate, Scale=-1.0.*Scale);
+    else
+        Original_r  = Original;
+        New_r       = New;
+    end
+
+    X_vec      =  Original_r.x.val[:,1,1];
+    Y_vec      =  Original_r.y.val[1,:,1];
+    
+    Xnew = New_r.x.val
+    Ynew = New_r.y.val
+    Znew, fields_new = InterpolateDataFields2D_vecs(X_vec, Y_vec, Original_r.z, Original_r.fields, Xnew, Ynew)
+
+    return CartData(New.x.val,New.y.val,Znew, fields_new)
 end
 
 
@@ -1156,9 +1184,10 @@ function InterpolateDataFields2D_vecs(EW_vec, NS_vec, depth, fields_new, EW, NS)
    # fields_new  = V.fields;
     field_names = keys(fields_new);
     for i = 1:length(fields_new)
-        if typeof(fields_new[i]) <: Tuple
+        data_tuple = fields_new[i] 
+
+        if (typeof(data_tuple) <: Tuple) & (!contains(String(field_names[i]),"colors"))
             # vector or anything that contains more than 1 field
-            data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop 
             data_array = zeros(size(EW,1),size(EW,2),size(EW,3),length(data_tuple));     # create a 3D array that holds the 2D interpolated values
             unit_array = zeros(size(data_array));
 
@@ -1168,12 +1197,36 @@ function InterpolateDataFields2D_vecs(EW_vec, NS_vec, depth, fields_new, EW, NS)
             end
             data_new    = tuple([data_array[:,:,1,c] for c in 1:size(data_array,4)]...)     # transform 3D matrix to tuple
 
+        elseif contains(String(field_names[i]),"colors")
+            # This is a 3D matrix. We need to interpolate each color channel separately, while using nearest neighbour
+            # as you don't want to average colors
+
+            # use nearest neighbour to interpolate data
+            X,Y,_ = XYZGrid(EW_vec, NS_vec, depth.val[1]);
+
+            coord       =   [vec(X)'; vec(Y)'];
+            kdtree      =   KDTree(coord; leafsize = 10);
+            points      =   [vec(EW)';vec(NS)'];
+            idx,dist    =   nn(kdtree, points);
+            I           =   CartesianIndices(axes(X))
+            I_idx       =   I[idx]
+            I_loc       =   CartesianIndices(axes(EW))
+
+            data_array = zeros(size(EW,1),size(EW,2),size(EW,3),length(data_tuple));     # create a 3D array that holds the 2D interpolated values
+            for (n,i) in enumerate(I_loc)
+                ix,iy = i[1],i[2]
+                for j=1:length(data_tuple)
+                    data_array[ix,iy,1,j] = data_tuple[j][I_idx[n]]
+                end    
+            end
+            data_new    = tuple([data_array[:,:,1,c] for c in 1:size(data_array,4)]...)     # transform 3D matrix to tuple
+                             
         else
             # scalar field
-            if length(size(fields_new[i]))==3
-                interpol    =   linear_interpolation((EW_vec, NS_vec), fields_new[i][:,:,1], extrapolation_bc = Flat());            # create interpolation object
+            if length(size(data_tuple))==3
+                interpol    =   linear_interpolation((EW_vec, NS_vec), data_tuple[:,:,1], extrapolation_bc = Flat());            # create interpolation object
             else
-                interpol    =   linear_interpolation((EW_vec, NS_vec), fields_new[i], extrapolation_bc = Flat());            # create interpolation object
+                interpol    =   linear_interpolation((EW_vec, NS_vec), data_tuple, extrapolation_bc = Flat());            # create interpolation object
             end
 
             data_new    =   interpol.(EW, NS);                                                 # interpolate data field
@@ -1702,7 +1755,7 @@ function VoteMap(DataSets::GeoData, criteria::String; dims=(50,50,50))
 end
 
 """
-    Data_R = RotateTranslateScale(Data::Union{ParaviewData, CartData}; Rotate=0, Translate=(0,0,0), Scale=(1.0,1.0,1.0))
+    Data_R = RotateTranslateScale(Data::Union{ParaviewData, CartData}; Rotate=0, Translate=(0,0,0), Scale=(1.0,1.0,1.0), Xc=(0.0,0.0))
 
 Does an in-place rotation, translation and scaling of the Cartesian dataset `Data`. 
 
@@ -1711,6 +1764,7 @@ Note that we apply the transformations in exactly this order:
 -   `Scale`:        scaling applied to the `x,y,z` coordinates of the data set
 -   `Rotate`:       rotation around the `x/y` axis (around the center of the box)
 -   `Translate`:    translation
+-   `Xc`:           center of rotation
 
 # Example
 ```julia
@@ -1732,7 +1786,7 @@ ParaviewData
   fields: (:Depth,)
 ```
 """
-function RotateTranslateScale(Data::Union{ParaviewData, CartData}; Rotate=0, Translate=(0,0,0), Scale=(1.0,1.0,1.0))
+function RotateTranslateScale(Data::Union{ParaviewData, CartData}; Rotate::Number=0.0, Translate=(0,0,0), Scale=(1.0,1.0,1.0), Xc=(0.0,0.0))
 
     X,Y,Z       = copy(Data.x.val), copy(Data.y.val), copy(Data.z.val);     # Extract coordinates
     Xr,Yr,Zr    = X,Y,Z;                                                    # Rotated coordinates 
@@ -1747,13 +1801,13 @@ function RotateTranslateScale(Data::Union{ParaviewData, CartData}; Rotate=0, Tra
 
 
     # 2) 2D rotation around X/Y axis, around center of box
-    Xm,Ym = mean(X), mean(Y);  
-    R = [cosd(Rotate[1]) -sind(Rotate[1]); sind(Rotate[1]) cosd(Rotate[1])]; # 2D rotation matrix
+    Xm,Ym = 0.0, 0.0;  
+    R = [cosd(Rotate) -sind(Rotate); sind(Rotate) cosd(Rotate)]; # 2D rotation matrix
 
     for i in eachindex(X)
-        Rot_XY = R*[X[i]-Xm; Y[i]-Ym];
-        Xr[i]  = Rot_XY[1] + Xm;
-        Yr[i]  = Rot_XY[2] + Ym;
+        Rot_XY = R*[X[i]-Xc[1]; Y[i]-Xc[2]];
+        Xr[i]  = Rot_XY[1] + Xc[1];
+        Yr[i]  = Rot_XY[2] + Xc[2];
     end 
   
     # 3) Add translation
@@ -1762,15 +1816,11 @@ function RotateTranslateScale(Data::Union{ParaviewData, CartData}; Rotate=0, Tra
     Zr .+= Translate[3];
     
     # Modify original structure
-    #Data.x.val = Xr;
-    #Data.y.val = Yr;
-    #Data.z.val = Zr;
     if isa(Data, ParaviewData)
         Data_r =  ParaviewData(Xr,Yr,Zr, Data.fields)   
     else
         Data_r =  CartData(Xr,Yr,Zr, Data.fields)   
     end
-
     
     return Data_r
 end
