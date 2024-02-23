@@ -1154,21 +1154,21 @@ Typically used for horizontal surfaces.
 Note: `Original` should have orthogonal coordinates. If it has not, e.g., because it was rotated, you'll have to specify the angle `Rotate` that it was rotated by
 
 """
-function InterpolateDataFields2D(Original::CartData, New::CartData; Rotate=0.0, Translate=(0.0,0.0,0.0), Scale=(1.0,1.0,1.0))
-    if (Rotate!=0.0) || Any(Translate .!= (0,0,0)) || Any(Scale .!= (1.0,1.0,1.0))
-        Original_r  = RotateTranslateScale(Original, Rotate = -1.0*Rotate, Translate = -1.0.*Translate, Scale=-1.0.*Scale);
-        New_r       = RotateTranslateScale(New, Rotate = -1.0*Rotate, Translate = -1.0.*Translate, Scale=-1.0.*Scale);
+function InterpolateDataFields2D1(Original::CartData, New::CartData; Rotate=0.0, Translate=(0.0,0.0,0.0), Scale=(1.0,1.0,1.0))
+    if (Rotate!=0.0) || any(Translate .!= (0,0,0)) || any(Scale .!= (1.0,1.0,1.0))
+        Original_r  = RotateTranslateScale(Original, Rotate = -1.0*Rotate, Translate = -1.0.*Translate, Scale=Scale);
+        New_r       = RotateTranslateScale(New, Rotate = -1.0*Rotate, Translate = -1.0.*Translate, Scale=Scale);
     else
         Original_r  = Original;
         New_r       = New;
     end
-
+    
     X_vec      =  Original_r.x.val[:,1,1];
     Y_vec      =  Original_r.y.val[1,:,1];
-    
+
     Xnew = New_r.x.val
     Ynew = New_r.y.val
-    Znew, fields_new = InterpolateDataFields2D_vecs(X_vec, Y_vec, Original_r.z, Original_r.fields, Xnew, Ynew)
+    Znew, fields_new = GeophysicalModelGenerator.InterpolateDataFields2D_vecs(X_vec, Y_vec, Original_r.z, Original_r.fields, Xnew, Ynew)
 
     return CartData(New.x.val,New.y.val,Znew, fields_new)
 end
