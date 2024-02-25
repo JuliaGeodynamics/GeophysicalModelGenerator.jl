@@ -107,7 +107,7 @@ ImportTopo(; lat=[37,49], lon=[4,20], file::String="@earth_relief_01m.grd") = Im
 
 
 """
-  data_GMT = ImportGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=true, NorthernHemisphere=true, constantDepth=false)
+  data_GMT = ImportGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=true, NorthernHemisphere=true, constantDepth=false, removeNaN_z=false, removeNaN_field=false)
 
 This imports a GeoTIFF dataset (usually containing a surface of some sort) using GMT.
 The file should either have `UTM` coordinates of `longlat` coordinates. If it doesn't, you can 
@@ -119,9 +119,9 @@ Optional keywords:
 - `iskm`      : if true, the depth is multiplied by 1e-3 (default=true)
 - `NorthernHemisphere`: if true, the UTM zone is set to be in the northern hemisphere (default=true); only relevant if the data uses UTM projection
 - `constantDepth`: if true we will not warp the surface by z-values, but use a constant value instead
-- `removeNaN`   : if true, we will remove NaN values from the dataset
+- `removeNaN_z`  : if true, we will remove NaN values from the z-dataset
 """
-function ImportGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=true, NorthernHemisphere=true, constantDepth=false, removeNaN=false)
+function ImportGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=true, NorthernHemisphere=true, constantDepth=false, removeNaN_z=false, removeNaN_field=false)
   G = gmtread(fname);
 
   # Transfer to GeoData
@@ -150,14 +150,17 @@ function ImportGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=tr
     end
 
   end
+  
+  if removeNaN_z
+    remove_NaN_Surface!(Depth, Lon, Lat)
+  end
+  if removeNaN_field
+    remove_NaN_Surface!(data, Lon, Lat)
+  end
   data_field  = NamedTuple{(fieldname,)}((data,));
 
   if constantDepth
     Depth = zero(Lon)
-  end
-
-  if removeNaN
-    remove_NaN_Surface!(Depth, Lon, Lat)
   end
 
   if contains(G.proj4,"utm")
