@@ -12,7 +12,7 @@ else
   using ..GMT
 end
 
-using GeophysicalModelGenerator: LonLatDepthGrid, GeoData, UTMData, km
+using GeophysicalModelGenerator: LonLatDepthGrid, GeoData, UTMData, km, remove_NaN_Surface!
 
 println("Loading GMT routines within GMG")
 
@@ -119,8 +119,9 @@ Optional keywords:
 - `iskm`      : if true, the depth is multiplied by 1e-3 (default=true)
 - `NorthernHemisphere`: if true, the UTM zone is set to be in the northern hemisphere (default=true); only relevant if the data uses UTM projection
 - `constantDepth`: if true we will not warp the surface by z-values, but use a constant value instead
+- `removeNaN`   : if true, we will remove NaN values from the dataset
 """
-function ImportGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=true, NorthernHemisphere=true, constantDepth=false)
+function ImportGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=true, NorthernHemisphere=true, constantDepth=false, removeNaN=false)
   G = gmtread(fname);
 
   # Transfer to GeoData
@@ -155,6 +156,9 @@ function ImportGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=tr
     Depth = zero(Lon)
   end
 
+  if removeNaN
+    remove_NaN_Surface!(Depth, Lon, Lat)
+  end
 
   if contains(G.proj4,"utm")
     zone = parse(Int64,split.(split(G.proj4,"zone=")[2]," ")[1]); # retrieve UTM zone

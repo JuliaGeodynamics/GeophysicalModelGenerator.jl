@@ -7,7 +7,7 @@ export RotateTranslateScale
 export DrapeOnTopo, LithostaticPressure!
 export FlattenCrossSection
 export AddField, RemoveField
-export SubtractSurfaces!, AddSurfaces!
+export SubtractSurfaces!, AddSurfaces!, remove_NaN_Surface!
 
 using NearestNeighbors
 
@@ -1985,6 +1985,30 @@ Subtracts `Surface2` to `Surface1`. The addition happens on the `Surface1.z`; th
 function SubtractSurfaces!(Surface1::Union{CartData,ParaviewData}, Surface2::Union{CartData,ParaviewData})
     
     Surface1.z.val .=  Surface1.z.val - Surface2.z.val
+
+    return nothing
+end
+
+
+
+
+"""
+    remove_NaN_Surface!(Z,X,Y)
+    
+Removes NaN's from a grid `Z` by taking the closest points as specified by `X` and `Y`.
+"""
+function remove_NaN_Surface!(Z,X,Y)
+    # use nearest neighbour to interpolate data
+    id      = findall(isnan.(Z) .== false)
+    id_NaN  = findall(isnan.(Z))
+    
+    coord   =   [X[id]'; Y[id]'];
+    kdtree  =   KDTree(coord; leafsize = 10);
+    
+    points    = [X[id_NaN]'; Y[id_NaN]'];
+    idx,dist  = nn(kdtree, points);
+    
+    Z[id_NaN] = Z[id[idx]]
 
     return nothing
 end
