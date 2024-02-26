@@ -79,8 +79,8 @@ end
 
 
 
-"""
-CrossSectionVolume(Volume::GeoData; dims=(100,100), Interpolate=false, Depth_level=nothing; Lat_level=nothing; Lon_level=nothing; Start=nothing, End=nothing, Depth_extent=nothing )
+""" 
+CrossSectionVolume(Volume::AbstractGeneralGrid; dims=(100,100), Interpolate=false, Depth_level=nothing; Lat_level=nothing; Lon_level=nothing; Start=nothing, End=nothing, Depth_extent=nothing )
 
 Creates a cross-section through a volumetric (3D) `GeoData` object.
 
@@ -502,9 +502,9 @@ Creates a cross-section through a `GeoData` object.
 julia> Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
 julia> Data            =   Depth*2;                # some data
 julia> Vx,Vy,Vz        =   ustrip(Data*3),ustrip(Data*4),ustrip(Data*5);
-julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)));
-julia> Data_cross      =   CrossSection(Data_set3D, Depth_level=-100km)
-GeoData
+julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz))); 
+julia> Data_cross      =   CrossSection(Data_set3D, Depth_level=-100km)  
+GeoData 
   size  : (11, 11, 1)
   lon   ϵ [ 10.0 : 20.0]
   lat   ϵ [ 30.0 : 40.0]
@@ -529,7 +529,6 @@ function CrossSection(DataSet::AbstractGeneralGrid; dims=(100,100), Interpolate=
     end
 
     return DataProfile
-
 end
 
 """
@@ -559,7 +558,7 @@ CartData
 ```
 """
 function FlattenCrossSection(V::CartData)
-
+ 
     x_new = sqrt.((V.x.val.-V.x.val[1,1,1]).^2 .+ (V.y.val.-V.y.val[1,1,1]).^2) # NOTE: the result is in km, as V.x and V.y are stored in km
 
 
