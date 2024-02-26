@@ -28,7 +28,7 @@ using GeophysicalModelGenerator
 
 # test loading images (profiles & mapviews)
 
-# Extact & save profile in GeoData format
+# Extract & save profile in GeoData format
 filename            =   "test.png";             # fake png
 Corner_LowerLeft    =   (18.0, 51.0, -590.0)
 Corner_UpperRight   =   (9.0, 42.0,    0.0)
@@ -78,5 +78,3 @@ data_Image          =   Screenshot_To_UTMData(filename,Corner_LowerLeft, Corner_
 @test data_Image.EW.val[22] ≈ 0.42424242424242425
 @test data_Image.NS.val[22] ≈ 48.666666666666664
 @test Value(data_Image.depth[22]) ≈ -15.0m
-
-

@@ -1,12 +1,12 @@
-# Import profiles/maps from published papers 
+# Import profiles/maps from published papers
 
 ## Goal
-Ideally, all data should be availabe in digital format, after which you could use the tools described in the other tutorial to transform them into `GeoData` and export them to VTK.
+Ideally, all data should be available in digital format, after which you could use the tools described in the other tutorial to transform them into `GeoData` and export them to VTK.
 Yet, the reality is different and often data is not (yet) available, or papers are old and the authors can no longer be contacted.
 
 For that reason, `GeophysicalModelGenerator` has tools that allow you to transfer a screenshot from any published paper into `GeoData/Paraview` and see it in 3D at the correct geographic location. This can be done for vertical profiles and for mapviews, which gives you a quick and easy way to see those papers in a new (3D) light.
 
-Here, we explain how. 
+Here, we explain how.
 - [Import profiles/maps from published papers](#import-profilesmaps-from-published-papers)
   - [Goal](#goal)
   - [General procedure](#general-procedure)
@@ -50,7 +50,7 @@ Extracting GeoData from: Lippitsch_Fig13a.png
               └ lower right = (17.23  , 43.8   ,  -400.0 )
               └ upper left  = (4.65   , 45.73  ,  0.0    )
               └ upper right = (17.23  , 43.8   ,  0.0    )
-GeoData 
+GeoData
   size  : (325, 824, 1)
   lon   ϵ [ 4.6499999999999995 : 17.230000000000004]
   lat   ϵ [ 43.79999999999999 : 45.730000000000004]
@@ -59,7 +59,7 @@ GeoData
 ```
 Finally, you save it in Paraview format as always:
 ```julia
-julia> Write_Paraview(data_profile1, "Lippitsch_Fig13a_profile") 
+julia> Write_Paraview(data_profile1, "Lippitsch_Fig13a_profile")
 ```
 
 You can open this in paraview. Here, it is shown along with topographic data (made transparent):
@@ -81,10 +81,10 @@ Corner_UpperRight   =   (15.5, 50.0 , -150.0)
 Corner_LowerRight   =   (15.5, 43.0 , -150.0)
 Corner_UpperLeft    =   (3.5 , 50.0 , -150.0)
 data_Fig13_map      =   Screenshot_To_GeoData("Fig13_mapview.png",Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight,Corner_UpperLeft=Corner_UpperLeft)
-Write_Paraview(data_Fig13_map, "Lippitsch_Fig13_mapview") 
+Write_Paraview(data_Fig13_map, "Lippitsch_Fig13_mapview")
 ```
 
-Once added to paraview (together with a few additional map views from the same paper):  
+Once added to paraview (together with a few additional map views from the same paper):
 ![Tutorial_ScreenShots_Lippitsch_4](../assets/img/Tutorial_ScreenShots_Lippitsch_4.png)
 
 #### 4. Using an automatic digitizer to pick points on map
@@ -112,10 +112,10 @@ The general approach is simple: open a multiblock file, and pass the filename to
 An example showing you how this works is:
 ```julia
 julia> vtmfile = vtk_multiblock("Lippitsch_CrossSections")
-julia> Write_Paraview(data_Fig12_90km, vtmfile) 
-julia> Write_Paraview(data_Fig12_180km, vtmfile) 
-julia> Write_Paraview(data_Fig12_300km, vtmfile) 
-julia> Write_Paraview(data_Fig12_400km, vtmfile) 
+julia> Write_Paraview(data_Fig12_90km, vtmfile)
+julia> Write_Paraview(data_Fig12_180km, vtmfile)
+julia> Write_Paraview(data_Fig12_300km, vtmfile)
+julia> Write_Paraview(data_Fig12_400km, vtmfile)
 julia> vtk_save(vtmfile)
 ```
 Note that you have to create the cross-sections first (see the julia script below).
@@ -127,4 +127,3 @@ The full julia script that interprets all the figures is given [here](https://gi
 ```julia
 julia> include("Lippitsch_Screenshots.jl")
 ```
-

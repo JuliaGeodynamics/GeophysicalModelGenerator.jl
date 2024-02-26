@@ -1,12 +1,12 @@
 # NOTE: this remains WIP, which is why it is not yet in the documentation
-# These are routines that allow importing *.stl triangular surfaces and employ them 
+# These are routines that allow importing *.stl triangular surfaces and employ them
 
 using FileIO
 using GeometryBasics: TriangleP, Mesh, normals, PointMeta, coordinates
 using LinearAlgebra
 
-# Warning: the TriangleIntersect dependency does not seem to work on different machines, as the developer did not add a version nunber..
-# That forces us to remove it here, and 
+# Warning: the TriangleIntersect dependency does not seem to work on different machines, as the developer did not add a version number..
+# That forces us to remove it here, and
 #using TriangleIntersect
 
 export Ray, Intersection, IntersectRayTriangle, load, TriangleNormal, Point, IntersectRayMesh, coordinates
@@ -19,12 +19,12 @@ Base.convert(::Type{Triangle}, t::TriangleP)    =   Triangle(convert(Point,t[1])
 Triangle(t::TriangleP) = convert(Triangle,t)
 
 
-# Define a few routins to allow computing the intersection of a ray with a triangle
+# Define a few routines to allow computing the intersection of a ray with a triangle
 #/(p::GeometryBasics.Point, n::Number) = GeometryBasics.Point(p.x/n, p.y/n, p.z/n)
 #unitize(p::GeometryBasics.Point) = p/(p*p)
 
 #=
-# Intersection 
+# Intersection
 struct Intersection
     ip::Point    # intersecting point
     id::Float64                 # intersecting distance
@@ -63,7 +63,7 @@ function IntersectRayTriangle(r::Ray, t::TriangleP, normal)
     v2v2    =   dot(v2,v2)
     v1v2    =   dot(v1,v2)
     t_denom =   v1v2*v1v2 - v1v1*v2v2
- 
+
     denom = dot(normal,r.direction)
     denom == 0 && return no_intersection
     ri = normal*(t[1] - r.origin) / denom
@@ -80,7 +80,7 @@ function IntersectRayTriangle(r::Ray, t::TriangleP, normal)
     t_intersection >= 1 && return no_intersection
     s_intersection + t_intersection >= 1 && return no_intersection
     return Intersection(t[1] + s_intersection*v1+t_intersection*v2, ri, true)
-   
+
 
 end
 =#
@@ -119,31 +119,31 @@ function STLToSurface(name::String,  Xin, Yin, minZ)
     else
         X,Y  =  Xin, Yin;
     end
-    
+
     Z    =  ones(size(X))*NaN
-   
+
     minM  =  minimum.(mesh)
     maxM  =  maximum.(mesh)
     max_x = [maxM[i][1] for i=1:length(maxM)]
     min_x = [minM[i][1] for i=1:length(maxM)]
     max_y = [maxM[i][2] for i=1:length(maxM)]
     min_y = [minM[i][2] for i=1:length(maxM)]
-    
+
     for i in eachindex(X)
-        
+
         r_up =  Ray(Point(X[i],Y[i],minZ),Point(0.0, 0.0, 1.0))
-        
-        ind = findall(  (X[i] .>= min_x)  .& (X[i] .<= max_x) .& 
+
+        ind = findall(  (X[i] .>= min_x)  .& (X[i] .<= max_x) .&
                         (Y[i] .>= min_y)  .& (Y[i] .<= max_y) )
 
         for iT in eachindex(ind)
-        
+
             is = intersect(r_up, Triangle(mesh[ind[iT]]))
-            if is.is_intersection 
+            if is.is_intersection
                 Z[i] = is.ip.z
             end
 
-            
+
         end
     end
 
@@ -153,7 +153,7 @@ function STLToSurface(name::String,  Xin, Yin, minZ)
     X_out[:,:,1] = X;
     Y_out[:,:,1] = Y;
     Z_out[:,:,1] = Z;
-    
+
     Data = ParaviewData(X_out,Y_out,Z_out,(depth=Z_out,))
 
     return Data
@@ -162,26 +162,26 @@ end
 =#
 
 
-""" 
-    inside = IsInsideClosedSTL(mesh::Mesh, Pt, eps=1e-3) 
+"""
+    inside = IsInsideClosedSTL(mesh::Mesh, Pt, eps=1e-3)
 
 Determine whether a point `Pt` is inside a 3D closed triangular `*.stl` surface or not.
 
-This implements the winding number method, following the python code: 
+This implements the winding number method, following the python code:
 https://github.com/marmakoide/inside-3d-mesh
 
 This again is described in the following [paper](https://igl.ethz.ch/projects/winding-number/) by Alec Jacobson, Ladislav Kavan and Olga Sorkine-Hornung.
 """
-function IsInsideClosedSTL(mesh::Mesh, Pt::Vector, eps=1e-3) 
+function IsInsideClosedSTL(mesh::Mesh, Pt::Vector, eps=1e-3)
 
      # Compute triangle vertices and their norms relative to X
-     M_vec  = [mesh.position[i]-Pt[:]   for i in eachindex(mesh.position)];  
+     M_vec  = [mesh.position[i]-Pt[:]   for i in eachindex(mesh.position)];
      M      = zeros(length(M_vec),3);
      for i=1:length(M_vec)
         M[i,:] = Float64.(M_vec[i][1:3]);
      end
      M_norm = sqrt.(sum(M.^2,dims=2))
- 
+
      # Accumulate generalized winding number per triangle
      winding_number = 0.
      for iT=1:length(mesh)
@@ -204,8 +204,7 @@ function IsInsideClosedSTL(mesh::Mesh, Pt::Vector, eps=1e-3)
      else
         isinside = false
      end
-     
-     
+
+
      return isinside
 end
-
