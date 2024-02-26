@@ -92,7 +92,7 @@ latitude                                        FLOAT                   latitude
 longitude                                       FLOAT                   longitude
 Vs                                              FLOAT                   longitude latitude depth
 ```
-Here we can see that there are four variables in this file, three of them (depth,latitude, longitude) having a single dimension and the fourth one (Vs) having dimensions of the three previous variables. The three one-dimensional vectors therefore denote a regualar grid of coordinates defining the locations where Vs is stored.
+Here we can see that there are four variables in this file, three of them (depth,latitude, longitude) having a single dimension and the fourth one (Vs) having dimensions of the three previous variables. The three one-dimensional vectors therefore denote a regular grid of coordinates defining the locations where Vs is stored.
 To load this data, we can now simply use the command *ncread*:
 ```julia-repl
 julia> lat = ncread(filename,"latitude")
