@@ -1,4 +1,4 @@
-# few utils that are useful 
+# few utils that are useful
 
 export meshgrid, CrossSection, CrossSectionVolume, CrossSectionSurface, CrossSectionPoints, ExtractSubvolume, SubtractHorizontalMean
 export ParseColumns_CSV_File, AboveSurface, BelowSurface, VoteMap
@@ -32,26 +32,26 @@ end
 """
     V = AddField(V::AbstractGeneralGrid,field_name::String,data::Any)
 
-Add Fields Data to GeoData or CartData 
+Add Fields Data to GeoData or CartData
 
 """
 function AddField(V::AbstractGeneralGrid,field_name::String,data::Any)
     fields_new  = V.fields;     new_field   =   NamedTuple{(Symbol(field_name),)}((data,));
-    fields_new  =   merge(fields_new, new_field); # replace the field in fields_new 
+    fields_new  =   merge(fields_new, new_field); # replace the field in fields_new
 
-    if isa(V,GeoData) 
+    if isa(V,GeoData)
         V = GeoData(V.lon.val,V.lat.val,V.depth.val,fields_new)
     elseif isa(V,CartData)
         V = CartData(V.x.val,V.y.val,V.z.val,fields_new)
     else
         error("AddField is only implemented for GeoData and CartData structures")
     end
-    
-    return V 
+
+    return V
 end
 
-# this function is taken from @JeffreySarnoff  
-function dropnames(namedtuple::NamedTuple, names::Tuple{Vararg{Symbol}}) 
+# this function is taken from @JeffreySarnoff
+function dropnames(namedtuple::NamedTuple, names::Tuple{Vararg{Symbol}})
     keepnames = Base.diff_names(Base._nt_names(namedtuple), names)
    return NamedTuple{keepnames}(namedtuple)
 end
@@ -63,26 +63,26 @@ Removes the field with name `field_name` from the GeoData or CartData dataset
 
 """
 function RemoveField(V::AbstractGeneralGrid,field_name::String)
-    fields_new  = V.fields;    
+    fields_new  = V.fields;
     fields_new  = dropnames(fields_new, (Symbol(field_name),))
-    
-    if isa(V,GeoData) 
+
+    if isa(V,GeoData)
         V = GeoData(V.lon.val,V.lat.val,V.depth.val,fields_new)
     elseif isa(V,CartData)
         V = CartData(V.x.val,V.y.val,V.z.val,fields_new)
     else
         error("RemoveField is only implemented for GeoData and CartData structures")
     end
-    
-    return V 
+
+    return V
 end
 
 
 
-""" 
+"""
 CrossSectionVolume(Volume::GeoData; dims=(100,100), Interpolate=false, Depth_level=nothing; Lat_level=nothing; Lon_level=nothing; Start=nothing, End=nothing, Depth_extent=nothing )
 
-Creates a cross-section through a volumetric (3D) `GeoData` object. 
+Creates a cross-section through a volumetric (3D) `GeoData` object.
 
 - Cross-sections can be horizontal (map view at a given depth), if `Depth_level` is specified
 - They can also be vertical, either by specifying `Lon_level` or `Lat_level` (for a fixed lon/lat), or by defining both `Start=(lon,lat)` & `End=(lon,lat)` points.
@@ -95,9 +95,9 @@ Creates a cross-section through a volumetric (3D) `GeoData` object.
 julia> Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
 julia> Data            =   Depth*2;                # some data
 julia> Vx,Vy,Vz        =   ustrip(Data*3),ustrip(Data*4),ustrip(Data*5);
-julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz))); 
-julia> Data_cross      =   CrossSectionVolume(Data_set3D, Depth_level=-100km)  
-GeoData 
+julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)));
+julia> Data_cross      =   CrossSectionVolume(Data_set3D, Depth_level=-100km)
+GeoData
   size  : (11, 11, 1)
   lon   ϵ [ 10.0 : 20.0]
   lat   ϵ [ 30.0 : 40.0]
@@ -120,7 +120,7 @@ function CrossSectionVolume(V::AbstractGeneralGrid; dims=(100,100), Interpolate=
     X,Y,Z = coordinate_grids(V)
 
     if !isnothing(Depth_level)    # Horizontal slice
-        CheckBounds(Z, Depth_level)    
+        CheckBounds(Z, Depth_level)
         if Interpolate
             Lon,Lat,Depth = LonLatDepthGrid(    LinRange(minimum(X), maximum(X), dims[1]),
                                                 LinRange(minimum(Y), maximum(Y), dims[2]),
@@ -134,7 +134,7 @@ function CrossSectionVolume(V::AbstractGeneralGrid; dims=(100,100), Interpolate=
     end
 
     if !isnothing(Lat_level)   # vertical slice @ given latitude
-        CheckBounds(Y, Lat_level)    
+        CheckBounds(Y, Lat_level)
         if Interpolate
             Lon,Lat,Depth = LonLatDepthGrid(    LinRange(minimum(X), maximum(X), dims[1]),
                                                 Lat_level,
@@ -148,8 +148,8 @@ function CrossSectionVolume(V::AbstractGeneralGrid; dims=(100,100), Interpolate=
     end
 
     if !isnothing(Lon_level)   # vertical slice @ given longitude
-        CheckBounds(X, Lon_level)    
-        if Interpolate 
+        CheckBounds(X, Lon_level)
+        if Interpolate
             Lon,Lat,Depth = LonLatDepthGrid(    Lon_level,
                                                 LinRange(minimum(Y), maximum(Y), dims[1]),
                                                 LinRange(minimum(Z), maximum(Z), dims[2]))
@@ -189,17 +189,17 @@ function CrossSectionVolume(V::AbstractGeneralGrid; dims=(100,100), Interpolate=
         Lon             =   zeros(dims[1],dims[2],1)
         Lat             =   zeros(dims[1],dims[2],1)
         Depth           =   zeros(dims[1],dims[2],1)*Depth_p[1]
-        
+
         # We need 3D matrixes for the paraview writing routine to know we are in 3D
         Lon[:,:,1]      =   Lon_p[:,1,:]
         Lat[:,:,1]      =   Lat_p[1,:,:]
         Depth[:,:,1]    =   Depth_p[1,:,:]
-        
+
     end
 
     if Interpolate
         # Interpolate data on profile
-        DataProfile = InterpolateDataFields(V, Lon, Lat, NumValue(Depth));    
+        DataProfile = InterpolateDataFields(V, Lon, Lat, NumValue(Depth));
     else
         # extract data (no interpolation)
         DataProfile = ExtractDataSets(V, iLon, iLat, iDepth);
@@ -210,7 +210,7 @@ function CrossSectionVolume(V::AbstractGeneralGrid; dims=(100,100), Interpolate=
 end
 
 
-""" 
+"""
 CrossSectionSurface(Surface::GeoData; dims=(100,), Interpolate=false, Depth_level=nothing; Lat_level=nothing; Lon_level=nothing; Start=nothing, End=nothing )
 
 Creates a cross-section through a surface (2D) `GeoData` object.
@@ -225,9 +225,9 @@ Creates a cross-section through a surface (2D) `GeoData` object.
 julia> Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,-50km);
 julia> Data            =   Depth*2;                # some data
 julia> Vx,Vy,Vz        =   ustrip(Data*3),ustrip(Data*4),ustrip(Data*5);
-julia> Data_set2D      =   GeoData(Lon,Lat,Depth,(Depth=Depth,)); 
-julia> Data_cross      =   CrossSectionSurface(Data_set2D, Lat_level =15)  
-GeoData 
+julia> Data_set2D      =   GeoData(Lon,Lat,Depth,(Depth=Depth,));
+julia> Data_cross      =   CrossSectionSurface(Data_set2D, Lat_level =15)
+GeoData
   size      : (100,)
   lon       ϵ [ 10.0 : 20.0]
   lat       ϵ [ 15.0 : 15.0]
@@ -245,7 +245,7 @@ function CrossSectionSurface(S::AbstractGeneralGrid; dims=(100,), Interpolate=tr
     end
 
     X,Y,Z = coordinate_grids(S)
-    
+
     Lon_vec = X[:,1,1]
     Lat_vec = Y[1,:,1]
 
@@ -286,13 +286,13 @@ function CrossSectionSurface(S::AbstractGeneralGrid; dims=(100,), Interpolate=tr
     for i = 1:length(S.fields)
         if typeof(S.fields[i]) <: Tuple
             # vector or anything that contains more than 1 field
-            data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop 
+            data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop
             data_array = zeros(size(Lon,1),size(Lon,2),length(data_tuple));     # create a 2D array that holds the 2D interpolated values
             unit_array = zeros(size(data_array));
 
             for j=1:length(data_tuple)
                 interpol    =   linear_interpolation((Lon_vec, Lat_vec), dropdims(ustrip.(data_tuple[j]),dims=3),extrapolation_bc = NaN);      # create interpolation object
-                data_array[:,:,j] =   interpol.(Lon, Lat);          
+                data_array[:,:,j] =   interpol.(Lon, Lat);
             end
             data_new    = tuple([data_array[:,:,c] for c in 1:size(data_array,3)]...)     # transform 3D matrix to tuple, do not add unit, as this creates an error in GMG (Issue), to add the unit: *unit(S.fields[i][1][1])
 
@@ -301,11 +301,11 @@ function CrossSectionSurface(S::AbstractGeneralGrid; dims=(100,), Interpolate=tr
             interpol    =   linear_interpolation((Lon_vec, Lat_vec), dropdims(ustrip.(S.fields[i]),dims=3), extrapolation_bc = NaN);
             data_new    =   interpol.(Lon, Lat)*unit(S.fields[i][1]);                                                 # interpolate data field
         end
-        
-        # replace the field 
+
+        # replace the field
         new_field   =   NamedTuple{(field_names[i],)}((data_new,))                          # Create a tuple with same name and unit
         fields_new  =   merge(fields_new, new_field);                                       # replace the field in fields_new
-        
+
     end
 
     # create GeoData structure with the interpolated points
@@ -317,19 +317,19 @@ end
 
 """
     function CrossSectionPoints(P::GeoData; Depth_level=nothing, Lat_level=nothing, Lon_level=nothing, Start=nothing, End=nothing, section_width=50 )
-    
+
 Creates a projection of separate points (saved as a GeoData object) onto a chosen plane. Only points with a maximum distance of section_width are taken into account
 
 """
 function CrossSectionPoints(P::GeoData; Depth_level=nothing, Lat_level=nothing, Lon_level=nothing, Start=nothing, End=nothing, section_width = 10km)
-    
+
     DataSetType = CheckDataSet(P);
     if DataSetType != 1
         error("CrossSectionPoints: the input data set has to be a pointwise data set!")
     end
 
-    if !isnothing(Depth_level) 
-        ind = findall(-0.5*ustrip(section_width) .< (NumValue(P.depth) .- ustrip(Depth_level)) .< 0.5*ustrip(section_width)) # find all points around the desired depth level, both units shoud be in km, so no unit transformation required
+    if !isnothing(Depth_level)
+        ind = findall(-0.5*ustrip(section_width) .< (NumValue(P.depth) .- ustrip(Depth_level)) .< 0.5*ustrip(section_width)) # find all points around the desired depth level, both units should be in km, so no unit transformation required
 
         # create temporary variables
         lon_tmp     = NumValue(P.lon.val[ind])
@@ -344,7 +344,7 @@ function CrossSectionPoints(P::GeoData; Depth_level=nothing, Lat_level=nothing, 
     if !isnothing(Lat_level)   # vertical slice @ given latitude
 
         p_Point = ProjectionPoint(Lat=Lat_level,Lon=sum(P.lon.val)/length(P.lon.val)) # define the projection point (lat/lon) as the latitude and the mean of the longitudes of the data
-        P_UTM   = Convert2UTMzone(P, p_Point) # convert to UTM        
+        P_UTM   = Convert2UTMzone(P, p_Point) # convert to UTM
         ind     = findall(-0.5*ustrip(uconvert(u"m",section_width)) .< (P_UTM.NS.val .- p_Point.NS) .< 0.5*ustrip(uconvert(u"m",section_width))) # find all points around the desired latitude level, UTM is in m, so we have to convert the section width
 
         # create temporary variables
@@ -384,7 +384,7 @@ function CrossSectionPoints(P::GeoData; Depth_level=nothing, Lat_level=nothing, 
 
         # choose projection point based on Start and End coordinates of the profile
         p_Point = ProjectionPoint(Lat=0.5*(Start[2]+End[2]),Lon=0.5*(Start[1]+End[1]))
-    
+
         # convert P to UTM Data
         P_UTM = Convert2UTMzone(P, p_Point) # convert to UTM
 
@@ -409,7 +409,7 @@ function CrossSectionPoints(P::GeoData; Depth_level=nothing, Lat_level=nothing, 
 
         t = (nx*Profile_UTM.EW.val[1] .- nx*P_UTM.EW.val .+ ny*Profile_UTM.NS.val[1] .- ny*P_UTM.NS.val .+ nz*Profile_UTM.depth.val[1]*1e3 .- nz*P_UTM.depth.val*1e3)/(nx*nx+ny*ny+nz*nz)
 
-        # compute the distance to the plane 
+        # compute the distance to the plane
         dist  = sqrt.((t.*nx).^2 + (t.*ny).^2 + (t.*nz).^2)
 
         # find the points that are within the required window around the profile
@@ -448,25 +448,25 @@ function CrossSectionPoints(P::GeoData; Depth_level=nothing, Lat_level=nothing, 
     for i = 1:length(P.fields)
         if typeof(P.fields[i]) <: Tuple
             # vector or anything that contains more than 1 field
-            data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop 
+            data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop
             data_array = zeros(size(ind,1),length(data_tuple));     # create a 2D array that holds the chosen values
 
             for j=1:length(data_tuple)
-                data_array[:,j] = ustrip.(data_tuple[i][ind])          
+                data_array[:,j] = ustrip.(data_tuple[i][ind])
             end
             data_new    = tuple([data_array[:,:,c] for c in 1:size(data_array,3)]...)     # transform 2D matrix to tuple, do not consider the unit as it creates an error in GMG (Issue), to add the unit: *unit.(P.fields[i][1][1]
-    
+
         else
             # scalar field
             data_new    =   fields_new[i][ind];                                                 # interpolate data field
         end
-            
-        # replace the field 
+
+        # replace the field
         new_field   =   NamedTuple{(field_names[i],)}((data_new,))                          # Create a tuple with same name and unit
         fields_new  =   merge(fields_new, new_field);                                       # replace the field in fields_new
-            
+
     end
-    
+
     # merge old and new fields
     fields_new = merge(fields_new,field_tmp);
 
@@ -485,7 +485,7 @@ end
 """
     CrossSection(DataSet::AbstractGeneralGrid; dims=(100,100), Interpolate=false, Depth_level=nothing, Lat_level=nothing, Lon_level=nothing, Start=nothing, End=nothing, Depth_extent=nothing, section_width=50km)
 
-Creates a cross-section through a `GeoData` object. 
+Creates a cross-section through a `GeoData` object.
 
 - Cross-sections can be horizontal (map view at a given depth), if `Depth_level` is specified
 - They can also be vertical, either by specifying `Lon_level` or `Lat_level` (for a fixed lon/lat), or by defining both `Start=(lon,lat)` & `End=(lon,lat)` points.
@@ -502,9 +502,9 @@ Creates a cross-section through a `GeoData` object.
 julia> Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
 julia> Data            =   Depth*2;                # some data
 julia> Vx,Vy,Vz        =   ustrip(Data*3),ustrip(Data*4),ustrip(Data*5);
-julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz))); 
-julia> Data_cross      =   CrossSection(Data_set3D, Depth_level=-100km)  
-GeoData 
+julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)));
+julia> Data_cross      =   CrossSection(Data_set3D, Depth_level=-100km)
+GeoData
   size  : (11, 11, 1)
   lon   ϵ [ 10.0 : 20.0]
   lat   ϵ [ 30.0 : 40.0]
@@ -518,10 +518,10 @@ function CrossSection(DataSet::AbstractGeneralGrid; dims=(100,100), Interpolate=
     DataSetType = CheckDataSet(DataSet); # check which kind of data set we are dealing with
 
     if DataSetType==1 # points
-        DataProfile = CrossSectionPoints(DataSet; Depth_level, Lat_level, Lon_level, Start, End, section_width)    
+        DataProfile = CrossSectionPoints(DataSet; Depth_level, Lat_level, Lon_level, Start, End, section_width)
     elseif DataSetType==2 # surface
         DataProfile = CrossSectionSurface(DataSet; dims, Depth_level, Lat_level, Lon_level, Start, End)
-    elseif DataSetType==3 # volume 
+    elseif DataSetType==3 # volume
         DataProfile = CrossSectionVolume(DataSet; dims, Interpolate, Depth_level, Lat_level, Lon_level, Start, End, Depth_extent)
 
         # add field that has coordinates along the profile
@@ -548,7 +548,7 @@ x_new = FlattenCrossSection(Data_Cross)
 This flattened CrossSection can be added to original Data_Cross by AddField()
 
 Data_Cross = AddField(Data_Cross,"FlatCrossSection", x_new)
-CartData 
+CartData
     size    : (100, 100, 1)
     x       ϵ [ 0.0 : 99.9]
     y       ϵ [ -10.0 : 20.0]
@@ -559,7 +559,7 @@ CartData
 ```
 """
 function FlattenCrossSection(V::CartData)
- 
+
     x_new = sqrt.((V.x.val.-V.x.val[1,1,1]).^2 .+ (V.y.val.-V.y.val[1,1,1]).^2) # NOTE: the result is in km, as V.x and V.y are stored in km
 
 
@@ -576,9 +576,9 @@ end
     julia> Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
     julia> Data            =   Depth*2;                # some data
     julia> Vx,Vy,Vz        =   ustrip(Data*3),ustrip(Data*4),ustrip(Data*5);
-    julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz))); 
-    julia> Data_cross      =   CrossSection(Data_set3D, Start=(10,30),End=(20,40)) 
-    julia> x_profile       =   FlattenCrossSection(Data_cross) 
+    julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)));
+    julia> Data_cross      =   CrossSection(Data_set3D, Start=(10,30),End=(20,40))
+    julia> x_profile       =   FlattenCrossSection(Data_cross)
     julia> Data_cross      =   AddField(Data_cross,"x_profile",x_profile)
 
     ```
@@ -606,7 +606,7 @@ Extract or "cuts-out" a piece of a 2D or 3D GeoData set, defined by `Lon`, `Lat`
 
 This is useful if you are only interested in a part of a much bigger larger data set.
 
-- `Lon_level`,`Lat_level` and `Depth_level` should be tuples that indicate `(minimum_value, maximum_value)` along the respective direction. If not specified we use the full range. 
+- `Lon_level`,`Lat_level` and `Depth_level` should be tuples that indicate `(minimum_value, maximum_value)` along the respective direction. If not specified we use the full range.
 - By default, `Interpolate=false` and we find the closest indices within the data set (so your new data set will not go exactly from minimum to maximum).
 - Alternatively, if `Interpolate=true` we interpolate the data onto a new grid that has dimensions `dims`. This can be useful to compare data sets that are originally given in different resolutions.
 
@@ -616,14 +616,14 @@ julia> Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
 julia> Data            =   Depth*2;                # some data
 julia> Vx,Vy,Vz        =   ustrip(Data*3),ustrip(Data*4),ustrip(Data*5);
 julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)))
-GeoData 
+GeoData
   size  : (11, 11, 13)
   lon   ϵ [ 10.0 : 20.0]
   lat   ϵ [ 30.0 : 40.0]
   depth ϵ [ -300.0 km : 0.0 km]
   fields: (:Depthdata, :LonData, :Velocity)
 julia> Data_extracted = ExtractSubvolume(Data_set3D,Lon_level=(10,12),Lat_level=(35,40))
-GeoData 
+GeoData
   size  : (3, 6, 13)
   lon   ϵ [ 10.0 : 12.0]
   lat   ϵ [ 35.0 : 40.0]
@@ -636,7 +636,7 @@ By default it extracts the data points closest to the area defined by Lon_level/
 Alternatively, you can also interpolate the data onto a new grid:
 ```julia
 julia> Data_extracted = ExtractSubvolume(Data_set3D,Lon_level=(10,12),Lat_level=(35,40), Interpolate=true, dims=(50,51,52))
-GeoData 
+GeoData
   size  : (50, 51, 52)
   lon   ϵ [ 10.0 : 12.0]
   lat   ϵ [ 35.0 : 40.0]
@@ -666,10 +666,10 @@ function ExtractSubvolume(V::GeoData; Interpolate=false, Lon_level=nothing, Lat_
         # Don't interpolate
         i_s, i_e    =   argmin(abs.(V.lon.val[:,1,1] .- Lon_level[1])), argmin(abs.(V.lon.val[:,1,1] .- Lon_level[2]))
         iLon        =   i_s:i_e;
-        
+
         i_s, i_e    =   argmin(abs.(V.lat.val[1,:,1] .- Lat_level[1])), argmin(abs.(V.lat.val[1,:,1] .- Lat_level[2]))
         iLat        =   i_s:i_e;
-        
+
         i_s, i_e    =   argmin(abs.(V.depth.val[1,1,:] .- ustrip(Depth_level[1]))), argmin(abs.(V.depth.val[1,1,:] .- ustrip(Depth_level[2])))
         step        =   1;
         if i_e<i_s
@@ -690,7 +690,7 @@ Extract or "cuts-out" a piece of a 2D or 3D GeoData set, defined by `Lon`, `Lat`
 
 This is useful if you are only interested in a part of a much bigger larger data set.
 
-- `Lon_level`,`Lat_level` and `Depth_level` should be tuples that indicate `(minimum_value, maximum_value)` along the respective direction. If not specified we use the full range. 
+- `Lon_level`,`Lat_level` and `Depth_level` should be tuples that indicate `(minimum_value, maximum_value)` along the respective direction. If not specified we use the full range.
 - By default, `Interpolate=false` and we find the closest indices within the data set (so your new data set will not go exactly from minimum to maximum).
 - Alternatively, if `Interpolate=true` we interpolate the data onto a new grid that has dimensions `dims`. This can be useful to compare data sets that are originally given in different resolutions.
 
@@ -700,14 +700,14 @@ julia> Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
 julia> Data            =   Depth*2;                # some data
 julia> Vx,Vy,Vz        =   ustrip(Data*3),ustrip(Data*4),ustrip(Data*5);
 julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)))
-GeoData 
+GeoData
   size  : (11, 11, 13)
   lon   ϵ [ 10.0 : 20.0]
   lat   ϵ [ 30.0 : 40.0]
   depth ϵ [ -300.0 km : 0.0 km]
   fields: (:Depthdata, :LonData, :Velocity)
 julia> Data_extracted = ExtractSubvolume(Data_set3D,Lon_level=(10,12),Lat_level=(35,40))
-GeoData 
+GeoData
   size  : (3, 6, 13)
   lon   ϵ [ 10.0 : 12.0]
   lat   ϵ [ 35.0 : 40.0]
@@ -716,16 +716,16 @@ GeoData
 ```
 By default it extracts the data points closest to the area defined by Lon_level/Lat_level/Depth_level.
 
-    
+
 # 2D Example along a cross-section through 3D data:
-```julia-repl   
+```julia-repl
 julia> X,Y,Z = XYZGrid(10:20,30:40,-300:25:0);
 julia> Data = Z.*2
 julia> Data_Int = Int64.(Data)
 julia> DataSet_Cart = CartData(X,Y,Z,(Data=Data,Data_Int=Data_Int, Velocity=(X,Y,Z)))
 
 julia> Data_cross = CrossSection(DataSet_Cart, Start=(11.0,35), End=(19, 39.0))
-CartData 
+CartData
     size    : (100, 100, 1)
     x       ϵ [ 11.0 : 19.0]
     y       ϵ [ 35.0 : 39.0]
@@ -734,7 +734,7 @@ CartData
   attributes: ["note"]
 
 julia> Data_extracted = ExtractSubvolume(Data_cross, X_level=(1,7), Z_level=(-200,-100))
-  CartData 
+  CartData
       size    : (50, 50, 1)
       x       ϵ [ 11.894427190999917 : 17.260990336999413]
       y       ϵ [ 35.44721359549995 : 38.130495168499706]
@@ -742,16 +742,16 @@ julia> Data_extracted = ExtractSubvolume(Data_cross, X_level=(1,7), Z_level=(-20
       fields  : (:FlatCrossSection, :Data, :Data_Int, :Velocity)
     attributes: ["note"]
 julia> typeof(Data_extracted.fields.Data_Int)
-    Array{Int64, 3}    
+    Array{Int64, 3}
 ```
 
 """
-function ExtractSubvolume(V::CartData; 
-                    Interpolate=true, 
-                    X_level=nothing, 
+function ExtractSubvolume(V::CartData;
+                    Interpolate=true,
+                    X_level=nothing,
                     X_cross=nothing,
-                    Y_level=nothing, 
-                    Z_level=nothing, 
+                    Y_level=nothing,
+                    Z_level=nothing,
                     dims=(50,50,50))
 
     if isnothing(X_level)
@@ -768,11 +768,11 @@ function ExtractSubvolume(V::CartData;
         X,Y,Z   = LonLatDepthGrid(  LinRange(X_level[1], X_level[2], dims[1]),
                                     LinRange(Y_level[1], Y_level[2], dims[2]),
                                     LinRange(Z_level[1], Z_level[2], dims[3]) );
-                                    
+
         Data_extract    =   InterpolateDataFields(V, X, Y, Z)
 
     elseif size(V.x.val)[3]==1
-        
+
         # we are dealing with a vertical cross-section through a 3D dataset computed with CrossSection(V,Start=.., End=...)
         Xcross=V.fields.FlatCrossSection;
         if isnothing(X_level)
@@ -783,7 +783,7 @@ function ExtractSubvolume(V::CartData;
 
         # we need to interpolate the data onto a new grid given by X_level and Z_level
         X_level_cross = X_level;
-        
+
         interpol_x =   linear_interpolation(Xcross[:,1,1], V.x.val[:,1,1],extrapolation_bc = NaN);      # create interpolation object
         interpol_y =   linear_interpolation(Xcross[:,1,1], V.y.val[:,1,1],extrapolation_bc = NaN);      # create interpolation object
 
@@ -807,10 +807,10 @@ function ExtractSubvolume(V::CartData;
         # Don't interpolate
         i_s, i_e    =   argmin(abs.(V.x.val[:,1,1] .- X_level[1])), argmin(abs.(V.x.val[:,1,1] .- X_level[2]))
         iLon        =   i_s:i_e;
-        
+
         i_s, i_e    =   argmin(abs.(V.y.val[1,:,1] .- Y_level[1])), argmin(abs.(V.y.val[1,:,1] .- Y_level[2]))
         iLat        =   i_s:i_e;
-        
+
         i_s, i_e    =   argmin(abs.(V.z.val[1,1,:] .- ustrip(Z_level[1]))), argmin(abs.(V.z.val[1,1,:] .- ustrip(Z_level[2])))
         step        =   1;
         if i_e<i_s
@@ -838,13 +838,13 @@ function InterpolateDataFields_CrossSection(V::CartData, X,Y,Z, X_cross)
     for i = 1:length(V.fields)
         if typeof(V.fields[i]) <: Tuple
             # vector or anything that contains more than 1 field
-            data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop 
+            data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop
             data_array = zeros(size(Data_extract.x)...,length(data_tuple));     # create a 3D array that holds the 2D interpolated values
             unit_array = zeros(size(data_array));
 
             for j=1:length(data_tuple)
                 interpol    =   linear_interpolation((V.fields.FlatCrossSection[:,1,1], V.z.val[1,:,1]), ustrip.(data_tuple[j][:,:,1]),extrapolation_bc = NaN);      # create interpolation object
-                data_array[:,:,:,j] =   interpol.(X_cross, Z);          
+                data_array[:,:,:,j] =   interpol.(X_cross, Z);
             end
             data_new    = tuple([data_array[:,:,:,c] for c in 1:size(data_array,4)]...)     # transform 3D matrix to tuple
 
@@ -859,14 +859,14 @@ function InterpolateDataFields_CrossSection(V::CartData, X,Y,Z, X_cross)
         end
         Data_extract = AddField(Data_extract,String(field_names[i]),data_new)
     end
-    
+
     return Data_extract
 
 end
 
 
 function CheckBounds(Data::GeoUnit, Data_Cross)
-    
+
     min_Data, max_Data = NumValue(minimum(Data.val)), NumValue(maximum(Data.val));
     if ustrip(Data_Cross) < min_Data || ustrip(Data_Cross)>max_Data
         error("Outside bounds [$min_Data : $max_Data]; $Data_Cross")
@@ -874,7 +874,7 @@ function CheckBounds(Data::GeoUnit, Data_Cross)
 end
 
 function CheckBounds(Data::AbstractArray, Data_Cross)
-    
+
     min_Data, max_Data = NumValue(minimum(Data)), NumValue(maximum(Data));
     if ustrip(Data_Cross) < min_Data || ustrip(Data_Cross)>max_Data
         error("Outside bounds [$min_Data : $max_Data]; $Data_Cross")
@@ -885,7 +885,7 @@ end
 function CheckDataSet(DataSet::GeoData)
     if length(size(DataSet.lon)) == 1 # scattered points
         return 1
-    else 
+    else
         if any(size(DataSet.lon).==1) # surface data
             return 2
         else # volume data
@@ -897,7 +897,7 @@ end
 function CheckDataSet(DataSet::CartData)
     if length(size(DataSet.x)) == 1 # scattered points
         return 1
-    else 
+    else
         if any(size(DataSet.x).==1) # surface data
             return 2
         else # volume data
@@ -920,14 +920,14 @@ julia> z        =   -10:2:2
 julia> X,Y,Z    =   XYZGrid(x, y, z);
 julia> Data     =   Z
 julia> Data_set1=   CartData(X,Y,Z, (FakeData=Data,Data2=Data.+1.))
-CartData 
+CartData
     size    : (6, 11, 7)
     x       ϵ [ 0.0 km : 10.0 km]
     y       ϵ [ -5.0 km : 5.0 km]
     z       ϵ [ -10.0 km : 2.0 km]
     fields  : (:FakeData, :Data2)
   attributes: ["note"]
-  
+
 julia> X,Y,Z    =   XYZGrid(0:4:10, -1:.1:1, -5:.1:1 );
 julia> Data_set2= InterpolateDataFields(Data_set1, X,Y,Z)
 ```
@@ -951,7 +951,7 @@ function InterpolateDataFields(V::AbstractGeneralGrid, Lon, Lat, Depth)
     for i = 1:length(V.fields)
         if typeof(V.fields[i]) <: Tuple
             # vector or anything that contains more than 1 field
-            data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop 
+            data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop
             data_array = zeros(size(Lon,1),size(Lon,2),size(Lon,3),length(data_tuple));     # create a 3D array that holds the 2D interpolated values
             unit_array = zeros(size(data_array));
 
@@ -962,7 +962,7 @@ function InterpolateDataFields(V::AbstractGeneralGrid, Lon, Lat, Depth)
                 else
                     interpol    =   linear_interpolation((Lon_vec, Lat_vec, Depth_vec), ustrip.(data_tuple[j]),extrapolation_bc = NaN);      # create interpolation object
                 end
-                data_array[:,:,:,j] =   interpol.(Lon, Lat, ustrip.(Depth));          
+                data_array[:,:,:,j] =   interpol.(Lon, Lat, ustrip.(Depth));
             end
             data_new    = tuple([data_array[:,:,:,c] for c in 1:size(data_array,4)]...)     # transform 3D matrix to tuple
 
@@ -979,13 +979,13 @@ function InterpolateDataFields(V::AbstractGeneralGrid, Lon, Lat, Depth)
                 data_new = round.(Int64,data_new)
             end
         end
-        
-        # replace the one 
+
+        # replace the one
         new_field   =   NamedTuple{(field_names[i],)}((data_new,))                          # Create a tuple with same name
         fields_new  =   merge(fields_new, new_field);                                       # replace the field in fields_new
-        
+
     end
-    
+
 
     # Create a GeoData struct with the newly interpolated fields
     if isa(V,GeoData)
@@ -1020,7 +1020,7 @@ function InterpolateDataFields(V::UTMData, EW, NS, Depth)
     for i = 1:length(V.fields)
         if typeof(V.fields[i]) <: Tuple
             # vector or anything that contains more than 1 field
-            data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop 
+            data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop
             data_array = zeros(size(EW,1),size(EW,2),size(EW,3),length(data_tuple));     # create a 3D array that holds the 2D interpolated values
             unit_array = zeros(size(data_array));
 
@@ -1031,7 +1031,7 @@ function InterpolateDataFields(V::UTMData, EW, NS, Depth)
                 else
                     interpol    =   linear_interpolation((EW_vec, NS_vec, Depth_vec), ustrip.(data_tuple[j]),extrapolation_bc = NaN);      # create interpolation object
                 end
-                data_array[:,:,:,j] =   interpol.(EW, NS, Depth);          
+                data_array[:,:,:,j] =   interpol.(EW, NS, Depth);
             end
             data_new    = tuple([data_array[:,:,:,c] for c in 1:size(data_array,4)]...)     # transform 3D matrix to tuple
 
@@ -1045,13 +1045,13 @@ function InterpolateDataFields(V::UTMData, EW, NS, Depth)
             end
             data_new    =   interpol.(EW, NS, Depth);                                                 # interpolate data field
         end
-        
-        # replace the one 
+
+        # replace the one
         new_field   =   NamedTuple{(field_names[i],)}((data_new,))                          # Create a tuple with same name
         fields_new  =   merge(fields_new, new_field);                                       # replace the field in fields_new
-        
+
     end
-    
+
 
     # Create a GeoData struct with the newly interpolated fields
     Data_profile = UTMData(EW, NS, Depth, fields_new);
@@ -1068,13 +1068,13 @@ function InterpolateDataFields2D(V::GeoData, Lon, Lat)
 
     Lon_vec     =  V.lon.val[:,1,1];
     Lat_vec     =  V.lat.val[1,:,1];
-   
+
     fields_new  = V.fields;
     field_names = keys(fields_new);
     for i = 1:length(V.fields)
         if typeof(V.fields[i]) <: Tuple
             # vector or anything that contains more than 1 field
-            data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop 
+            data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop
             data_array = zeros(size(Lon,1),size(Lon,2),size(Lon,3),length(data_tuple));     # create a 3D array that holds the 2D interpolated values
             unit_array = zeros(size(data_array));
 
@@ -1084,7 +1084,7 @@ function InterpolateDataFields2D(V::GeoData, Lon, Lat)
                 else
                     interpol    =   linear_interpolation((Lon_vec, Lat_vec), ustrip.(data_tuple[j]),extrapolation_bc = Flat());      # create interpolation object
                 end
-                data_array[:,:,1,j] =   interpol.(Lon, Lat);          
+                data_array[:,:,1,j] =   interpol.(Lon, Lat);
             end
             if length(size(data_tuple[1]))==3
                 data_new    = tuple([data_array[:,:,:,c] for c in 1:size(data_array,4)]...)     # transform 3D matrix to tuple
@@ -1101,11 +1101,11 @@ function InterpolateDataFields2D(V::GeoData, Lon, Lat)
 
             data_new    =   interpol.(Lon, Lat);                                                 # interpolate data field
         end
-        
-        # replace the one 
+
+        # replace the one
         new_field   =   NamedTuple{(field_names[i],)}((data_new,))                          # Create a tuple with same name
         fields_new  =   merge(fields_new, new_field);                                       # replace the field in fields_new
-        
+
     end
 
     # Interpolate z-coordinate as well
@@ -1114,8 +1114,8 @@ function InterpolateDataFields2D(V::GeoData, Lon, Lat)
     else
         interpol    =   linear_interpolation((Lon_vec, Lat_vec), V.depth.val, extrapolation_bc = Flat());            # create interpolation object
     end
-    depth_new =  interpol.(Lon, Lat);    
-    
+    depth_new =  interpol.(Lon, Lat);
+
 
     # Create a GeoData struct with the newly interpolated fields
     # Data_profile = GeoData(Lon, Lat, Depth*0, fields_new);
@@ -1149,7 +1149,7 @@ end
 """
     InterpolateDataFields2D(Original::CartData, New::CartData; Rotate=0.0, Translate=(0,0,0), Scale=(1.0,1.0,1.0))
 
-Interpolates a data field `Original` on a 2D CartData grid `New`. 
+Interpolates a data field `Original` on a 2D CartData grid `New`.
 Typically used for horizontal surfaces.
 
 Note: `Original` should have orthogonal coordinates. If it has not, e.g., because it was rotated, you'll have to specify the angle `Rotate` that it was rotated by
@@ -1163,7 +1163,7 @@ function InterpolateDataFields2D(Original::CartData, New::CartData; Rotate=0.0, 
         Original_r  = Original;
         New_r       = New;
     end
-    
+
     X_vec      =  Original_r.x.val[:,1,1];
     Y_vec      =  Original_r.y.val[1,:,1];
 
@@ -1185,7 +1185,7 @@ function InterpolateDataFields2D_vecs(EW_vec, NS_vec, depth, fields_new, EW, NS)
    # fields_new  = V.fields;
     field_names = keys(fields_new);
     for i = 1:length(fields_new)
-        data_tuple = fields_new[i] 
+        data_tuple = fields_new[i]
 
         if (typeof(data_tuple) <: Tuple) & (!contains(String(field_names[i]),"colors"))
             # vector or anything that contains more than 1 field
@@ -1194,7 +1194,7 @@ function InterpolateDataFields2D_vecs(EW_vec, NS_vec, depth, fields_new, EW, NS)
 
             for j=1:length(data_tuple)
                 interpol    =   linear_interpolation((EW_vec, NS_vec), ustrip.(data_tuple[j]),extrapolation_bc = Flat());      # create interpolation object
-                data_array[:,:,1,j] =   interpol.(EW, NS);          
+                data_array[:,:,1,j] =   interpol.(EW, NS);
             end
             data_new    = tuple([data_array[:,:,1,c] for c in 1:size(data_array,4)]...)     # transform 3D matrix to tuple
 
@@ -1218,10 +1218,10 @@ function InterpolateDataFields2D_vecs(EW_vec, NS_vec, depth, fields_new, EW, NS)
                 ix,iy = i[1],i[2]
                 for j=1:length(data_tuple)
                     data_array[ix,iy,1,j] = data_tuple[j][I_idx[n]]
-                end    
+                end
             end
             data_new    = tuple([data_array[:,:,1,c] for c in 1:size(data_array,4)]...)     # transform 3D matrix to tuple
-                             
+
         else
             # scalar field
             if length(size(data_tuple))==3
@@ -1232,11 +1232,11 @@ function InterpolateDataFields2D_vecs(EW_vec, NS_vec, depth, fields_new, EW, NS)
 
             data_new    =   interpol.(EW, NS);                                                 # interpolate data field
         end
-        
-        # replace the one 
+
+        # replace the one
         new_field   =   NamedTuple{(field_names[i],)}((data_new,))                          # Create a tuple with same name
         fields_new  =   merge(fields_new, new_field);                                       # replace the field in fields_new
-        
+
     end
 
     # Interpolate z-coordinate as well
@@ -1245,8 +1245,8 @@ function InterpolateDataFields2D_vecs(EW_vec, NS_vec, depth, fields_new, EW, NS)
     else
         interpol    =   linear_interpolation((EW_vec, NS_vec), depth.val, extrapolation_bc = Flat());            # create interpolation object
     end
-    depth_new =  interpol.(EW, NS);    
-    
+    depth_new =  interpol.(EW, NS);
+
 
     # Create a UTMData struct with the newly interpolated fields
     # Data_profile = UTMData(EW, NS, Depth*0, fields_new);
@@ -1258,25 +1258,25 @@ end
 """
     Surf_interp = InterpolateDataOnSurface(V::ParaviewData, Surf::ParaviewData)
 
-Interpolates a 3D data set `V` on a surface defined by `Surf`. 
+Interpolates a 3D data set `V` on a surface defined by `Surf`.
 # Example
 ```julia
 julia> Data
-ParaviewData 
+ParaviewData
   size  : (33, 33, 33)
   x     ϵ [ -3.0 : 3.0]
   y     ϵ [ -2.0 : 2.0]
   z     ϵ [ -2.0 : 0.0]
   fields: (:phase, :density, :visc_total, :visc_creep, :velocity, :pressure, :temperature, :dev_stress, :strain_rate, :j2_dev_stress, :j2_strain_rate, :plast_strain, :plast_dissip, :tot_displ, :yield, :moment_res, :cont_res)
 julia> surf
-ParaviewData 
+ParaviewData
   size  : (96, 96, 1)
   x     ϵ [ -2.9671875 : 3.2671875]
   y     ϵ [ -1.9791666666666667 : 1.9791666666666667]
   z     ϵ [ -1.5353766679763794 : -0.69925457239151]
   fields: (:Depth,)
 julia> Surf_interp = InterpolateDataOnSurface(Data, surf)
-  ParaviewData 
+  ParaviewData
     size  : (96, 96, 1)
     x     ϵ [ -2.9671875 : 3.2671875]
     y     ϵ [ -1.9791666666666667 : 1.9791666666666667]
@@ -1285,7 +1285,7 @@ julia> Surf_interp = InterpolateDataOnSurface(Data, surf)
 ```
 """
 function InterpolateDataOnSurface(V::ParaviewData, Surf::ParaviewData)
-    
+
     # Create GeoData structure:
     V_geo               =   GeoData(V.x.val, V.y.val, V.z.val, V.fields)
     V_geo.depth.val     =   ustrip(V_geo.depth.val);
@@ -1301,7 +1301,7 @@ function InterpolateDataOnSurface(V::ParaviewData, Surf::ParaviewData)
 end
 
 function InterpolateDataOnSurface(V::CartData, Surf::CartData)
-    
+
     # Create GeoData structure:
     V_geo               =   GeoData(V.x.val, V.y.val, V.z.val, V.fields)
     V_geo.depth.val     =   ustrip(V_geo.depth.val);
@@ -1322,7 +1322,7 @@ end
 Interpolates a 3D data set `V` on a surface defined by `Surf`
 """
 function InterpolateDataOnSurface(V::GeoData, Surf::GeoData)
-    
+
     Surf_interp = InterpolateDataFields(V, Surf.lon.val, Surf.lat.val, Surf.depth.val)
 
     return Surf_interp
@@ -1339,7 +1339,7 @@ function ExtractDataSets(V::AbstractGeneralGrid, iLon, iLat, iDepth)
     Lon     =   zeros(typeof(X[1]), length(iLon),length(iLat),length(iDepth));
     Lat     =   zeros(typeof(Y[1]), length(iLon),length(iLat),length(iDepth));
     Depth   =   zeros(typeof(Z[1]), length(iLon),length(iLat),length(iDepth));
-    
+
     iLo                 =   1:length(iLon);
     iLa                 =   1:length(iLat);
     iDe                 =   1:length(iDepth)
@@ -1352,13 +1352,13 @@ function ExtractDataSets(V::AbstractGeneralGrid, iLon, iLat, iDepth)
     for i = 1:length(V.fields)
         if typeof(V.fields[i]) <: Tuple
             # vector or anything that contains more than 1 field
-            data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop 
+            data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop
             data_array = zeros(typeof(data_tuple[1][1]),length(iLon),length(iLat),length(iDepth),length(data_tuple));     # create a 3D array that holds the 2D interpolated values
             unit_array = zeros(size(data_array));
 
             for j=1:length(data_tuple)
                 data_field           =   data_tuple[j];
-                data_array[:,:,:,j]  =   data_field[iLon, iLat, iDepth];          
+                data_array[:,:,:,j]  =   data_field[iLon, iLat, iDepth];
             end
             data_new    = tuple([data_array[:,:,:,c] for c in 1:size(data_array,4)]...)       # transform 4D matrix to tuple
 
@@ -1367,13 +1367,13 @@ function ExtractDataSets(V::AbstractGeneralGrid, iLon, iLat, iDepth)
             data_new                =   zeros(typeof(V.fields[i][1]), length(iLon),length(iLat),length(iDepth));
             data_new[iLo,iLa,iDe]   =   V.fields[i][iLon, iLat, iDepth]                                 # interpolate data field
         end
-        
-        # replace the one 
+
+        # replace the one
         new_field   =   NamedTuple{(field_names[i],)}((data_new,))                          # Create a tuple with same name
         fields_new  =   merge(fields_new, new_field);                                       # replace the field in fields_new
-        
+
     end
-    
+
 
     # Create a GeoData struct with the newly interpolated fields
     if isa(V,GeoData)
@@ -1403,15 +1403,15 @@ function SubtractHorizontalMean(V::AbstractArray{T, 3}; Percentage=false) where 
     if Percentage
         V_sub     = zeros(size(V));                 # no units
     else
-        V_sub     = zeros(typeof(V[1]), size(V));   
+        V_sub     = zeros(typeof(V[1]), size(V));
     end
 
     for iLayer = 1:NumLayers
         average             =   mean(filter(!isnan, vec(V[:,:,iLayer])));
-        
+
         if Percentage
             V_sub[:,:,iLayer]   =   ustrip(V[:,:,iLayer]) .- ustrip(average);
-            V_sub[:,:,iLayer]   =   V_sub[:,:,iLayer]./ustrip(average)*100.0;     # the result is normalized 
+            V_sub[:,:,iLayer]   =   V_sub[:,:,iLayer]./ustrip(average)*100.0;     # the result is normalized
         else
             V_sub[:,:,iLayer]   =   V[:,:,iLayer] .- average;
         end
@@ -1436,15 +1436,15 @@ function SubtractHorizontalMean(V::AbstractArray{T, 2}; Percentage=false) where 
     if Percentage
         V_sub     = zeros(size(V));                 # no units
     else
-        V_sub     = zeros(typeof(V[1]), size(V));   
+        V_sub     = zeros(typeof(V[1]), size(V));
     end
 
     for iLayer = 1:NumLayers
         average             =   mean(filter(!isnan, vec(V[:,iLayer])));
-        
+
         if Percentage
             V_sub[:,iLayer]   =   ustrip(V[:,iLayer]) .- ustrip(average);
-            V_sub[:,iLayer]   =   V_sub[:,iLayer]./ustrip(average)*100.0;     # the result is normalized 
+            V_sub[:,iLayer]   =   V_sub[:,iLayer]./ustrip(average)*100.0;     # the result is normalized
         else
             V_sub[:,iLayer]   =   V[:,iLayer] .- average;
         end
@@ -1457,11 +1457,11 @@ end
 
 
 
-""" 
+"""
     ParseColumns_CSV_File(data_file, num_columns)
 
 This parses numbers from CSV file that is read in with `CSV.File`.
-That is useful in case the CSV files has tables that contain both strings (e.g., station names) and numbers (lat/lon/height) and you are only intested in the numbers
+That is useful in case the CSV files has tables that contain both strings (e.g., station names) and numbers (lat/lon/height) and you are only interested in the numbers
 
 
 # Example
@@ -1474,7 +1474,7 @@ julia> data = ParseColumns_CSV_File(data_file, 4)
 
 """
 function ParseColumns_CSV_File(data_file, num_columns)
-    data                =   zeros(size(data_file,1), num_columns);    
+    data                =   zeros(size(data_file,1), num_columns);
     for (row_num,row) in enumerate(data_file)
         num         =   0;
         for i=1:length(row)
@@ -1482,7 +1482,7 @@ function ParseColumns_CSV_File(data_file, num_columns)
                 num          +=  1;
                 data[row_num,num] = row[i]
             else
-            
+
                 try parse(Float64,row[i])
                     num          +=  1;
                     data[row_num,num] = parse(Float64,row[i])
@@ -1496,7 +1496,7 @@ function ParseColumns_CSV_File(data_file, num_columns)
 end
 
 
-""" 
+"""
     AboveSurface(Data::GeoData, DataSurface::GeoData; above=true)
 
 Returns a boolean array of size(Data.Lon), which is true for points that are above the surface DataSurface (or for points below if above=false).
@@ -1507,17 +1507,17 @@ This can be used, for example, to mask points above/below the Moho in a volumetr
 First we create a 3D data set and a 2D surface:
 ```julia
 julia> Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
-julia> Data            =   Depth*2; 
+julia> Data            =   Depth*2;
 julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon))
-GeoData 
+GeoData
   size  : (11, 11, 13)
   lon   ϵ [ 10.0 : 20.0]
   lat   ϵ [ 30.0 : 40.0]
   depth ϵ [ -300.0 km : 0.0 km]
   fields: (:Depthdata, :LonData)
-julia> Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,-40km);  
+julia> Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,-40km);
 julia> Data_Moho       =   GeoData(Lon,Lat,Depth+Lon*km, (MohoDepth=Depth,))
-  GeoData 
+  GeoData
     size  : (11, 11, 1)
     lon   ϵ [ 10.0 : 20.0]
     lat   ϵ [ 30.0 : 40.0]
@@ -1526,13 +1526,13 @@ julia> Data_Moho       =   GeoData(Lon,Lat,Depth+Lon*km, (MohoDepth=Depth,))
 ```
 Next, we intersect the surface with the data set:
 ```julia
-julia> Above       =   AboveSurface(Data_set3D, Data_Moho); 
+julia> Above       =   AboveSurface(Data_set3D, Data_Moho);
 ```
 Now, `Above` is a boolean array that is true for points above the surface and false for points below and at the surface.
 
 """
 function AboveSurface(Data::GeoData, DataSurface::GeoData; above=true)
-    
+
     if size(DataSurface.lon)[3]!=1
         error("It seems that DataSurface is not a surface")
     end
@@ -1643,20 +1643,20 @@ The way it works is:
 - Filter data points in one model (e.g., areas with a velocity anomaly > 2 percent). Set everything that satisfies this criteria to 1 and everything else to 0.
 - Sum the results of the different datasets
 
-If a feature is consistent between different datasets, it will have larger values. 
+If a feature is consistent between different datasets, it will have larger values.
 
 # Example
 We assume that we have 2 seismic velocity datasets `Data_Zhao_Pwave` and `DataKoulakov_Alps`:
 ```julia
 julia> Data_Zhao_Pwave
-GeoData 
+GeoData
   size  : (121, 94, 101)
   lon   ϵ [ 0.0 : 18.0]
   lat   ϵ [ 38.0 : 51.95]
   depth ϵ [ -1001.0 km : -1.0 km]
   fields: (:dVp_Percentage,)
 julia> DataKoulakov_Alps
-  GeoData 
+  GeoData
     size  : (108, 81, 35)
     lon   ϵ [ 4.0 : 20.049999999999997]
     lat   ϵ [ 37.035928143712574 : 49.01197604790419]
@@ -1664,9 +1664,9 @@ julia> DataKoulakov_Alps
     fields: (:dVp_percentage, :dVs_percentage)
 ```
 You can create a VoteMap which combines the two data sets with:
-```julia 
+```julia
 julia> Data_VoteMap = VoteMap([Data_Zhao_Pwave,DataKoulakov_Alps],["dVp_Percentage>2.5","dVp_percentage>3.0"])
-GeoData 
+GeoData
   size  : (50, 50, 50)
   lon   ϵ [ 4.0 : 18.0]
   lat   ϵ [ 38.0 : 49.01197604790419]
@@ -1675,9 +1675,9 @@ GeoData
 ```
 
 You can also create a VoteMap of a single dataset:
-```julia 
+```julia
 julia> Data_VoteMap = VoteMap(Data_Zhao_Pwave,"dVp_Percentage>2.5", dims=(50,51,52))
-GeoData 
+GeoData
   size  : (50, 51, 52)
   lon   ϵ [ 0.0 : 18.0]
   lat   ϵ [ 38.0 : 51.95]
@@ -1693,7 +1693,7 @@ function VoteMap(DataSets::Vector{GeoData}, criteria::Vector{String}; dims=(50,5
     if length(criteria) != numDataSets
         error("Need the same number of criteria as the number of data sets")
     end
-    
+
     # Determine the overlapping lon/lat/depth regions of all datasets
     lon_limits  = [minimum(DataSets[1].lon.val);        maximum(DataSets[1].lon.val)];
     lat_limits  = [minimum(DataSets[1].lat.val);        maximum(DataSets[1].lat.val)];
@@ -1704,7 +1704,7 @@ function VoteMap(DataSets::Vector{GeoData}, criteria::Vector{String}; dims=(50,5
 
         lat_limits[1]   =   maximum([lat_limits[1]  minimum(DataSets[i].lat.val)]);
         lat_limits[2]   =   minimum([lat_limits[2]  maximum(DataSets[i].lat.val)]);
- 
+
         z_limits[1]     =   maximum([z_limits[1]    minimum(DataSets[i].depth.val)]);
         z_limits[2]     =   minimum([z_limits[2]    maximum(DataSets[i].depth.val)]);
     end
@@ -1713,7 +1713,7 @@ function VoteMap(DataSets::Vector{GeoData}, criteria::Vector{String}; dims=(50,5
     VoteMap             =   zeros(Int64,dims)
     for i=1:numDataSets
         VoteMap_Local   =   zeros(Int64,dims)
-        
+
         # Interpolate data set to smaller domain
         DataSet         =   ExtractSubvolume(DataSets[i]; Interpolate=true, Lon_level=lon_limits, Lat_level=lat_limits, Depth_level=z_limits, dims=dims);
 
@@ -1726,10 +1726,10 @@ function VoteMap(DataSets::Vector{GeoData}, criteria::Vector{String}; dims=(50,5
         end
 
         Array3D         =   ustrip.(DataSet.fields[expr.args[2]]);                  # strip units, just in case
-        
-        # Modify the value, to be Array3D 
+
+        # Modify the value, to be Array3D
         expr_mod        =   Expr(:call, expr.args[1], :($Array3D), expr.args[3]);      # modify the original expression to use Array3D as variable name
-        
+
         # The expression should have a ".", such as Array .> 1.0. If not, it will not apply this in a pointwise manner
         #   Here, we add this dot if it is not there yet
         if cmp(String(expr_mod.args[1])[1],Char('.'))==1
@@ -1739,7 +1739,7 @@ function VoteMap(DataSets::Vector{GeoData}, criteria::Vector{String}; dims=(50,5
         ind                 = eval(expr_mod);    # evaluate the modified expression
         VoteMap_Local[ind] .= 1;                 # assign vote-map
 
-        VoteMap = VoteMap + VoteMap_Local;       # Sum 
+        VoteMap = VoteMap + VoteMap_Local;       # Sum
     end
 
     DataSet     =   ExtractSubvolume(DataSets[1], Interpolate=true, Lon_level=lon_limits, Lat_level=lat_limits, Depth_level=z_limits, dims=dims);
@@ -1758,7 +1758,7 @@ end
 """
     Data_R = RotateTranslateScale(Data::Union{ParaviewData, CartData}; Rotate=0, Translate=(0,0,0), Scale=(1.0,1.0,1.0), Xc=(0.0,0.0))
 
-Does an in-place rotation, translation and scaling of the Cartesian dataset `Data`. 
+Does an in-place rotation, translation and scaling of the Cartesian dataset `Data`.
 
 # Parameters
 Note that we apply the transformations in exactly this order:
@@ -1771,7 +1771,7 @@ Note that we apply the transformations in exactly this order:
 ```julia
 julia> X,Y,Z   =   XYZGrid(10:20,30:40,-50:-10);
 julia> Data_C  =   ParaviewData(X,Y,Z,(Depth=Z,))
-ParaviewData 
+ParaviewData
   size  : (11, 11, 41)
   x     ϵ [ 10.0 : 20.0]
   y     ϵ [ 30.0 : 40.0]
@@ -1779,7 +1779,7 @@ ParaviewData
   fields: (:Depth,)
 julia> Data_R = RotateTranslateScale(Data_C, Rotate=30);
 julia> Data_R
-ParaviewData 
+ParaviewData
   size  : (11, 11, 41)
   x     ϵ [ 8.169872981077807 : 21.83012701892219]
   y     ϵ [ 28.16987298107781 : 41.83012701892219]
@@ -1790,7 +1790,7 @@ ParaviewData
 function RotateTranslateScale(Data::Union{ParaviewData, CartData}; Rotate::Number=0.0, Translate=(0,0,0), Scale=(1.0,1.0,1.0), Xc=(0.0,0.0))
 
     X,Y,Z       = copy(Data.x.val), copy(Data.y.val), copy(Data.z.val);     # Extract coordinates
-    Xr,Yr,Zr    = X,Y,Z;                                                    # Rotated coordinates 
+    Xr,Yr,Zr    = X,Y,Z;                                                    # Rotated coordinates
 
     # 1) Scaling
     if length(Scale)==1
@@ -1802,41 +1802,41 @@ function RotateTranslateScale(Data::Union{ParaviewData, CartData}; Rotate::Numbe
 
 
     # 2) 2D rotation around X/Y axis, around center of box
-    Xm,Ym = 0.0, 0.0;  
+    Xm,Ym = 0.0, 0.0;
     R = [cosd(Rotate) -sind(Rotate); sind(Rotate) cosd(Rotate)]; # 2D rotation matrix
 
     for i in eachindex(X)
         Rot_XY = R*[X[i]-Xc[1]; Y[i]-Xc[2]];
         Xr[i]  = Rot_XY[1] + Xc[1];
         Yr[i]  = Rot_XY[2] + Xc[2];
-    end 
-  
+    end
+
     # 3) Add translation
     Xr .+= Translate[1];
     Yr .+= Translate[2];
     Zr .+= Translate[3];
-    
+
     # Modify original structure
     if isa(Data, ParaviewData)
-        Data_r =  ParaviewData(Xr,Yr,Zr, Data.fields)   
+        Data_r =  ParaviewData(Xr,Yr,Zr, Data.fields)
     else
-        Data_r =  CartData(Xr,Yr,Zr, Data.fields)   
+        Data_r =  CartData(Xr,Yr,Zr, Data.fields)
     end
-    
+
     return Data_r
 end
 
 
 """
-    Topo = DrapeOnTopo(Topo::GeoData, Data::GeoData) 
+    Topo = DrapeOnTopo(Topo::GeoData, Data::GeoData)
 
-This drapes fields of a data set `Data` on the topography `Topo`    
+This drapes fields of a data set `Data` on the topography `Topo`
 
 
 """
 function DrapeOnTopo(Topo::GeoData, Data::GeoData)
 
-    
+
     Lon,Lat,Depth    =   LonLatDepthGrid( Topo.lon.val[:,1,1], Topo.lat.val[1,:,1],Topo.depth.val[1,1,:]);
 
     # use nearest neighbour to interpolate data
@@ -1848,50 +1848,50 @@ function DrapeOnTopo(Topo::GeoData, Data::GeoData)
 
     idx_out     = findall(  (Lon .<  minimum(Data.lon.val)) .| (Lon .>  maximum(Data.lon.val)) .|
                             (Lat .<  minimum(Data.lat.val)) .| (Lat .>  maximum(Data.lat.val)) )
-    
+
     fields_new  = Topo.fields;
     field_names = keys(Data.fields);
-    
+
     for i = 1:length(Data.fields)
-        
+
         if typeof(Data.fields[i]) <: Tuple
 
             # vector or anything that contains more than 1 field
-            data_tuple = Data.fields[i]      # we have a tuple (likely a vector field), so we have to loop 
+            data_tuple = Data.fields[i]      # we have a tuple (likely a vector field), so we have to loop
 
             data_array = zeros(typeof(data_tuple[1][1]),size(Topo.lon.val,1),size(Topo.lon.val,2),size(Topo.lon.val,3),length(Data.fields[i]));     # create a 3D array that holds the 2D interpolated values
             unit_array = zeros(size(data_array));
 
             for j=1:length(data_tuple)
                 data_field           =   data_tuple[j];
-                tmp                  =   data_array[:,:,:,1]; 
+                tmp                  =   data_array[:,:,:,1];
                 tmp                  =   data_field[idx]
                 data_array[:,:,:,j]  =   tmp
             end
-            
+
             data_new    = tuple([data_array[:,:,:,c] for c in 1:size(data_array,4)]...)       # transform 4D matrix to tuple
 
             # remove points outside domain
             for j=1:length(data_tuple)
-                tmp           =   data_new[j]; 
+                tmp           =   data_new[j];
                 tmp[idx_out] .= NaN
                 data_array[:,:,:,j]  =   tmp
             end
             data_new    = tuple([data_array[:,:,:,c] for c in 1:size(data_array,4)]...)       # transform 4D matrix to tuple
 
         else
-            
+
             # scalar field
             data_new        =   zeros(typeof(Data.fields[i][1]), size(Topo.lon.val,1),size(Topo.lon.val,2),size(Topo.lon.val,3));
             data_new        =   Data.fields[i][idx]                                 # interpolate data field
-            
+
         end
-        
-        # replace the one 
+
+        # replace the one
         new_field   =   NamedTuple{(field_names[i],)}((data_new,))                          # Create a tuple with same name
         fields_new  =   merge(fields_new, new_field);                                       # replace the field in fields_new
-        
-    end 
+
+    end
 
 
     Topo_new        =   GeoData(Topo.lon.val,Topo.lat.val,Topo.depth.val, fields_new)
@@ -1901,10 +1901,10 @@ function DrapeOnTopo(Topo::GeoData, Data::GeoData)
 end
 
 
-""" 
+"""
     DrapeOnTopo(Topo::CartData, Data::CartData)
 
-Drapes Cartesian Data on topography 
+Drapes Cartesian Data on topography
 """
 function DrapeOnTopo(Topo::CartData, Data::CartData)
     Topo_lonlat = GeoData(ustrip.(Topo.x.val),ustrip.(Topo.y.val), ustrip.(Topo.z.val), Topo.fields )
@@ -1917,20 +1917,20 @@ function DrapeOnTopo(Topo::CartData, Data::CartData)
     return Topo_new
 end
 
-""" 
+"""
     LithostaticPressure!(Plithos::Array, Density::Array, dz::Number; g=9.81)
 
 Computes lithostatic pressure from a 3D density array, assuming constant soacing `dz` in vertical direction. Optionally, the gravitational acceleration `g` can be specified.
 
 """
 function LithostaticPressure!(Plithos::Array{T,N}, Density::Array{T,N}, dz::Number; g=9.81) where {T,N}
-    
+
     Plithos[:] = Density*dz*g;
-    
+
     selectdim(Plithos,N,size(Plithos)[N]) .= 0      # set upper row to zero
-    
+
     Plithos[:] = reverse!(cumsum(reverse!(Plithos),dims=N))
-    
+
     return nothing
 end
 
@@ -1942,7 +1942,7 @@ Adds `Surface2` to `Surface1`. The addition happens on the `Surface1.depth`; the
 
 """
 function AddSurfaces!(Surface1::Union{GeoData,UTMData}, Surface2::Union{GeoData,UTMData})
-    
+
     Surface1.depth.val .=  Surface1.depth.val + Surface2.depth.val
 
     return nothing
@@ -1955,7 +1955,7 @@ Adds `Surface2` to `Surface1`. The addition happens on the `Surface1.z`; the fie
 
 """
 function AddSurfaces!(Surface1::Union{CartData,ParaviewData}, Surface2::Union{CartData,ParaviewData})
-    
+
     Surface1.z.val .=  Surface1.z.val + Surface2.z.val
 
     return nothing
@@ -1969,7 +1969,7 @@ Subtracts `Surface2` to `Surface1`. The addition happens on the `Surface1.depth`
 
 """
 function SubtractSurfaces!(Surface1::Union{GeoData,UTMData}, Surface2::Union{GeoData,UTMData})
-    
+
     Surface1.depth.val .=  Surface1.depth.val - Surface2.depth.val
 
     return nothing
@@ -1983,7 +1983,7 @@ Subtracts `Surface2` to `Surface1`. The addition happens on the `Surface1.z`; th
 
 """
 function SubtractSurfaces!(Surface1::Union{CartData,ParaviewData}, Surface2::Union{CartData,ParaviewData})
-    
+
     Surface1.z.val .=  Surface1.z.val - Surface2.z.val
 
     return nothing
@@ -1994,20 +1994,20 @@ end
 
 """
     remove_NaN_Surface!(Z,X,Y)
-    
+
 Removes NaN's from a grid `Z` by taking the closest points as specified by `X` and `Y`.
 """
 function remove_NaN_Surface!(Z,X,Y)
     # use nearest neighbour to interpolate data
     id      = findall(isnan.(Z) .== false)
     id_NaN  = findall(isnan.(Z))
-    
+
     coord   =   [X[id]'; Y[id]'];
     kdtree  =   KDTree(coord; leafsize = 10);
-    
+
     points    = [X[id_NaN]'; Y[id_NaN]'];
     idx,dist  = nn(kdtree, points);
-    
+
     Z[id_NaN] = Z[id[idx]]
 
     return nothing

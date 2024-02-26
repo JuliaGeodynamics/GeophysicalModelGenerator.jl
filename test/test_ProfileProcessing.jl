@@ -15,13 +15,13 @@ data_Surf = GMG_Dataset("Mrozek_Moho_Grid_EU","Surface","https://seafile.rlp.net
 data_EQ     = GMG_Dataset("AlpArraySeis","Point","https://seafile.rlp.net/f/87d565882eda40689666/?dl=1", true)
 data_SS     = GMG_Dataset("Handy_etal_SE_Profile1","Screenshot","https://seafile.rlp.net/f/5ffe580e765e4bd1bafe/?dl=1", true)
 
-# Note: the volumetric datasets are choosen as they are smaller in size (less download)
+# Note: the volumetric datasets are chosen as they are smaller in size (less download)
 data_Vol1   = GMG_Dataset("Hua2017","Volume","https://seafile.rlp.net/f/1fb68b74e5d742d39e62/?dl=1", true)
 data_Vol2   = GMG_Dataset("Plomerova2022","Volume","https://seafile.rlp.net/f/abccb8d3302b4ef5af17/?dl=1", true)
 #data_Vol1   = GMG_Dataset("Paffrath2021","Volume","https://seafile.rlp.net/f/5c8c851af6764b5db20d/?dl=1", true)
 #data_Vol2   = GMG_Dataset("Zhao2016","Volume","https://seafile.rlp.net/f/e81a6d075f6746609973/?dl=1", true)
 
-# Now load these datasets into NamedTuples 
+# Now load these datasets into NamedTuples
 
 SurfData        =   load_GMG(data_Surf)
 PointData       =   load_GMG(data_EQ)
@@ -54,7 +54,7 @@ VolData_combined2 = combine_VolData(Data.Volume, dims=(50,51,52))
 VolData_combined3 = combine_VolData(Data.Volume, lon=(1,22), lat=(40,52), dims=(50,51,52))
 @test isnan(VolData_combined3.fields.Hua2017_Vp[1000])
 
-# Define horizonal & vertical profiles
+# Define horizontal & vertical profiles
 prof1 = ProfileData(start_lonlat=(5,45), end_lonlat=(15,49))
 prof2 = ProfileData(depth = -100)
 prof3 = ProfileData(start_lonlat=(5,45), end_lonlat=(5,49))
@@ -74,7 +74,7 @@ GeophysicalModelGenerator.CreateProfileVolume!(prof1, VolData_combined1,  Depth_
 GeophysicalModelGenerator.CreateProfileSurface!(prof1,Data.Surface)
 @test prof1.SurfData[1].fields.MohoDepth[80] ≈ -37.58791461075397km
 
-# dito with EQ data:
+# ditto with EQ data:
 GeophysicalModelGenerator.CreateProfilePoint!(prof1,Data.Point, section_width=5km)
 GeophysicalModelGenerator.CreateProfilePoint!(prof4,Data.Point, section_width=10km)
 @test  length(prof1.PointData[1].lon) == 13
