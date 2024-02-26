@@ -172,10 +172,10 @@ struct GeoData <: AbstractGeneralGrid
         # Check ordering of the arrays in case of 3D
         if sum(size(lon).>1)==3
             if maximum(abs.(diff(lon,dims=2)))>maximum(abs.(diff(lon,dims=1))) || maximum(abs.(diff(lon,dims=3)))>maximum(abs.(diff(lon,dims=1)))
-                error("It appears that the lon array has a wrong ordering")
+                @warn "It appears that the lon array has a wrong ordering"
             end
             if maximum(abs.(diff(lat,dims=1)))>maximum(abs.(diff(lat,dims=2))) || maximum(abs.(diff(lat,dims=3)))>maximum(abs.(diff(lat,dims=2)))
-                error("It appears that the lat array has a wrong ordering")
+                @warn "It appears that the lat array has a wrong ordering"
             end
         end
 
@@ -414,10 +414,10 @@ struct UTMData <: AbstractGeneralGrid
         # Check ordering of the arrays in case of 3D
         if sum(size(EW).>1)==3
             if maximum(abs.(diff(EW,dims=2)))>maximum(abs.(diff(EW,dims=1))) || maximum(abs.(diff(EW,dims=3)))>maximum(abs.(diff(EW,dims=1)))
-                error("It appears that the EW array has a wrong ordering")
+                @warn "It appears that the EW array has a wrong ordering"
             end
             if maximum(abs.(diff(NS,dims=1)))>maximum(abs.(diff(NS,dims=2))) || maximum(abs.(diff(NS,dims=3)))>maximum(abs.(diff(NS,dims=2)))
-                error("It appears that the NS array has a wrong ordering")
+                @warn "It appears that the NS array has a wrong ordering"
             end
         end
 
@@ -698,10 +698,10 @@ struct CartData <: AbstractGeneralGrid
         # Check ordering of the arrays in case of 3D
         if sum(size(x).>1)==3
             if maximum(abs.(diff(x,dims=2)))>maximum(abs.(diff(x,dims=1))) || maximum(abs.(diff(x,dims=3)))>maximum(abs.(diff(x,dims=1)))
-                error("It appears that the x-array has a wrong ordering")
+                @warn "It appears that the x-array has a wrong ordering"
             end
             if maximum(abs.(diff(y,dims=1)))>maximum(abs.(diff(y,dims=2))) || maximum(abs.(diff(y,dims=3)))>maximum(abs.(diff(y,dims=2)))
-                error("It appears that the y-array has a wrong ordering")
+                @warn "It appears that the y-array has a wrong ordering"
             end
         end
 
