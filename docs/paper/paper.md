@@ -20,13 +20,13 @@ authors:
     orcid: 0000-0002-3615-5923
     affiliation: 3
   - name: Pascal Aellig
-    #orcid: 0000-0003-1185-3730
+    orcid: 0009-0008-9039-5646
     affiliation: 1
   - name: Jacob Frasukiewicz
     #orcid: 0000-0003-1185-3730
     affiliation: 1
 affiliations:
- - name: Johannes Gutenberg University Mainz, Germany 
+ - name: Johannes Gutenberg University Mainz, Germany
    index: 1
  - name: University of Bayreuth, Germany
    index: 2
