@@ -1,17 +1,17 @@
 using Base: Int64, Float64, NamedTuple
 using Printf
 using Parameters        # helps setting default parameters in structures
-using SpecialFunctions: erfc  
+using SpecialFunctions: erfc
 
 # Setup_geometry
-# 
+#
 # These are routines that help to create input geometries, such as slabs with a given angle
 #
 
-export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!,
+export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!, AddLayer!,
         makeVolcTopo,
         ConstantTemp, LinearTemp, HalfspaceCoolingTemp, SpreadingRateTemp,
-        ConstantPhase, LithosphericPhases, 
+        ConstantPhase, LithosphericPhases,
         Compute_ThermalStructure, Compute_Phase
 
 
@@ -35,17 +35,17 @@ Parameters
 - Origin - the origin, used to rotate the box around. Default is the left-front-top corner
 - StrikeAngle - strike angle of slab
 - DipAngle - dip angle of slab
-- phase - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()` 
-- T - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()` 
+- phase - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
+- T - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
 
 
 Examples
 ========
 
 Example 1) Box with constant phase and temperature & a dip angle of 10 degrees:
-```julia 
+```julia
 julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
-LaMEM Grid: 
+LaMEM Grid:
   nel         : (32, 32, 32)
   marker/cell : (3, 3, 3)
   markers     : (96, 96, 96)
@@ -56,38 +56,38 @@ julia> Phases = zeros(Int32,   size(Grid.X));
 julia> Temp   = zeros(Float64, size(Grid.X));
 julia> AddBox!(Phases,Temp,Grid, xlim=(0,500), zlim=(-50,0), phase=ConstantPhase(3), DipAngle=10, T=ConstantTemp(1000))
 julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
-julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview 
+julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
 1-element Vector{String}:
- "LaMEM_ModelSetup.vts"   
+ "LaMEM_ModelSetup.vts"
 ```
 
 Example 2) Box with halfspace cooling profile
-```julia 
+```julia
 julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
 julia> Phases = zeros(Int32,   size(Grid.X));
 julia> Temp   = zeros(Float64, size(Grid.X));
 julia> AddBox!(Phases,Temp,Grid, xlim=(0,500), zlim=(-50,0), phase=ConstantPhase(3), DipAngle=10, T=ConstantTemp(1000))
 julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
-julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview 
+julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
 1-element Vector{String}:
- "LaMEM_ModelSetup.vts"   
+ "LaMEM_ModelSetup.vts"
 ```
 """
 function AddBox!(Phase, Temp, Grid::AbstractGeneralGrid;                 # required input
                 xlim=Tuple{2}, ylim=nothing, zlim=Tuple{2},     # limits of the box
                 Origin=nothing, StrikeAngle=0, DipAngle=0,      # origin & dip/strike
                 phase = ConstantPhase(1),                       # Sets the phase number(s) in the box
-                T=nothing )                                     # Sets the thermal structure (various fucntions are available)
-    
+                T=nothing )                                     # Sets the thermal structure (various functions are available)
+
     # Retrieve 3D data arrays for the grid
     X,Y,Z = coordinate_grids(Grid)
 
-    # Limits of block                
-    if ylim==nothing 
-        ylim = (minimum(Y), maximum(Y)) 
+    # Limits of block
+    if ylim==nothing
+        ylim = (minimum(Y), maximum(Y))
     end
-    
-    if Origin==nothing 
+
+    if Origin==nothing
         Origin = (xlim[1], ylim[1], zlim[2])  # upper-left corner
     end
 
@@ -102,10 +102,10 @@ function AddBox!(Phase, Temp, Grid::AbstractGeneralGrid;                 # requi
     # Set phase number & thermal structure in the full domain
     ztop = zlim[2] - Origin[3]
     zbot = zlim[1] - Origin[3]
-    ind = findall(  (Xrot .>= (xlim[1] - Origin[1])) .& (Xrot .<= (xlim[2] - Origin[1])) .&  
-                    (Yrot .>= (ylim[1] - Origin[2])) .& (Yrot .<= (ylim[2] - Origin[2])) .&  
+    ind = findall(  (Xrot .>= (xlim[1] - Origin[1])) .& (Xrot .<= (xlim[2] - Origin[1])) .&
+                    (Yrot .>= (ylim[1] - Origin[2])) .& (Yrot .<= (ylim[2] - Origin[2])) .&
                     (Zrot .>= zbot) .& (Zrot .<= ztop)  )
-    
+
 
     # Compute thermal structure accordingly. See routines below for different options
     if T != nothing
@@ -114,9 +114,110 @@ function AddBox!(Phase, Temp, Grid::AbstractGeneralGrid;                 # requi
 
     # Set the phase. Different routines are available for that - see below.
     Phase[ind] = Compute_Phase(Phase[ind], Temp[ind], Xrot[ind], Yrot[ind], Zrot[ind], phase)
-    
+
     return nothing
 end
+
+
+"""
+    AddLayer!(Phase, Temp, Grid::AbstractGeneralGrid; xlim=Tuple{2}, [ylim=Tuple{2}], zlim=Tuple{2},
+            phase = ConstantPhase(1),
+            T=nothing )
+
+Adds a layer with phase & temperature structure to a 3D model setup. The most common use would be to add a lithospheric layer to a model setup.
+This simplifies creating model geometries in geodynamic models
+
+
+Parameters
+====
+- Phase - Phase array (consistent with Grid)
+- Temp  - Temperature array (consistent with Grid)
+- Grid -  grid structure (usually obtained with ReadLaMEM_InputFile, but can also be other grid types)
+- xlim -  left/right coordinates of box
+- ylim -  front/back coordinates of box
+- zlim -  bottom/top coordinates of box
+- phase - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
+- T - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
+
+
+Examples
+========
+
+Example 1) Layer with constant phase and temperature
+```julia
+julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
+LaMEM Grid:
+  nel         : (32, 32, 32)
+  marker/cell : (3, 3, 3)
+  markers     : (96, 96, 96)
+  x           ϵ [-3.0 : 3.0]
+  y           ϵ [-2.0 : 2.0]
+  z           ϵ [-2.0 : 0.0]
+julia> Phases = zeros(Int32,   size(Grid.X));
+julia> Temp   = zeros(Float64, size(Grid.X));
+julia> AddLayer!(Phases,Temp,Grid, zlim=(-50,0), phase=ConstantPhase(3), T=ConstantTemp(1000))
+julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
+julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
+1-element Vector{String}:
+ "LaMEM_ModelSetup.vts"
+```
+
+Example 2) Box with halfspace cooling profile
+```julia
+julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
+julia> Phases = zeros(Int32,   size(Grid.X));
+julia> Temp   = zeros(Float64, size(Grid.X));
+julia> AddLayer!(Phases,Temp,Grid, zlim=(-50,0), phase=ConstantPhase(3), T=HalfspaceCoolingTemp())
+julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
+julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
+1-element Vector{String}:
+ "LaMEM_ModelSetup.vts"
+```
+"""
+function AddLayer!(Phase, Temp, Grid::AbstractGeneralGrid;      # required input
+                xlim=nothing, ylim=nothing, zlim=nothing,       # limits of the layer
+                phase = ConstantPhase(1),                       # Sets the phase number(s) in the box
+                T=nothing )                                     # Sets the thermal structure (various functions are available)
+
+    # Retrieve 3D data arrays for the grid
+    X,Y,Z = coordinate_grids(Grid)
+
+    # Limits of block
+    if isnothing(xlim)==isnothing(ylim)==isnothing(zlim)
+        error("You need to specify at least one of the limits (xlim, ylim, zlim)")
+    end
+
+    if isnothing(xlim)
+        xlim = (minimum(X), maximum(X))
+    end
+    if isnothing(ylim)
+        ylim = (minimum(Y), maximum(Y))
+    end
+    if isnothing(zlim)
+        zlim = (minimum(Z), maximum(Z))
+    end
+
+    # Set phase number & thermal structure in the full domain
+    ind = findall(  (X .>= (xlim[1])) .& (X .<= (xlim[2])) .&
+                    (Y .>= (ylim[1])) .& (Y .<= (ylim[2])) .&
+                    (Z .>= (zlim[1])) .& (Z .<= (zlim[2]))
+                )
+
+
+    # Compute thermal structure accordingly. See routines below for different options
+    if !isnothing(T)
+        Temp[ind] = Compute_ThermalStructure(Temp[ind], X[ind], Y[ind], Z[ind], T)
+    end
+
+    # Set the phase. Different routines are available for that - see below.
+    Phase[ind] = Compute_Phase(Phase[ind], Temp[ind], X[ind], Y[ind], Z[ind], phase)
+
+    return nothing
+end
+
+
+
+
 
 """
     AddSphere!(Phase, Temp, Grid::AbstractGeneralGrid; cen=Tuple{3}, radius=Tuple{1},
@@ -133,17 +234,17 @@ Parameters
 - Grid - LaMEM grid structure (usually obtained with ReadLaMEM_InputFile)
 - cen - center coordinates of sphere
 - radius - radius of sphere
-- phase - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()` 
-- T - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()` 
+- phase - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
+- T - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
 
 
 Example
 ========
 
 Sphere with constant phase and temperature:
-```julia 
+```julia
 julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
-LaMEM Grid: 
+LaMEM Grid:
   nel         : (32, 32, 32)
   marker/cell : (3, 3, 3)
   markers     : (96, 96, 96)
@@ -154,16 +255,16 @@ julia> Phases = zeros(Int32,   size(Grid.X));
 julia> Temp   = zeros(Float64, size(Grid.X));
 julia> AddSphere!(Phases,Temp,Grid, cen=(0,0,-1), radius=0.5, phase=ConstantPhase(2), T=ConstantTemp(800))
 julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
-julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview 
+julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
 1-element Vector{String}:
- "LaMEM_ModelSetup.vts"   
+ "LaMEM_ModelSetup.vts"
 ```
 """
 function AddSphere!(Phase, Temp, Grid::AbstractGeneralGrid;      # required input
     cen=Tuple{3}, radius=Tuple{1},                         # center and radius of the sphere
     phase = ConstantPhase(1),                           # Sets the phase number(s) in the sphere
-    T=nothing )                                         # Sets the thermal structure (various fucntions are available)
-          
+    T=nothing )                                         # Sets the thermal structure (various functions are available)
+
     # Retrieve 3D data arrays for the grid
     X,Y,Z = coordinate_grids(Grid)
 
@@ -200,17 +301,17 @@ Parameters
 - Origin - the origin, used to rotate the box around. Default is the left-front-top corner
 - StrikeAngle - strike angle of slab
 - DipAngle - dip angle of slab
-- phase - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()` 
-- T - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()` 
+- phase - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
+- T - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
 
 
 Example
 ========
 
 Ellipsoid with constant phase and temperature, rotated 90 degrees and tilted by 45 degrees:
-```julia 
+```julia
 julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
-LaMEM Grid: 
+LaMEM Grid:
   nel         : (32, 32, 32)
   marker/cell : (3, 3, 3)
   markers     : (96, 96, 96)
@@ -221,18 +322,18 @@ julia> Phases = zeros(Int32,   size(Grid.X));
 julia> Temp   = zeros(Float64, size(Grid.X));
 julia> AddEllipsoid!(Phases,Temp,Grid, cen=(-1,-1,-1), axes=(0.2,0.1,0.5), StrikeAngle=90, DipAngle=45, phase=ConstantPhase(3), T=ConstantTemp(600))
 julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
-julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview 
+julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
 1-element Vector{String}:
- "LaMEM_ModelSetup.vts"   
+ "LaMEM_ModelSetup.vts"
 ```
 """
 function AddEllipsoid!(Phase, Temp, Grid::AbstractGeneralGrid;      # required input
     cen=Tuple{3}, axes=Tuple{3},                           # center and semi-axes of the ellpsoid
     Origin=nothing, StrikeAngle=0, DipAngle=0,             # origin & dip/strike
     phase = ConstantPhase(1),                              # Sets the phase number(s) in the box
-    T=nothing )                                            # Sets the thermal structure (various fucntions are available)
+    T=nothing )                                            # Sets the thermal structure (various functions are available)
 
-    if Origin==nothing 
+    if Origin==nothing
         Origin = cen  # center
     end
 
@@ -281,17 +382,17 @@ Parameters
 - base - center coordinate of bottom of cylinder
 - cap - center coordinate of top of cylinder
 - radius - radius of the cylinder
-- phase - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()` 
-- T - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()` 
+- phase - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
+- T - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
 
 
 Example
 ========
 
 Cylinder with constant phase and temperature:
-```julia 
+```julia
 julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
-LaMEM Grid: 
+LaMEM Grid:
   nel         : (32, 32, 32)
   marker/cell : (3, 3, 3)
   markers     : (96, 96, 96)
@@ -302,16 +403,16 @@ julia> Phases = zeros(Int32,   size(Grid.X));
 julia> Temp   = zeros(Float64, size(Grid.X));
 julia> AddCylinder!(Phases,Temp,Grid, base=(-1,-1,-1.5), cap=(1,1,-0.5), radius=0.25, phase=ConstantPhase(4), T=ConstantTemp(400))
 julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
-julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview 
+julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
 1-element Vector{String}:
- "LaMEM_ModelSetup.vts"   
+ "LaMEM_ModelSetup.vts"
 ```
 """
 function AddCylinder!(Phase, Temp, Grid::AbstractGeneralGrid;   # required input
     base=Tuple{3}, cap=Tuple{3}, radius=Tuple{1},               # center and radius of the sphere
     phase = ConstantPhase(1),                           # Sets the phase number(s) in the sphere
-    T=nothing )                                         # Sets the thermal structure (various fucntions are available)
-    
+    T=nothing )                                         # Sets the thermal structure (various functions are available)
+
     # axis vector of cylinder
     axVec = cap .- base
     ax2   = (axVec[1]^2 + axVec[2]^2 + axVec[3]^2)
@@ -355,8 +456,8 @@ function Rot3D!(X,Y,Z, StrikeAngle, DipAngle)
 
     for i in eachindex(X)
         CoordVec = [X[i], Y[i], Z[i]]
-        CoordRot =  rotz*CoordVec; 
-        CoordRot =  roty*CoordRot; 
+        CoordRot =  rotz*CoordVec;
+        CoordRot =  roty*CoordRot;
         X[i] = CoordRot[1];
         Y[i] = CoordRot[2];
         Z[i] = CoordRot[3];
@@ -390,9 +491,9 @@ Example
 ========
 
 Cylinder with constant phase and temperature:
-```julia 
+```julia
 julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
-LaMEM Grid: 
+LaMEM Grid:
   nel         : (32, 32, 32)
   marker/cell : (3, 3, 3)
   markers     : (96, 96, 96)
@@ -400,7 +501,7 @@ LaMEM Grid:
   y           ϵ [-2.0 : 2.0]
   z           ϵ [-2.0 : 0.0]
 julia> Topo = makeVolcTopo(Grid, center=[0.0,0.0], height=0.4, radius=1.5, crater=0.5, base=0.1)
-CartData 
+CartData
     size    : (33, 33, 1)
     x       ϵ [ -3.0 : 3.0]
     y       ϵ [ -2.0 : 2.0]
@@ -408,21 +509,21 @@ CartData
     fields  : (:Topography,)
   attributes: ["note"]
 julia> Topo = makeVolcTopo(Grid, center=[0.0,0.0], height=0.8, radius=0.5, crater=0.0, base=0.4, background=Topo.fields.Topography)
-CartData 
+CartData
     size    : (33, 33, 1)
     x       ϵ [ -3.0 : 3.0]
     y       ϵ [ -2.0 : 2.0]
     z       ϵ [ 0.1 : 0.8]
     fields  : (:Topography,)
   attributes: ["note"]
-julia> Write_Paraview(Topo,"VolcanoTopo")           # Save topography to paraview 
-Saved file: VolcanoTopo.vts  
+julia> Write_Paraview(Topo,"VolcanoTopo")           # Save topography to paraview
+Saved file: VolcanoTopo.vts
 ```
 """
-function makeVolcTopo(Grid::LaMEM_grid; 
-    center::Array{Float64, 1}, 
-    height::Float64, 
-    radius::Float64, 
+function makeVolcTopo(Grid::LaMEM_grid;
+    center::Array{Float64, 1},
+    height::Float64,
+    radius::Float64,
     crater=0.0,
     base=0.0,
     background=nothing)
@@ -443,7 +544,7 @@ function makeVolcTopo(Grid::LaMEM_grid;
 
     # get radial distance from crater rim
     RD .-= crater
-    
+
     # find position relative to crater rim
     dr   = radius - crater
     pos  = (-RD ./ dr .+ 1)
@@ -456,7 +557,7 @@ function makeVolcTopo(Grid::LaMEM_grid;
     else
         background = nondimensionalize(background, CharUnits)
         if size(background) == size(X)
-            H .= background 
+            H .= background
         elseif size(background) == size(reshape(X,nx,ny,1))
             H .= background[:,:,1]
         else
@@ -467,7 +568,7 @@ function makeVolcTopo(Grid::LaMEM_grid;
     H[ind] .= pos[ind] .* (height-base) .+ base
     ind     = findall(x->x>= 1.0, pos)
     H[ind] .= height
-    
+
     # dimensionalize
     Topo = dimensionalize(H, km, CharUnits)
 
@@ -476,12 +577,12 @@ function makeVolcTopo(Grid::LaMEM_grid;
 end
 
 
-abstract type AbstractThermalStructure end  
+abstract type AbstractThermalStructure end
 
 
 """
     ConstantTemp(T=1000)
-    
+
 Sets a constant temperature inside the box
 
 Parameters
@@ -500,7 +601,7 @@ end
 
 """
     LinearTemp(Ttop=0, Tbot=1000)
-    
+
 Set a linear temperature structure from top to bottom
 
 Parameters
@@ -526,7 +627,7 @@ end
 
 """
     HalfspaceCoolingTemp(Tsurface=0, Tmantle=1350, Age=60, Adiabat=0)
-    
+
 Sets a halfspace temperature structure in plate
 
 Parameters
@@ -553,7 +654,7 @@ function Compute_ThermalStructure(Temp, X, Y, Z, s::HalfspaceCoolingTemp)
     ThermalAge  =   Age*1e6*SecYear;
 
     MantleAdiabaticT    =   Tmantle .+ Adiabat*abs.(Z);   # Adiabatic temperature of mantle
-    
+
     for i in eachindex(Temp)
         Temp[i] =   (Tsurface .- Tmantle)*erfc((abs.(Z[i])*1e3)./(2*sqrt(kappa*ThermalAge))) + MantleAdiabaticT[i];
     end
@@ -563,7 +664,7 @@ end
 
 """
     SpreadingRateTemp(Tsurface=0, Tmantle=1350, Adiabat=0, MORside="left",SpreadingVel=3, AgeRidge=0, maxAge=80)
-    
+
 Sets a halfspace temperature structure within the box, combined with a spreading rate (which implies that the plate age varies)
 
 Parameters
@@ -593,28 +694,28 @@ function Compute_ThermalStructure(Temp, X, Y, Z, s::SpreadingRateTemp)
     kappa       =   1e-6;
     SecYear     =   3600*24*365
     dz          =   Z[end]-Z[1];
-  
+
 
     MantleAdiabaticT    =   Tmantle .+ Adiabat*abs.(Z);   # Adiabatic temperature of mantle
-    
+
     if MORside=="left"
-        Distance = X .- X[1,1,1]; 
+        Distance = X .- X[1,1,1];
     elseif MORside=="right"
-        Distance = X[end,1,1] .- X; 
+        Distance = X[end,1,1] .- X;
     elseif MORside=="front"
-        Distance = Y .- Y[1,1,1]; 
+        Distance = Y .- Y[1,1,1];
     elseif MORside=="back"
-        Distance = Y[1,end,1] .- Y; 
+        Distance = Y[1,end,1] .- Y;
     else
         error("unknown side")
     end
-    
+
     for i in eachindex(Temp)
         ThermalAge    =   abs(Distance[i]*1e3*1e2)/SpreadingVel + AgeRidge*1e6;   # Thermal age in years
         if ThermalAge>maxAge*1e6
             ThermalAge = maxAge*1e6
         end
-        
+
         ThermalAge    =   ThermalAge*SecYear;
 
         Temp[i] = (Tsurface .- Tmantle)*erfc((abs.(Z[i])*1e3)./(2*sqrt(kappa*ThermalAge))) + MantleAdiabaticT[i];
@@ -624,12 +725,12 @@ end
 
 
 
-abstract type AbstractPhaseNumber end  
+abstract type AbstractPhaseNumber end
 
 
 """
     ConstantPhase(phase=1)
-    
+
 Sets a constant phase inside the box
 
 Parameters
@@ -649,7 +750,7 @@ end
 
 """
     LithosphericPhases(Layers=[10 20 15], Phases=[1 2 3 4], Tlab=nothing )
-    
+
 This allows defining a layered lithosphere. Layering is defined from the top downwards.
 
 Parameters

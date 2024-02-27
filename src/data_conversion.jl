@@ -1,20 +1,20 @@
 """
-**data_conversion.jl** contains functions to convert imported data from e.g. CSV or netCDF files to the GeoData format 
-that is used internally to store all data related to a certain data set. For importing files, use standard methods, such 
-as CSV import using *readdlm* (see the [DelimitedFiles.jl](https://docs.julialang.org/en/v1/stdlib/DelimitedFiles/) package) 
-or netCDF import (see the [NetCDF.jl](https://github.com/JuliaGeo/NetCDF.jl) package). 
+**data_conversion.jl** contains functions to convert imported data from e.g. CSV or netCDF files to the GeoData format
+that is used internally to store all data related to a certain data set. For importing files, use standard methods, such
+as CSV import using *readdlm* (see the [DelimitedFiles.jl](https://docs.julialang.org/en/v1/stdlib/DelimitedFiles/) package)
+or netCDF import (see the [NetCDF.jl](https://github.com/JuliaGeo/NetCDF.jl) package).
 """
 
 """
-Using *readdlm* on CSV files will provide two output arguments, one containing the header as a Array{AbstractString, 2} and 
+Using *readdlm* on CSV files will provide two output arguments, one containing the header as a Array{AbstractString, 2} and
 the other one containing the data as Array{Float64, 2}.
 """
 
 ############ CONVERT DLM DATA TO GEO DATA
 function DLM2Geo(hdr::Array{AbstractString, 2},data::Array{Float64, 2},DepthCon::AbstractString)
-    
+
     # initialize array of structures to store the data
-    # while doing so, separate the unit from the variable name 
+    # while doing so, separate the unit from the variable name
     ndata   = size(data,1) # number of entries
     nfields = size(data,2) # number of fields
 
@@ -39,7 +39,7 @@ function DLM2Geo(hdr::Array{AbstractString, 2},data::Array{Float64, 2},DepthCon:
             LatData = data[1:end,ifield]
         elseif occursin("depth",hdr[ifield])
             # ISSUE: WE DEFINE DEPTH AS NEGATIVE, BUT HOW DO WE SET THAT?
-            # WE COULD ADD A FLAG THAT INDICATES THE DEPTH CONVENTION AND 
+            # WE COULD ADD A FLAG THAT INDICATES THE DEPTH CONVENTION AND
             # TREAT IT ACCORDINGLY
             depth_ind = ifield;
             varname = GetVariableName(hdr[ifield])# get variable name
@@ -86,7 +86,7 @@ function DLM2Geo(hdr::Array{AbstractString, 2},data::Array{Float64, 2},DepthCon:
 
         # take care of the header strings
         varname = GetVariableName(tmp_hdr[ihdr])# get variable name
-        varunit = GetVariableUnit(tmp_hdr[ihdr])# get variable unit   
+        varunit = GetVariableUnit(tmp_hdr[ihdr])# get variable unit
         if cmp(varunit,"%")==0
             tmp_hdr[ihdr] = string(varname,"_percentage")
         else
@@ -100,26 +100,26 @@ function DLM2Geo(hdr::Array{AbstractString, 2},data::Array{Float64, 2},DepthCon:
     hdr_tpl  = Tuple(Symbol(x) for x in tmp_hdr) # convert header to tuple
     data_tpl = Tuple.(tmp_vec for i in size(tmp_vec,1)) # convert data to tuple
     tmp = NamedTuple{hdr_tpl}(data_tpl)
- 
+
     println(typeof(tmp))
 
     # initialize data structure
     importdata = GeoData(LonData,LatData,DepthData,tmp)
 
     # assign data to output
-    return importdata 
+    return importdata
 
 end
 
 
-########### REARRANGE DATA TO OBTAIN A 3D MATIX IF NECESSARY ##########
+########### REARRANGE DATA TO OBTAIN A 3D MATRIX IF NECESSARY ##########
 function RearrangeToMatrix()
 
 end
 ########### CONVERT NETCDF DATA TO GEO DATA ########
 """
-Converting netCDF data to GeoData is fairly easy. One can read in Data from a netCDF file using ncread("filename","variable") 
-(the contents of the netcdf file can be queried beforehand using ncinfo("filename")). Via *ncread*, one then reads in all the 
+Converting netCDF data to GeoData is fairly easy. One can read in Data from a netCDF file using ncread("filename","variable")
+(the contents of the netcdf file can be queried beforehand using ncinfo("filename")). Via *ncread*, one then reads in all the
 desired variables. NetCDF2Geo then takes care of converting this data to GeoData.
 """
 function NetCDF2Geo()
@@ -136,7 +136,7 @@ function GetVariableName(inputstring::SubString{String})
     indfirst = nothing
     iloop     = 1
     str2find = ["(","[","{"]
-    # find first occurence of one of the brackets
+    # find first occurrence of one of the brackets
     while isnothing(indfirst)
         indfirst = findfirst(str2find[iloop],inputstring)
         iloop = iloop + 1
@@ -144,7 +144,7 @@ function GetVariableName(inputstring::SubString{String})
             break
         end
     end
-    
+
     # either return the whole inputstring or only the part before the unit
     if isnothing(indfirst)
         return inputstring
@@ -180,9 +180,3 @@ function GetVariableUnit(inputstring::SubString{String})
     end
 
 end
-
-
-
-
-
-

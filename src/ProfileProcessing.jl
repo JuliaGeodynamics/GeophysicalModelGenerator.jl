@@ -1,4 +1,4 @@
-# 
+#
 # this is ProfileProcessing.jl
 # It contains functions and type definitions to gather selected data for given profiles
 
@@ -7,7 +7,7 @@ export ExtractProfileData!, ReadPickedProfiles
 import Base: show
 
 """
-Structure that holds profile data (interpolated/projected on the profile) 
+Structure that holds profile data (interpolated/projected on the profile)
 
     struct ProfileData
         vertical        ::  Bool # vertical:true, horizontal:false
@@ -69,7 +69,7 @@ function show(io::IO, g::ProfileData)
     if !isnothing(g.PointData)
         println(io, "        PointData: $(keys(g.PointData)) ")
     end
-    
+
     return nothing
 end
 
@@ -78,26 +78,26 @@ end
 Structure that stores info about a GMG Dataset, which is useful to collect a wide variety of datasets.
 
 - Name    :: String          # Name of the dataset
-- Type    :: String          # Volumetric, Surface, Point, Screenshot    
-- DirName :: String          # Directory name or url of dataset 
+- Type    :: String          # Volumetric, Surface, Point, Screenshot
+- DirName :: String          # Directory name or url of dataset
 - active  :: Bool            # should this data be loaded or not?
 
 """
 mutable struct GMG_Dataset
     Name    :: String          # Name of the dataset
-    Type    :: String          # Volumetric, Surface, Point, Screenshot    
-    DirName :: String          # Directory name or url of dataset 
+    Type    :: String          # Volumetric, Surface, Point, Screenshot
+    DirName :: String          # Directory name or url of dataset
     active  :: Bool            # active in the GUI or not?
 
-    function GMG_Dataset(Name::String,Type::String,DirName::String,active::Bool=false) 
+    function GMG_Dataset(Name::String,Type::String,DirName::String,active::Bool=false)
         Type = strip(Type)
         Name = strip(Name)
         DirName = strip(DirName)
-        
+
         if !any(occursin.(Type,["Volume","Surface","Point","Screenshot","Topography"]))
             error("Type should be either: Volume,Surface,Point,Topography or Screenshot. Is: $Type.")
         end
-    
+
         if DirName[end-4:end] == ".jld2"
             DirName = DirName[1:end-5]
         end
@@ -107,15 +107,15 @@ mutable struct GMG_Dataset
 end
 
 
-# Print info 
+# Print info
 function show(io::IO, g::GMG_Dataset)
     if g.active
         str_act = "(active)  :"
     else
         str_act = "(inactive):"
-    end    
+    end
     print(io, "GMG $(g.Type) Dataset $str_act $(g.Name) @ $(g.DirName)")
-    
+
     return nothing
 end
 
@@ -144,7 +144,7 @@ Note that the first line of the file is skipped.
 
 Here, the meaning of the variables is:
 - `Name`: The name of the dataset to be loaded
-- `Location`: the location of the file (directory and filename) on your local machine, or an url where we can download the file from the web. The url is expected to start with "http". 
+- `Location`: the location of the file (directory and filename) on your local machine, or an url where we can download the file from the web. The url is expected to start with "http".
 - `Type`: type of the dataset (Volume, Surface, Point, Screenshot)
 - `Active`: Do we want this file to be loaded or not? Optional parameter that defaults to `true`
 
@@ -153,7 +153,7 @@ function Load_Dataset_file(file_datasets::String)
     datasets    = readdlm(file_datasets,',',skipstart =1); # read information on datasets to be used from text file
     n           = size(datasets,1)
 
-    # Deal with last collumn (in case it is not specified or not specified everywhere)
+    # Deal with last column (in case it is not specified or not specified everywhere)
     if size(datasets,2)==4
         active      = datasets[:,4]
         active      = replace(active,""=>true)
@@ -170,7 +170,7 @@ function Load_Dataset_file(file_datasets::String)
     return Datasets
 end
 
-""" 
+"""
     Data = load_GMG(Datasets::Vector{GMG_Dataset})
 
 This loads all the active datasets in `Datasets`, and returns a NamedTuple with Volume, Surface, Point, Screenshot and Topography data
@@ -178,7 +178,7 @@ This loads all the active datasets in `Datasets`, and returns a NamedTuple with 
 """
 function load_GMG(Datasets::Vector{GMG_Dataset})
 
-   
+
     DataPoint       =   NamedTuple();
     DataSurf        =   NamedTuple();
     DataScreenshot  =   NamedTuple();
@@ -187,7 +187,7 @@ function load_GMG(Datasets::Vector{GMG_Dataset})
     for data in Datasets
         if data.active
             # load into NamedTuple (I'm sure this can be done more compact somehow..)
-            loaded_data = load_GMG(data)   
+            loaded_data = load_GMG(data)
             if data.Type=="Volume"
                 DataVol         =   merge(DataVol,loaded_data)
             elseif data.Type=="Surface"
@@ -211,7 +211,7 @@ end
 
     VolData_combined = combine_VolData(VolData::NamedTuple; lat=nothing, lon=nothing, depth=nothing, dims=(100,100,100), dataset_preferred = 1)
 
-This takes different volumetric datasets (specified in `VolData`) & merges them into a single one. 
+This takes different volumetric datasets (specified in `VolData`) & merges them into a single one.
 You need to either provide the "reference" dataset within the NamedTuple (`dataset_preferred`), or the lat/lon/depth and dimensions of the new dataset.
 
 """
@@ -238,7 +238,7 @@ function combine_VolData(VolData::NamedTuple; lat=nothing, lon=nothing, depth=no
         names_fields    = String.(keys(DataSet_interp.fields))
         for (j,name) in enumerate(names_fields)
             name_new_field = DataSet_Names[i]*"_"*name # name of new field includes name of dataset
-            # Note: we use ustrip here, and thereby remove the values, as the cross-section routine made problems 
+            # Note: we use ustrip here, and thereby remove the values, as the cross-section routine made problems
             DataSetRef = AddField(DataSetRef,name_new_field, ustrip.(DataSet_interp.fields[j]))
         end
     end
@@ -253,11 +253,11 @@ end
 """
     CreateProfileVolume!(Profile::ProfileData, VolData::AbstractGeneralGrid; DimsVolCross::NTuple=(100,100), Depth_extent=nothing)
 
-Creates a cross-section through a volumetric 3D dataset `VolData` with the data supplied in `Profile`. `Depth_extent` can be the minimum & maximum depth for vertical profiles 
+Creates a cross-section through a volumetric 3D dataset `VolData` with the data supplied in `Profile`. `Depth_extent` can be the minimum & maximum depth for vertical profiles
 """
 function CreateProfileVolume!(Profile::ProfileData, VolData::AbstractGeneralGrid; DimsVolCross::NTuple=(100,100), Depth_extent=nothing)
 
-    if Profile.vertical 
+    if Profile.vertical
         # take a vertical cross section
         cross_tmp = CrossSection(VolData,dims=DimsVolCross, Start=Profile.start_lonlat,End=Profile.end_lonlat,Depth_extent=Depth_extent)        # create the cross section
 
@@ -269,7 +269,7 @@ function CreateProfileVolume!(Profile::ProfileData, VolData::AbstractGeneralGrid
         # take a horizontal cross section
         cross_tmp = CrossSection(VolData, Depth_level=Profile.depth, Interpolate=true, dims=DimsVolCross)
     end
- 
+
     Profile.VolData = cross_tmp # assign to Profile data structure
     return nothing
 end
@@ -278,15 +278,15 @@ end
 ### internal function to process surface data - contrary to the volume data, we here have to save lon/lat/depth pairs for every surface data set, so we create a NamedTuple of GeoData data sets
 function CreateProfileSurface!(Profile::ProfileData, DataSet::NamedTuple; DimsSurfCross=(100,))
     num_datasets = length(DataSet)
-    
-    tmp = NamedTuple()             # initialize empty one 
+
+    tmp = NamedTuple()             # initialize empty one
     DataSetName = keys(DataSet)    # Names of the datasets
     for idata = 1:num_datasets
 
         # load data set --> each data set is a single GeoData structure, so we'll only have to get the respective key to load the correct type
         data_tmp = DataSet[idata]
 
-        if Profile.vertical 
+        if Profile.vertical
             # take a vertical cross section
             data = CrossSectionSurface(data_tmp, dims=DimsSurfCross, Start=Profile.start_lonlat, End=Profile.end_lonlat)        # create the cross section
 
@@ -296,16 +296,16 @@ function CreateProfileSurface!(Profile::ProfileData, DataSet::NamedTuple; DimsSu
 
             # add the data set as a NamedTuple
             data_NT     = NamedTuple{(DataSetName[idata],)}((data,))
-            tmp         = merge(tmp,data_NT) 
+            tmp         = merge(tmp,data_NT)
 
         else
-            # we do not have this implemented          
+            # we do not have this implemented
             #error("horizontal profiles not yet implemented")
         end
     end
 
     Profile.SurfData = tmp # assign to profile data structure
-    return 
+    return
 end
 
 
@@ -313,15 +313,15 @@ end
 ### function to process point data - contrary to the volume data, we here have to save lon/lat/depth pairs for every point data set
 function CreateProfilePoint!(Profile::ProfileData, DataSet::NamedTuple; section_width=50km)
     num_datasets = length(DataSet)
-    
-    tmp = NamedTuple()             # initialize empty one 
+
+    tmp = NamedTuple()             # initialize empty one
     DataSetName = keys(DataSet)    # Names of the datasets
     for idata = 1:num_datasets
 
         # load data set --> each data set is a single GeoData structure, so we'll only have to get the respective key to load the correct type
         data_tmp = DataSet[idata]
 
-        if Profile.vertical 
+        if Profile.vertical
             # take a vertical cross section
             data    = CrossSectionPoints(data_tmp, Start=Profile.start_lonlat, End=Profile.end_lonlat, section_width = section_width)        # create the cross section
 
@@ -331,7 +331,7 @@ function CreateProfilePoint!(Profile::ProfileData, DataSet::NamedTuple; section_
 
             # add the data set as a NamedTuple
             data_NT     = NamedTuple{(DataSetName[idata],)}((data,))
-            tmp         = merge(tmp,data_NT) 
+            tmp         = merge(tmp,data_NT)
 
         else
             # take a horizontal cross section
@@ -339,12 +339,12 @@ function CreateProfilePoint!(Profile::ProfileData, DataSet::NamedTuple; section_
 
             # add the data set as a NamedTuple
             data_NT     = NamedTuple{(DataSetName[idata],)}((data,))
-            tmp         = merge(tmp,data_NT) 
+            tmp         = merge(tmp,data_NT)
         end
     end
 
     Profile.PointData = tmp # assign to profile data structure
-    return 
+    return
 end
 
 
@@ -404,7 +404,7 @@ function ExtractProfileData(ProfileCoordFile::String,ProfileNumber::Int64,DataSe
 
     # load all Data
     VolData, SurfData, PointData, ScreenshotData, TopoData = load_GMG(Datasets_all)
-    
+
     # merge VolData:
     VolData_combined = combine_VolData(VolData)
 
@@ -419,7 +419,7 @@ end
 
 #=
 
-# Boris: I don't know exactly in which format you have your current files; 
+# Boris: I don't know exactly in which format you have your current files;
 ### wrapper function to extract data for a single profile
 function ExtractProfileData(ProfileCoordFile,ProfileNumber,DataSetName,DataSetFile,DataSetType,DimsVolCross,DepthVol,DimsSurfCross,WidthPointProfile)
 
@@ -460,7 +460,7 @@ end
 ### wrapper function to read the profile numbers+coordinates from a text file, the dataset names+locations+types from another text file
 ### once this is done, the different datasets are projected onto the profiles
 
-### currently, the function is quite slow, as the different data sets are reloaded for each profile. 
+### currently, the function is quite slow, as the different data sets are reloaded for each profile.
 ### a faster way would be to load one data set and create the profiles from it and then move on to the next one. However, this would require to hold all the profile data in memory, which may be a bit much...
 
 function CreateProfileData(file_profiles,file_datasets;Depth_extent=(-300,0),DimsVolCross=(500,300),DimsSurfCross = (100,),WidthPointProfile = 20km)
@@ -481,14 +481,12 @@ function CreateProfileData(file_profiles,file_datasets;Depth_extent=(-300,0),Dim
 
         # 2. process the profiles
         ExtractedData = ExtractProfileData(file_profiles,ProfileNumber[iprofile],DataSetName,DataSetFile,DataSetType,DimsVolCross,Depth_extent,DimsSurfCross,WidthPointProfile)
-    
+
         # 3. save data as JLD2
         fn = "Profile"*string(ProfileNumber[iprofile])
         jldsave(fn*".jld2";ExtractedData)
-    
+
     end
 
 end
 =#
-
-

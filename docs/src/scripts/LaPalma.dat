@@ -3,7 +3,7 @@
 # Data is provided in the variables seg_x, seg_y, seg_z and includes:
 #    * coordinates of the delimiters between the segments (n-1 points)
 #    * number of cells                                    (n points)
-#    * bias coefficients                                  (n points) 
+#    * bias coefficients                                  (n points)
 
 
 #===============================================================================
@@ -40,11 +40,11 @@ unit_stress      = 1e9
 # relative geometry tolerance for grid manipulations (default 1e-9)
 
 	gtol = 1e-9
-	
-# Number of cells for all segments 
+
+# Number of cells for all segments
 	nel_x	=   64
-	nel_y	=   64 
-	nel_z	=   32   
+	nel_y	=   64
+	nel_z	=   32
 
 # Coordinates of all segments (including start and end points)
 	coord_x = 	-50 	50
@@ -62,7 +62,7 @@ unit_stress      = 1e9
 	surf_max_angle     = 45.0             # maximum angle with horizon (smoothed if larger)
 	surf_topo_file     = LaPalma_Topo.topo # initial topography file (redundant)
 	erosion_model      = 0              # erosion model [0-none (default), 1-infinitely fast]
-	sediment_model     = 0              # sedimentation model [0-none (dafault), 1-prescribed rate]
+	sediment_model     = 0              # sedimentation model [0-none (default), 1-prescribed rate]
 
 #===============================================================================
 # Boundary conditions
@@ -79,7 +79,7 @@ unit_stress      = 1e9
 
 	# Free surface top boundary flag
 	open_top_bound = 1
-	
+
 #===============================================================================
 # Jacobian & residual evaluation parameters
 #===============================================================================
@@ -154,7 +154,7 @@ unit_stress      = 1e9
 	out_avd     = 1 # activate AVD phase output
 	out_avd_pvd = 1 # activate writing .pvd file
 	out_avd_ref = 1 # AVD grid refinement factor
-	
+
 # free surface output
 	out_surf            = 1 # activate surface output
 	out_surf_pvd        = 1 # activate writing .pvd file
@@ -172,19 +172,19 @@ unit_stress      = 1e9
 		Name = air
 		ID	= 0
 		rho	= 100
-		alpha   = 3e-5 
+		alpha   = 3e-5
 
-	# Linear Viscosity	
+	# Linear Viscosity
 		eta	= 1e17
 
 	# Elastic parameters
 		G 	= 1e10
 		nu 	= 0.2
-		
-	# Thermal parameters	
+
+	# Thermal parameters
 		k 	= 30
 		Cp 	= 1000
-		
+
 	# Plastic parameters
 		ch 	= 10e6
 		fr 	= 30
@@ -195,19 +195,19 @@ unit_stress      = 1e9
 		Name = water
 		ID	= 1
 		rho	= 100
-		alpha   = 3e-5 
+		alpha   = 3e-5
 
-	# Linear Viscosity	
+	# Linear Viscosity
 		eta	= 1e17
 
 	# Elastic parameters
 		G 	= 1e10
 		nu 	= 0.2
-		
-	# Thermal parameters	
+
+	# Thermal parameters
 		k 	= 30
 		Cp 	= 1000
-		
+
 	# Plastic parameters
 		ch 	= 10e6
 		fr 	= 30
@@ -220,7 +220,7 @@ unit_stress      = 1e9
 		ID   	= 2
 		rho 	= 2900
 		alpha   = 3e-5
-		
+
 	# dislocation viscosity
 		#disl_prof = Plagioclase_An75-Ranalli_1995
 		#disl_prof = Wet_Quarzite-Ranalli_1995
@@ -230,18 +230,18 @@ unit_stress      = 1e9
 	# Elastic parameters
 		G 	= 3e10
 		nu 	= 0.2
-	
+
 	# Thermal parameters
 		k 	= 3
 		Cp 	= 1000
-		
+
 	# Plastic parameters
 		ch 	= 10e6
 		fr 	= 30
 	<MaterialEnd>
-	
-	
-		
+
+
+
 # ------------------- Mantle lithosphere-------------------
 	<MaterialStart>
 		Name 	= Mantle
@@ -255,11 +255,11 @@ unit_stress      = 1e9
 	# Elastic parameters
 		G 	= 6.5e10
 		nu 	= 0.2
-	
+
 	# Thermal parameters
 		k 	= 3.3
 		Cp 	= 1000
-		
+
 	# Plastic parameters
 		ch 	= 10e6
 		fr 	= 30
@@ -318,9 +318,9 @@ unit_stress      = 1e9
 # PETSc options
 #===============================================================================
 <PetscOptionsStart>
-	
+
 # SNES
-	
+
 	-snes_npicard 5
 	-snes_max_it 200
 	-snes_rtol 1e-6
@@ -328,11 +328,11 @@ unit_stress      = 1e9
 	-snes_PicardSwitchToNewton_rtol 1e-7 #-7
 	#-snes_NewtonSwitchToPicard_it   1       # number of Newton iterations after which we switch back to Picard
 #	-snes_monitor
-#	-snes_linesearch_monitor	
+#	-snes_linesearch_monitor
 
 # Jacobian solver
-	-js_ksp_type fgmres 
-	-js_ksp_monitor	
+	-js_ksp_type fgmres
+	-js_ksp_monitor
 	-js_ksp_max_it 30
 	-js_ksp_rtol 1e-5
 	-js_ksp_atol 1e-6
@@ -345,17 +345,13 @@ unit_stress      = 1e9
 	-gmg_pc_mg_galerkin
 	-gmg_pc_mg_type multiplicative
 	-gmg_pc_mg_cycle_type v
-	
+
 	-gmg_mg_levels_ksp_type richardson
     -gmg_mg_levels_ksp_richardson_scale 0.5
     -gmg_mg_levels_ksp_max_it 5
     -gmg_mg_levels_pc_type jacobi
 
 	-crs_pc_factor_mat_solver_package pastix
-	
+
 
 <PetscOptionsEnd>
-
-
-
-

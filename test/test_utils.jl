@@ -81,13 +81,14 @@ test_cross      =   CrossSection(Data_setCart3D, Lon_level=15, dims=(50,100), In
 # Create 3D volume with some fake data
 Grid            = CreateCartGrid(size=(100,100,100), x=(0.0km, 99.9km), y=(-10.0km, 20.0km), z=(-40km,4km));
 X,Y,Z           = XYZGrid(Grid.coord1D...);
-DataSet         = CartData(X,Y,Z,(Depthdata=Z,))
+DataSet_Cart    = CartData(X,Y,Z,(Depthdata=Z,))
 
-test_cross      = CrossSection(DataSet, dims=(100,100), Interpolate=true, Start=(ustrip(Grid.min[1]),ustrip(Grid.max[2])), End=(ustrip(Grid.max[1]), ustrip(Grid.min[2])))
+test_cross_cart  = CrossSection(DataSet_Cart, dims=(100,100), Interpolate=true, Start=(ustrip(Grid.min[1]),ustrip(Grid.max[2])), End=(ustrip(Grid.max[1]), ustrip(Grid.min[2])))
 
-flatten_cross   = FlattenCrossSection(test_cross)
+flatten_cross   = FlattenCrossSection(test_cross_cart)
 
 @test flatten_cross[2][30]==1.0536089537226578
+@test test_cross_cart.fields.FlatCrossSection[2][30] == flatten_cross[2][30] # should be added by default
 
 # Flatten 3D CrossSection with GeoData
 Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
@@ -106,16 +107,32 @@ Data_sub_Interp = ExtractSubvolume(Data_set3D,Lon_level=(10,15), Lat_level=(30,3
 @test Data_sub_Interp.fields[1][11]==-600km
 @test size(Data_sub_Interp.lat)==(51,21,32)
 
+Data_sub_Interp_Cart = ExtractSubvolume(DataSet_Cart,X_level=(10,15), Y_level=(10,12), Interpolate=true, dims=(51,21,32))
+@test Data_sub_Interp_Cart.fields[1][11]==-40km
+@test size(Data_sub_Interp_Cart.x)==(51,21,32)
+
+Data_cross_Interp_Cart = ExtractSubvolume(test_cross_cart,X_level=(10,50), Z_level=(-20,-5), dims=(51,61))
+@test Data_cross_Interp_Cart.fields[1][11]==18.0
+@test size(Data_cross_Interp_Cart.x)==(51,61,1)
+
 # no interpolation
 Data_sub_NoInterp = ExtractSubvolume(Data_set3D,Lon_level=(10,15), Lat_level=(30,32), Interpolate=false, dims=(51,21,32))
 @test Data_sub_NoInterp.fields[1][11]==-600km
 @test size(Data_sub_NoInterp.lat)==(6,3,13)
+
+Data_sub_Interp_Cart = ExtractSubvolume(DataSet_Cart,X_level=(10,15), Y_level=(10,12), Interpolate=false, dims=(51,21,32))
+@test Data_sub_Interp_Cart.fields[1][5]==-40km
+@test size(Data_sub_Interp_Cart.x)==(6,8,100)
+
 
 # Extract subset of cross-section
 test_cross      =   CrossSection(Data_set3D, Lat_level=35, dims=(50,100), Interpolate=true)
 Data_sub_cross  =   ExtractSubvolume(test_cross, Depth_level=(-100km,0km), Interpolate=false)
 @test Data_sub_cross.fields[1][11]==-200.00000000000003km
 @test size(Data_sub_cross.lat)==(50,1,34)
+
+test_cross_cart   =  CrossSection(DataSet_Cart, Start=(0.0,-9.0), End=(90.0, 19.0)) # Cartesian cross-section
+
 
 # compute the mean velocity per depth in a 3D dataset and subtract the mean from the given velocities
 Data_pert   =   SubtractHorizontalMean(ustrip(Data))    # 3D, no units
@@ -183,15 +200,14 @@ Data_VoteMap = VoteMap([Data_set3D_reverse, Data_set3D], ["Depthdata<-560","LonD
 X,Y,Z   =   LonLatDepthGrid(10:20,30:40,-50:-10);
 Data_C  =   ParaviewData(X,Y,Z,(Depth=Z,))
 Data_C1 =   RotateTranslateScale(Data_C, Rotate=30);
-@test Data_C1.x.val[10] ≈ 20.964101615137753
-@test Data_C1.y.val[10] ≈ 32.66987298107781
+@test Data_C1.x.val[10] ≈ 1.4544826719043336
+@test Data_C1.y.val[10] ≈ 35.48076211353316
 @test Data_C1.z.val[20] == -50
 
 Data_C1 = RotateTranslateScale(Data_C, Scale=10, Rotate=10, Translate=(1,2,3));
-@test Data_C1.x.val[10] ≈ 213.78115820908607
-@test Data_C1.y.val[10] ≈ 339.4092822315127
+@test Data_C1.x.val[10] ≈ 136.01901977224043
+@test Data_C1.y.val[10] ≈ 330.43547966037914
 @test Data_C1.z.val[20] == -497.0
-
 
 # create point data set (e.g. Earthquakes)
 Lon,Lat,Depth   =   LonLatDepthGrid(15:0.05:17,35:0.05:37,280km);

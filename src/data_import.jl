@@ -1,6 +1,6 @@
 # This is data_import.jl
 #
-# This file contains functions to import different data types. 
+# This file contains functions to import different data types.
 #
 # Author: Marcel Thielmann, 05/2021
 
@@ -13,9 +13,9 @@ function ReadCSV_LatLon(filename::AbstractString,DepthCon::AbstractString)
     # import data from file with coordinates given in lat/lon/depth format and additional data given in additional columns
     # the idea here is to assign the data to a structure of the type GeoData which will then be used for further processing
     data,hdr = readdlm(filename,',', Float64,'\n'; header=true, skipblanks=true, comments=true, comment_char='#')
-    
+
     # initialize array of structures to store the data
-    # while doing so, separate the unit from the variable name 
+    # while doing so, separate the unit from the variable name
     ndata   = size(data,1) # number of entries
     nfields = size(data,2) # number of fields
 
@@ -40,7 +40,7 @@ function ReadCSV_LatLon(filename::AbstractString,DepthCon::AbstractString)
             LatData = data[1:end,ifield]
         elseif occursin("depth",hdr[ifield])
             # ISSUE: WE DEFINE DEPTH AS NEGATIVE, BUT HOW DO WE SET THAT?
-            # WE COULD ADD A FLAG THAT INDICATES THE DEPTH CONVENTION AND 
+            # WE COULD ADD A FLAG THAT INDICATES THE DEPTH CONVENTION AND
             # TREAT IT ACCORDINGLY
             depth_ind = ifield;
             varname = GetVariableName(hdr[ifield])# get variable name
@@ -78,7 +78,7 @@ function ReadCSV_LatLon(filename::AbstractString,DepthCon::AbstractString)
 
         # take care of the header strings
         varname = GetVariableName(tmp_hdr[ihdr])# get variable name
-        varunit = GetVariableUnit(tmp_hdr[ihdr])# get variable unit   
+        varunit = GetVariableUnit(tmp_hdr[ihdr])# get variable unit
         if cmp(varunit,"%")==0
             tmp_hdr[ihdr] = string(varname,"_percentage")
         else
@@ -92,14 +92,14 @@ function ReadCSV_LatLon(filename::AbstractString,DepthCon::AbstractString)
     hdr_tpl  = Tuple(Symbol(x) for x in tmp_hdr) # convert header to tuple
     data_tpl = Tuple.(tmp_vec for i in size(tmp_vec,1)) # convert data to tuple
     tmp = NamedTuple{hdr_tpl}(data_tpl)
- 
+
     println(typeof(tmp))
 
     # initialize data structure
     importdata = GeoData(LonData,LatData,DepthData,tmp)
 
     # assign data to output
-    return importdata 
+    return importdata
 
 end
 
@@ -110,7 +110,7 @@ function GetVariableName(inputstring::SubString{String})
     indfirst = nothing
     iloop     = 1
     str2find = ["(","[","{"]
-    # find first occurence of one of the brackets
+    # find first occurrence of one of the brackets
     while isnothing(indfirst)
         indfirst = findfirst(str2find[iloop],inputstring)
         iloop = iloop + 1
@@ -118,7 +118,7 @@ function GetVariableName(inputstring::SubString{String})
             break
         end
     end
-    
+
     # either return the whole inputstring or only the part before the unit
     if isnothing(indfirst)
         return inputstring
@@ -158,22 +158,22 @@ end
 
 
 """
-    Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, Cartesian=false, UTM=false, UTMzone, isnorth=true)
+    Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, Cartesian=false, UTM=false, UTMzone, isnorth=true, fieldname::Symbol=:colors)
 
 Take a screenshot of Georeferenced image either a `lat/lon`, `x,y` (if `Cartesian=true`) or in UTM coordinates (if `UTM=true`) at a given depth or along profile and converts it to a `GeoData`, `CartData` or `UTMData` struct, which can be saved to Paraview
 
-The lower left and upper right coordinates of the image need to be specified in tuples of `(lon,lat,depth)` or `(UTM_ew, UTM_ns, depth)`, where `depth` is negative in the Earth (and in km).
+The lower left and upper right coordinates of the image need to be specified in tuples of `(lon,lat,depth)` or `(UTM_ew, UTM_ns, depth)`, where `depth` is negative inside the Earth (and in km).
 
 The lower right and upper left corners can be specified optionally (to take non-orthogonal images into account). If they are not specified, the image is considered orthogonal and the corners are computed from the other two.
 
 *Note*: if your data is in `UTM` coordinates you also need to provide the `UTMzone` and whether we are on the northern hemisphere or not (`isnorth`).
 """
-function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, Cartesian=false, UTM=false, UTMzone=nothing, isnorth=true)
+function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, Cartesian=false, UTM=false, UTMzone=nothing, isnorth::Bool=true, fieldname::Symbol=:colors)
 
     img         =   load(filename)      # load image
 
     # Define lon/lat/depth of lower left corner
-    
+
     # try to determine if this is a horizontal profile or not
     if abs(Corner_UpperRight[3]-Corner_LowerLeft[3])>0.0
         DepthProfile = true
@@ -181,7 +181,7 @@ function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperR
         DepthProfile = false
     end
 
-    # We should be able to either define 4 corners or only 2 and reconstruct the other two from the 
+    # We should be able to either define 4 corners or only 2 and reconstruct the other two from the
     if isnothing(Corner_LowerRight) || isnothing(Corner_UpperLeft)
         if DepthProfile
             Corner_LowerRight  = (Corner_UpperRight[1], Corner_UpperRight[2], Corner_LowerLeft[3])
@@ -235,7 +235,7 @@ function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperR
    # i = 2; Corners_lat     = [Corner_LowerLeft[i] Corner_LowerRight[i]; Corner_UpperLeft[i] Corner_UpperRight[i];]
    # i = 3; Corners_depth   = [Corner_LowerLeft[i] Corner_LowerRight[i]; Corner_UpperLeft[i] Corner_UpperRight[i];]
 
-  
+
     # Extract the colors from the grid
     img_RGB     =   convert.(RGB, img)     # convert to  RGB data
 
@@ -263,20 +263,22 @@ function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperR
     Y                       =   interp_linear_lat.(X_int,   Y_int);
     Depth                   =   interp_linear_depth.(X_int, Y_int);
 
-    # Transfer to 3D arrays (check if needed or not; if yes, redo error message in struct routin)
+    # Transfer to 3D arrays (check if needed or not; if yes, redo error message in struct routine)
     red                     =   zeros(size(Depth)); red[:,:,1]   = r;
     green                   =   zeros(size(Depth)); green[:,:,1] = g;
     blue                    =   zeros(size(Depth)); blue[:,:,1]  = b;
 
     # Create GeoData structure - NOTE: RGB data must be 2D matrixes, not 3D!
+    color_data = NamedTuple{(fieldname,)}(((red,green,blue),));
+
     if Cartesian
-        data_Image              =   CartData(X, Y, Depth,(colors=(red,green,blue),))
+        data_Image              =   CartData(X, Y, Depth, color_data)
     end
     if UTM
-        data_Image              =   UTMData(X, Y, Depth, UTMzone, isnorth, (colors=(red,green,blue),))
+        data_Image              =   UTMData(X, Y, Depth, UTMzone, isnorth, color_data)
     end
     if (!Cartesian) && (!UTM)
-        data_Image              =   GeoData(X, Y, Depth, (colors=(red,green,blue),))
+        data_Image              =   GeoData(X, Y, Depth, color_data)
     end
     return data_Image
 end
@@ -287,28 +289,27 @@ end
 
 Does the same as `Screenshot_To_GeoData`, but returns a `CartData` structure
 """
-function Screenshot_To_CartData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing)
-    
+function Screenshot_To_CartData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, fieldname::Symbol=:colors)
+
 
     # first create a GeoData struct
-    Data_Cart = Screenshot_To_GeoData(filename, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, Cartesian=true)
+    Data_Cart = Screenshot_To_GeoData(filename, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, Cartesian=true, fieldname=fieldname)
 
     return Data_Cart
 
 end
 
 """
-    Data = Screenshot_To_UTMData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, UTMzone::Int64=nothing, isnorth::Bool=true)
+    Data = Screenshot_To_UTMData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, UTMzone::Int64=nothing, isnorth::Bool=true, fieldname=:colors)
 
-Does the same as `Screenshot_To_GeoData`, but returns for UTM data 
+Does the same as `Screenshot_To_GeoData`, but returns for UTM data
 Note that you have to specify the `UTMzone` and `isnorth`
 """
-function Screenshot_To_UTMData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, UTMzone::Int64=nothing, isnorth::Bool=true)
+function Screenshot_To_UTMData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, UTMzone::Int64=nothing, isnorth::Bool=true, fieldname::Symbol=:colors)
 
       # first create a GeoData struct
-      Data_UTM = Screenshot_To_GeoData(filename, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, Cartesian=false, UTM=true, UTMzone=UTMzone, isnorth=isnorth)
+      Data_UTM = Screenshot_To_GeoData(filename, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, Cartesian=false, UTM=true, UTMzone=UTMzone, isnorth=isnorth, fieldname=fieldname)
 
       return Data_UTM
 
 end
-

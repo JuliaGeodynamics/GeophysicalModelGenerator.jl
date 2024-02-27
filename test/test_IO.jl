@@ -1,13 +1,15 @@
 using Test
 
+pkg_dir = pkgdir(GeophysicalModelGenerator)
+
 # test saving to file
 Lon3D,Lat3D,Depth3D = LonLatDepthGrid(1.0:3:10.0, 11.0:4:20.0, (-20:5:-10)*km);
 Data_set    =   GeophysicalModelGenerator.GeoData(Lon3D,Lat3D,Depth3D,(DataFieldName=Depth3D,))   
-@test save_GMG("test",Data_set) == nothing
+@test save_GMG(joinpath(pkg_dir,"test"),Data_set) == nothing
 
 
 # loading from local file
-data_local = load_GMG("test")
+data_local = load_GMG(joinpath(pkg_dir,"test"))
 @test data_local.depth.val[20]==-15.0
 
 # loading from local file

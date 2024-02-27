@@ -13,24 +13,24 @@ export voxGrav
     voxGrav(X::Array{Float64, 3}, Y::Array{Float64, 3}, Z::Array{Float64, 3}, RHO::Array{Float64, 3};
     refMod="AVG", lengthUnit="m", rhoTol=1e-9, Topo=[], outName="Bouguer", printing=true)
 
-    Computes Bouguer anomalies and gradients  
-    
-    Required arguments:  
-    X,Y,Z:       3D matrices with the coordinates of the grid (X should vary in the first dimension, Y in the second, Z (vertical) in the thrid)  
-    RHO:         3D matrix with the densitiy at each grid point [kg/m^3]  
-    
-    Optional arguments:  
-    refMod:      1D vector with the reference density for each depth  
-                 Alternatively, the strings "NE", "SE", "SW", "NW", "AVG" can be used.  
-                 In that case, one of the corners of `RHO` is used as reference model.  
-                 In case of "AVG" the reference model is the average of each depth slice.  
-    lengthUnit:  The unit of the coordinates and topography file. Either "m" or "km"  
-    rhoTol:      density differences smaller than rhoTol will be ignored [kg/m^3]  
-    Topo:        2D matrix with the topography of the surface (only relevant for the paraview output)  
-    outName:     name of the paraview output (do not include file type)  
+    Computes Bouguer anomalies and gradients
+
+    Required arguments:
+    X,Y,Z:       3D matrices with the coordinates of the grid (X should vary in the first dimension, Y in the second, Z (vertical) in the third)
+    RHO:         3D matrix with the density at each grid point [kg/m^3]
+
+    Optional arguments:
+    refMod:      1D vector with the reference density for each depth
+                 Alternatively, the strings "NE", "SE", "SW", "NW", "AVG" can be used.
+                 In that case, one of the corners of `RHO` is used as reference model.
+                 In case of "AVG" the reference model is the average of each depth slice.
+    lengthUnit:  The unit of the coordinates and topography file. Either "m" or "km"
+    rhoTol:      density differences smaller than rhoTol will be ignored [kg/m^3]
+    Topo:        2D matrix with the topography of the surface (only relevant for the paraview output)
+    outName:     name of the paraview output (do not include file type)
     printing:    activate printing of additional information [true or false]
 """
-function voxGrav(X::Array{Float64, 3}, Y::Array{Float64, 3}, Z::Array{Float64, 3}, RHO::Array{Float64, 3}; 
+function voxGrav(X::Array{Float64, 3}, Y::Array{Float64, 3}, Z::Array{Float64, 3}, RHO::Array{Float64, 3};
                  refMod="AVG", lengthUnit="m", rhoTol=1e-9, Topo=[], outName="Bouguer", printing=true)
 
     ## check input
@@ -58,13 +58,13 @@ function voxGrav(X::Array{Float64, 3}, Y::Array{Float64, 3}, Z::Array{Float64, 3
     ny     = size(X,2);
     nz     = size(X,3);
 
-    # substract reference model
+    # subtract reference model
     for i = 1 : nz
         RHO[:,:,i] .= RHO[:,:,i] .- RefMod[i]
     end
 
     # interpolate density grid to cell centers
-    DRHO = RHO[1:end-1,1:end-1,1:end-1] .+ RHO[2:end,1:end-1,1:end-1] .+ RHO[2:end,2:end,1:end-1] .+ RHO[1:end-1,2:end,1:end-1] + 
+    DRHO = RHO[1:end-1,1:end-1,1:end-1] .+ RHO[2:end,1:end-1,1:end-1] .+ RHO[2:end,2:end,1:end-1] .+ RHO[1:end-1,2:end,1:end-1] +
             RHO[1:end-1,1:end-1,2:end]   .+ RHO[2:end,1:end-1,2:end]   .+ RHO[2:end,2:end,2:end]   .+ RHO[1:end-1,2:end,2:end]
     DRHO = DRHO ./ 8
 
@@ -119,7 +119,7 @@ function voxGrav(X::Array{Float64, 3}, Y::Array{Float64, 3}, Z::Array{Float64, 3
     coords = permutedims(coords,[4,1,2,3])
     vtkfile = vtk_grid(outName,coords)
 
-    if printing   
+    if printing
         @printf "%.3f %% of the domain contained anomalous densities. If this is more than expected, adjust rhoTol for faster computation.\n" 100*frac
         @printf "Writing output...\n"
         vtkfile["Bouguer Anomaly [mGal]"]   = dg
@@ -137,7 +137,7 @@ function voxGrav(X::Array{Float64, 3}, Y::Array{Float64, 3}, Z::Array{Float64, 3
 
     if orient == 1
         return dg, gradX, gradY
-    else 
+    else
         return permutedims(dg, [2,1]), permutedims(gradX, [2,1]), permutedims(gradY, [2,1])
     end
 end
@@ -208,7 +208,7 @@ function checkInput(X, Y, Z, RHO, refMod, lengthUnit, rhoTol, Topo, outName, pri
     else
         error("lengthUnit should be \"m\" or \"km\".")
     end
-    
+
     # reference model
     if !(typeof(refMod) == String)
         if length(refMod) == nz
@@ -225,7 +225,7 @@ function checkInput(X, Y, Z, RHO, refMod, lengthUnit, rhoTol, Topo, outName, pri
             RefMod = RHO[1,1,:]
         elseif refMod == "NW"
             RefMod = RHO[1,end,:]
-        elseif refMode == "AVG"
+        elseif refMod == "AVG"
             RefMod = !mean([1.,1.,1.],RHO)
         else
             error("RefMod should be NE, SE, SW, NW, AVG or a vector with one value for each depth.")

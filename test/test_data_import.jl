@@ -28,7 +28,7 @@ using GeophysicalModelGenerator
 
 # test loading images (profiles & mapviews)
 
-# Extact & save profile in GeoData format
+# Extract & save profile in GeoData format
 filename            =   "test.png";             # fake png
 Corner_LowerLeft    =   (18.0, 51.0, -590.0)
 Corner_UpperRight   =   (9.0, 42.0,    0.0)
@@ -37,6 +37,10 @@ data_Image          =   Screenshot_To_GeoData(filename,Corner_LowerLeft, Corner_
 @test data_Image.lat[1000] ≈ 50.59296482412061
 @test Value(data_Image.depth[1000])==-590km
 @test Write_Paraview(data_Image, "Profile_1")==nothing
+
+# test if we use a different name for the color dataset
+data_Image_newfieldname  =   Screenshot_To_GeoData(filename,Corner_LowerLeft, Corner_UpperRight, fieldname=:fake)
+@test  keys(data_Image_newfieldname.fields)[1] == :fake
 
 # Test in CartData
 data_Image          =   Screenshot_To_GeoData(filename,Corner_LowerLeft, Corner_UpperRight, Cartesian=true)
@@ -74,5 +78,3 @@ data_Image          =   Screenshot_To_UTMData(filename,Corner_LowerLeft, Corner_
 @test data_Image.EW.val[22] ≈ 0.42424242424242425
 @test data_Image.NS.val[22] ≈ 48.666666666666664
 @test Value(data_Image.depth[22]) ≈ -15.0m
-
-
