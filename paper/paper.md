@@ -7,33 +7,34 @@ tags:
   - tectonics
   - geophysics
 authors:
-  - name: Adrian M. Price-Whelan
-    orcid: 0000-0000-0000-0000
-    affiliation: "1, 2" # (Multiple affiliations must be quoted)
-  - name: Author Without ORCID
-    equal-contrib: true # (This is how you can denote equal contributions between multiple authors)
+  - name: Boris J.P. Kaus
+    orcid: 0000-0002-0247-8660
+    affiliation: 1 # (Multiple affiliations must be quoted)
+  - name: Marcel Thielmann
+    orcid: 0000-0003-1185-3730
     affiliation: 2
-  - name: Author with no affiliation
-    corresponding: true # (This is how to denote the corresponding author)
+  - name: Arne Spang
+    orcid: 0000-0002-6107-0403
+    affiliation: 2
+  - name: Luca de Siena
+    orcid: 0000-0002-3615-5923
     affiliation: 3
-  - given-names: Ludwig
-    dropping-particle: van
-    surname: Beethoven
-    affiliation: 3
+  - name: Pascal Aellig
+    #orcid: 0000-0003-1185-3730
+    affiliation: 1
+  - name: Jacob Frasukiewicz
+    #orcid: 0000-0003-1185-3730
+    affiliation: 1
 affiliations:
- - name: Lyman Spitzer, Jr. Fellow, Princeton University, USA
+ - name: Johannes Gutenberg University Mainz, Germany 
    index: 1
- - name: Institution Name, Country
+ - name: University of Bayreuth, Germany
    index: 2
- - name: Independent Researcher, Country
+ - name: Bologna University, Italy
    index: 3
-date: 13 August 2017
-bibliography: paper.bib
 
-# Optional fields if submitting to a AAS journal too, see this blog post:
-# https://blog.joss.theoj.org/2018/12/a-new-collaboration-with-aas-publishing
-aas-doi: 10.3847/xxxxx <- update this with the DOI from AAS once you know it.
-aas-journal: Astrophysical Journal <- The name of the AAS journal.
+date: 27 February 2024
+bibliography: paper.bib
 ---
 
 # Summary
