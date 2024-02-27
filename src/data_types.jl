@@ -168,15 +168,15 @@ struct GeoData <: AbstractGeneralGrid
         if isa(lon, StepRangeLen)
             lon = Vector(lon);
         end
-
-        # Check ordering of the arrays in case of 3D
+        
+        # Check ordering of the arrays in case of 3D -- the check is not bullet proof for now
         if sum(size(lon).>1)==3
-            if maximum(abs.(diff(lon,dims=2)))>maximum(abs.(diff(lon,dims=1))) || maximum(abs.(diff(lon,dims=3)))>maximum(abs.(diff(lon,dims=1)))
-                @warn "It appears that the lon array has a wrong ordering"
-            end
-            if maximum(abs.(diff(lat,dims=1)))>maximum(abs.(diff(lat,dims=2))) || maximum(abs.(diff(lat,dims=3)))>maximum(abs.(diff(lat,dims=2)))
-                @warn "It appears that the lat array has a wrong ordering"
-            end
+           if maximum(abs.(diff(lon,dims=2)))>maximum(abs.(diff(lon,dims=1))) || maximum(abs.(diff(lon,dims=3)))>maximum(abs.(diff(lon,dims=1)))
+            @warn ("It appears that the lon array has a wrong ordering")
+           end
+           if maximum(abs.(diff(lat,dims=1)))>maximum(abs.(diff(lat,dims=2))) || maximum(abs.(diff(lat,dims=3)))>maximum(abs.(diff(lat,dims=2)))
+            @warn ("It appears that the lat array has a wrong ordering")
+           end
         end
 
         # fields should be a NamedTuple. In case we simply provide an array, lets transfer it accordingly
