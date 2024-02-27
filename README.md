@@ -1,11 +1,14 @@
 # Geophysical Model Generator
+<h1> <img src="/assets/GMG_Logo_new_noText.pdf" alt="GeophysicalModelGenerator.jl" width="50"> GeophysicalModelGenerator.jl </h1>
+
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev/)
 [![Build Status](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/workflows/CI/badge.svg)](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/actions)
 [![DOI](https://zenodo.org/badge/366377223.svg)](https://zenodo.org/doi/10.5281/zenodo.8074345)
 
-![GMG_LogoWide](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/assets/1148509/0fa80120-0f99-4eb2-bb00-60551ea3b6c4)
+![GMG_Logo_Light](assets/GMG_Logo_new_light.pdf){.light-mode}
+![GMG_Logo_Dark](assets/GMG_Logo_new_dark.pdf){.dark-mode}
 
 Creating consistent 3D images of geophysical and geological datasets and turning that into an input model for geodynamic simulations is often challenging. The aim of this package is to help with this, by providing a number of routines to easily import data and create a consistent 3D visualisation from it in the VTK-toolkit format, which can for example be viewed with [Paraview](https://www.paraview.org). In addition, we provide a range of tools that helps to generate input models to perform geodynamic simulations and import the results of such simulations back into julia. 
 
