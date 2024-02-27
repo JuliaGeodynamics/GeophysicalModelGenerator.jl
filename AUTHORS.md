@@ -9,8 +9,8 @@ provided substantial additions or modifications. Together, these two groups form
 ## Principal Developers
 * [Boris Kaus](https://www.geosciences.uni-mainz.de/geophysics-and-geodynamics/team/univ-prof-dr-boris-kaus/),
   Johannes Gutenberg University Mainz, Germany
-* [Marcel Thielmann](https://www.staff.uni-bayreuth.de/~bt303651/),
-  Bayrisches Geoinstitut, University of Bayreuth, Germany
+* [Marcel Thielmann](https://quakeid.github.io/author/marcel-thielmann/),
+  Bayerisches Geoinstitut, University of Bayreuth, Germany
 
 
 ## Contributors
