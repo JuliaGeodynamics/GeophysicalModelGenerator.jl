@@ -60,8 +60,8 @@ representative at an online or offline event.
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to
-[Michael Schlottke-Lakemper](mailto:m.schlottke-lakemper@acom.rwth-aachen.de),
-[Hendrik Ranocha](mailto:mail@ranocha.de),
+[Boris Kaus](https://www.geosciences.uni-mainz.de/geophysics-and-geodynamics/team/univ-prof-dr-boris-kaus/),
+[Marcel Thielmann](https://www.staff.uni-bayreuth.de/~bt303651/),
 or any other of the principal developers responsible for enforcement listed in
 [AUTHORS.md](AUTHORS.md).
 All complaints will be reviewed and investigated promptly and fairly.

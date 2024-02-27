@@ -7,13 +7,13 @@ using Documenter
 # Get GeophysicalModelGenerator.jl root directory
 GMG_root_dir = dirname(@__DIR__)
 
-include(joinpath(GMG_root_dir, "docs", "man", "make.jl"))
-
 # Copy list of authors to not need to synchronize it manually
 authors_text = read(joinpath(GMG_root_dir, "AUTHORS.md"), String)
 authors_text = replace(authors_text, "in the [LICENSE.md](LICENSE.md) file" => "under [License](@ref)")
 write(joinpath(@__DIR__, "src", "man", "authors.md"), authors_text)
-
+#Contributing
+contributing = read(joinpath(GMG_root_dir, "CONTRIBUTING.md"), String)
+write(joinpath(@__DIR__, "src", "man", "contributing.md"), contributing)
 
 # Copy some files from the repository root directory to the docs and modify them
 # as necessary
@@ -76,8 +76,7 @@ makedocs(;
         "List of functions"  => "man/listfunctions.md",
         "Authors" => "man/authors.md",
         "Contributing" => "man/contributing.md",
-        "Code of Conduct" => "code_of_conduct.md",
-        "License" => "license.md",
+        "Code of Conduct" => "man/code_of_conduct.md"
     ],
 )
 
