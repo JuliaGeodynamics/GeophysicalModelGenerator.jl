@@ -21,5 +21,5 @@ data_remote = load_GMG(url)
 # loading remote data 
 url  = "https://seafile.rlp.net/f/10f867e410bb4d95b3fe/?dl=1"
 data_remote = download_data(url, "temp1.dat")
-@test  data_remote == "/Users/kausb/.julia/dev/GeophysicalModelGenerator/temp1.dat"
+@test  data_remote[end-8:end] == "temp1.dat"
 
