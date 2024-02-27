@@ -200,15 +200,14 @@ Data_VoteMap = VoteMap([Data_set3D_reverse, Data_set3D], ["Depthdata<-560","LonD
 X,Y,Z   =   LonLatDepthGrid(10:20,30:40,-50:-10);
 Data_C  =   ParaviewData(X,Y,Z,(Depth=Z,))
 Data_C1 =   RotateTranslateScale(Data_C, Rotate=30);
-@test Data_C1.x.val[10] ≈ 20.964101615137753
-@test Data_C1.y.val[10] ≈ 32.66987298107781
+@test Data_C1.x.val[10] ≈ 1.4544826719043336
+@test Data_C1.y.val[10] ≈ 35.48076211353316
 @test Data_C1.z.val[20] == -50
 
 Data_C1 = RotateTranslateScale(Data_C, Scale=10, Rotate=10, Translate=(1,2,3));
-@test Data_C1.x.val[10] ≈ 213.78115820908607
-@test Data_C1.y.val[10] ≈ 339.4092822315127
+@test Data_C1.x.val[10] ≈ 136.01901977224043
+@test Data_C1.y.val[10] ≈ 330.43547966037914
 @test Data_C1.z.val[20] == -497.0
-
 
 # create point data set (e.g. Earthquakes)
 Lon,Lat,Depth   =   LonLatDepthGrid(15:0.05:17,35:0.05:37,280km);

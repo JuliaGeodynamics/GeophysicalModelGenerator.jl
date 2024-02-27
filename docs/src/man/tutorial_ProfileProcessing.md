@@ -10,7 +10,7 @@ The function `save_GMG` is a convenient function to save `GeoData` structure (an
 
 Generally, in most applications we either have `Volume` (e.g., seismic tomography),  `Surface` (Moho surface) or `Point` data (earthquake locations). Some special datasets in GMG are `Screenshot` data or `Topography` data, which we treat separately as graphical user interface often treat this in a different way.
 
-A simple way to define all this info is by using the `GMG_Dataset` format. 
+A simple way to define all this info is by using the `GMG_Dataset` format.
 ```julia
 julia> data_EQ     = GMG_Dataset("AlpArraySeis","Point","https://seafile.rlp.net/f/87d565882eda40689666/?dl=1", true)
 GMG Point Dataset (active)  : AlpArraySeis @ https://seafile.rlp.net/f/87d565882eda40689666/?dl=1
@@ -49,27 +49,27 @@ julia> VolData_combined = combine_VolData(VolData, dataset_preferred = 1)
 ```
 In this case, we take the dimensions of the first dataset and propject all other data onto that. You can customize that.
 
-## Define profiles 
+## Define profiles
 
 Next, lets define profiles:
 ```julia
 julia> prof1 = ProfileData(start_lonlat=(5,45), end_lonlat=(15,49));
 julia> prof2 = ProfileData(depth = -100)
-Horizontal ProfileData 
-  depth      : -100.0 
+Horizontal ProfileData
+  depth      : -100.0
 ```
 
-## Project data onto profiles 
+## Project data onto profiles
 You can project all data onto the profiles with:
 ```julia
 julia> ExtractProfileData!(prof1, VolData_combined, SurfData, PointData)
 julia> ExtractProfileData!(prof2, VolData_combined, SurfData, PointData)
 julia> prof1
 Vertical ProfileData
-  lon/lat    : (5.0, 45.0)-(15.0, 49.0) 
-  # VolData  : (:Hua2017_Vp, :Hua2017_dVp_perc, :Plomerova2022_Vp, :Plomerova2022_dVp, :x_profile) 
-  # SurfData : (:Mrozek_Moho_Grid_EU,) 
-  # PointData: (:AlpArraySeis,) 
+  lon/lat    : (5.0, 45.0)-(15.0, 49.0)
+  # VolData  : (:Hua2017_Vp, :Hua2017_dVp_perc, :Plomerova2022_Vp, :Plomerova2022_dVp, :x_profile)
+  # SurfData : (:Mrozek_Moho_Grid_EU,)
+  # PointData: (:AlpArraySeis,)
 ```
 
 By default we use 50 km wide band of the data to project pointdata. You can change that with:
@@ -90,13 +90,13 @@ data_Surf = GMG_Dataset("Mrozek_Moho_Grid_EU","Surface","https://seafile.rlp.net
 data_EQ     = GMG_Dataset("AlpArraySeis","Point","https://seafile.rlp.net/f/87d565882eda40689666/?dl=1", true)
 data_SS     = GMG_Dataset("Handy_etal_SE_Profile1","Screenshot","https://seafile.rlp.net/f/5ffe580e765e4bd1bafe/?dl=1", true)
 
-# Note: the volumetric datasets are choosen as they are smaller in size (less download)
+# Note: the volumetric datasets are chosen as they are smaller in size (less download)
 data_Vol1   = GMG_Dataset("Hua2017","Volume","https://seafile.rlp.net/f/1fb68b74e5d742d39e62/?dl=1", true)
 data_Vol2   = GMG_Dataset("Plomerova2022","Volume","https://seafile.rlp.net/f/abccb8d3302b4ef5af17/?dl=1", true)
 #data_Vol1   = GMG_Dataset("Paffrath2021","Volume","https://seafile.rlp.net/f/5c8c851af6764b5db20d/?dl=1", true)
 #data_Vol2   = GMG_Dataset("Zhao2016","Volume","https://seafile.rlp.net/f/e81a6d075f6746609973/?dl=1", true)
 
-# Now load these datasets into NamedTuples 
+# Now load these datasets into NamedTuples
 SurfData        =   load_GMG(data_Surf)
 PointData       =   load_GMG(data_EQ)
 ScreenshotData  =   load_GMG(data_SS)
@@ -128,7 +128,7 @@ VolData_combined2 = combine_VolData(VolData, dims=(50,51,52))
 VolData_combined3 = combine_VolData(VolData, lon=(1,22), lat=(40,52), dims=(50,51,52))
 @test isnan(VolData_combined3.fields.Hua2017_Vp[1000])
 
-# Define horizonal & vertical profiles
+# Define horizontal & vertical profiles
 prof1 = ProfileData(start_lonlat=(5,45), end_lonlat=(15,49))
 prof2 = ProfileData(depth = -100)
 prof3 = ProfileData(start_lonlat=(5,45), end_lonlat=(5,49))
@@ -148,7 +148,7 @@ GeophysicalModelGenerator.CreateProfileVolume!(prof1, VolData_combined1,  Depth_
 GeophysicalModelGenerator.CreateProfileSurface!(prof1,SurfData)
 @test prof1.SurfData[1].fields.MohoDepth[80] ≈ -37.58791461075397km
 
-# dito with EQ data:
+# ditto with EQ data:
 GeophysicalModelGenerator.CreateProfilePoint!(prof1,PointData, section_width=5km)
 GeophysicalModelGenerator.CreateProfilePoint!(prof4,PointData, section_width=10km)
 @test  length(prof1.PointData[1].lon) == 13
@@ -192,4 +192,3 @@ profile_backwards_compat = ExtractProfileData("test_files/PickedProfiles.txt",1,
 @test length(profile_backwards_compat.PointData[1].lon) == 440
 
 -->
-

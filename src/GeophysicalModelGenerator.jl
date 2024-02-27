@@ -1,28 +1,26 @@
 module GeophysicalModelGenerator
 
 using Base: String, show_index, Tuple, FieldDescStorage
-using Requires
-
 
 # Load & export some useful commands/functions from GeoParams:
 import GeoParams
 using .GeoParams
-export 
-        @u_str, uconvert, upreffered, unit, ustrip, NoUnits,  #  Units 
-        GeoUnit, GEO_units, SI_units, NO_units, AbstratGeoUnits, 
+export
+        @u_str, uconvert, upreffered, unit, ustrip, NoUnits,  #  Units
+        GeoUnit, GEO_units, SI_units, NO_units, AbstractGeoUnits,
         Nondimensionalize, Nondimensionalize!, Dimensionalize, Dimensionalize!,
-        superscript, upreferred, GEO, SI, NONE, isDimensional, 
+        superscript, upreferred, GEO, SI, NONE, isDimensional,
         km, m, cm, mm, Myrs, yr, s, MPa, Pa, Pas, K, C, kg, mol,
         isDimensional, Value, NumValue, Unit, UnitValue
 
 export ReadCSV_LatLon, meshgrid, voxGrav
 
-abstract type AbstractGeneralGrid end                                    # general grid types 
+abstract type AbstractGeneralGrid end                                    # general grid types
 
 export AbstractGeneralGrid
 
 # julia standard library packages
-using DelimitedFiles, Statistics            
+using DelimitedFiles, Statistics
 
 # other packages
 using   WriteVTK, Colors, MeshIO, FileIO, Interpolations, Geodesy
@@ -46,17 +44,24 @@ include("ProfileProcessing.jl")
 include("IO.jl")
 
 # Add optional routines (only activated when the packages are loaded)
-function __init__()
-        @require GMT = "5752ebe1-31b9-557e-87aa-f909b540aa54" begin
-                println("Loading GMT routines within GMG")
-                @eval include("./GMT_utils.jl")
-        end
-        @require GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a" begin
-                println("Loading GLMakie plotting routines within GMG")
-                @eval include("./Visualisation.jl")
-        end
-end
 
+# GMT routines
+
+"""
+Optional routine that imports topography. It requires you to load `GMT`
+"""
+function ImportTopo end
+function ImportGeoTIFF end
+export ImportTopo, ImportGeoTIFF
+
+# GLMakie routines
+
+"""
+Interactive widget that allows you to explore a 3D data set `DataSet` in an interactive manner.
+It requires you to load `GLMakie`
+"""
+function Visualise end
+export Visualise
 
 
 end

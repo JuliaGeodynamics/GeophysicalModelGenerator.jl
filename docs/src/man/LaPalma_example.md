@@ -28,7 +28,7 @@ Topo = ImportTopo(lon = [-18.7, -17.1], lat=[28.0, 29.2], file="@earth_relief_03
 ````
 
 ````
-GeoData 
+GeoData
   size  : (1921, 1441, 1)
   lon   ϵ [ 341.3 : 342.9]
   lat   ϵ [ 28.0 : 29.2]
@@ -46,7 +46,7 @@ GeoData
     Load the data with:
     ````julia
       julia> Topo=load_GMG("Topo_LaPalma")
-      GeoData 
+      GeoData
         size      : (1921, 1441, 1)
         lon       ϵ [ 341.3 : 342.9]
         lat       ϵ [ 28.0 : 29.2]
@@ -60,7 +60,7 @@ Download that [here](https://seafile.rlp.net/f/64e0b0a6b1e941b7bba5/?dl=1)
 
 ````julia
 data_all_EQ = load_GMG("EQ_Data")
-GeoData 
+GeoData
   size      : (6045,)
   lon       ϵ [ -17.841 : -17.8268]
   lat       ϵ [ 28.5717 : 28.573]
@@ -96,7 +96,7 @@ Once this is done you can convert the topographic data to the cartesian referenc
 ````julia
 julia> EQ_cart   = Convert2CartData(data_all_EQ, proj);
 julia> Topo_cart = Convert2CartData(Topo, proj)
-CartData 
+CartData
     size    : (1921, 1441, 1)
     x       ϵ [ -86.09445705828863 : 73.67229892155609]
     y       ϵ [ -63.5531883197492 : 73.28446155584604]
@@ -117,7 +117,7 @@ In a next step, the routine `ProjectCartData` projects a `GeoData` structure to 
 
 ````julia
 julia> Topo_LaMEM = ProjectCartData(Topo_LaMEM, Topo, proj)
-CartData 
+CartData
     size    : (701, 651, 1)
     x       ϵ [ -70.0 : 70.0]
     y       ϵ [ -60.0 : 70.0]
@@ -145,7 +145,7 @@ Make sure you are in the same directory as the *.dat file & execute the followin
 
 ````julia
 julia> Grid    = ReadLaMEM_InputFile("LaPalma.dat")
-LaMEM Grid: 
+LaMEM Grid:
   nel         : (64, 64, 32)
   marker/cell : (3, 3, 3)
   markers     : (192, 192, 96)
@@ -157,7 +157,7 @@ LaMEM Grid:
 The `LaMEM_grid` structure contains the number of elements in every direction and the number of markers in every cell.
 It also contains `Grid.X`, `Grid.Y`, `Grid.Z`, which are the coordinates of each of the markers in the 3 directions.
 
-In a next step we need to give each of these points a `Phase` number (which is an integer, that indicates the type of the rock that point has), as well as the temperature (in Celcius).
+In a next step we need to give each of these points a `Phase` number (which is an integer, that indicates the type of the rock that point has), as well as the temperature (in Celsius).
 
 ````julia
 julia> Phases  = ones(Int32,size(Grid.X))*2;
@@ -249,4 +249,3 @@ If you are interested in doing this, have a look at the LaMEM [wiki](https://bit
 ---
 
 *This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
-
