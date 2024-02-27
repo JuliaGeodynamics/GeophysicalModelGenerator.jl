@@ -4,6 +4,36 @@ using Documenter
 
 #DocMeta.setdocmeta!(GeophysicalModelGenerator, :DocTestSetup, :(using GeophysicalModelGenerator); recursive=true)
 
+# Get GeophysicalModelGenerator.jl root directory
+GMG_root_dir = dirname(@__DIR__)
+
+include(joinpath(GMG_root_dir, "docs", "man", "make.jl"))
+
+# Copy list of authors to not need to synchronize it manually
+authors_text = read(joinpath(GMG_root_dir, "AUTHORS.md"), String)
+authors_text = replace(authors_text, "in the [LICENSE.md](LICENSE.md) file" => "under [License](@ref)")
+write(joinpath(@__DIR__, "src", "man", "authors.md"), authors_text)
+
+
+# Copy some files from the repository root directory to the docs and modify them
+# as necessary
+# Based on: https://github.com/ranocha/SummationByPartsOperators.jl/blob/0206a74140d5c6eb9921ca5021cb7bf2da1a306d/docs/make.jl#L27-L41
+open(joinpath(@__DIR__, "src", "man", "code_of_conduct.md"), "w") do io
+  # Point to source license file
+  println(io, """
+  ```@meta
+  EditURL = "https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/main/CODE_OF_CONDUCT.md"
+  ```
+  """)
+  # Write the modified contents
+  println(io, "# [Code of Conduct](@id code-of-conduct)")
+  println(io, "")
+  for line in eachline(joinpath(dirname(@__DIR__), "CODE_OF_CONDUCT.md"))
+    line = replace(line, "[AUTHORS.md](AUTHORS.md)" => "[Authors](@ref)")
+    println(io, "> ", line)
+  end
+end
+
 makedocs(;
     modules=[GeophysicalModelGenerator],
     authors="Marcel Thielmann, Boris Kaus",
@@ -26,7 +56,7 @@ makedocs(;
             "ISC earthquake data" =>  "man/tutorial_ISC_data.md",
             "Plot GPS vectors" =>  "man/tutorial_GPS.md",
             "Read UTM data" =>  "man/tutorial_UTM.md",
-            "VoteMaps" =>  "man/Tutorial_Votemaps.md",      
+            "VoteMaps" =>  "man/Tutorial_Votemaps.md",
             "Kilometer-scale volcano" =>  "man/tutorial_local_Flegrei.md",
             "Generating LaMEM model" =>  "man/LaPalma_example.md",
             "Create movies" =>  "man/tutorial_time_Seismicity.md"
@@ -43,8 +73,12 @@ makedocs(;
             "LaMEM" => "man/lamem.md",
             "Profile Processing" => "man/profile_processing.md"
         ],
-        "List of functions"  => "man/listfunctions.md"
-    ],  
+        "List of functions"  => "man/listfunctions.md",
+        "Authors" => "man/authors.md",
+        "Contributing" => "man/contributing.md",
+        "Code of Conduct" => "code_of_conduct.md",
+        "License" => "license.md",
+    ],
 )
 
 deploydocs(;
@@ -56,4 +90,3 @@ deploydocs(;
     forcepush=true,
     push_preview = true
 )
-
