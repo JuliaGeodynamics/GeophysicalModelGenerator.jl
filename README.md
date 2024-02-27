@@ -1,4 +1,6 @@
-# Geophysical Model Generator ![GeophysicalModelGenerator.jl](assets/GMG_Logo_new_noText.pdf)
+# Geophysical Model Generator 
+
+![GeophysicalModelGenerator.jl](./assets/GMG_Logo_new_noText.pdf)
 
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev)
