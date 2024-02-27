@@ -1,5 +1,5 @@
 # Geophysical Model Generator
-<h1> <img src="/assets/GMG_Logo_new_noText.pdf" alt="GeophysicalModelGenerator.jl" width="50"> GeophysicalModelGenerator.jl </h1>
+<h1> <img src="assets/GMG_Logo_new_noText.pdf" alt="GeophysicalModelGenerator.jl" width="50"> GeophysicalModelGenerator.jl </h1>
 
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev)
