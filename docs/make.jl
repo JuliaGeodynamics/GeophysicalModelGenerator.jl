@@ -93,6 +93,7 @@ makedocs(;
         "Authors" => "man/authors.md",
         "Contributing" => "man/contributing.md",
         "Code of Conduct" => "man/code_of_conduct.md"
+        "License" => "man/license.md",
     ],
 )
 
