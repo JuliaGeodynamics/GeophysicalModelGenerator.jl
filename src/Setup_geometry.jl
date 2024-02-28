@@ -875,7 +875,7 @@ function SolveDiff1Dexplicit_vary!(
     ci      =   @. (kAi*dt)/(di^2.0*thermal_parameters.ρCp[2:end-1])
     T[2:end-1]   =   @. ai*T0[3:end] + bi*T0[2:end-1] + ci*T0[1:end-2] + 
                     thermal_parameters.H[2:end-1]*dt/thermal_parameters.ρCp[2:end-1]
-    return T
+    return T    
 end
 
 function example_CLrheology(;    

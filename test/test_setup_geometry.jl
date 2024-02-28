@@ -1,5 +1,5 @@
 # test setting geometries in the different grid types
-using Test, GeophysicalModelGenerator
+using Test, GeophysicalModelGenerator, GeoParams
 
 
 # GeoData
@@ -99,9 +99,9 @@ Grid        =   CreateCartGrid(size=(10,20,30),x=(0.0km,10km), y=(0.0km, 10km), 
 
 
 # test 1D-explicit thermal solver for AddBox
-Grid                =   CreateCartGrid(size=(96,96,96),x=(-100,100), y=(-100,100), z=(-400,0))
-Temp                =   ones(Float64, Grid.N...)*1350;
-Phases              =   zeros(Int64,  Grid.N...);
+Grid        =   CreateCartGrid(size=(96,96,96),x=(-50.,50.), y=(-50.,50.), z=(-200.,0))
+Temp        =   zeros(Float64, Grid.N...);
+Phases      =   zeros(Int64,  Grid.N...);
 
 # horizontally layer lithosphere; UpperCrust,LowerCrust,Mantle
 AddBox!(Phases,Temp,Grid, xlim=(-50,50), zlim=(-100,0), Origin=(0.0,0.0,0.0),
@@ -167,3 +167,13 @@ AddBox!(Phases,Temp,Grid, xlim=(-50,50), zlim=(-100,0),
     DipAngle=30.0, T=LithosphericTemp(rheology=rheology,nz=201))
 
 @test sum(Temp[1,1,:]) ≈ 40297.50545496938
+
+# using flux lower boundary conditions
+Temp    =   zeros(Float64, Grid.N...);
+Phases  =   zeros(Int64,  Grid.N...);
+
+AddBox!(Phases,Temp,Grid, xlim=(-50,50), zlim=(-100,0),
+    phase=LithosphericPhases(Layers=[20 15 65], Phases = [1 2 3], Tlab=nothing), 
+    DipAngle=30.0, T=LithosphericTemp(lbound="flux",nz=201))
+
+@test sum(Temp[1,1,:]) ≈ 37182.86627823313
