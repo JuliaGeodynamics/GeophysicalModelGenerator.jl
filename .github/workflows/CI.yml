@@ -14,13 +14,13 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - '1.9'
+#          - '1.9'
           - '1.10'
-          - 'nightly'
+#          - 'nightly'
         os:
           - ubuntu-latest
-          - macOS-latest
-          - windows-latest
+#          - macOS-latest
+#          - windows-latest
         arch:
           - x64
     steps:

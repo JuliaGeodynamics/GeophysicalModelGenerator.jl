@@ -2,7 +2,7 @@ using Documenter
 
 push!(LOAD_PATH, dirname(@__DIR__))
 
-using GeophysicalModelGenerator
+using GeophysicalModelGenerator, GLMakie
 
 #DocMeta.setdocmeta!(GeophysicalModelGenerator, :DocTestSetup, :(using GeophysicalModelGenerator); recursive=true)
 
