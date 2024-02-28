@@ -16,3 +16,10 @@ data_local = load_GMG(joinpath(pkg_dir,"test"))
 url  = "https://seafile.rlp.net/f/10f867e410bb4d95b3fe/?dl=1"
 data_remote = load_GMG(url)
 @test  data_remote.fields.MohoDepth[20] ≈ -17.99km
+
+
+# loading remote data 
+url  = "https://seafile.rlp.net/f/10f867e410bb4d95b3fe/?dl=1"
+data_remote = download_data(url, "temp1.dat")
+@test  data_remote[end-8:end] == "temp1.dat"
+
