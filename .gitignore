@@ -11,3 +11,5 @@ tutorial/Mroczek_Moho_AD.vtu
 *.jld2
 *.vtr
 *.vts
+*.xml
+tutorial/test.tiff
