@@ -1,5 +1,5 @@
 ```@meta
-EditURL = "../../../tutorial/LaPalma_example.jl"
+EditURL = "../../../tutorials/LaPalma_example.jl"
 ```
 
 # Create a Cartesian Model Setup for La Palma

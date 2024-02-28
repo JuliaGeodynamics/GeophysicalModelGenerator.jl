@@ -1,5 +1,5 @@
 ```@meta
-EditURL = "../../../tutorial/Tutorial_Votemaps.jl"
+EditURL = "../../../tutorials/Tutorial_Votemaps.jl"
 ```
 
 # Votemaps
