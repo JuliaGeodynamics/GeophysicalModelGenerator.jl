@@ -62,6 +62,6 @@ And once we have done that, you can visualize the data in the same way:
 julia> Visualise(Data_Cart, Topography=Topo_Cart)
 ```
 
-```@docs
-GeophysicalModelGenerator.Visualise
-```
+# ```@docs
+# GeophysicalModelGenerator.Visualise
+# ```

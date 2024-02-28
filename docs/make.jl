@@ -1,6 +1,8 @@
-using GeophysicalModelGenerator
-using .GeophysicalModelGenerator
 using Documenter
+
+push!(LOAD_PATH, dirname(@__DIR__))
+
+using GeophysicalModelGenerator
 
 #DocMeta.setdocmeta!(GeophysicalModelGenerator, :DocTestSetup, :(using GeophysicalModelGenerator); recursive=true)
 
@@ -33,6 +35,7 @@ open(joinpath(@__DIR__, "src", "man", "code_of_conduct.md"), "w") do io
     println(io, "> ", line)
   end
 end
+
 open(joinpath(@__DIR__, "src", "man", "contributing.md"), "w") do io
     # Point to source license file
     println(io, """
@@ -46,14 +49,13 @@ open(joinpath(@__DIR__, "src", "man", "contributing.md"), "w") do io
     for line in eachline(joinpath(dirname(@__DIR__), "CONTRIBUTING.md"))
       line = replace(line, "[LICENSE.md](LICENSE.md)" => "[License](@ref)")
       line = replace(line, "[AUTHORS.md](AUTHORS.md)" => "[Authors](@ref)")
-    #   line = replace(line, "[AUTHORS.md](AUTHORS.md)" => "[Authors](@ref)")
       println(io, "> ", line)
     end
   end
 
 makedocs(;
     modules=[GeophysicalModelGenerator],
-    authors="Marcel Thielmann, Boris Kaus",
+    authors="Boris Kaus, Marcel Thielmann",
     sitename="GeophysicalModelGenerator.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
@@ -75,7 +77,7 @@ makedocs(;
             "Read UTM data" =>  "man/tutorial_UTM.md",
             "VoteMaps" =>  "man/Tutorial_Votemaps.md",
             "Kilometer-scale volcano" =>  "man/tutorial_local_Flegrei.md",
-            "Generating LaMEM model" =>  "man/LaPalma_example.md",
+            "Cartesian Volcano Model" =>  "man/LaPalma_example.md",
             "Create movies" =>  "man/tutorial_time_Seismicity.md"
         ],
         "User Guide" => Any[
@@ -95,6 +97,8 @@ makedocs(;
         "Contributing" => "man/contributing.md",
         "Code of Conduct" => "man/code_of_conduct.md"
     ],
+    pagesonly=true,
+    warnonly=true
 )
 
 deploydocs(;
