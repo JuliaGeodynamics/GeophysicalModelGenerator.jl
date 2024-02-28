@@ -2,7 +2,7 @@
 EditURL = "../../../tutorials/LaPalma_example.jl"
 ```
 
-# Create a Cartesian Model Setup for La Palma
+# 14 - Create a Cartesian Model Setup for La Palma
 
 ## Aim
 In this tutorial, your will learn how to use real data to create a geodynamic model setup with LaMEM.

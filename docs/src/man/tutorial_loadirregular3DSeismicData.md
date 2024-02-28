@@ -1,4 +1,4 @@
-# 3D tomography model that is re-interpolated on a regular grid
+# 7 - 3D tomography model that is re-interpolated on a regular grid
 
 ## Goal
 This explains how to load a 3D seismic data set that is given in CSV format (comma separated ASCII), and plot it in paraview. The example is a shear-wave velocity model of the Alpine-Mediterranean region, described in:
