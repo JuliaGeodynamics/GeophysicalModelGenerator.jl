@@ -763,8 +763,9 @@ function Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::LithosphericTemp)
     @unpack Tsurface, Tpot, dTadi, ubound, lbound, utbf, ltbf, age, 
         dtfac, nz, rheology = s
 
+    # Create 1D depth profile within the box
     z   =   LinRange(round(maximum(Z)),round(minimum(Z)),nz)    # [km]
-    z   =   @. z*1e3                                            # [m]  
+    z   =   @. z*1e3                                            # [m] 
     dz  =   z[2] - z[1]                                         # Gride resolution
 
     # Initialize 1D arrays for explicit solver
@@ -787,6 +788,7 @@ function Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::LithosphericTemp)
         ztop        =   zlayer[i]
     end
 
+    # Setup initial T-profile
     Tpot        =   Tpot + 273.15                   # Potential temp [K]  
     Tsurface    =   Tsurface + 273.15               # Surface temperature [ K ]
     T           =   @. Tpot + abs.(z./1.0e3)*dTadi  # Initial T-profile [ K ]    
@@ -823,10 +825,13 @@ function Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::LithosphericTemp)
             thermal_parameters,
             ubound,lbound,
             utbf,ltbf,
-            phase,
             dz,
             dt)
     end
+
+    interp_linear_T = linear_interpolation(-z./1.0e3, T.-273.15)      # create interpolation object
+    Temp = interp_linear_T(-Z)
+    
     return Temp
 end
 
@@ -835,18 +840,11 @@ function SolveDiff1Dexplicit_vary!(
     thermal_parameters,
     ubound,lbound,
     utbf,ltbf,
-    phase,
     di,
     dt
 )    
     nz      =   length(T)
     T0      =   T
-
-    #compute_density!(thermal_parameters.ρ,rheology,phase,args)
-    #compute_heatcapacity!(thermal_parameters.Cp,rheology,phase,args)
-    #compute_conductivity!(thermal_parameters.k,rheology,phase,args)
-    #thermal_parameters.ρCp  .=   @. thermal_parameters.Cp * thermal_parameters.ρ
-    #compute_radioactive_heat!(thermal_parameters.H,rheology,phase,args)
 
     if ubound == "const"
         T[1]    =   T0[1]
@@ -877,7 +875,7 @@ function SolveDiff1Dexplicit_vary!(
     ci      =   @. (kAi*dt)/(di^2.0*thermal_parameters.ρCp[2:end-1])
     T[2:end-1]   =   @. ai*T0[3:end] + bi*T0[2:end-1] + ci*T0[1:end-2] + 
                     thermal_parameters.H[2:end-1]*dt/thermal_parameters.ρCp[2:end-1]
-    return T #, thermal_parameters
+    return T
 end
 
 function example_CLrheology(;    

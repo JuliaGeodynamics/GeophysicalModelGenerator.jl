@@ -96,3 +96,14 @@ ind         =   BelowSurface(Grid, Topo_cart);
 CharDim     =   GEO_units();
 Grid        =   CreateCartGrid(size=(10,20,30),x=(0.0km,10km), y=(0.0km, 10km), z=(-10.0km, 2.0km), CharDim=CharDim)
 @test Grid.Δ[2] ≈ 0.0005263157894736842
+
+
+# test 1D-explicit thermal solver for AddBox
+Grid                =   CreateCartGrid(size=(96,96,96),x=(-100,100), y=(-100,100), z=(-400,0))
+Temp                =   ones(Float64, Grid.N...)*1350;
+Phases              =   zeros(Int64,  Grid.N...);
+
+AddBox!(Phases,Temp,Grid, xlim=(-100,100), zlim=(-200,0), Origin=(0.0,0.0,0.0),
+    phase=LithosphericPhases(Layers=[20 15 165], Phases = [1 2 3], Tlab=nothing), 
+    DipAngle=0.0, T=LithosphericTemp(nz=301))
+
