@@ -3,7 +3,6 @@ using Printf
 using Parameters        # helps setting default parameters in structures
 using SpecialFunctions: erfc
 using GeoParams
-import GeoParams: Diffusion, Dislocation
 
 # Setup_geometry
 #
@@ -740,6 +739,7 @@ end
     ltbf = 10.0e-3      # q [W/m^2]; if lbound = "flux"
     age = 120.0         # Lithospheric age [Ma]
     dtfac = 0.9         # Diffusion stability criterion
+    nz = 201            
     rheology = example_CLrheology()
 end
 
@@ -760,93 +760,114 @@ struct Thermal_parameters{A}
 end
 
 function Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::LithosphericTemp)
-    @unpack Tsurface, Tpot, dTadi, ubound, lbound, utbf, ltbf, age, dtfac, rheology = s
+    @unpack Tsurface, Tpot, dTadi, ubound, lbound, utbf, ltbf, age, 
+        dtfac, nz, rheology = s
 
-    di          =   - Z[1] / (length(Z) -1 )      # Grid resolution
-    @show Z[end] Z[1] size(Z) length(Z) typeof(Z)
-    @show di
+    z   =   LinRange(round(maximum(Z)),round(minimum(Z)),nz)    # [km]
+    z   =   @. z*1e3                                            # [m]  
+    dz  =   z[2] - z[1]                                         # Gride resolution
+
+    # Initialize 1D arrays for explicit solver
+    T       =   zeros(nz)    
+    phase   =   Int64.(zeros(nz))
+
+    # Assign phase id from Phase to 1D phase array
+    phaseid     =   (minimum(Phase):1:maximum(Phase))    
+    ztop        =   round(maximum(Z[findall(Phase .== phaseid[1])]))
+    zlayer      =   zeros(length(phaseid))
+    for i = 1:length(phaseid)
+        # Calculate layer thicknes from Phase array
+        zlayer[i]   =   round(minimum(Z[findall(Phase .== phaseid[i])]))
+        zlayer[i]   =   zlayer[i]*1.0e3
+    end
+    for i = 1:length(phaseid)
+        # Assign phase ids
+        ind         =   findall((z .>= zlayer[i]) .&  (z .<= ztop))    
+        phase[ind]  .=  phaseid[i]
+        ztop        =   zlayer[i]
+    end
 
     Tpot        =   Tpot + 273.15                   # Potential temp [K]  
     Tsurface    =   Tsurface + 273.15               # Surface temperature [ K ]
-    Temp        =   @. Tpot + abs.(Z/1.0e3)*dTadi   # Initial T-profile [ K ]
-    Temp[1]     =   Tsurface
-
+    T           =   @. Tpot + abs.(z./1.0e3)*dTadi  # Initial T-profile [ K ]    
+    T[1]        =   Tsurface   
+    
     args        = (;)
-    thermal_parameters  = Thermal_parameters(length(Z))   
-
+    thermal_parameters  = Thermal_parameters(nz)   
+    
     ## Update thermal parameters ======================================== #
-    compute_density!(thermal_parameters.ρ,rheology,Phase,args)
-    compute_heatcapacity!(thermal_parameters.Cp,rheology,Phase,args)
-    compute_conductivity!(thermal_parameters.k,rheology,Phase,args)
+    compute_density!(thermal_parameters.ρ,rheology,phase,args)
+    compute_heatcapacity!(thermal_parameters.Cp,rheology,phase,args)
+    compute_conductivity!(thermal_parameters.k,rheology,phase,args)
     thermal_parameters.ρCp  .=   @. thermal_parameters.Cp * thermal_parameters.ρ
-    compute_radioactive_heat!(thermal_parameters.H,rheology,Phase,args)
+    compute_radioactive_heat!(thermal_parameters.H,rheology,phase,args)
 
     # Thermal diffusivity [ m^2/s ]
     κ       =   maximum(thermal_parameters.k) / 
         minimum(thermal_parameters.ρ) / minimum(thermal_parameters.Cp)
-    # =================================================================== #
+    ## =================================================================== #
     ## Time stability criterion ========================================= #
     tfac    =   60.0*60.0*24.0*365.25   # Seconds per year
     age     =   age*1.0e6*tfac          # Age in seconds
-    dtexp   =   di^2.0/2.0/κ            # Stability criterion for explicit
-    dt      =   dtfac*dtexp
-    @show typeof(age) typeof(dt)
-    @show ceil(age/dt   )
-    nit     =   Int(ceil(age/dt))       # Number of iterations
+    dtexp   =   dz^2.0/2.0/κ            # Stability criterion for explicit
+    dt      =   dtfac*dtexp             # [s]
+    nit     =   Int64(ceil(age/dt))     # Number of iterations
     time    =   zeros(nit)              # Time array
-
+    
     for i = 1:nit
         if i > 1
             time[i]   =   time[i-1] + dt
         end
         SolveDiff1Dexplicit_vary!(
-            Temp,
+            T,
             thermal_parameters,
             ubound,lbound,
             utbf,ltbf,
-            di,
+            phase,
+            dz,
             dt)
     end
     return Temp
 end
 
 function SolveDiff1Dexplicit_vary!(    
-    Temp,
+    T,
     thermal_parameters,
     ubound,lbound,
-    utbf,ltbf,      #rheology, #Phase,
+    utbf,ltbf,
+    phase,
     di,
-    dt              # ,#args
+    dt
 )    
-    nx      =   length(Temp)
-    T0      =   Temp
+    nz      =   length(T)
+    T0      =   T
 
-    compute_density!(thermal_parameters.ρ,rheology,Phase,args)
-    compute_heatcapacity!(thermal_parameters.Cp,rheology,Phase,args)
-    compute_conductivity!(thermal_parameters.k,rheology,Phase,args)
-    thermal_parameters.ρCp  .=   @. thermal_parameters.Cp * thermal_parameters.ρ
-    compute_radioactive_heat!(thermal_parameters.H,rheology,Phase,args)
+    #compute_density!(thermal_parameters.ρ,rheology,phase,args)
+    #compute_heatcapacity!(thermal_parameters.Cp,rheology,phase,args)
+    #compute_conductivity!(thermal_parameters.k,rheology,phase,args)
+    #thermal_parameters.ρCp  .=   @. thermal_parameters.Cp * thermal_parameters.ρ
+    #compute_radioactive_heat!(thermal_parameters.H,rheology,phase,args)
 
     if ubound == "const"
-        Temp[1]    =   T0[1]
+        T[1]    =   T0[1]
     elseif ubound == "flux"
         kB      =   (thermal_parameters.k[2] + thermal_parameters.k[1])/2.0
         kA      =   (thermal_parameters.k[1] + thermal_parameters.k[1])/2.0
         a       =   (dt*(kA + kB)) / (di^2.0 * thermal_parameters.ρCp[1])
         b       =   1 - (dt*(kA + kB)) / (di^2.0 * thermal_parameters.ρCp[1])        
         c       =   (dt*2.0*utbf)/(di * thermal_parameters.ρCp[1])
-        Temp[1] =   a*T0[2] + b*T0[1] + c + 
+        T[1]    =   a*T0[2] + b*T0[1] + c + 
                 thermal_parameters.H[1]*dt/thermal_parameters.ρCp[1]
     end
     if lbound == "const"
-        Temp[nx]    =   T0[nx]
+        T[nz]   =   T0[nz]
     elseif lbound == "flux"
-        kB      =   (thermal_parameters.k[nx] + thermal_parameters.k[nx])/2.0
-        kA      =   (thermal_parameters.k[nx] + thermal_parameters.k[nx-1])/2.0
-        a       =   (dt*(kA + kB)) / (di^2.0 * thermal_parameters.ρCp[nx])
-        b       =   1 - (dt*(kA + kB)) / (di^2.0 * thermal_parameters.ρCp[nx])
-        c       =   -(dt*2.0*ltbf) / (di * thermal_parameters.ρCp[nx])
-        Temp[nx]    =   a*T0[nx-1] + b*T0[nx] + c
+        kB      =   (thermal_parameters.k[nz] + thermal_parameters.k[nz])/2.0
+        kA      =   (thermal_parameters.k[nz] + thermal_parameters.k[nz-1])/2.0
+        a       =   (dt*(kA + kB)) / (di^2.0 * thermal_parameters.ρCp[nz])
+        b       =   1 - (dt*(kA + kB)) / (di^2.0 * thermal_parameters.ρCp[nz])
+        c       =   -(dt*2.0*ltbf) / (di * thermal_parameters.ρCp[nz])
+        T[nz]   =   a*T0[nz-1] + b*T0[nz] + c
     end
 
     kAi     =   @. (thermal_parameters.k[1:end-2] + thermal_parameters.k[2:end-1])/2.0
@@ -854,9 +875,9 @@ function SolveDiff1Dexplicit_vary!(
     ai      =   @. (kBi*dt)/(di^2.0*thermal_parameters.ρCp[2:end-1])
     bi      =   @. 1.0 - (dt*(kAi + kBi))/(di^2.0*thermal_parameters.ρCp[2:end-1])
     ci      =   @. (kAi*dt)/(di^2.0*thermal_parameters.ρCp[2:end-1])
-    Temp[2:end-1]   =   @. ai*T0[3:end] + bi*T0[2:end-1] + ci*T0[1:end-2] + 
+    T[2:end-1]   =   @. ai*T0[3:end] + bi*T0[2:end-1] + ci*T0[1:end-2] + 
                     thermal_parameters.H[2:end-1]*dt/thermal_parameters.ρCp[2:end-1]
-    return Temp #, thermal_parameters
+    return T #, thermal_parameters
 end
 
 function example_CLrheology(;    
@@ -877,13 +898,11 @@ function example_CLrheology(;
     rheology = (
         # Name              = "UpperCrust",
         SetMaterialParams(;
-            Phase               = 1,
+            Phase               =   1,
             Density             =   ConstantDensity(; ρ=ρUC),
             HeatCapacity        =   ConstantHeatCapacity(; Cp=CpUC),
             Conductivity        =   ConstantConductivity(; k=kUC),
             RadioactiveHeat     =   ConstantRadioactiveHeat(; H_r=HUC*ρUC),     # [H] = W/m^3
-            CompositeRheology   =   SetDislocationCreep(Dislocation.granite_Tirel_2008),
-            Plasticity          =   DruckerPrager(ϕ=15.0, C=20MPa),
         ),
         # Name              = "LowerCrust",
         SetMaterialParams(;
@@ -892,8 +911,6 @@ function example_CLrheology(;
             HeatCapacity        =   ConstantHeatCapacity(; Cp=CpLC),
             Conductivity        =   ConstantConductivity(; k=kLC),
             RadioactiveHeat     =   ConstantRadioactiveHeat(; H_r=HLC*ρLC),     # [H] = W/m^3
-            CompositeRheology   =   SetDislocationCreep(Dislocation.diabase_Caristan_1982),
-            Plasticity          =   DruckerPrager(ϕ=15.0, C=20MPa),
         ),
         # Name              = "LithosphericMantle",
         SetMaterialParams(;
@@ -902,10 +919,6 @@ function example_CLrheology(;
             HeatCapacity        =   ConstantHeatCapacity(; Cp=CpM),
             Conductivity        =   ConstantConductivity(; k=kM),
             RadioactiveHeat     =   ConstantRadioactiveHeat(; H_r=HM*ρM),       # [H] = W/m^3
-            CompositeRheology   =   CompositeRheology(
-                                        SetDiffusionCreep(Diffusion.dry_olivine_Hirth_2003),
-                                        SetDislocationCreep(Dislocation.dry_olivine_Hirth_2003)),
-            Plasticity          =   DruckerPrager(ϕ=15.0, C=20MPa),
         ),
     )
     return rheology
