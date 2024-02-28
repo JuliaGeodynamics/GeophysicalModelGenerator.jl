@@ -14,6 +14,9 @@ write(joinpath(@__DIR__, "src", "man", "authors.md"), authors_text)
 #Contributing
 contributing = read(joinpath(GMG_root_dir, "CONTRIBUTING.md"), String)
 write(joinpath(@__DIR__, "src", "man", "contributing.md"), contributing)
+#License
+License = read(joinpath(GMG_root_dir, "LICENSE.md"), String)
+write(joinpath(@__DIR__, "src", "man", "license.md"), license)
 
 # Copy some files from the repository root directory to the docs and modify them
 # as necessary
