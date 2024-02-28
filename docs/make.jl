@@ -7,20 +7,32 @@ using Documenter
 # Get GeophysicalModelGenerator.jl root directory
 GMG_root_dir = dirname(@__DIR__)
 
+license = read(joinpath(GMG_root_dir, "LICENSE.md"), String)
+write(joinpath(@__DIR__, "src", "man", "license.md"), license)
 # Copy list of authors to not need to synchronize it manually
 authors_text = read(joinpath(GMG_root_dir, "AUTHORS.md"), String)
-authors_text = replace(authors_text, "in the [LICENSE.md](LICENSE.md) file" => "under [License](@ref)")
+# authors_text = replace(authors_text, "in the [LICENSE.md](LICENSE.md) file" => "under [License](@ref)")
 write(joinpath(@__DIR__, "src", "man", "authors.md"), authors_text)
-#Contributing
-contributing = read(joinpath(GMG_root_dir, "CONTRIBUTING.md"), String)
-write(joinpath(@__DIR__, "src", "man", "contributing.md"), contributing)
-#License
-License = read(joinpath(GMG_root_dir, "LICENSE.md"), String)
-write(joinpath(@__DIR__, "src", "man", "license.md"), license)
 
 # Copy some files from the repository root directory to the docs and modify them
 # as necessary
 # Based on: https://github.com/ranocha/SummationByPartsOperators.jl/blob/0206a74140d5c6eb9921ca5021cb7bf2da1a306d/docs/make.jl#L27-L41
+open(joinpath(@__DIR__, "src", "man", "license.md"), "w") do io
+  # Point to source license file
+  println(io, """
+  ```@meta
+  EditURL = "https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/main/LICENSE.md"
+  ```
+  """)
+  # Write the modified contents
+  println(io, "# [License](@id license)")
+  println(io, "")
+  for line in eachline(joinpath(dirname(@__DIR__), "LICENSE.md"))
+    line = replace(line, "[AUTHORS.md](AUTHORS.md)" => "[Authors](@ref)")
+    println(io, "> ", line)
+  end
+end
+
 open(joinpath(@__DIR__, "src", "man", "code_of_conduct.md"), "w") do io
   # Point to source license file
   println(io, """
@@ -96,7 +108,7 @@ makedocs(;
         "Authors" => "man/authors.md",
         "Contributing" => "man/contributing.md",
         "Code of Conduct" => "man/code_of_conduct.md",
-        "License" => "man/license.md",
+        "License" => "man/license.md"
     ],
 )
 
