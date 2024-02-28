@@ -1,7 +1,7 @@
 # This provides functions to load and save GeoData structs & friends to file
 using JLD2, Downloads
 
-export save_GMG, load_GMG
+export save_GMG, load_GMG, download_data
 
 """
     save_GMG(filename::String, data::Union{GeoData, CartDat, UTMData}; dir=pwd())
@@ -70,4 +70,33 @@ function load_GMG(filename::String, dir=pwd())
     data =  load_object(file_ext)
 
     return data
+end 
+
+
+
+
+"""
+    download_data(url::String, local_filename="temp.dat"; dir=pwd() )
+
+Downloads a remote dataset with name `url` from a remote location and saves it to the current directory
+
+Example
+====
+```julia
+julia> url  = "https://seafile.rlp.net/f/10f867e410bb4d95b3fe/?dl=1";
+julia> download_data(url)
+"/Users/kausb/.julia/dev/GeophysicalModelGenerator/temp.dat"
+```
+
+"""
+function download_data(url::String, local_filename="temp.dat"; dir=pwd() )
+
+    if !contains(url,"http")
+        @warn "the url does not contain http; please double check that it worked"
+    end
+
+    # download remote file to a local temporary directory
+    file_ext = Downloads.download(url, joinpath(dir,local_filename))
+
+    return file_ext
 end 

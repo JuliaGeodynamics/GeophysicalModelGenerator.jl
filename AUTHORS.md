@@ -4,7 +4,7 @@ GeophysicalModelGenerator.jl's development is coordinated by a group of *princip
 who are also its main contributors and who can be contacted in case of
 questions about GeophysicalModelGenerator.jl. In addition, there are *contributors* who have
 provided substantial additions or modifications. Together, these two groups form
-"The GeophysicalModelGenerator.jl Authors" as mentioned in the [LICENSE.md](LICENSE.md) file.
+"The GeophysicalModelGenerator.jl Authors".
 
 ## Principal Developers
 * [Boris Kaus](https://www.geosciences.uni-mainz.de/geophysics-and-geodynamics/team/univ-prof-dr-boris-kaus/),
@@ -20,6 +20,7 @@ are listed in alphabetical order:
 * Pascal Aellig
 * Luca De Siena
 * Andrea Piccolo
+* Hendrik Rachona
 * Christian Schuler
 * Arne Spang
 * Tatjana Weiler
