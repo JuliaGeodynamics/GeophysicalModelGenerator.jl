@@ -12,7 +12,7 @@ using DataFrames, CSV
 #
 # The approach we take here is to first read in the Vz data points & reshape it to 2D matrixes
 # Next, we read the Ve/Vn data and add them to the Vz grid
-data_file               =   CSV.File("ALPS2017_DEF_VT.GRD",datarow=18,header=false,delim=' ')
+data_file               =   CSV.File("/Users/mthiel/Downloads/ALPS2017_DEF_VT.GRD",datarow=18,header=false,delim=' ')
 
 num_columns             =   4;
 data                    =   ParseColumns_CSV_File(data_file, num_columns);     # Read numerical data from the file
@@ -29,7 +29,7 @@ Ve                      =   ones(size(Vz))*NaN;
 Vn                      =   ones(size(Vz))*NaN;
 
 # Now read the Ve/Vn (horizontal) velocities:
-data_file                       =   CSV.File("ALPS2017_DEF_HZ.GRD",datarow=18,header=false,delim=' ')
+data_file                       =   CSV.File("/Users/mthiel/Downloads/ALPS2017_DEF_HZ.GRD",datarow=18,header=false,delim=' ')
 data                            =   ParseColumns_CSV_File(data_file, 10)
 lon_Hz, lat_Hz, Ve_Hz, Vn_Hz    =   data[:,1], data[:,2], data[:,3],  data[:,4];
 Ve_Hz                   =   Ve_Hz*1000; #in mm/year
