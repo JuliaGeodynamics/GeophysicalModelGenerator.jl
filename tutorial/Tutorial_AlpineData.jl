@@ -185,47 +185,41 @@ The result the looks like this (plotted here together with the topography):
 
 In case you are interested: we are employing the `oleron` scientific colormap from [Fabio Crameri's scientific colormap package](https://www.fabiocrameri.ch/colourmaps/) here.
 
-
-
-
-
-
-
 # ## 4. GPS data
 # Besides data on the structure of the subsurface, it is also nice to see the dynamics of a region. Dynamic processes can be nicely seen in the surface velocities given by GPS data. 
 # As GPS data consists of three-dimensional vectors, we have to treat it differently than the seismicity data in the previous section. The example is based on a paper by Sanchez et al. (2018) [https://essd.copernicus.org/articles/10/1503/2018/#section7](https://essd.copernicus.org/articles/10/1503/2018/#section7).
 #
 # ### 3.1. Download and import GPS data: 
+# The data related to the paper can be downloaded from: [here](https://doi.pangaea.de/10.1594/PANGAEA.886889). There you will find links to several data sets. 
+# Some are the data on the actual stations and some are interpolated data on a grid. Here, we will use the gridded data as an example (which interpolates the ), 
+# and will therefore download the following data sets:
+#
+# - ALPS2017_DEF_HZ	Surface deformation model of the Alpine Region	[https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_DEF_HZ.GRD](https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_DEF_HZ.GRD)
+# - ALPS2017_DEF_VT	Vertical deformation model of the Alpine Region	[https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_DEF_VT.GRD](https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_DEF_VT.GRD)
 
-The data related to the paper can be downloaded from: https://doi.pangaea.de/10.1594/PANGAEA.886889
-There you will find links to several data sets. Some are the data on the actual stations and some are interpolated data on a grid. Here, we will use the gridded data as an example (which interpolates the ), and will therefore download the following data sets:
+download_data("https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_DEF_HZ.GRD","ALPS2017_DEF_HZ.GRD")
+download_data("https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_DEF_VT.GRD","ALPS2017_DEF_VT.GRD")
 
-- ALPS2017_DEF_HZ	Surface deformation model of the Alpine Region	[https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_DEF_HZ.GRD](https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_DEF_HZ.GRD)
-- ALPS2017_DEF_VT	Vertical deformation model of the Alpine Region	[https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_DEF_VT.GRD](https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_DEF_VT.GRD)
+# Next, we have a look at the data. We will use the package `CSV.jl` to load the comma-separated data.
+# Let's have a look at the file `ALPS2017_DEF_VT.GRD`. If we open it with a text editor, we see that the data starts at line 18, and has the following format:
+#
+# Column 1: Longitude [degrees]
+# Column 2: Latitude [degrees]
+# Column 3: Velocity in the height direction [m/a]
+# Column 4: Uncertainty of the height component [m/a]
+#
+# So we have 4 columns with data values, and the data is separated by spaces.
+# We can load that in julia as:
+data_vhz = readdlm("ALPS2017_DEF_HZ.GRD",header=false,skipstart=18);
+data_vz = readdlm("ALPS2017_DEF_VT.GRD",header=false,skipstart=17);
+  
+lon_vz =   data_vz[:,1]
+lat_vz =   data_vz[:,2]
+vz     =   data_vz[:,3];
 
-Next, we have a look at the data themselves. We will use the package `CSV.jl` to load the comma-separated data.
-Let's have a look at the file `ALPS2017_DEF_VT.GRD`. If we open it with a text editor, we see that the data starts at line 18, and has the following format:
-```
-Column 1: Longitude [degrees]
-Column 2: Latitude [degrees]
-Column 3: Velocity in the height direction [m/a]
-Column 4: Uncertainty of the height component [m/a]
 
+#=
 
- 4.00    43.00    0.000067   0.000287
- 4.30    43.00   -0.001000   0.000616
- 4.60    43.00   -0.001067   0.000544
-```
-So we have 4 columns with data values, and the data is separated by spaces.
-We can load that in julia as:
-```julia
-julia> using CSV, GeophysicalModelGenerator
-julia> data_file =   CSV.File("ALPS2017_DEF_VT.GRD",datarow=18,header=false,delim=' ');
-```
-We can read the numerical data from the file with:
-```julia
-julia> data                    =   ParseColumns_CSV_File(data_file, 4);     
-julia> lon_Vz, lat_Vz, Vz_vec  =   data[:,1], data[:,2], data[:,3];
 ```
 
 #### 2. Check & reshape vertical velocity
@@ -371,4 +365,4 @@ In order to plot the velocities as arrows, you need to select the `Glyph` tool (
 The arrows can now be colored by the individual velocity components or its magnitude.
 
 
-
+=#

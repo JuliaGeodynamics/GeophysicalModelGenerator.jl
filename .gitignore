@@ -13,3 +13,11 @@ tutorial/Mroczek_Moho_AD.vtu
 *.vts
 *.xml
 tutorial/test.tiff
+*.csv
+*.csv
+*.GRD
+*.vtu
+*.vtr
+*.vts
+*.jld2
+*.tiff
