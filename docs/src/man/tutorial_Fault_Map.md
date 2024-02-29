@@ -1,11 +1,15 @@
 # Fault Density Map
 
 ## Aim
-In this tutorial Fault Data is loaded as Shapefiles, which is then transformed to raster data. With the help of that a fault density map of Europe is created with the CountMap function
+
+````julia
+#In this tutorial Fault Data is loaded as Shapefiles, which is then transformed to raster data. With the help of that a fault density map of Europe is created with the CountMap function
+````
 
 ## Load Data
 
 Load packages
+
 ````julia
 using GeophysicalModelGenerator, Shapefile, Plots, Rasters, GeoDatasets, Interpolations
 ````
@@ -37,7 +41,7 @@ lat    = faults.dims[2]
 Download coastlines with GeoDatasets
 
 ````julia
-lonC,latC,dataC = GeoDatasets.landseamask(;resolution='l',grid=10);
+lonC,latC,dataC = GeoDatasets.landseamask(;resolution='l',grid=10)
 ````
 
 Interpolate to fault grid
@@ -54,6 +58,7 @@ Plot the fault data
 heatmap(lon.val,lat.val,coastlines',legend=false,colormap=cgrad(:gray1,rev=true),alpha=0.4);
 plot!(faults; color=:red,legend = false,title="Fault Map World",ylabel="Lat",xlabel="Lon")
 ````
+
 ![tutorial_Fault_Map](../assets/img/WorldMap.svg)
 
 Restrict area to Europe
@@ -73,7 +78,8 @@ Lon3D,Lat3D, Faults = LonLatDepthGrid(Lon,Lat,0);
 Faults[:,:,1]       = data
 Data_Faults         = GeoData(Lon3D,Lat3D,Faults,(Faults=Faults,))
 ````
-#### Create Density Map 
+
+#### Create Density Map
 Create a density map of the fault data. This is done with the CountMap function. This function takes a specified field of a 2D GeoData struct and counts the entries in all control areas which are defined by steplon (number of control areas in lon direction) and steplat (number of control areas in lat direction). The field should only consist of 0.0 and 1.0 and the steplength. The final result is normalized by the highest count.
 
 ````julia
@@ -92,6 +98,7 @@ coastlinesEurope = map(y -> y > 1 ? 1 : y, coastlinesEurope)
 heatmap(lon,lat,coastlinesEurope',colormap=cgrad(:gray1,rev=true),alpha=1.0);
 heatmap!(lon,lat,countmap.fields.CountMap[:,:,1]',colormap=cgrad(:batlowW,rev=true),alpha = 0.8,legend=true,title="Fault Density Map Europe",ylabel="Lat",xlabel="Lon")
 ````
+
 ![tutorial_Fault_Map](../assets/img/FaultDensity.svg)
 
 ---
