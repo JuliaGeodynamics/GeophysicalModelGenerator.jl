@@ -95,7 +95,7 @@ makedocs(;
             "11 - Read UTM data" =>  "man/tutorial_UTM.md",
             "12 - VoteMaps" =>  "man/Tutorial_Votemaps.md",
             "13 - Campi Flegrei" =>  "man/tutorial_local_Flegrei.md",
-            "14 - Cartesian Volcano Model" =>  "man/LaPalma_example.md",
+            "14 - La Palma volcano Model" =>  "man/Tutorial_LaPalma.md",
             "15 - Create movies" =>  "man/tutorial_time_Seismicity.md"
         ],
         "User Guide" => Any[
