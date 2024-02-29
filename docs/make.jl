@@ -93,11 +93,11 @@ makedocs(;
             "9 - ISC earthquake data" =>  "man/tutorial_ISC_data.md",
             "10 - Plot GPS vectors" =>  "man/tutorial_GPS.md",
             "11 - Read UTM data" =>  "man/tutorial_UTM.md",
-            "12 - Fault Density Map" =>  "man/tutorial_Fault_Map.md",
             "12 - VoteMaps" =>  "man/Tutorial_Votemaps.md",
             "13 - Campi Flegrei" =>  "man/tutorial_local_Flegrei.md",
             "14 - Cartesian Volcano Model" =>  "man/LaPalma_example.md",
-            "15 - Create movies" =>  "man/tutorial_time_Seismicity.md"
+            "15 - Create movies" =>  "man/tutorial_time_Seismicity.md",
+            "16 - Fault Density Map" =>  "man/tutorial_Fault_Map.md",
         ],
         "User Guide" => Any[
             "Installation" =>  "man/installation.md",
