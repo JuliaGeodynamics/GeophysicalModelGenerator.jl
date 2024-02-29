@@ -117,10 +117,9 @@ end
 """
     DatasetCountMap = CountMap(DataSet::GeoData,field::String,stepslon::Int64,stepslat::Int64)
 
-Counts the ones in a 2D GeoData field that is specified by "field" in a control area which is defined by steplon and steplat.
-steplon is the number of control areas in lon direction and steplat the number of control areas in lat direction
-The counts per control area are normalized by the highest count
-
+Takes a 2D GeoData struct and counts entries of `field` per predefined control area. `field` should only consist of 1.0s and 0.0s. The control area is defined by `steplon` and `steplat`.
+`steplon` is the number of control areas in longitude direction and `steplat` the number of control areas in latitude direction.
+The counts per control area are normalized by the highest count.
 
 ```julia
 julia> Data_Faults         = GeoData(Lon3D,Lat3D,Faults,(Faults=Faults,))
