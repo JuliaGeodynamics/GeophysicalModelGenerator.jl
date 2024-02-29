@@ -1,8 +1,8 @@
 ```@meta
-EditURL = "<unknown>/Tutorial_Votemaps.jl"
+EditURL = "../../../tutorials/Tutorial_Votemaps.jl"
 ```
 
-# Votemaps
+# 12 - Votemaps
 
 ## Aim
 In this tutorial, your will learn how to create Votemaps that compare different tomographic models and look for similarities between different models.
@@ -58,10 +58,10 @@ The result of this gives a feeling which features are consistent between the 3 m
 So how do we create Votemaps?
 Doing this is rather simple:
 
-````@example Tutorial_Votemaps
+```julia
 Data_VoteMap = VoteMap( [Pwave_Paffrath,       PSwave_Koulakov,    Pwave_Zhao],
                         ["dVp_Percentage>3.0","dVp_percentage>2.0","dVp_Percentage>2.0"], dims=(100,100,100))
-````
+```
 
 This will look at the common `lon`,`lat`,`depth` ranges between all 3 models, interpret each of the models to a common grid of size `(100,100,100)` and apply each of the criteria specified
 The resulting `GeoData` struct looks like:

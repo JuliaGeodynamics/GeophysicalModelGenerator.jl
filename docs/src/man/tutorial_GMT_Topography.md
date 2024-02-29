@@ -1,4 +1,4 @@
-# Extract topographic data from GMT.jl 
+# 4 - Extract topographic data from GMT.jl 
 
 ## Goal
 

@@ -1,4 +1,4 @@
-# Extract ETOPO1 topographic data using GMT.jl and drape a geological map on top of the topography (given as raster graphics)
+# 8 - Extract ETOPO1 topographic data using GMT.jl and drape a geological map on top of the topography (given as raster graphics)
 
 ## Goal
 

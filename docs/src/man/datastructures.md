@@ -5,11 +5,13 @@ We also provide a `UTMData`, which is essentially the same but with UTM coordina
 For plotting, we transfer this into the `ParaviewData` structure, which has cartesian coordinates around the center of the Earth. We employ the `wgs84` reference ellipsoid as provided by the [Geodesy.jl](https://github.com/JuliaGeo/Geodesy.jl) package to perform this transformation.
 
 ```@docs
-GeophysicalModelGenerator.GeoData
-GeophysicalModelGenerator.UTMData
-GeophysicalModelGenerator.ParaviewData
-GeophysicalModelGenerator.CartData
-GeophysicalModelGenerator.LonLatDepthGrid
-GeophysicalModelGenerator.XYZGrid
-GeophysicalModelGenerator.ProjectionPoint
+UTMData
+ParaviewData
+CartData
+LonLatDepthGrid
+XYZGrid
+ProjectionPoint
 ```
+
+
+GeoData
