@@ -99,7 +99,8 @@ Grid        =   CreateCartGrid(size=(10,20,30),x=(0.0km,10km), y=(0.0km, 10km), 
 
 
 # test 1D-explicit thermal solver for AddBox -----------
-Grid        =   CreateCartGrid(size=(96,96,96),x=(-200.,200.), y=(-200.,200.), z=(-200.,0))
+nel         =   96
+Grid        =   CreateCartGrid(size=(nel,nel,nel),x=(-200.,200.), y=(-200.,200.), z=(-200.,0))
 Temp        =   zeros(Float64, Grid.N...);
 Phases      =   zeros(Int64,  Grid.N...);
 
