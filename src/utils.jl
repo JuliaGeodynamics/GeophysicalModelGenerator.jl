@@ -1173,6 +1173,23 @@ function InterpolateDataFields2D(Original::CartData, New::CartData; Rotate=0.0, 
     return CartData(New.x.val,New.y.val,Znew, fields_new)
 end
 
+"""    
+    Surf_interp = InterpolateDataFields2D(V::GeoData, x::AbstractRange, y::AbstractRange;  Lat::Number, Lon::Number)
+
+Interpolates a 3D data set `V` with a projection point `proj=(Lat, Lon)` on a plane defined by `x` and `y`, where `x` and `y` are uniformly spaced.
+Returns the 2D array `Surf_interp`. 
+"""
+function InterpolateDataFields2D(V::GeoData, x::AbstractRange, y::AbstractRange;  Lat=49.9929, Lon=8.2473)
+    # Default: Lat=49.9929, Lon=8.2473 => Mainz (center of universe)
+    proj = ProjectionPoint(; Lat = Lat, Lon = Lon)
+    return InterpolateTopographyOnPlane(V::GeoData, proj, x, y)
+end
+
+function InterpolateDataFields2D(LonLat::GeoData, proj::ProjectionPoint, x::AbstractRange, y::AbstractRange)
+    cart_grid = CartData(XYZGrid(x, y, 0))
+    tproj = ProjectCartData(cart_grid, LonLat, proj)
+    return tproj.z.val[:, :, 1]
+end
 
 """
     InterpolateDataFields2D_vecs(x_vec, y_vec, depth, fields_new, X, Y)
@@ -1326,8 +1343,6 @@ function InterpolateDataOnSurface(V::GeoData, Surf::GeoData)
 
     return Surf_interp
 end
-
-
 
 # Extracts a sub-data set using indices
 function ExtractDataSets(V::AbstractGeneralGrid, iLon, iLat, iDepth)
