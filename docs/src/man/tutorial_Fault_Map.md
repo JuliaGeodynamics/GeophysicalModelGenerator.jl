@@ -34,13 +34,13 @@ lon    = faults.dims[1]
 lat    = faults.dims[2]
 ````
 
-download coastlines with GeoDatasets
+Download coastlines with GeoDatasets
 
 ````julia
 lonC,latC,dataC = GeoDatasets.landseamask(;resolution='l',grid=10);
 ````
 
-interpolate to fault grid
+Interpolate to fault grid
 
 ````julia
 itp        = linear_interpolation((lonC, latC), dataC)
@@ -48,7 +48,7 @@ coastlines = itp[lon.val,lat.val]
 coastlines = map(y -> y > 1 ? 1 : y, coastlines)
 ````
 
-plot the fault data
+Plot the fault data
 
 ````julia
 heatmap(lon.val,lat.val,coastlines',legend=false,colormap=cgrad(:gray1,rev=true),alpha=0.4);
@@ -56,7 +56,7 @@ plot!(faults; color=:red,legend = false,title="Fault Map World",ylabel="Lat",xla
 ````
 ![tutorial_Fault_Map](../assets/img/WorldMap.svg)
 
-restrict area to Europe
+Restrict area to Europe
 
 ````julia
 indlat = findall((lat .> 35) .& (lat .< 60))
@@ -74,7 +74,7 @@ Faults[:,:,1]       = data
 Data_Faults         = GeoData(Lon3D,Lat3D,Faults,(Faults=Faults,))
 ````
 #### Create Density Map 
-Create a density map of the faults data. This is done with the CountMap function. This function takes a 2D GeoData struct 
+Create a density map of the fault data. This is done with the CountMap function. This function takes a specified field of a 2D GeoData struct and counts the entries in all control areas which are defined by steplon (number of control areas in lon direction) and steplat (number of control areas in lat direction). The field should only consist of 0.0 and 1.0 and the steplength. The final result is normalized by the highest count.
 
 ````julia
 steplon  = 125
