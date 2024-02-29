@@ -36,7 +36,7 @@ coastlines = map(y -> y > 1 ? 1 : y, coastlines)
 # Plot the fault data
 heatmap(lon.val,lat.val,coastlines',legend=false,colormap=cgrad(:gray1,rev=true),alpha=0.4);
 plot!(faults; color=:red,legend = false,title="Fault Map World",ylabel="Lat",xlabel="Lon")
-# ![tutorial_Fault_Map](../assets/img/WorldMap.svg)
+# ![tutorial_Fault_Map](../assets/img/WorldMap.png)
 
 # Restrict area to Europe
 indlat = findall((lat .> 35) .& (lat .< 60))
@@ -63,4 +63,4 @@ coastlinesEurope = itp[lon,lat]
 coastlinesEurope = map(y -> y > 1 ? 1 : y, coastlinesEurope)
 heatmap(lon,lat,coastlinesEurope',colormap=cgrad(:gray1,rev=true),alpha=1.0);
 heatmap!(lon,lat,countmap.fields.CountMap[:,:,1]',colormap=cgrad(:batlowW,rev=true),alpha = 0.8,legend=true,title="Fault Density Map Europe",ylabel="Lat",xlabel="Lon")
-# ![tutorial_Fault_Map](../assets/img/FaultDensity.svg)
+# ![tutorial_Fault_Map](../assets/img/FaultDensity.png)

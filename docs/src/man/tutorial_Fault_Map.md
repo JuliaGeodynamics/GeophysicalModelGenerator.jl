@@ -59,7 +59,7 @@ heatmap(lon.val,lat.val,coastlines',legend=false,colormap=cgrad(:gray1,rev=true)
 plot!(faults; color=:red,legend = false,title="Fault Map World",ylabel="Lat",xlabel="Lon")
 ````
 
-![tutorial_Fault_Map](../assets/img/WorldMap.svg)
+![tutorial_Fault_Map](../assets/img/WorldMap.png)
 
 Restrict area to Europe
 
@@ -83,8 +83,8 @@ Data_Faults         = GeoData(Lon3D,Lat3D,Faults,(Faults=Faults,))
 Create a density map of the fault data. This is done with the CountMap function. This function takes a specified field of a 2D GeoData struct and counts the entries in all control areas which are defined by steplon (number of control areas in lon direction) and steplat (number of control areas in lat direction). The field should only consist of 0.0 and 1.0 and the steplength. The final result is normalized by the highest count.
 
 ````julia
-steplon  = 125
-steplat  = 70
+steplon  = 188
+steplat  = 104
 countmap = CountMap(Data_Faults,"Faults",steplon,steplat)
 ````
 
@@ -99,7 +99,7 @@ heatmap(lon,lat,coastlinesEurope',colormap=cgrad(:gray1,rev=true),alpha=1.0);
 heatmap!(lon,lat,countmap.fields.CountMap[:,:,1]',colormap=cgrad(:batlowW,rev=true),alpha = 0.8,legend=true,title="Fault Density Map Europe",ylabel="Lat",xlabel="Lon")
 ````
 
-![tutorial_Fault_Map](../assets/img/FaultDensity.svg)
+![tutorial_Fault_Map](../assets/img/FaultDensity.png)
 
 ---
 
