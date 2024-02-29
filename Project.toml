@@ -15,6 +15,7 @@ Glob = "c27321d9-0574-5035-807b-f59d2c89b15c"
 ImageIO = "82e4d734-157c-48bb-816b-45c225c6df19"
 Interpolations = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
+LightXML = "9c8b4983-aa76-5018-a973-4c85ecc9e179"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MeshIO = "7269a6da-0436-5bbc-96c2-40638cbb6118"
 NearestNeighbors = "b8a86587-4115-5ab1-83bc-aa920d37bbce"
@@ -59,4 +60,4 @@ GMT = "5752ebe1-31b9-557e-87aa-f909b540aa54"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test","GMT"]
+test = ["Test", "GMT"]

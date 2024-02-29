@@ -10,6 +10,16 @@ Vx1,Vy1,Vz1     =   Data1*3,Data1*4,Data1*5
 Data_set2D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data1,LonData1=Lon, Velocity=(Vx1,Vy1,Vz1)))  
 @test_throws ErrorException CrossSection(Data_set2D, Depth_level=-10)
 
+# Test interpolation of depth to a given cartesian XY-plane
+x = 11:19
+y = 31:39
+plane1 = InterpolateDataFields2D(Data_set2D, x, y)
+proj   = ProjectionPoint()
+plane2 = InterpolateDataFields2D(Data_set2D, proj, x, y)
+
+@test plane1 == plane2
+@test all(==(-50e0), plane1)
+
 # Create 3D volume with some fake data
 Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
 Data            =   Depth*2;                # some data
