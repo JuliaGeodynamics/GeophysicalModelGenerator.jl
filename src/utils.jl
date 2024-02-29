@@ -1182,7 +1182,7 @@ Returns the 2D array `Surf_interp`.
 function InterpolateDataFields2D(V::GeoData, x::AbstractRange, y::AbstractRange;  Lat=49.9929, Lon=8.2473)
     # Default: Lat=49.9929, Lon=8.2473 => Mainz (center of universe)
     proj = ProjectionPoint(; Lat = Lat, Lon = Lon)
-    return InterpolateTopographyOnPlane(V::GeoData, proj, x, y)
+    return InterpolateDataFields2D(V::GeoData, proj, x, y)
 end
 
 function InterpolateDataFields2D(LonLat::GeoData, proj::ProjectionPoint, x::AbstractRange, y::AbstractRange)
