@@ -1,4 +1,4 @@
-# Import profiles/maps from published papers
+# 6 - Import profiles/maps from published papers
 
 ## Goal
 Ideally, all data should be available in digital format, after which you could use the tools described in the other tutorial to transform them into `GeoData` and export them to VTK.
@@ -7,14 +7,14 @@ Yet, the reality is different and often data is not (yet) available, or papers a
 For that reason, `GeophysicalModelGenerator` has tools that allow you to transfer a screenshot from any published paper into `GeoData/Paraview` and see it in 3D at the correct geographic location. This can be done for vertical profiles and for mapviews, which gives you a quick and easy way to see those papers in a new (3D) light.
 
 Here, we explain how.
-- [Import profiles/maps from published papers](#import-profilesmaps-from-published-papers)
+- [6 - Import profiles/maps from published papers](#6---import-profilesmaps-from-published-papers)
   - [Goal](#goal)
   - [General procedure](#general-procedure)
       - [1. Download data and crop images](#1-download-data-and-crop-images)
-      - [2. Read data of a cross-section & create VTS file](#2-read-data-of-a-cross-section--create-vts-file)
-      - [3. Read data of a mapview & create *.vts file](#3-read-data-of-a-mapview--create-vts-file)
+      - [2. Read data of a cross-section \& create VTS file](#2-read-data-of-a-cross-section--create-vts-file)
+      - [3. Read data of a mapview \& create \*.vts file](#3-read-data-of-a-mapview--create-vts-file)
       - [4. Using an automatic digitizer to pick points on map](#4-using-an-automatic-digitizer-to-pick-points-on-map)
-      - [5. Creating a multiblock Paraview/*.vtm file](#5-creating-a-multiblock-paraviewvtm-file)
+      - [5. Creating a multiblock Paraview/\*.vtm file](#5-creating-a-multiblock-paraviewvtm-file)
       - [6. Julia script](#6-julia-script)
 ## General procedure
 #### 1. Download data and crop images
