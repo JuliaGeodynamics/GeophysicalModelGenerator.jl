@@ -2,7 +2,7 @@
 
 export meshgrid, CrossSection, CrossSectionVolume, CrossSectionSurface, CrossSectionPoints, ExtractSubvolume, SubtractHorizontalMean
 export ParseColumns_CSV_File, AboveSurface, BelowSurface, VoteMap
-export InterpolateDataOnSurface, InterpolateDataFields2D, InterpolateDataFields
+export InterpolateDataOnSurface, InterpolateDataFields2D, InterpolateDataFields, InterpolateTopographyOnPlane
 export RotateTranslateScale
 export DrapeOnTopo, LithostaticPressure!
 export FlattenCrossSection
@@ -1343,7 +1343,7 @@ function InterpolateDataOnSurface(V::GeoData, Surf::GeoData)
 
     return Surf_interp
 end
-
+  
 # Extracts a sub-data set using indices
 function ExtractDataSets(V::AbstractGeneralGrid, iLon, iLat, iDepth)
 
