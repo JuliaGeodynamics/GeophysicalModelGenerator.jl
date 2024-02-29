@@ -750,7 +750,7 @@ Parameters
 - age       : age of the lithosphere [Ma]
 - dtfac     : Diffusion stability criterion to calculate T_age
 - nz        : Grid spacing for the 1D profile within the box
-- rheology  : Stucture containing the thermal parameters for each phase [default example_CLrheology]
+- rheology  : Structure containing the thermal parameters for each phase [default example_CLrheology]
 
 """
 @with_kw_noshow mutable struct LithosphericTemp <: AbstractThermalStructure
@@ -801,7 +801,7 @@ function Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::LithosphericTemp)
     ztop        =   round(maximum(Z[findall(Phase .== phaseid[1])]))
     zlayer      =   zeros(length(phaseid))
     for i = 1:length(phaseid)
-        # Calculate layer thicknes from Phase array
+        # Calculate layer thickness from Phase array
         zlayer[i]   =   round(minimum(Z[findall(Phase .== phaseid[i])]))
         zlayer[i]   =   zlayer[i]*1.0e3
     end
