@@ -156,8 +156,7 @@ end
 # See the description of the interface [here](http://www.isc.ac.uk/iscbulletin/search/webservices/bulletin/).
 # We will now download all reviewed earthquake data between 1990 and 2000 in the same region as the extracted topography. 
 # We will only consider earthquakes with a magnitude larger than 3. The resulting dataset is quite large, so consider to either limit the time range or the magnitude range.
-download_data("http://www.isc.ac.uk/cgi-bin/web-db-run?request=COLLECTED&req_agcy=ISC-EHB&out_format=QuakeML&ctr_lat=&ctr_lon=&radius=&max_dist_units=deg&searchshape=RECT&top_lat=49&bot_lat=37&left_lon=4&right_lon=20&srn=&grn=&start_year=1990&start_month=1&start_day=01&start_time=00:00:00&end_year=2015&end_month=12&end_day=01&end_time=23:00:00&min_dep=&max_dep=&min_mag=3.0&max_mag=&req_mag_type=Any&req_mag_agcy=Any&table_owner=iscehb
-","ISCData.xml")
+# download_data("http://www.isc.ac.uk/cgi-bin/web-db-run?request=COLLECTED&req_agcy=ISC-EHB&out_format=QuakeML&ctr_lat=&ctr_lon=&radius=&max_dist_units=deg&searchshape=RECT&top_lat=49&bot_lat=37&left_lon=4&right_lon=20&srn=&grn=&start_year=1990&start_month=1&start_day=01&start_time=00%3A00%3A00&end_year=2015&end_month=12&end_day=31&end_time=00%3A00%3A00&min_dep=&max_dep=&min_mag=3.0&max_mag=&req_mag_type=Any&req_mag_agcy=Any&min_def=&max_def=&prime_only=on&include_magnitudes=on&table_owner=iscehb","ISCData.xml")
 
 # Once the data has been downloaded, we can extract lon/lat/depth/magnitude using one of the GMG functions, which will give us a GeoData structure:
 Data_ISC = GetLonLatDepthMag_QuakeML("ISCData.xml");
@@ -279,5 +278,43 @@ save_GMG("GPS_Sanchez",Data_GPS_Sanchez)
 
 
 # ## 5. Seismic tomography data
-download_data("https://figshare.com/ndownloader/files/34093958","isoNEWTON21.nc")
-download_data("https://figshare.com/ndownloader/files/34093967","Slabs_aniNEWTON21.nc")
+# Finally, we'd like to have a look at the subsurface by looking at a seismic tomography. To do so, we'll first download the tomography published by [Rappisi et al.(2022)](https://doi.org/10.1029/2021JB023488).
+#download_data("https://figshare.com/ndownloader/files/34093958","isoNEWTON21.nc")
+#download_data("https://figshare.com/ndownloader/files/34093967","Slabs_aniNEWTON21.nc")
+
+download_data("https://figshare.com/ndownloader/files/34093955","aniNEWTON21.nc")
+
+# We now load this file using the NCDatasets package.
+using NCDatasets
+dataset = NCDataset("aniNEWTON21.nc","r")
+
+# The output of this command will also provide you with an overview of the file content. In the following, we will extract some of this content.
+lon     = dataset["Longitude"]
+lat     = dataset["Latitude"]
+dlnVp   = dataset["dlnVp"]
+Vp      = dataset["Vpi"]
+Depth   = dataset["Zg"]
+# As longitude and latitude are only given as 2D grids, we here have to convert them to 3D matrices. 
+Lon = repeat(lon[:,:],1,1,size(Depth,3));
+Lat = repeat(lat[:,:],1,1,size(Depth,3));
+
+# Finally, as we would like to keep the information on the data source, we add this information as a dictionary.
+Data_attribs   = Dict(
+    "author"=>  "Rappisi, F. and VanderBeek, B. P. and Faccenda, M. and Morelli, A. and Molinari, I.",
+    "title" => "Slab Geometry and Upper Mantle Flow Patterns in the Central Mediterranean From 3D Anisotropic P-Wave Tomography",
+    "journal"=>"Journal of Geophysical Research: Solid Earth",
+    "volume"=>127,
+    "number"=>5,
+    "pages"=>"e2021JB023488",
+    "doi"=>"https://doi.org/10.1029/2021JB023488",
+    "url"=>"https://doi.org/10.1029/2021JB023488",
+    "year"=>2022
+)
+# Now we are all set and can create a GeoData structure.
+Data = GeoData(Lon,Lat,Depth[:,:,:],(Vp=Vp[:,:,:],dVp=dlnVp[:,:,:]),Data_attribs);
+# And then we save it again.
+Write_Paraview(Data, "Rappisi2022")
+save_GMG("Rappisi2022",Data)
+
+# For the sake of this tutorial, we have now imported all the data we would like to look at. All that is missing is now a joint visualization
+# of these datasets. To obtain this visualization, we will load all the VTK files into Paraview and have a look. 
