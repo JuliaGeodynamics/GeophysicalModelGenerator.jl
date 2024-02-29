@@ -108,7 +108,7 @@ for iunit = 1:length(units)
     lat_tmp     = lat[ind_unit]
     depth_tmp   = depth[ind_unit]
     
-    # for later checking, we can now save the original point data as a VTK file: 
+    # for later checking, we can save the original point data as a VTK file: 
     data_Moho = GeophysicalModelGenerator.GeoData(lon_tmp,lat_tmp,depth_tmp,(MohoDepth=depth_tmp*km,))
     filename = "Mroczek_Moho_" * units[iunit]
     Write_Paraview(data_Moho, filename, PointsData=true)
@@ -154,13 +154,7 @@ end
 # We will now download all reviewed earthquake data between 1990 and 2000 in the same region as the extracted topography. We will only consider earthquakes with a magnitude larger than 3. The resulting dataset is quite large, so consider to either limit the time range or the magnitude range.
 download_data("http://www.isc.ac.uk/cgi-bin/web-db-run?out_format=QuakeML&request=REVIEWED&searchshape=RECT&bot_lat=37&top_lat=49&left_lon=4&right_lon=20&start_year=1990&start_month=01&start_day=01&start_time=00:00:00&end_year=2000&end_month=12&end_day=31&end_time=15:00:00&min_mag=3.0&req_mag_type=Any&prime_only=on","ISCData.xml")
 
-## Steps
-#### 1. Download data
-You can get data from the ISC catalogue here:
-[http://www.isc.ac.uk/iscbulletin/search/catalogue/](http://www.isc.ac.uk/iscbulletin/search/catalogue/)
-The catalogue will give you an on screen CSV output that will then have to be copied to a file of your choice (here we will call it *ISC1.dat*). Do that and start julia from the directory where it was downloaded.
-
-#### 2. Read data into Julia
+# ### 3.2 Read data into Julia
 The main data-file, `ISC1.dat`, has 23 lines of comments (indicated with `#`), after which the data starts. We can use the julia package [https://github.com/JuliaData/CSV.jl](CSV.jl) to read in the data, and tell it that the data is separated by `,`.
 ```julia-repl
 julia> using CSV, GeophysicalModelGenerator
