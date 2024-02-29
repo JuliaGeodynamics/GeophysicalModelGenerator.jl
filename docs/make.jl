@@ -73,6 +73,7 @@ makedocs(;
             "ISC earthquake data" =>  "man/tutorial_ISC_data.md",
             "Plot GPS vectors" =>  "man/tutorial_GPS.md",
             "Read UTM data" =>  "man/tutorial_UTM.md",
+            "Fault Density Map" =>  "man/Tutorial_Fault_Map.md",
             "VoteMaps" =>  "man/Tutorial_Votemaps.md",
             "Kilometer-scale volcano" =>  "man/tutorial_local_Flegrei.md",
             "Generating LaMEM model" =>  "man/LaPalma_example.md",
