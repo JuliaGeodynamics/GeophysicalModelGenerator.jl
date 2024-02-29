@@ -8,7 +8,7 @@ Grid_geo = GeoData(Lon,Lat,Depth,(;Depth))
 
 # create 2D GeoData struct
 Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,0);
-CM              =   zeros(size(Data1)); CM[1:5,1:5] .= 1.0
+CM              =   zeros(size(Depth)); CM[1:5,1:5] .= 1.0
 Data_set2D      =   GeoData(Lon,Lat,Depth,(Count=CM,))  
 
 using StableRNGs

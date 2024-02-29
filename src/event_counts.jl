@@ -1,6 +1,6 @@
 using NearestNeighbors
 
-export PointData2NearestGrid
+export PointData2NearestGrid, CountMap
 
 
 """
