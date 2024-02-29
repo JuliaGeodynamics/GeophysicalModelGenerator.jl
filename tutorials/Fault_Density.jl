@@ -9,10 +9,8 @@
 
 using GeophysicalModelGenerator, Shapefile, Plots, Rasters, GeoDatasets, Interpolations
 
-
 # Data from "Active Faults of Eurasia Database AFEAD v2022" DOI:10.13140/RG.2.2.25509.58084
 File   = "AFEAD_v2022/AFEAD_v2022/AFEAD_v2022.shp"
-
 
 # Load data using Shapefile
 
@@ -26,7 +24,6 @@ faults  = Shapefile.Handle(File).shapes[ind]
 faults  = rasterize(last,faults; res=(0.12,0.12), missingval=0, fill=1, atol = 0.4, shape=:line)
 lon    = faults.dims[1]
 lat    = faults.dims[2]
-
 
 # Download coastlines with GeoDatasets
 lonC,latC,dataC = GeoDatasets.landseamask(;resolution='l',grid=10)
@@ -55,8 +52,8 @@ Data_Faults         = GeoData(Lon3D,Lat3D,Faults,(Faults=Faults,))
 
 # #### Create Density Map 
 # Create a density map of the fault data. This is done with the CountMap function. This function takes a specified field of a 2D GeoData struct and counts the entries in all control areas which are defined by steplon (number of control areas in lon direction) and steplat (number of control areas in lat direction). The field should only consist of 0.0 and 1.0 and the steplength. The final result is normalized by the highest count.
-steplon  = 125
-steplat  = 70
+steplon  = 188
+steplat  = 104
 countmap = CountMap(Data_Faults,"Faults",steplon,steplat)
 
 # Plot the density map with coastlines
