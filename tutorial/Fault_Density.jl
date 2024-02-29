@@ -25,46 +25,33 @@ coastlines = itp[lon.val,lat.val]
 coastlines = map(y -> y > 1 ? 1 : y, coastlines)
 
 # plot the fault data
-p = heatmap(lon.val,lat.val,coastlines',legend=false,colormap=cgrad(:gray1,rev=true),alpha=0.4);
-p = plot!(faults; color=:red,legend = false,title="Fault Map World",ylabel="Lat",xlabel="Lon")
+heatmap(lon.val,lat.val,coastlines',legend=false,colormap=cgrad(:gray1,rev=true),alpha=0.4);
+plot!(faults; color=:red,legend = false,title="Fault Map World",ylabel="Lat",xlabel="Lon")
 
-# restrict lon lat area
+# restrict area
 indlat = findall((lat .> 35) .& (lat .< 60))
 Lat    = lat[indlat]
 indlon = findall((lon .> -10) .& (lon .< 35))
 Lon    = lon[indlon]
 data   = faults.data[indlon,indlat]
 
-ind_lon = findall( (lonC .> 0) .& (lonC .< 30 ) );
-ind_lat = findall( (latC .> 35) .& (latC .< 50 ) );
+# create GeoData from restricted data
+Lon3D,Lat3D, Faults = LonLatDepthGrid(Lon,Lat,0);
+Faults[:,:,1]       = data
+Data_Faults         = GeoData(Lon3D,Lat3D,Faults,(Faults=Faults,))
 
-# create density map
-stepsize = 2
-lonstep = Lon[1:stepsize:end]
-latstep = Lat[1:stepsize:end]
-countmap = zeros(length(latstep),length(lonstep))
-for i = 1:length(lonstep)-1
-    for j = 1:length(latstep)-1
-        indi    = findall((Lon .>= lonstep[i]) .& (Lon .< lonstep[i+1]))
-        indj    = findall((Lat .>= latstep[j]) .& (Lat .< latstep[j+1]))
-        dataint = data[indi,indj]
-        count   = sum(dataint)
-        countmap[j,i] = count
-    end
-end
-maxcount = maximum(countmap)
-countmap = countmap ./ maxcount
+steplon  = Int(length(Lon)/3)
+steplat  = Int(length(Lon)/3)
+countmap = CountMap(Data_Faults,"Faults",steplon,steplat)
 
-coastlinesEurope = itp[lonstep.val,latstep.val]
+lon = unique(countmap.lon.val)
+lat = unique(countmap.lat.val)
+coastlinesEurope = itp[lon,lat]
 coastlinesEurope = map(y -> y > 1 ? 1 : y, coastlinesEurope)
-p2 = heatmap(lonstep.val,latstep.val,coastlinesEurope',colormap=cgrad(:gray1,rev=true),alpha=1.0);
-p2 = heatmap!(lonstep.val,latstep.val,countmap,colormap=cgrad(:batlowW,rev=true),alpha = 0.7,legend=true,title="Fault Density Map Europe")
+heatmap(lon,lat,coastlinesEurope',colormap=cgrad(:gray1,rev=true),alpha=1.0);
+heatmap!(lon,lat,countmap.fields.CountMap[:,:,1]',colormap=cgrad(:batlowW,rev=true),alpha = 0.8,legend=true,title="Fault Density Map Europe",ylabel="Lat",xlabel="Lon")
 
-# save as GeoData
-Lon3D,Lat3D, Dens3D = LonLatDepthGrid(lonstep,latstep,0);
-Dens3D[:,:,1] = countmap'
-Data_Faults = GeoData(Lon3D,Lat3D,Dens3D,(Faults=Dens3D,))
-Write_Paraview(Data_Faults, "Faults_Spherical")
+Write_Paraview(countmap, "Faults")
 
 
 

@@ -7,7 +7,8 @@ using GeophysicalModelGenerator
 Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,-50km);
 Data1           =   Depth*2;                # some data
 Vx1,Vy1,Vz1     =   Data1*3,Data1*4,Data1*5
-Data_set2D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data1,LonData1=Lon, Velocity=(Vx1,Vy1,Vz1)))  
+CM              =   zeros(size(Data1)); CM[1:5,1:5] .= 1.0
+Data_set2D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data1,LonData1=Lon, Velocity=(Vx1,Vy1,Vz1),Count=CM))  
 @test_throws ErrorException CrossSection(Data_set2D, Depth_level=-10)
 
 # Create 3D volume with some fake data
@@ -195,6 +196,12 @@ Data_VoteMap = VoteMap([Data_set3D_reverse, Data_set3D], ["Depthdata<-560","LonD
 @test Data_VoteMap.fields[:VoteMap][10,9,1]==2
 @test Data_VoteMap.fields[:VoteMap][9 ,9,1]==1
 @test Data_VoteMap.fields[:VoteMap][9 ,9,2]==0
+
+# Test CountMap
+Data_CountMap = CountMap(Data_set2D,"Count",5,5)
+@test Data_CountMap.fields.CountMap[1,1] == 1.0
+@test Data_CountMap.fields.CountMap[2,2] == 0.4444444444444444
+@test Data_CountMap.fields.CountMap[4,4] == 0.0
 
 # Test rotation routines
 X,Y,Z   =   LonLatDepthGrid(10:20,30:40,-50:-10);
