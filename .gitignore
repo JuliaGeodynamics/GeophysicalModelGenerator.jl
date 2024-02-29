@@ -21,3 +21,4 @@ tutorial/test.tiff
 *.vts
 *.jld2
 *.tiff
+*.nc
