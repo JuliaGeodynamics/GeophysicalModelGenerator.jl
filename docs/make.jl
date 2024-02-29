@@ -1,23 +1,43 @@
-using GeophysicalModelGenerator
-using .GeophysicalModelGenerator
 using Documenter
+
+push!(LOAD_PATH, dirname(@__DIR__))
+
+using GeophysicalModelGenerator
+
+# Importing these activates package extensions
+import GLMakie, GMT
 
 #DocMeta.setdocmeta!(GeophysicalModelGenerator, :DocTestSetup, :(using GeophysicalModelGenerator); recursive=true)
 
 # Get GeophysicalModelGenerator.jl root directory
 GMG_root_dir = dirname(@__DIR__)
 
+license = read(joinpath(GMG_root_dir, "LICENSE.md"), String)
+write(joinpath(@__DIR__, "src", "man", "license.md"), license)
 # Copy list of authors to not need to synchronize it manually
 authors_text = read(joinpath(GMG_root_dir, "AUTHORS.md"), String)
-authors_text = replace(authors_text, "in the [LICENSE.md](LICENSE.md) file" => "under [License](@ref)")
+# authors_text = replace(authors_text, "in the [LICENSE.md](LICENSE.md) file" => "under [License](@ref)")
 write(joinpath(@__DIR__, "src", "man", "authors.md"), authors_text)
-#Contributing
-contributing = read(joinpath(GMG_root_dir, "CONTRIBUTING.md"), String)
-write(joinpath(@__DIR__, "src", "man", "contributing.md"), contributing)
 
 # Copy some files from the repository root directory to the docs and modify them
 # as necessary
 # Based on: https://github.com/ranocha/SummationByPartsOperators.jl/blob/0206a74140d5c6eb9921ca5021cb7bf2da1a306d/docs/make.jl#L27-L41
+open(joinpath(@__DIR__, "src", "man", "license.md"), "w") do io
+  # Point to source license file
+  println(io, """
+  ```@meta
+  EditURL = "https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/main/LICENSE.md"
+  ```
+  """)
+  # Write the modified contents
+  println(io, "# [License](@id license)")
+  println(io, "")
+  for line in eachline(joinpath(dirname(@__DIR__), "LICENSE.md"))
+    line = replace(line, "[AUTHORS.md](AUTHORS.md)" => "[Authors](@ref)")
+    println(io, "> ", line)
+  end
+end
+
 open(joinpath(@__DIR__, "src", "man", "code_of_conduct.md"), "w") do io
   # Point to source license file
   println(io, """
@@ -33,6 +53,7 @@ open(joinpath(@__DIR__, "src", "man", "code_of_conduct.md"), "w") do io
     println(io, "> ", line)
   end
 end
+
 open(joinpath(@__DIR__, "src", "man", "contributing.md"), "w") do io
     # Point to source license file
     println(io, """
@@ -46,14 +67,13 @@ open(joinpath(@__DIR__, "src", "man", "contributing.md"), "w") do io
     for line in eachline(joinpath(dirname(@__DIR__), "CONTRIBUTING.md"))
       line = replace(line, "[LICENSE.md](LICENSE.md)" => "[License](@ref)")
       line = replace(line, "[AUTHORS.md](AUTHORS.md)" => "[Authors](@ref)")
-    #   line = replace(line, "[AUTHORS.md](AUTHORS.md)" => "[Authors](@ref)")
       println(io, "> ", line)
     end
   end
 
 makedocs(;
     modules=[GeophysicalModelGenerator],
-    authors="Marcel Thielmann, Boris Kaus",
+    authors="Boris Kaus, Marcel Thielmann",
     sitename="GeophysicalModelGenerator.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
@@ -62,22 +82,21 @@ makedocs(;
         "Home" => "index.md",
         "Tutorials" => Any[
             "Overview" =>  "man/tutorials.md",
-            "3D seismic tomography from ASCII" =>  "man/tutorial_load3DSeismicData.md",
-            "3D seismic tomography from netCDF" =>  "man/tutorial_loadregular3DSeismicData_netCDF.md",
-            "Visualize Moho topography" =>  "man/tutorial_MohoTopo.md",
-            "Create GMT-based topography" =>  "man/tutorial_GMT_Topography.md",
-            "Coastlines" =>  "man/tutorial_Coastlines.md",
-            "Import screenshots" =>  "man/tutorial_Screenshot_To_Paraview.md",
-            "Interpolate irregular 3D seismic tomography" =>  "man/tutorial_loadirregular3DSeismicData.md",
-            "ETOPO1 Topography and geological maps" =>  "man/tutorial_GMT_Topography_GeologicalMap.md",
-            "ISC earthquake data" =>  "man/tutorial_ISC_data.md",
-            "Plot GPS vectors" =>  "man/tutorial_GPS.md",
-            "Read UTM data" =>  "man/tutorial_UTM.md",
-            "Fault Density Map" =>  "man/Tutorial_Fault_Map.md",
-            "VoteMaps" =>  "man/Tutorial_Votemaps.md",
-            "Kilometer-scale volcano" =>  "man/tutorial_local_Flegrei.md",
-            "Generating LaMEM model" =>  "man/LaPalma_example.md",
-            "Create movies" =>  "man/tutorial_time_Seismicity.md"
+            "1 - 3D seismic tomography from ASCII" =>  "man/tutorial_load3DSeismicData.md",
+            "2 - 3D seismic tomography from netCDF" =>  "man/tutorial_loadregular3DSeismicData_netCDF.md",
+            "3 - Visualize Moho topography" =>  "man/tutorial_MohoTopo.md",
+            "4 - Create GMT-based topography" =>  "man/tutorial_GMT_Topography.md",
+            "5 - Coastlines" =>  "man/tutorial_Coastlines.md",
+            "6 - Import screenshots" =>  "man/tutorial_Screenshot_To_Paraview.md",
+            "7 - Interpolate irregular 3D seismic tomography" =>  "man/tutorial_loadirregular3DSeismicData.md",
+            "8 - ETOPO1 Topography and geological maps" =>  "man/tutorial_GMT_Topography_GeologicalMap.md",
+            "9 - ISC earthquake data" =>  "man/tutorial_ISC_data.md",
+            "10 - Plot GPS vectors" =>  "man/tutorial_GPS.md",
+            "11 - Read UTM data" =>  "man/tutorial_UTM.md",
+            "12 - VoteMaps" =>  "man/Tutorial_Votemaps.md",
+            "13 - Campi Flegrei" =>  "man/tutorial_local_Flegrei.md",
+            "14 - Cartesian Volcano Model" =>  "man/LaPalma_example.md",
+            "15 - Create movies" =>  "man/tutorial_time_Seismicity.md"
         ],
         "User Guide" => Any[
             "Installation" =>  "man/installation.md",
@@ -94,8 +113,11 @@ makedocs(;
         "List of functions"  => "man/listfunctions.md",
         "Authors" => "man/authors.md",
         "Contributing" => "man/contributing.md",
-        "Code of Conduct" => "man/code_of_conduct.md"
+        "Code of Conduct" => "man/code_of_conduct.md",
+        "License" => "man/license.md"
     ],
+    pagesonly=true,
+    warnonly=true
 )
 
 deploydocs(;

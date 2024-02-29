@@ -1,5 +1,5 @@
 # test setting geometries in the different grid types
-using Test, GeophysicalModelGenerator
+using Test, GeophysicalModelGenerator, GeoParams
 
 
 # GeoData
@@ -96,3 +96,85 @@ ind         =   BelowSurface(Grid, Topo_cart);
 CharDim     =   GEO_units();
 Grid        =   CreateCartGrid(size=(10,20,30),x=(0.0km,10km), y=(0.0km, 10km), z=(-10.0km, 2.0km), CharDim=CharDim)
 @test Grid.Δ[2] ≈ 0.0005263157894736842
+
+
+# test 1D-explicit thermal solver for AddBox -----------
+nel         =   96
+Grid        =   CreateCartGrid(size=(nel,nel,nel),x=(-200.,200.), y=(-200.,200.), z=(-200.,0))
+Temp        =   zeros(Float64, Grid.N...);
+Phases      =   zeros(Int64,  Grid.N...);
+
+# 1) horizontally layer lithosphere; UpperCrust,LowerCrust,Mantle
+AddBox!(Phases,Temp,Grid, xlim=(-100,100), zlim=(-100,0), Origin=(0.0,0.0,0.0),
+    phase=LithosphericPhases(Layers=[20 15 65], Phases = [1 2 3], Tlab=nothing), 
+    DipAngle=0.0, T=LithosphericTemp(nz=201))
+
+@test sum(Temp[Int64(nel/2),Int64(nel/2),:]) ≈ 36131.638045729735
+
+# 2) inclined lithosphere; UpperCrust,LowerCrust,Mantle
+Temp    =   zeros(Float64, Grid.N...);
+Phases  =   zeros(Int64,  Grid.N...);
+
+AddBox!(Phases,Temp,Grid, xlim=(-100,100), zlim=(-100,0), Origin=(0.0,0.0,0.0),
+    phase=LithosphericPhases(Layers=[20 15 65], Phases = [1 2 3], Tlab=nothing), 
+    DipAngle=30.0, T=LithosphericTemp(nz=201))
+
+@test sum(Temp[Int64(nel/2),Int64(nel/2),:]) ≈ 41912.18172533137
+
+# 3) inclined lithosphere with respect to the default origin; UpperCrust,LowerCrust,Mantle
+Temp    =   zeros(Float64, Grid.N...);
+Phases  =   zeros(Int64,  Grid.N...);
+
+AddBox!(Phases,Temp,Grid, xlim=(-100,100), zlim=(-100,0),
+    phase=LithosphericPhases(Layers=[20 15 65], Phases = [1 2 3], Tlab=nothing), 
+    DipAngle=30.0, T=LithosphericTemp(nz=201))
+
+@test sum(Temp[Int64(nel/2),Int64(nel/2),:]) ≈ 41316.11499878003
+
+# 4) inclined lithosphere with only two layers
+Temp    =   zeros(Float64, Grid.N...);
+Phases  =   zeros(Int64,  Grid.N...);
+
+ρM=3.0e3            # Density [ kg/m^3 ]
+CpM=1.0e3           # Specific heat capacity [ J/kg/K ]
+kM=2.3              # Thermal conductivity [ W/m/K ]
+HM=0.0              # Radiogenic heat source per mass [H] = W/kg; [H] = [Q/rho]
+ρUC=2.7e3           # Density [ kg/m^3 ]
+CpUC=1.0e3          # Specific heat capacity [ J/kg/K ]
+kUC=3.0             # Thermal conductivity [ W/m/K ]
+HUC=617.0e-12       # Radiogenic heat source per mass [H] = W/kg; [H] = [Q/rho]
+
+rheology = (
+        # Name              = "UpperCrust",
+        SetMaterialParams(;
+            Phase               =   1,
+            Density             =   ConstantDensity(; ρ=ρUC),
+            HeatCapacity        =   ConstantHeatCapacity(; Cp=CpUC),
+            Conductivity        =   ConstantConductivity(; k=kUC),
+            RadioactiveHeat     =   ConstantRadioactiveHeat(; H_r=HUC*ρUC),     # [H] = W/m^3
+        ),
+        # Name              = "LithosphericMantle",
+        SetMaterialParams(;
+            Phase               =   2,
+            Density             =   ConstantDensity(; ρ=ρM),
+            HeatCapacity        =   ConstantHeatCapacity(; Cp=CpM),
+            Conductivity        =   ConstantConductivity(; k=kM),
+            RadioactiveHeat     =   ConstantRadioactiveHeat(; H_r=HM*ρM),       # [H] = W/m^3
+        ),
+    );
+
+AddBox!(Phases,Temp,Grid, xlim=(-100,100), zlim=(-100,0),
+    phase=LithosphericPhases(Layers=[20 80], Phases = [1 2], Tlab=nothing), 
+    DipAngle=30.0, T=LithosphericTemp(rheology=rheology,nz=201))
+
+@test sum(Temp[Int64(nel/2),Int64(nel/2),:]) ≈ 40513.969831615716
+
+# 5) using flux lower boundary conditions
+Temp    =   zeros(Float64, Grid.N...);
+Phases  =   zeros(Int64,  Grid.N...);
+
+AddBox!(Phases,Temp,Grid, xlim=(-100,100), zlim=(-100,0),
+    phase=LithosphericPhases(Layers=[20 15 65], Phases = [1 2 3], Tlab=nothing), 
+    DipAngle=30.0, T=LithosphericTemp(lbound="flux",nz=201))
+
+@test sum(Temp[Int64(nel/2),Int64(nel/2),:]) ≈ 37359.648604722104

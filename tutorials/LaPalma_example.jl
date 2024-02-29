@@ -1,7 +1,8 @@
-# # Create a 3D LaMEM setup for La Palma
+# # Create a Cartesian Model Setup for La Palma
 #
 # ## Aim
-# In this tutorial, your will learn how to use real data to create a geodynamic model setup with LaMEM. We will use the data of La Palma, which is a volcanic island that started erupting in mid september 2021.
+# In this tutorial, your will learn how to use real data to create a geodynamic model setup with LaMEM. 
+# We will use the data of the Cumbre Viejo eruption in La Palma, which is a volcanic island that erupted from mid september 2021 - december 2021.
 # LaMEM is a cartesian geodynamic model, which implies that you will have to transfer the data from `GeoData` to `CartData`.
 #
 #
@@ -10,9 +11,8 @@
 #  1) Topography
 #  2) Earthquake locations
 
-# We start with loading the required packages
-using GeophysicalModelGenerator, JLD2
-using GMT
+# We start with loading the required packages, which includes `GMT` to download topography (an optional dependency for `GeophysicalModelGenerator`)
+using GeophysicalModelGenerator, GMT
 
 # In case you managed to install GMT on your machine, you can automatically download the topography with
 Topo = ImportTopo(lon = [-18.7, -17.1], lat=[28.0, 29.2], file="@earth_relief_03s.grd")
@@ -56,6 +56,9 @@ Topo_LaMEM = ProjectCartData(Topo_LaMEM, Topo, proj)
 # Let's have a look at the data:
 Write_Paraview(EQ_cart,"EQ_cart",PointsData=true)
 Write_Paraview(Topo_LaMEM,"Topo_LaMEM")
+
+
+#= 
 
 # ## 3. Create LaMEM setup
 #
@@ -123,3 +126,5 @@ Save_LaMEMMarkersParallel(Model3D)
 
 #src Note: The markdown page is generated using:
 #src Literate.markdown("LaPalma_example.jl",outputdir="../man/", execute=true)
+
+=#

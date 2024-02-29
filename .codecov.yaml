@@ -7,4 +7,4 @@ coverage:
       default:
         informational: true
     changes: false
-comment: false
+comment: true

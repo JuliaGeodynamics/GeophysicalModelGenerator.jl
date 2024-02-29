@@ -1,4 +1,4 @@
-# Moho topography
+# 3 - Moho topography
 
 ## Goal
 This explains how to load the Moho topography for Italy and the Alps and create a paraview file

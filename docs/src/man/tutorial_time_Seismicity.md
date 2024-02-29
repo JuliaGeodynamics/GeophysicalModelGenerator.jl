@@ -1,5 +1,4 @@
-# How to create a movie to show seismic distribution through time
-
+# 15 - How to create a movie that shows the temporal evolution of seismicity
 ## Goal
 
 This tutorial creates a movie of the spatial variations in seismicity using the earthquakes previously visualized at Campi Flegrei caldera. We visualize it against the travel-time model and tomography:
@@ -76,7 +75,7 @@ julia>Movie_Paraview(pvd=movie, Finalize=true)
 
 ```
 
-This tutorial has created a new *TemporalSeismicity.pvd* that can be loaded in Paraview.
+This tutorial has created a new *TemporalSeismicity.pvd* file that can be loaded in Paraview.
 
 ![Tutorial_SeismicTime_PVD](../assets/img/Tutorial_SeismicityTime_2.png)
 
