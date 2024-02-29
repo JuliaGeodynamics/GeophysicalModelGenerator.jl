@@ -348,6 +348,6 @@ function GetLonLatDepthMag_QuakeML(filename::String)
         mag[ievent]   = parse(Float64,string(collect(child_nodes(get_elements_by_tagname(get_elements_by_tagname(magnitude[1],"mag")[1],"value")[1]))[1]));
     end
     
-    Data_ISC = GeoData(lon,lat,depth,(Magnitude=mag,Depth=depth));
+    Data_ISC = GeoData(lon,lat,-1*depth/1e3,(Magnitude=mag,Depth=-1*depth/1e3*km));
     return Data_ISC
 end
