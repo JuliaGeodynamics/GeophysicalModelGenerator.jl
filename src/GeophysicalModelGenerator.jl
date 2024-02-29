@@ -42,6 +42,7 @@ include("Setup_geometry.jl")
 include("stl.jl")
 include("ProfileProcessing.jl")
 include("IO.jl")
+include("event_counts.jl")
 
 # Add optional routines (only activated when the packages are loaded)
 
