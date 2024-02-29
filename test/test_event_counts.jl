@@ -22,7 +22,7 @@ R = (sum(pt.^2,dims=2)).^(1/3)
 ind = findall(R.< 5);
 
 # test the basic routine
-counts = PointData2NearestGrid(pt[:,1],pt[:,2],pt[:,3], NumValue(Grid.x),NumValue(Grid.y), NumValue(Grid.z); radius_factor=2)
+counts = PointData2NearestGrid(pt[:,1],pt[:,2],pt[:,3], NumValue(Grid_cart.x),NumValue(Grid_cart.y), NumValue(Grid_cart.z); radius_factor=2)
 @test extrema(counts) == (0, 86)
 
 # Test if the grid is on a CartData grid
