@@ -168,7 +168,7 @@ AddBox!(Phases,Temp,Grid, xlim=(-100,100), zlim=(-100,0),
 
 @test sum(Temp[Int64(nel/2),Int64(nel/2),:]) ≈ 40513.969831615716
 
-# using flux lower boundary conditions
+# 5) using flux lower boundary conditions
 Temp    =   zeros(Float64, Grid.N...);
 Phases  =   zeros(Int64,  Grid.N...);
 

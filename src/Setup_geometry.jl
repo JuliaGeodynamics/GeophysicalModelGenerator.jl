@@ -727,7 +727,7 @@ function Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp)
 end
 
 """
-    SpreadingRateTemp(Tsurface=0.0, Tpot=1350.0, dTadi=0.5, 
+    LithosphericTemp(Tsurface=0.0, Tpot=1350.0, dTadi=0.5, 
                         ubound="const", lbound="const, utbf = 50.0e-3, ltbf = 10.0e-3, 
                         age = 120.0, dtfac = 0.9, nz = 201, 
                         rheology = example_CLrheology() 
