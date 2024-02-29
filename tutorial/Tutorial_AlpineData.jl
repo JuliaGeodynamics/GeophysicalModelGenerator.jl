@@ -31,7 +31,6 @@ Write_Paraview(Topo, "Topography_Alps")
 # Also, if you want to save this data for later use in julia, you can save it as JLD2 file using the function save_GMG:
 save_GMG("Topography_Alps",Topo)
 
-
 # ##  2. Moho topography
 # When looking at data concerning the Alpine subsurface, we are often interested in the depth of the [Moho](https://en.wikipedia.org/wiki/Mohorovi%C4%8Di%C4%87_discontinuity). 
 # ### 2.1 Download and import of the data
@@ -144,15 +143,23 @@ for iunit = 1:length(units)
     filename = "Mrozek_Moho_Grid_" * units[iunit]
     Write_Paraview(Data_Moho, filename)
     save_GMG(filename,Topo)
+    
+    # Just for checking, we can now also plot both the original data and the resulting interpolated Moho
+
 
 end
+
+
+
 
 # ## 3. Seismicity
 # Earthquakes are always interesting, so we will now import the seismicity data from ISC. 
 # ### 3.1 Download and import
-# ISC provides a method to download parts of it's catalogue via a web interface. See the description of the interface [here](http://www.isc.ac.uk/iscbulletin/search/webservices/bulletin/).
-# We will now download all reviewed earthquake data between 1990 and 2000 in the same region as the extracted topography. We will only consider earthquakes with a magnitude larger than 3. The resulting dataset is quite large, so consider to either limit the time range or the magnitude range.
-download_data("http://www.isc.ac.uk/cgi-bin/web-db-run?request=COLLECTED&req_agcy=ISC-EHB&out_format=CATCSV&ctr_lat=&ctr_lon=&radius=&max_dist_units=deg&searchshape=RECT&top_lat=49&bot_lat=37&left_lon=4&right_lon=20&srn=&grn=&start_year=1990&start_month=1&start_day=01&start_time=00%3A00%3A00&end_year=2000&end_month=12&end_day=01&end_time=23%3A00%3A00&min_dep=&max_dep=&min_mag=3.0&max_mag=&req_mag_type=Any&req_mag_agcy=Any&table_owner=iscehb
+# ISC provides a method to download parts of it's catalogue via a web interface. 
+# See the description of the interface [here](http://www.isc.ac.uk/iscbulletin/search/webservices/bulletin/).
+# We will now download all reviewed earthquake data between 1990 and 2000 in the same region as the extracted topography. 
+# We will only consider earthquakes with a magnitude larger than 3. The resulting dataset is quite large, so consider to either limit the time range or the magnitude range.
+download_data("http://www.isc.ac.uk/cgi-bin/web-db-run?request=COLLECTED&req_agcy=ISC-EHB&out_format=CATCSV&ctr_lat=&ctr_lon=&radius=&max_dist_units=deg&searchshape=RECT&top_lat=49&bot_lat=37&left_lon=4&right_lon=20&srn=&grn=&start_year=1990&start_month=1&start_day=01&start_time=00%3A00%3A00&end_year=2015&end_month=12&end_day=01&end_time=23%3A00%3A00&min_dep=&max_dep=&min_mag=3.0&max_mag=&req_mag_type=Any&req_mag_agcy=Any&table_owner=iscehb
 ","ISCData.xml")
 
 # Once the data has been downloaded, we can extract lon/lat/depth/magnitude using one of the GMG functions, which will give us a GeoData structure:
@@ -165,7 +172,7 @@ save_GMG("EQ_ISC",Data_ISC)
 # Besides data on the structure of the subsurface, it is also nice to see the dynamics of a region. Dynamic processes can be nicely seen in the surface velocities given by GPS data. 
 # As GPS data consists of three-dimensional vectors, we have to treat it differently than the seismicity data in the previous section. The example is based on a paper by Sanchez et al. (2018) [https://essd.copernicus.org/articles/10/1503/2018/#section7](https://essd.copernicus.org/articles/10/1503/2018/#section7).
 #
-# ### 3.1. Download and import GPS data: 
+# ### 4.1. Download and import GPS data: 
 # The data related to the paper can be downloaded from: [here](https://doi.pangaea.de/10.1594/PANGAEA.886889). There you will find links to several data sets. 
 # Some are the data on the actual stations and some are interpolated data on a grid. Here, we will use the gridded data as an example (which interpolates the ), 
 # and will therefore download the following data sets:
@@ -176,8 +183,9 @@ save_GMG("EQ_ISC",Data_ISC)
 download_data("https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_DEF_HZ.GRD","ALPS2017_DEF_HZ.GRD")
 download_data("https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_DEF_VT.GRD","ALPS2017_DEF_VT.GRD")
 
-# Next, we have a look at the data. We will use the package `CSV.jl` to load the comma-separated data.
-# Let's have a look at the file `ALPS2017_DEF_VT.GRD`. If we open it with a text editor, we see that the data starts at line 18, and has the following format:
+# Next, we will load the data. Us above, we will use `DelimitedFiles.jl` to load the data. Let's first start with the vertical velocities,
+# which are stored in `ALPS2017_DEF_VT.GRD`. If we open that file with a text editor, we see that the data starts at line 18, and has it the 
+# following format:
 #
 # Column 1: Longitude [degrees]
 # Column 2: Latitude [degrees]
@@ -186,12 +194,79 @@ download_data("https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_
 #
 # So we have 4 columns with data values, and the data is separated by spaces.
 # We can load that in julia as:
-data_vhz = readdlm("ALPS2017_DEF_HZ.GRD",header=false,skipstart=18);
-data_vz = readdlm("ALPS2017_DEF_VT.GRD",header=false,skipstart=17);
-  
+data_vz = readdlm("ALPS2017_DEF_VT.GRD",header=false,skipstart=17)
+
 lon_vz =   data_vz[:,1]
 lat_vz =   data_vz[:,2]
-vz     =   data_vz[:,3];
+vz     =   data_vz[:,3]
+
+# To have a closer look at the data, let's plot it. To do so, we will employ the julia package `Plots.jl`.
+using Plots
+Plots.scatter(lon_vz,lat_vz)
+
+# We can see that the data is distributed on a regular grid. We can determine the size of this grid with:
+nlon = unique(lon_vz)
+nlat = unique(lat_vz)
+
+# So we have a `41` by `31` grid. GMG requires 3D matrixes for the data (as we want to plot the results in Paraview in 3D). 
+# That is why we first initialize 3D matrixes for `lon,lat,Vz`:
+
+Lon   =   zeros(nlon,nlat,1)
+Lat   =   zeros(nlon,nlat,1)
+Vz    =   zeros(nlon,nlat,1)
+
+# And we can reshape the vectors accordingly:
+
+Lon[:,:,1] =   reshape(lon_Vz,(nlon,nlat))
+Lat[:,:,1] =   reshape(lat_Vz,(nlon,nlat))
+Vz[:,:,1]  =   reshape(vz,(nlon,nlat))
+
+# Now that we have imported the vertical velocities, let's do the same for the horizontal ones.
+# Again looking at the data, we see that it starts at line 19 and is organized as follows:
+# Column 1: Longitude [degrees]
+# Column 2: Latitude [degrees]
+# Column 3: East component of the deformation [m/a]
+# Column 4: North component of the deformation [m/a]
+# Column 5: Uncertainty of the east component [m/a]
+# Column 6: Uncertainty of the north component [m/a]
+#
+# Let's load the data again and extract the relevant data:
+data_vh = readdlm("ALPS2017_DEF_HZ.GRD",header=false,skipstart=18)
+
+lon_vh =   data_vh[:,1]
+lat_vh =   data_vh[:,2]
+ve     =   data_vh[:,3]
+vn     =   data_vh[:,4]
+
+# Let's have a look at how the data points of this dataset are distributed:
+Plots.scatter(lon_vh,lat_vh)
+# So it appears that the horizontal velocities are given on the same regular grid as well, 
+# but not in regions which are covered with water. 
+# This thus requires a bit more work to transfer to a rectangular grid. 
+# The strategy we take is to first define 2D matrixes with horizontal velocities with the same size as Vz 
+# which are initialized with `NaN` (not a number).
+Ve = ones(size(Vz))*NaN;
+Vn = ones(size(Vz))*NaN;
+# Next we loop over all points in `lon_Hz,lat_Hz` and place them into the 2D matrixes:
+for i in eachindex(lon_vh)
+    ind = intersect(findall(x->x==lon_vh[i], lon), findall(x->x==lat_vh[i], lat))
+    Ve[ind] .= ve[i];
+    Vn[ind] .= vn[i];
+end
+
+# At this stage, we have horizontal and vertical velocities in units of `m/yr`. 
+# Yet, given the small velocities in the Alps, it makes more sense to have them in units of `mm/yr`:
+Vz = Vz*1000;
+Ve = Ve*1000;
+Vn = Vn*1000;
+# And the magnitude is
+Vmagnitude  =   sqrt.(Ve.^2 + Vn.^2 + Vz.^2); 
+
+# ### 4.2 Interpolate topogrpaphy on the grid
+# At this stage we have the 3D velocity components on a grid. Yet, we don't have information yet about the elevation of the stations (as the provided data set did not give this). 
+# We could ignore that and set the elevation to zero, which would allow saving the data directly. 
+# Yet, a better way is to load the topographic map of the area and interpolate the elevation to the velocity grid.
+
 
 
 ```
