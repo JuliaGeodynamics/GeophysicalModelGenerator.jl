@@ -4,7 +4,9 @@
 #
 # Author: Marcel Thielmann, 05/2021
 
-export Screenshot_To_GeoData, Screenshot_To_CartData, Screenshot_To_UTMData
+using LightXML
+
+export Screenshot_To_GeoData, Screenshot_To_CartData, Screenshot_To_UTMData, GetLonLatDepthMag_QuakeML
 
 # import CSV data using standard library functions
 # here we assume that the data is indeed comma separated and that comments are preceded with a "#"
@@ -309,7 +311,43 @@ function Screenshot_To_UTMData(filename::String, Corner_LowerLeft, Corner_UpperR
 
       # first create a GeoData struct
       Data_UTM = Screenshot_To_GeoData(filename, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, Cartesian=false, UTM=true, UTMzone=UTMzone, isnorth=isnorth, fieldname=fieldname)
-
       return Data_UTM
+end
 
+"""
+    Data = GetLonLatDepthMag_QuakeML(filename::String)
+
+Extracts longitude, latitude, depth and magnitude from a QuakeML file that has been e.g. downloaded from ISC. The data is then returned in GeoData format.
+"""
+function GetLonLatDepthMag_QuakeML(filename::String)
+    # The QuakeML format consists of a tree with quite a lot of branches, so we have to traverse it to quite some extent to get the desired values
+    # using LightXML: extension???
+    xdoc = parse_file(filename); # parse the whole file
+    xroot =root(xdoc);
+    catalogues = get_elements_by_tagname(xroot,"eventParameters");
+    catalogue  = catalogues[1];
+    events     = get_elements_by_tagname(catalogue,"event"); # now those are all events
+    num_events = size(events,1);
+
+    # allocate, lat,lon,depth,magnitude
+    lon    = zeros(num_events,1);
+    lat    = zeros(num_events,1);
+    depth  = zeros(num_events,1);
+    mag    = zeros(num_events,1);
+
+    # now loop over the events and assign the respective values
+    for ievent = 1:num_events
+        tmp_event    = events[ievent];
+        origin = get_elements_by_tagname(events[ievent], "origin");
+        magnitude = get_elements_by_tagname(events[ievent], "magnitude");
+
+        # this is a bit dirty, if you find a better/cleaner way, be my guest...
+        lon[ievent]   = parse(Float64,string(collect(child_nodes(collect(child_elements(get_elements_by_tagname(origin[1], "longitude")[1]))[1]))[1]))
+        lat[ievent]   = parse(Float64,string(collect(child_nodes(collect(child_elements(get_elements_by_tagname(origin[1], "latitude")[1]))[1]))[1]))
+        depth[ievent] = parse(Float64,string(collect(child_nodes(collect(child_elements(get_elements_by_tagname(origin[1], "depth")[1]))[1]))[1]))
+        mag[ievent]   = parse(Float64,string(collect(child_nodes(get_elements_by_tagname(get_elements_by_tagname(magnitude[1],"mag")[1],"value")[1]))[1]));
+    end
+    
+    Data_ISC = GeoData(lon,lat,-1*depth/1e3,(Magnitude=mag,Depth=-1*depth/1e3*km));
+    return Data_ISC
 end
