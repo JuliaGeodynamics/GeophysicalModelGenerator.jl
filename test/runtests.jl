@@ -44,6 +44,10 @@ end
     include("test_GMT.jl")
 end
 
+@testset "Event counts" begin
+    include("test_event_counts.jl")
+end
+
 
 # Cleanup 
 foreach(rm, filter(endswith(".vts"), readdir()))

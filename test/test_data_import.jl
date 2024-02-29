@@ -78,3 +78,10 @@ data_Image          =   Screenshot_To_UTMData(filename,Corner_LowerLeft, Corner_
 @test data_Image.EW.val[22] ≈ 0.42424242424242425
 @test data_Image.NS.val[22] ≈ 48.666666666666664
 @test Value(data_Image.depth[22]) ≈ -15.0m
+
+# test the import of xml files from ISC
+# the search criteria are set in a way that only one event should be found
+download_data("http://www.isc.ac.uk/cgi-bin/web-db-run?request=COLLECTED&req_agcy=ISC-EHB&out_format=QuakeML&ctr_lat=&ctr_lon=&radius=&max_dist_units=deg&searchshape=RECT&top_lat=49&bot_lat=37&left_lon=4&right_lon=20&srn=&grn=&start_year=2000&start_month=1&start_day=01&start_time=00%3A00%3A00&end_year=2005&end_month=12&end_day=31&end_time=00%3A00%3A00&min_dep=&max_dep=&min_mag=5.8&max_mag=&req_mag_type=Any&req_mag_agcy=Any&min_def=&max_def=&include_magnitudes=on&include_links=on&include_headers=on&include_comments=on&table_owner=iscehb","ISCTest.xml")
+Data_ISC = GetLonLatDepthMag_QuakeML("ISCTest.xml");
+@test Value(Data_ISC.depth[1])==-13.0km
+@test Data_ISC.fields.Magnitude[1]==5.8
