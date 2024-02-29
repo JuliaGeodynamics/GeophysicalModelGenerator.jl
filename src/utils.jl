@@ -1833,10 +1833,6 @@ function CountMap(DataSet::GeoData,field::String,stepslon::Int64,stepslat::Int64
 
     # create new GeoData
     Lon3D,Lat3D, Data = LonLatDepthGrid(loncen,latcen,0);
-    print(size(lonstep),"\n")
-    print(size(latstep),"\n")
-    print(size(countmap),"\n")
-    print(size(Data[:,:,1]),"\n")
     Data[:,:,1]       .= countmap
     DatasetCountmap   = GeoData(Lon3D,Lat3D,Data,(CountMap=Data,))
 
