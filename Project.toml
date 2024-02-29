@@ -57,7 +57,8 @@ julia = "1.9"
 [extras]
 GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 GMT = "5752ebe1-31b9-557e-87aa-f909b540aa54"
+StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "GMT"]
+test = ["Test", "GMT", "StableRNGs"]
