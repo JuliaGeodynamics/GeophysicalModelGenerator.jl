@@ -1770,31 +1770,33 @@ function VoteMap(DataSets::GeoData, criteria::String; dims=(50,50,50))
 end
 
 """
-CountMap(DataSet::GeoData,field::String,stepslon::Int64,stepslat::Int64)
+    DatasetCountMap = CountMap(DataSet::GeoData,field::String,stepslon::Int64,stepslat::Int64)
 
 Counts the ones in a 2D GeoData field that is specified by "field" in a control area which is defined by steplon and steplat.
 steplon is the number of control areas in lon direction and steplat the number of control areas in lat direction
 The counts per control area are normalized by the highest count
 
 
-    julia> Data_Faults         = GeoData(Lon3D,Lat3D,Faults,(Faults=Faults,))
-    GeoData 
-        size      : (375, 208, 1)
-        lon       ϵ [ -9.932408319802885 : 34.93985125012068]
-        lat       ϵ [ 35.086096468211394 : 59.919210145128545]
-        depth     ϵ [ 0.0 : 1.0]
-        fields    : (:Faults,)
+```julia
+julia> Data_Faults         = GeoData(Lon3D,Lat3D,Faults,(Faults=Faults,))
+GeoData 
+    size      : (375, 208, 1)
+    lon       ϵ [ -9.932408319802885 : 34.93985125012068]
+    lat       ϵ [ 35.086096468211394 : 59.919210145128545]
+    depth     ϵ [ 0.0 : 1.0]
+    fields    : (:Faults,)
 
-    julia> steplon  = 125
-    julia> steplat  = 70
-    julia> countmap = CountMap(Data_Faults,"Faults",steplon,steplat)
+julia> steplon  = 125
+julia> steplat  = 70
+julia> countmap = CountMap(Data_Faults,"Faults",steplon,steplat)
 
-    GeoData 
-        size      : (124, 69, 1)
-        lon       ϵ [ -9.751471789279 : 34.75891471959677]
-        lat       ϵ [ 35.26604656731949 : 59.73926004602028]
-        depth     ϵ [ 0.0 : 1.0]
-        fields    : (:CountMap,)
+GeoData 
+    size      : (124, 69, 1)
+    lon       ϵ [ -9.751471789279 : 34.75891471959677]
+    lat       ϵ [ 35.26604656731949 : 59.73926004602028]
+    depth     ϵ [ 0.0 : 1.0]
+    fields    : (:CountMap,)
+```julia
 
 """
 function CountMap(DataSet::GeoData,field::String,stepslon::Int64,stepslat::Int64)
@@ -1834,9 +1836,9 @@ function CountMap(DataSet::GeoData,field::String,stepslon::Int64,stepslat::Int64
     # create new GeoData
     Lon3D,Lat3D, Data = LonLatDepthGrid(loncen,latcen,0);
     Data[:,:,1]       .= countmap
-    DatasetCountmap   = GeoData(Lon3D,Lat3D,Data,(CountMap=Data,))
+    DatasetCountMap   = GeoData(Lon3D,Lat3D,Data,(CountMap=Data,))
 
-    return DatasetCountmap
+    return DatasetCountMap
 end
 
 """
