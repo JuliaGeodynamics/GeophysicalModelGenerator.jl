@@ -108,7 +108,7 @@ for iunit = 1:length(units)
     lat_tmp     = lat[ind_unit]
     depth_tmp   = depth[ind_unit]
     
-    # for later checking, we can save the original point data as a VTK file: 
+    # for later checking, we can now save the original point data as a VTK file: 
     data_Moho = GeophysicalModelGenerator.GeoData(lon_tmp,lat_tmp,depth_tmp,(MohoDepth=depth_tmp*km,))
     filename = "Mroczek_Moho_" * units[iunit]
     Write_Paraview(data_Moho, filename, PointsData=true)
@@ -152,32 +152,14 @@ end
 # ### 3.1 Download and import
 # ISC provides a method to download parts of it's catalogue via a web interface. See the description of the interface [here](http://www.isc.ac.uk/iscbulletin/search/webservices/bulletin/).
 # We will now download all reviewed earthquake data between 1990 and 2000 in the same region as the extracted topography. We will only consider earthquakes with a magnitude larger than 3. The resulting dataset is quite large, so consider to either limit the time range or the magnitude range.
-download_data("http://www.isc.ac.uk/cgi-bin/web-db-run?out_format=QuakeML&request=REVIEWED&searchshape=RECT&bot_lat=37&top_lat=49&left_lon=4&right_lon=20&start_year=1990&start_month=01&start_day=01&start_time=00:00:00&end_year=2000&end_month=12&end_day=31&end_time=15:00:00&min_mag=3.0&req_mag_type=Any&prime_only=on","ISCData.xml")
+download_data("http://www.isc.ac.uk/cgi-bin/web-db-run?request=COLLECTED&req_agcy=ISC-EHB&out_format=CATCSV&ctr_lat=&ctr_lon=&radius=&max_dist_units=deg&searchshape=RECT&top_lat=49&bot_lat=37&left_lon=4&right_lon=20&srn=&grn=&start_year=1990&start_month=1&start_day=01&start_time=00%3A00%3A00&end_year=2000&end_month=12&end_day=01&end_time=23%3A00%3A00&min_dep=&max_dep=&min_mag=3.0&max_mag=&req_mag_type=Any&req_mag_agcy=Any&table_owner=iscehb
+","ISCData.xml")
 
-# ### 3.2 Read data into Julia
-The main data-file, `ISC1.dat`, has 23 lines of comments (indicated with `#`), after which the data starts. We can use the julia package [https://github.com/JuliaData/CSV.jl](CSV.jl) to read in the data, and tell it that the data is separated by `,`.
-```julia-repl
-julia> using CSV, GeophysicalModelGenerator
-julia> data_file        =   CSV.File("ISC1.dat",datarow=24,header=false,delim=',')
-```
-As this data contains a lot of information that we are not interested in at the moment and which is given in non-numeric formats (e.g. date, time etc.), we will use our helper function *ParseColumns_CSV_File* to only extract columns with numeric data.
-```julia-repl
-julia> data        =   ParseColumns_CSV_File(data_file, 14)
-julia> lon         = data[:,2];
-julia> lat         = data[:,1];
-julia> depth       = -1* data[:,3];
-julia> magnitude   = data[:,4];
-```
-Converting this data to a GeoStruct data and to export is to Paraview is then straightforward.
-```julia-repl
-julia> EQ_Data = GeoData(lon,lat,depth,(Magnitude=magnitude,Depth=depth));
-julia> Write_Paraview(EQ_Data, "EQ_ISC", PointsData=true)
-```
-The result the looks like this (plotted here together with the topography):
-
-![Tutorial_ISC](../assets/img/Tutorial_ISC.png)
-
-In case you are interested: we are employing the `oleron` scientific colormap from [Fabio Crameri's scientific colormap package](https://www.fabiocrameri.ch/colourmaps/) here.
+# Once the data has been downloaded, we can extract lon/lat/depth/magnitude using one of the GMG functions, which will give us a GeoData structure:
+Data_ISC = GetLonLatDepthMag_QuakeML("ISCData.xml");
+# As before, we can export this dataset to VTK annd also save it as a jld2 file (as we are now exporting point data, we have to use the option PointsData=true):
+Write_Paraview(EQ_Data, "EQ_ISC", PointsData=true);
+save_GMG("EQ_ISC",Data_ISC)
 
 # ## 4. GPS data
 # Besides data on the structure of the subsurface, it is also nice to see the dynamics of a region. Dynamic processes can be nicely seen in the surface velocities given by GPS data. 
@@ -211,8 +193,6 @@ lon_vz =   data_vz[:,1]
 lat_vz =   data_vz[:,2]
 vz     =   data_vz[:,3];
 
-
-#=
 
 ```
 
@@ -359,4 +339,4 @@ In order to plot the velocities as arrows, you need to select the `Glyph` tool (
 The arrows can now be colored by the individual velocity components or its magnitude.
 
 
-=#
+
