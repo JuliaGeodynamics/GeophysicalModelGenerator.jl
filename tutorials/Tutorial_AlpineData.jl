@@ -160,7 +160,7 @@ end
 
 # Once the data has been downloaded, we can extract lon/lat/depth/magnitude using one of the GMG functions, which will give us a GeoData structure:
 Data_ISC = GetLonLatDepthMag_QuakeML("ISCData.xml");
-# As before, we can export this dataset to VTK annd also save it as a jld2 file (as we are now exporting point data, we have to use the option PointsData=true):
+# As before, we can export this dataset to VTK and also save it as a jld2 file (as we are now exporting point data, we have to use the option PointsData=true):
 Write_Paraview(Data_ISC, "EQ_ISC", PointsData=true);
 save_GMG("EQ_ISC",Data_ISC)
 
