@@ -6,7 +6,7 @@ export PointData2NearestGrid
 """
     Grid_counts = PointData2NearestGrid(Point::CartData, Grid::CartData; radius_factor=1)
 
-Uses nearest neigbour interpolation to count how many points (given by `Point`) are in the vicinity of a 3D `Grid`. 
+Uses nearest neighbour interpolation to count how many points (given by `Point`) are in the vicinity of a 3D `Grid`. 
 The search radius is `R=radius_factor*(Δx² + Δy² + Δz²)^(1/3)`
 
 `Point` should have 1D coordinate vectors
@@ -28,7 +28,7 @@ end
 """
     Grid_counts = PointData2NearestGrid(pt_x,pt_y,pt_z, Grid::CartData; radius_factor=1)
 
-Uses nearest neigbour interpolation to count how many points (given by `pt_x`,`pt_y`,`pt_z` coordinate vectors) are in the 
+Uses nearest neighbour interpolation to count how many points (given by `pt_x`,`pt_y`,`pt_z` coordinate vectors) are in the 
 vicinity of 3D `CartGrid` specified by `Grid`. The search radius is `R=radius_factor*(Δx² + Δy² + Δz²)^(1/3)`
 
 `Grid_counts` is `Grid` but with an additional field `Count` that has the number of hits
@@ -46,7 +46,7 @@ end
 """
     Grid_counts = PointData2NearestGrid(Point::GeoData, Grid::GeoData; radius_factor=1)
 
-Uses nearest neigbour interpolation to count how many points (given by `Point`) are in the vicinity of a 3D `Grid`. 
+Uses nearest neighbour interpolation to count how many points (given by `Point`) are in the vicinity of a 3D `Grid`. 
 The search radius is `R=radius_factor*(Δx² + Δy² + Δz²)^(1/3)`
 
 `Point` should have 1D coordinate vectors
@@ -68,7 +68,7 @@ end
 """
     Grid_counts = PointData2NearestGrid(pt_x,pt_y,pt_z, Grid::GeoData; radius_factor=1)
 
-Uses nearest neigbour interpolation to count how many points (given by `pt_x`,`pt_y`,`pt_z` coordinate vectors) are in the 
+Uses nearest neighbour interpolation to count how many points (given by `pt_x`,`pt_y`,`pt_z` coordinate vectors) are in the 
 vicinity of 3D `GeoData` specified by `Grid`. The search radius is `R=radius_factor*(Δx² + Δy² + Δz²)^(1/3)`
 
 `Grid_counts` is `Grid` but with an additional field `Count` that has the number of hits
@@ -85,7 +85,7 @@ end
 """
     count = PointData2NearestGrid(pt_x,pt_y,pt_z, X,Y,Z; radius_factor=1)
 
-This uses nearest neigbour interpolation to count how many points (given by `pt_x`,`pt_y`,`pt_z` coordinate vectors) are in the 
+This uses nearest neighbour interpolation to count how many points (given by `pt_x`,`pt_y`,`pt_z` coordinate vectors) are in the 
 vicinity of 3D grid point specified by `X`,`Y`,`Z` 3D coordinate arrays, with regular spacing `(Δx,Δy,Δz)`.
 The search radius is `R=radius_factor*(Δx² + Δy² + Δz²)^(1/3)`
 
