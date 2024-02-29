@@ -12,7 +12,7 @@
 # To add the GMT package, simply add it with the julia package manager:
 # ```julia
 # julia> ]
-# (@v1.8) pkg> add GMT
+# (@v1.10) pkg> add GMT
 # ```
 # and load both GMG and GMT with:
 
@@ -20,7 +20,7 @@ using GeophysicalModelGenerator, GMT
 
 # When loading both packages, several GMT routines within GMG will be loaded. One of these routines is the function ImportTopo, where one simply has to provide the region for which to download the topographic data and the data source.
 
-Topo = ImportTopo([4,20,37,49], file="@earth_relief_01m.grd")
+Topo = ImportTopo([4,20,37,50], file="@earth_relief_01m.grd")
 # The data is available in different resolutions; see [here](http://gmt.soest.hawaii.edu/doc/latest/grdimage.html) for an overview. Generally, it is advisable to not use the largest resolution if you have a large area. 
 
 # If you have issues with loading the topography with GMT, there is also the alternative to download the data yourself and import it using Rasters.jl. This procedure is explained here. (ADD LINK TO TUTORIAL)
@@ -149,9 +149,6 @@ for iunit = 1:length(units)
 
 end
 
-
-
-
 # ## 3. Seismicity
 # Earthquakes are always interesting, so we will now import the seismicity data from ISC. 
 # ### 3.1 Download and import
@@ -279,3 +276,6 @@ Data_GPS_Sanchez = GeoData(Lon,Lat,topo_v,(Velocity_mm_year=(Ve,Vn,Vz),V_north=V
 # And as always, we'll save everything in VTK format and in jld2 format
 Write_Paraview(Data_GPS_Sanchez, "GPS_Sanchez")
 save_GMG("GPS_Sanchez",Data_GPS_Sanchez)
+
+
+# Paffrath
