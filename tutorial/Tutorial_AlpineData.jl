@@ -165,7 +165,7 @@ download_data("http://www.isc.ac.uk/cgi-bin/web-db-run?request=COLLECTED&req_agc
 # Once the data has been downloaded, we can extract lon/lat/depth/magnitude using one of the GMG functions, which will give us a GeoData structure:
 Data_ISC = GetLonLatDepthMag_QuakeML("ISCData.xml");
 # As before, we can export this dataset to VTK annd also save it as a jld2 file (as we are now exporting point data, we have to use the option PointsData=true):
-Write_Paraview(EQ_Data, "EQ_ISC", PointsData=true);
+Write_Paraview(Data_ISC, "EQ_ISC", PointsData=true);
 save_GMG("EQ_ISC",Data_ISC)
 
 # ## 4. GPS data
@@ -205,8 +205,8 @@ using Plots
 Plots.scatter(lon_vz,lat_vz)
 
 # We can see that the data is distributed on a regular grid. We can determine the size of this grid with:
-nlon = unique(lon_vz)
-nlat = unique(lat_vz)
+nlon = length(unique(lon_vz))
+nlat = length(unique(lat_vz))
 
 # So we have a `41` by `31` grid. GMG requires 3D matrixes for the data (as we want to plot the results in Paraview in 3D). 
 # That is why we first initialize 3D matrixes for `lon,lat,Vz`:
@@ -217,8 +217,8 @@ Vz    =   zeros(nlon,nlat,1)
 
 # And we can reshape the vectors accordingly:
 
-Lon[:,:,1] =   reshape(lon_Vz,(nlon,nlat))
-Lat[:,:,1] =   reshape(lat_Vz,(nlon,nlat))
+Lon[:,:,1] =   reshape(lon_vz,(nlon,nlat))
+Lat[:,:,1] =   reshape(lat_vz,(nlon,nlat))
 Vz[:,:,1]  =   reshape(vz,(nlon,nlat))
 
 # Now that we have imported the vertical velocities, let's do the same for the horizontal ones.
@@ -249,7 +249,7 @@ Ve = ones(size(Vz))*NaN;
 Vn = ones(size(Vz))*NaN;
 # Next we loop over all points in `lon_Hz,lat_Hz` and place them into the 2D matrixes:
 for i in eachindex(lon_vh)
-    ind = intersect(findall(x->x==lon_vh[i], lon), findall(x->x==lat_vh[i], lat))
+    ind = intersect(findall(x->x==lon_vh[i], Lon), findall(x->x==lat_vh[i], Lat))
     Ve[ind] .= ve[i];
     Vn[ind] .= vn[i];
 end
@@ -262,156 +262,20 @@ Vn = Vn*1000;
 # And the magnitude is
 Vmagnitude  =   sqrt.(Ve.^2 + Vn.^2 + Vz.^2); 
 
-# ### 4.2 Interpolate topogrpaphy on the grid
+# ### 4.2 Interpolate topography on the grid
 # At this stage we have the 3D velocity components on a grid. Yet, we don't have information yet about the elevation of the stations (as the provided data set did not give this). 
 # We could ignore that and set the elevation to zero, which would allow saving the data directly. 
 # Yet, a better way is to load the topographic map of the area and interpolate the elevation to the velocity grid.
+# As we have already the loaded the topographic map in section 1 of this tutorial, we can simply reuse it. To interpolate, we will use the function `InterpolateDataFields2D`
 
+topo_v, fields_v = InterpolateDataFields2D(Topo, Lon, Lat)
 
+# The variable we are interested in is the variable topo_v. fields_v contains the interpolation of all the fields in Topo to the new grid and we only keep it here for completeness.
+# Note that as the topography in the Topo variable is in km, topo_v will also be given the unit of km.
+# Next, we have to combine the data in a GeoData structure.
 
-```
+Data_GPS_Sanchez = GeoData(Lon,Lat,topo_v,(Velocity_mm_year=(Ve,Vn,Vz),V_north=Vn*mm/yr, V_east=Ve*mm/yr, V_vertical=Vz*mm/yr, Vmagnitude = Vmagnitude*mm/yr, Topo=fields_v.Topography))
 
-#### 2. Check & reshape vertical velocity
-
-Let's have a look at the data, by plotting it:
-```julia
-julia> using Plots
-julia> Plots.scatter(lon_Vz,lat_Vz)
-```
-![Tutorial_GPS_1](../assets/img/Tutorial_GPS_1.png)
-
-So clearly, this is a fully regular grid.
-We can determine the size of the grid with 
-```julia
-julia> unique(lon_Vz)
-41-element Vector{Float64}:
-  4.0
-  4.3
-  4.6
-  4.9
-  5.2
-  5.5
-  5.8
-  ⋮
- 14.5
- 14.8
- 15.1
- 15.4
- 15.7
- 16.0
-julia> unique(lat_Vz)
-31-element Vector{Float64}:
- 43.0
- 43.2
- 43.4
- 43.6
- 43.8
- 44.0
- 44.2
-  ⋮
- 48.0
- 48.2
- 48.4
- 48.6
- 48.8
- 49.0
-```
-So we have a `41` by `31` grid. GMG requires 3D matrixes for the data (as we want to plot the results in paraview in 3D). That is why we first initialize 3D matrixes for `lon,lat,Vz`:
-```julia
-julia> lon, lat, Vz            =   zeros(41,31,1),zeros(41,31,1),zeros(41,31,1)
-```
-And we can reshape the vectors accordingly:
-```julia
-julia> lon[:,:,1]              =   reshape(lon_Vz,(41,31))
-julia> lat[:,:,1]              =   reshape(lat_Vz,(41,31))
-julia> Vz[:,:,1]               =   reshape(Vz_vec,(41,31))
-```
-
-
-#### 3. Load horizontal velocities
-Next, we load the horizontal velocities from the file `ALPS2017_DEF_HZ.GRD`
-
-```julia
-julia> data_file                       =   CSV.File("ALPS2017_DEF_HZ.GRD",datarow=18,header=false,delim=' ');
-julia> data                            =   ParseColumns_CSV_File(data_file, 6);
-julia> lon_Hz, lat_Hz, Ve_Hz, Vn_Hz    =   data[:,1], data[:,2], data[:,3],  data[:,4];
-```
-
-Let's plot the data as well:
-```julia
-julia> Plots.scatter(lon_Hz,lat_Hz)
-```
-![Tutorial_GPS_2](../assets/img/Tutorial_GPS_2.png)
-
-So it appears that the horizontal velocities are given on the same regular grid as well, but not in the water. 
-This thus requires a bit more work. The strategy we take is to first define 2D matrixes with horizontal velocities with the same size as Vz which are initialized with `NaN` (not a number), which is treated specially by Paraview.
-
-```julia
-julia> Ve = ones(size(Vz))*NaN;
-julia> Vn = ones(size(Vz))*NaN;
-```
-
-Next we loop over all points in `lon_Hz,lat_Hz` and place them into the 2D matrixes:
-```julia
-julia>  for i in eachindex(lon_Hz)
-            ind = intersect(findall(x->x==lon_Hz[i], lon), findall(x->x==lat_Hz[i], lat))
-            Ve[ind] .= Ve_Hz[i];
-            Vn[ind] .= Vn_Hz[i];
-        end
-```
-
-At this stage, we have horizontal and vertical velocities in units of `m/yr`. Yet, given the small velocities in the Alps, it makes more sense to have them in units of `mm/yr`:
-```julia
-julia> Vz = Vz*1000;
-julia> Ve = Ve*1000;
-julia> Vn = Vn*1000;
-```
-And the magnitude is:
-```julia
-julia> Vmagnitude  =   sqrt.(Ve.^2 + Vn.^2 + Vz.^2);  
-```
-
-#### 4. Interpolate topography on grid
-At this stage we have the 3D velocity components on a grid. Yet, we don't have information yet about the elevation of the stations (as the provided data set did not give this). 
-We could ignore that and set the elevation to zero, which would allow saving the data directly to paraview.
-
-Yet, a better way is to load the topographic map of the area and interpolate the elevation to the velocity grid. We are using the `GMT.jl` to load the topographic data:
-```julia
-julia> using GMT
-julia> Elevation =   gmtread("@earth_relief_01m.grd", limits=[3,17,42,50]);
-```
-
-Next, we use the `Interpolations.jl` package to interpolate the topography:
-```julia
-julia> using Interpolations
-julia> interpol = LinearInterpolation((Elevation.x[1:end-1], Elevation.y[1:end-1]), Elevation.z');    
-julia> height   = interpol.(lon,lat)/1e3;
-```
-
-#### 5. Saving and plotting in Paraview
-At this stage, we have all we need. As the velocity is a vector field, we need to save it as a data structure with 3 components. When saving to paraview, GMG internally does a vector transformation. As this transformation does not retain the `east/north` components of the velocity field, it is a good idea to save them as separate fields so we can color the vectors accordingly in Paraview. Also note that we do not attach units to the vector fields, but we do have them for the scalar fields:
-
-```julia
-julia> GPS_Sanchez_grid = GeoData(lon,lat,height,(Velocity_mm_year=(Ve,Vn,Vz),V_north=Vn*mm/yr, V_east=Ve*mm/yr, V_vertical=Vz*mm/yr, Vmagnitude = Vmagnitude*mm/yr, Topography = height*km))
-GeoData 
-  size  : (41, 31, 1)
-  lon   ϵ [ 4.0 : 16.0]
-  lat   ϵ [ 43.0 : 49.0]
-  depth ϵ [ -2.6545 km : 3.426 km]
-  fields: (:Velocity_mm_year, :V_north, :V_east, :V_vertical, :Vmagnitude, :Topography)
-```
-Saving this to paraview is as always:
-```julia
-julia> Write_Paraview(GPS_Sanchez_grid, "GPSAlps_Sanchez_2017_grid")
-```
-
-Opening and plotting the vertical field gives:
-![Tutorial_GPS_3](../assets/img/Tutorial_GPS_3.png)
-
-In order to plot the velocities as arrows, you need to select the `Glyph` tool (red circle). Also specify `Velocity_mm_year ()` as both Orientation and Scale Array, and add `50` as scale factor. Once you push `Apply` it should look like:
-![Tutorial_GPS_4](../assets/img/Tutorial_GPS_4.png)
-
-The arrows can now be colored by the individual velocity components or its magnitude.
-
-
-
+# And as always, we'll save everything in VTK format and in jld2 format
+Write_Paraview(Data_GPS_Sanchez, "GPS_Sanchez")
+save_GMG("GPS_Sanchez",Data_GPS_Sanchez)
