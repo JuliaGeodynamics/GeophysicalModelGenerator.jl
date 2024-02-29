@@ -2,7 +2,7 @@
 
 export meshgrid, CrossSection, CrossSectionVolume, CrossSectionSurface, CrossSectionPoints, ExtractSubvolume, SubtractHorizontalMean
 export ParseColumns_CSV_File, AboveSurface, BelowSurface, VoteMap
-export InterpolateDataOnSurface, InterpolateDataFields2D, InterpolateDataFields
+export InterpolateDataOnSurface, InterpolateDataFields2D, InterpolateDataFields, InterpolateTopographyOnPlane
 export RotateTranslateScale
 export DrapeOnTopo, LithostaticPressure!
 export FlattenCrossSection
@@ -1327,7 +1327,17 @@ function InterpolateDataOnSurface(V::GeoData, Surf::GeoData)
     return Surf_interp
 end
 
+"""    
+    Surf_interp = InterpolateTopographyOnPlane(V::GeoData, proj::ProjectionPoint, x::AbstractRange, y::AbstractRange)
 
+Interpolates a 3D data set `V` with a projection point `proj` on a plane defined by `x` and `y`, where are uniformly spaced.
+Returns the 2D array `Surf_interp`. 
+"""
+function InterpolateTopographyOnPlane(V::GeoData, proj::ProjectionPoint, x::AbstractRange, y::AbstractRange)
+    cart_grid = CartData(XYZGrid(x, y, 0))
+    tproj = ProjectCartData(cart_grid, V, proj)
+    return tproj.z.val[:, :, 1]
+end
 
 # Extracts a sub-data set using indices
 function ExtractDataSets(V::AbstractGeneralGrid, iLon, iLat, iDepth)
