@@ -1,4 +1,4 @@
-# # Votemaps
+# # 12 - Votemaps
 #
 # ## Aim
 # In this tutorial, your will learn how to create Votemaps that compare different tomographic models and look for similarities between different models.

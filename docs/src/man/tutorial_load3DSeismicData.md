@@ -1,4 +1,4 @@
-# 3D tomography model in CSV formation
+# 1 - 3D tomography model in CSV formation
 
 ## Goal
 This explains how to load a 3D P-wave model and plot it in Paraview as a 3D volumetric data set. It also shows how you can create horizontal or vertical cross-sections through the data in a straightforward manner and how you can extract subsets of the data;
