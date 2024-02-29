@@ -1800,16 +1800,20 @@ function CountMap(DataSet::GeoData,field::String,stepslon::Int64,stepslat::Int64
     # create new lon/lat arrays which hold the boundaries of the control areas
     lonstep  = LinRange(lon[1],lon[end],stepslon)
     latstep  = LinRange(lat[1],lat[end],stepslat)
-    countmap = zeros(length(lonstep)-1,length(latstep)-1)
+    dlon     = abs(lonstep[2]-lonstep[1])
+    dlat     = abs(latstep[2]-latstep[1])
+    loncen   = lonstep[1]+dlon/2:dlon:lonstep[end]-dlon/2
+    latcen   = latstep[1]+dlat/2:dlat:latstep[end]-dlat/2
+    countmap = zeros(length(loncen),length(latcen))
 
-    expr            =   Meta.parse(field)
+    expr =   Meta.parse(field)
     if !haskey(DataSet.fields,expr[1])
         error("The GeoData set does not have the field: $(expr[1])")
     end
 
     # count the ones in every control area
-    for i = 1:length(lonstep)-1
-        for j = 1:length(latstep)-1
+    for i in eachindex(loncen)
+        for j in eachindex(latcen)
             indi          = findall((lon .>= lonstep[i]) .& (lon .<= lonstep[i+1]))
             indj          = findall((lat .>= latstep[j]) .& (lat .<= latstep[j+1]))
             dataint       = DataSet.fields[expr[1]][indi,indj,1]
@@ -1823,12 +1827,12 @@ function CountMap(DataSet::GeoData,field::String,stepslon::Int64,stepslat::Int64
     countmap = countmap ./ maxcount
 
     # create new GeoData
-    dlon   = abs(lonstep[2]-lonstep[1])
-    dlat   = abs(latstep[2]-latstep[1])
-    loncen = lonstep[1]+dlon/2:dlon:lonstep[end]-dlon/2
-    latcen = latstep[1]+dlat/2:dlat:latstep[end]-dlat/2
     Lon3D,Lat3D, Data = LonLatDepthGrid(loncen,latcen,0);
-    Data[:,:,1]      .= countmap
+    print(size(lonstep),"\n")
+    print(size(latstep),"\n")
+    print(size(countmap),"\n")
+    print(size(Data[:,:,1]),"\n")
+    Data[:,:,1]       .= countmap
     DatasetCountmap   = GeoData(Lon3D,Lat3D,Data,(CountMap=Data,))
 
     return DatasetCountmap
