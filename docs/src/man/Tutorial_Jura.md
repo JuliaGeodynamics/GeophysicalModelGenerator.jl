@@ -2,7 +2,7 @@
 EditURL = "../../../tutorials/Tutorial_Jura.jl"
 ```
 
-# Create a model for the Jura mountains
+# 17 - Create a model for the Jura mountains
 
 ## Aim
 In this tutorial, your will learn how to use drape a geological map on top of a digital topography model, import GeoTIFF surfaces and add cross-sections from screenshots to the model setup.
