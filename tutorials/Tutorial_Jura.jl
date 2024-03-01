@@ -18,7 +18,7 @@ Topo = ImportTopo(lat=[45.5,47.7], lon=[5, 8.1], file="@earth_relief_03s.grd")
 # The resulting map was uploaded to zenodo; it can be downloaded with
 #download_data("https://zenodo.org/10726801/SchoriM_Encl_01_Jura-map_A1.png", "SchoriM_Encl_01_Jura-map_A1.png")
 
-# We also used a slighly larger version of the map along with the online tool [https://apps.automeris.io](https://apps.automeris.io) to extract the location of the corners (using the indicated blue lon/lat values on the map as reference points).
+# We also used a slightly larger version of the map along with the online tool [https://apps.automeris.io](https://apps.automeris.io) to extract the location of the corners (using the indicated blue lon/lat values on the map as reference points).
 # This results in:
 lowerleft  = [4.54602510460251, 45.27456049638056, 0.0]
 upperright = [8.948117154811715, 47.781282316442606, 0.0]

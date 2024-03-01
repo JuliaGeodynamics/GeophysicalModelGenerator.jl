@@ -30,7 +30,7 @@ The resulting map was uploaded to zenodo; it can be downloaded with
 #download_data("https://zenodo.org/10726801/SchoriM_Encl_01_Jura-map_A1.png", "SchoriM_Encl_01_Jura-map_A1.png")
 ```
 
-We also used a slighly larger version of the map along with the online tool [https://apps.automeris.io](https://apps.automeris.io) to extract the location of the corners (using the indicated blue lon/lat values on the map as reference points).
+We also used a slightly larger version of the map along with the online tool [https://apps.automeris.io](https://apps.automeris.io) to extract the location of the corners (using the indicated blue lon/lat values on the map as reference points).
 This results in:
 
 ```julia
@@ -276,7 +276,6 @@ We can visualize this in paraview:
 ![Jura_Tutorial_2](../assets/img/Jura_2.png)
 
 Note that the `y`-direction is now perpendicular to the Jura mountains.
-
 The paraview statefiles to generate the two figures shown here are `/tutorials/Jura_1.pvsm` and `/tutorials/Jura_2.pvsm`.
 
 ---
