@@ -97,6 +97,7 @@ makedocs(;
             "13 - Campi Flegrei" =>  "man/tutorial_local_Flegrei.md",
             "14 - La Palma volcano Model" =>  "man/Tutorial_LaPalma.md",
             "15 - Create movies" =>  "man/tutorial_time_Seismicity.md"
+            "16 - Jura tutorial" =>  "man/Tutorial_Jura.md",
         ],
         "User Guide" => Any[
             "Installation" =>  "man/installation.md",
