@@ -154,7 +154,7 @@ end
 # See the description of the interface [here](http://www.isc.ac.uk/iscbulletin/search/webservices/bulletin/).
 # We will now download all reviewed earthquake data between 1990 and 2000 in the same region as the extracted topography. 
 # We will only consider earthquakes with a magnitude larger than 3. The resulting dataset is quite large, so consider to either limit the time range or the magnitude range.
-# download_data("http://www.isc.ac.uk/cgi-bin/web-db-run?request=COLLECTED&req_agcy=ISC-EHB&out_format=QuakeML&ctr_lat=&ctr_lon=&radius=&max_dist_units=deg&searchshape=RECT&top_lat=49&bot_lat=37&left_lon=4&right_lon=20&srn=&grn=&start_year=1990&start_month=1&start_day=01&start_time=00%3A00%3A00&end_year=2015&end_month=12&end_day=31&end_time=00%3A00%3A00&min_dep=&max_dep=&min_mag=3.0&max_mag=&req_mag_type=Any&req_mag_agcy=Any&min_def=&max_def=&prime_only=on&include_magnitudes=on&table_owner=iscehb","ISCData.xml")
+download_data("http://www.isc.ac.uk/cgi-bin/web-db-run?request=COLLECTED&req_agcy=ISC-EHB&out_format=QuakeML&ctr_lat=&ctr_lon=&radius=&max_dist_units=deg&searchshape=RECT&top_lat=49&bot_lat=37&left_lon=4&right_lon=20&srn=&grn=&start_year=1990&start_month=1&start_day=01&start_time=00%3A00%3A00&end_year=2015&end_month=12&end_day=31&end_time=00%3A00%3A00&min_dep=&max_dep=&min_mag=3.0&max_mag=&req_mag_type=Any&req_mag_agcy=Any&min_def=&max_def=&prime_only=on&include_magnitudes=on&table_owner=iscehb","ISCData.xml")
 
 # Once the data has been downloaded, we can extract `lon/lat/depth/magnitude` using one of the `GMG` functions, which will give us a `GeoData` structure:
 Data_ISC = GetLonLatDepthMag_QuakeML("ISCData.xml");
