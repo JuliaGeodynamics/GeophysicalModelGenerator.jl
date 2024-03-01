@@ -16,7 +16,7 @@ Topo = ImportTopo(lat=[45.5,47.7], lon=[5, 8.1], file="@earth_relief_03s.grd")
 # The geological map was taken from the [2021 PhD thesis of Marc Schori](https://folia.unifr.ch/unifr/documents/313053) and saved as png map.
 # We downloaded the pdf map, and cropped it to the lower left and upper right corners.
 # The resulting map was uploaded to zenodo; it can be downloaded with
-#download_data("https://zenodo.org/10726801/SchoriM_Encl_01_Jura-map_A1.png", "SchoriM_Encl_01_Jura-map_A1.png")
+download_data("https://zenodo.org/records/10726801/files/SchoriM_Encl_01_Jura-map_A1.png", "SchoriM_Encl_01_Jura-map_A1.png")
 
 # We also used a slightly larger version of the map along with the online tool [https://apps.automeris.io](https://apps.automeris.io) to extract the location of the corners (using the indicated blue lon/lat values on the map as reference points).
 # This results in:
@@ -43,7 +43,7 @@ TopoGeology = DrapeOnTopo(Topo, Geology)
 # Unfortunately, there are a lot of coordinate systems and in the thesis of Schori, a mixture of longitude/latitude (`longlat`) and a Swiss reference system is used. 
 # Within `GeophysicalModelGenerator`, we need a `longlat` coordinate system. It is quite easy to convert one to the other with the open-source [QGIS](https://qgis.org/) package.
 # We did this and saved the resulting image in Zenodo:
-#download_data("https://zenodo.org/10726801/BMes_Spline_longlat.tif", "BMes_Spline_longlat.tif")
+download_data("https://zenodo.org/records/10726801/files/BMes_Spline_longlat.tif", "BMes_Spline_longlat.tif")
 
 # Now, import the GeoTIFF as:
 Basement = ImportGeoTIFF("BMes_Spline_longlat.tif", fieldname=:Basement, removeNaN_z=true)
@@ -55,7 +55,7 @@ Basement = ImportGeoTIFF("BMes_Spline_longlat.tif", fieldname=:Basement, removeN
 # Often that is not the case and you have to use the mapview along with the digitizer tool described above to estimate this.
 
 # As example, we use the cross-section 
-#download_data("https://zenodo.org/10726801/BMes_Spline_longlat.tif", "BMes_Spline_longlat.tif")
+download_data("https://zenodo.org/records/10726801/files/Schori_2020_Ornans-Miserey-v2_whiteBG.png", "Schori_2020_Ornans-Miserey-v2_whiteBG.png")
 Corner_LowerLeft = (5.92507, 47.31300, -2.0)
 Corner_UpperRight = (6.25845, 46.99550, 2.0)
 CrossSection_1 = Screenshot_To_GeoData("Schori_2020_Ornans-Miserey-v2_whiteBG.png", Corner_LowerLeft, Corner_UpperRight) # name should have "colors" in it
@@ -140,19 +140,20 @@ Write_Paraview(CrossSection_1_cart,"CrossSection_1_cart")
 # The result looks like:
 # ![Jura_Tutorial_1](../assets/img/Jura_1.png) 
 
+# ## 3. Geological block model
 # Yet, if you want to perform a numerical simulation of the Jura, it is more convenient to rotate the maps such that we can perform a simulation perpendicular to the strike of the mountain belt.
 # This can be done with `RotateTranslateScale`:
-RotationAngle = -43; 
-TopoGeology_cart_rot    = RotateTranslateScale(TopoGeology_cart, Rotate=RotationAngle);
-Basement_cart_rot       = RotateTranslateScale(Basement_cart, Rotate=RotationAngle);
-CrossSection_1_cart_rot = RotateTranslateScale(CrossSection_1_cart, Rotate=RotationAngle);
+RotationAngle = -43
+TopoGeology_cart_rot    = RotateTranslateScale(TopoGeology_cart, Rotate=RotationAngle)
+Basement_cart_rot       = RotateTranslateScale(Basement_cart, Rotate=RotationAngle)
+CrossSection_1_cart_rot = RotateTranslateScale(CrossSection_1_cart, Rotate=RotationAngle)
 
 # Next, we can create a new computational grid that is more conveniently oriented:
 # We create both a surface and a 3D block 
 nx, ny, nz = 1024, 1024, 128
 x,y,z = range(-100,180,nx), range(-50,70,ny), range(-8,4,nz)
-ComputationalSurf  =  CartData(XYZGrid(x,y,0));
-ComputationalGrid  =  CartData(XYZGrid(x,y,z));
+ComputationalSurf  =  CartData(XYZGrid(x,y,0))
+ComputationalGrid  =  CartData(XYZGrid(x,y,z))
 
 # Re-interpolate the rotated to the new grid: 
 GeologyTopo_comp_surf = InterpolateDataFields2D(TopoGeology_cart_rot, ComputationalSurf, Rotate=RotationAngle)
@@ -160,31 +161,31 @@ Basement_comp_surf    = InterpolateDataFields2D(Basement_cart_rot,    Computatio
 
 # Next we can use the surfaces to create a 3D block model.
 # We start with a block model that has the different rocktypes:
-Phases = zeros(Int8,size(ComputationalGrid.x)); #Define rock types
+Phases = zeros(Int8,size(ComputationalGrid.x)) #Define rock types
 
 # Set everything below the topography to 1
-id = BelowSurface(ComputationalGrid, GeologyTopo_comp_surf);
-Phases[id] .= 1;
+id = BelowSurface(ComputationalGrid, GeologyTopo_comp_surf)
+Phases[id] .= 1
 
 # The basement is set to 2
-id = BelowSurface(ComputationalGrid, Basement_comp_surf);
-Phases[id] .= 2;
+id = BelowSurface(ComputationalGrid, Basement_comp_surf)
+Phases[id] .= 2
 
 # Add to the computational grid:
 ComputationalGrid = AddField(ComputationalGrid,"Phases", Phases)
 ComputationalGrid = RemoveField(ComputationalGrid,"Z")
 
 # Save the surfaces, cross-section and the grid:
-Write_Paraview(GeologyTopo_comp_surf,"GeologyTopo_comp_surf");
-Write_Paraview(Basement_comp_surf,   "Basement_comp_surf");
-Write_Paraview(CrossSection_1_cart_rot,"CrossSection_1_cart_rot");
-Write_Paraview(ComputationalGrid,"ComputationalGrid");
+Write_Paraview(GeologyTopo_comp_surf,"GeologyTopo_comp_surf")
+Write_Paraview(Basement_comp_surf,   "Basement_comp_surf")
+Write_Paraview(CrossSection_1_cart_rot,"CrossSection_1_cart_rot")
+Write_Paraview(ComputationalGrid,"ComputationalGrid")
 
 # We can visualize this in paraview: 
 # ![Jura_Tutorial_2](../assets/img/Jura_2.png) 
-#
-# Note that the `y`-direction is now perpendicular to the Jura mountains.
-# The paraview statefiles to generate the two figures shown here are `/tutorials/Jura_1.pvsm` and `/tutorials/Jura_2.pvsm`.
+# 
+# We use a vertical exaggeration of factor two. Also note that the `y`-direction is now perpendicular to the Jura mountains.
+# The paraview statefiles to generate this figure is `/tutorials/Jura_2.pvsm`.
 
 #src Note: The markdown page is generated using:
 #src Literate.markdown("tutorials/Tutorial_Jura.jl","docs/src/man",keepcomments=true, execute=false, codefence = "```julia" => "```")
