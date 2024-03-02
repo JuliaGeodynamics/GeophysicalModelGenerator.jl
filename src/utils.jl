@@ -2,7 +2,7 @@
 
 export meshgrid, CrossSection, CrossSectionVolume, CrossSectionSurface, CrossSectionPoints, ExtractSubvolume, SubtractHorizontalMean
 export ParseColumns_CSV_File, VoteMap, CountMap
-export InterpolateDataOnSurface, InterpolateDataFields2D, InterpolateDataFields, InterpolateTopographyOnPlane
+export InterpolateDataFields2D, InterpolateDataFields, InterpolateTopographyOnPlane
 export RotateTranslateScale
 export LithostaticPressure!
 export FlattenCrossSection
@@ -1267,80 +1267,6 @@ function InterpolateDataFields2D_vecs(EW_vec, NS_vec, depth, fields_new, EW, NS)
     # Data_profile = UTMData(EW, NS, Depth*0, fields_new);
 
     return depth_new, fields_new
-end
-
-
-"""
-    Surf_interp = InterpolateDataOnSurface(V::ParaviewData, Surf::ParaviewData)
-
-Interpolates a 3D data set `V` on a surface defined by `Surf`.
-# Example
-```julia
-julia> Data
-ParaviewData
-  size  : (33, 33, 33)
-  x     ϵ [ -3.0 : 3.0]
-  y     ϵ [ -2.0 : 2.0]
-  z     ϵ [ -2.0 : 0.0]
-  fields: (:phase, :density, :visc_total, :visc_creep, :velocity, :pressure, :temperature, :dev_stress, :strain_rate, :j2_dev_stress, :j2_strain_rate, :plast_strain, :plast_dissip, :tot_displ, :yield, :moment_res, :cont_res)
-julia> surf
-ParaviewData
-  size  : (96, 96, 1)
-  x     ϵ [ -2.9671875 : 3.2671875]
-  y     ϵ [ -1.9791666666666667 : 1.9791666666666667]
-  z     ϵ [ -1.5353766679763794 : -0.69925457239151]
-  fields: (:Depth,)
-julia> Surf_interp = InterpolateDataOnSurface(Data, surf)
-  ParaviewData
-    size  : (96, 96, 1)
-    x     ϵ [ -2.9671875 : 3.2671875]
-    y     ϵ [ -1.9791666666666667 : 1.9791666666666667]
-    z     ϵ [ -1.5353766679763794 : -0.69925457239151]
-    fields: (:phase, :density, :visc_total, :visc_creep, :velocity, :pressure, :temperature, :dev_stress, :strain_rate, :j2_dev_stress, :j2_strain_rate, :plast_strain, :plast_dissip, :tot_displ, :yield, :moment_res, :cont_res)
-```
-"""
-function InterpolateDataOnSurface(V::ParaviewData, Surf::ParaviewData)
-
-    # Create GeoData structure:
-    V_geo               =   GeoData(V.x.val, V.y.val, V.z.val, V.fields)
-    V_geo.depth.val     =   ustrip(V_geo.depth.val);
-
-    Surf_geo            =   GeoData(Surf.x.val, Surf.y.val, Surf.z.val, Surf.fields)
-    Surf_geo.depth.val  =   ustrip(Surf_geo.depth.val);
-
-    Surf_interp_geo     =   InterpolateDataOnSurface(V_geo, Surf_geo)
-    Surf_interp         =   ParaviewData(Surf_interp_geo.lon.val, Surf_interp_geo.lat.val, ustrip.(Surf_interp_geo.depth.val), Surf_interp_geo.fields)
-
-    return Surf_interp
-
-end
-
-function InterpolateDataOnSurface(V::CartData, Surf::CartData)
-
-    # Create GeoData structure:
-    V_geo               =   GeoData(V.x.val, V.y.val, V.z.val, V.fields)
-    V_geo.depth.val     =   ustrip(V_geo.depth.val);
-
-    Surf_geo            =   GeoData(Surf.x.val, Surf.y.val, Surf.z.val, Surf.fields)
-    Surf_geo.depth.val  =   ustrip(Surf_geo.depth.val);
-
-    Surf_interp_geo     =   InterpolateDataOnSurface(V_geo, Surf_geo)
-    Surf_interp         =   CartData(Surf_interp_geo.lon.val, Surf_interp_geo.lat.val, ustrip.(Surf_interp_geo.depth.val), Surf_interp_geo.fields)
-
-    return Surf_interp
-
-end
-
-"""
-    Surf_interp = InterpolateDataOnSurface(V::GeoData, Surf::GeoData)
-
-Interpolates a 3D data set `V` on a surface defined by `Surf`
-"""
-function InterpolateDataOnSurface(V::GeoData, Surf::GeoData)
-
-    Surf_interp = InterpolateDataFields(V, Surf.lon.val, Surf.lat.val, Surf.depth.val)
-
-    return Surf_interp
 end
   
 # Extracts a sub-data set using indices
