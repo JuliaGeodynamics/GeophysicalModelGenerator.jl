@@ -109,7 +109,7 @@ julia> unique(lat[ind])
 
 #### 3.1 Reshape data and save to paraview
 Next, we reshape the vectors with lon/lat/depth data into 3D matrixes:
-```
+```julia
 julia> resolution =  (length(unique(lon)), length(unique(lat)), length(unique(depth)))
 (121, 94, 101)
 julia> Lon          = reshape(lon,      resolution);
@@ -124,7 +124,7 @@ julia> iz=findall(x -> x==-101.0, Depth[1,1,:])
 1-element Vector{Int64}:
  91
 julia> data=dVp_perc_3D[:,:,iz];
-julia> heatmap(unique(lon), unique(lat),data[:,:,1]', c=:roma,title="$(Depth[1,1,iz]) km")
+heatmap(unique(lon), unique(lat),data[:,:,1]', c=:roma,title="$(Depth[1,1,iz]) km")
 ```
 ![DataPoints](../assets/img/Tutorial_Zhao_LatLon_data_101km.png)
 So this looks good.
@@ -205,7 +205,7 @@ As you see, this cross-section is not taken at exactly 10 degrees longitude. Tha
 
 If you wish to interpolate the data, specify `Interpolate=true`:
 ```julia
-julia> Data_cross  =   CrossSection(Data_set, Lon_level=10, Interpolate=true)
+julia> Data_cross = CrossSection(Data_set, Lon_level=10, Interpolate=true)
 GeoData 
   size  : (1, 100, 100)
   lon   ϵ [ 10.0 : 10.0]
@@ -272,10 +272,9 @@ julia> Data_set_Zhao2016_Vp = load_GMG("Zhao_Pwave")
 
 
 #### 8. Julia script
-
 The full julia script that does it all is given [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/main/tutorial/Alps_VpModel_Zhao_etal_JGR2016.jl). You need to be in the same directory as in the data file, after which you can run it in julia with
 ```julia
-julia> include("Alps_VpModel_Zhao_etal_JGR2016.jl")
+include("Alps_VpModel_Zhao_etal_JGR2016.jl")
 ```
 
 
