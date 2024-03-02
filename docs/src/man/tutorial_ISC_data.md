@@ -7,7 +7,7 @@ This explains how to load earthquake data obtained from the ISC catalogue.
 #### 1. Download data
 You can get data from the ISC catalogue here:
 [http://www.isc.ac.uk/iscbulletin/search/catalogue/](http://www.isc.ac.uk/iscbulletin/search/catalogue/)
-The catalogue will give you an on screen CSV output that will then have to be copied to a file of your choice (here we will call it *ISC1.dat*). Do that and start julia from the directory where it was downloaded.
+The catalogue will give you an on screen CSV output that will then have to be copied to a file of your choice (here we will call it `ISC1.dat`). Do that and start julia from the directory where it was downloaded.
 
 #### 2. Read data into Julia
 The main data-file, `ISC1.dat`, has 23 lines of comments (indicated with `#`), after which the data starts. We can use the julia package [https://github.com/JuliaData/CSV.jl](CSV.jl) to read in the data, and tell it that the data is separated by `,`.
