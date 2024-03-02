@@ -6,6 +6,11 @@ Grid_cart = CartData(XYZGrid(-20:20,-20:.1:20,-30:30))
 Lon,Lat,Depth = LonLatDepthGrid(-20:20,-20:.1:20,-30:30);
 Grid_geo = GeoData(Lon,Lat,Depth,(;Depth))
 
+# create 2D GeoData struct
+Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,0);
+CM              =   zeros(size(Depth)); CM[1:5,1:5] .= 1.0
+Data_set2D      =   GeoData(Lon,Lat,Depth,(Count=CM,))  
+
 using StableRNGs
 
 rng = StableRNG(123)
@@ -41,3 +46,9 @@ Grid_Count = PointData2NearestGrid(pt[:,1],pt[:,2],pt[:,3], Grid_geo; radius_fac
 # Test in case the EQ data is also specified as GeoData
 Grid_Count = PointData2NearestGrid(EQ_geo, Grid_geo; radius_factor=2)
 @test extrema(Grid_Count.fields.Count) == (0, 85)
+
+# Test CountMap
+Data_CountMap = CountMap(Data_set2D,"Count",5,5)
+@test Data_CountMap.fields.CountMap[1,1] == 1.0
+@test Data_CountMap.fields.CountMap[2,2] == 0.4444444444444444
+@test Data_CountMap.fields.CountMap[4,4] == 0.0
