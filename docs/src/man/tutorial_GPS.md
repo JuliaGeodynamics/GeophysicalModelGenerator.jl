@@ -50,8 +50,7 @@ data_file               =   CSV.File("ALPS2017_DEF_VT.GRD",datarow=18,header=fal
 
 num_columns             =   4;
 data                    =   ParseColumns_CSV_File(data_file, num_columns);     #Read numerical data from the file
-lon_Vz, lat_Vz, Vz_vec  =   data[:,1], data[:,2], data[:,3];
-nothing #hide
+lon_Vz, lat_Vz, Vz_vec  =   data[:,1], data[:,2], data[:,3]
 ```
 
 ## 2. Check & reshape vertical velocity
@@ -113,10 +112,9 @@ lon[:,:,1]              =   reshape(lon_Vz,(41,31))
 lat[:,:,1]              =   reshape(lat_Vz,(41,31))
 Vz[:,:,1]               =   reshape(Vz_vec,(41,31))
 
-Vz                      =   Vz*1000;                #in mm/year (original data in m/yr)
-Ve                      =   ones(size(Vz))*NaN;
-Vn                      =   ones(size(Vz))*NaN;
-nothing #hide
+Vz                      =   Vz*1000                #in mm/year (original data in m/yr)
+Ve                      =   ones(size(Vz))*NaN
+Vn                      =   ones(size(Vz))*NaN
 ```
 
 ## 3. Load horizontal velocities
@@ -126,8 +124,7 @@ Next, we load the horizontal velocities which is available in the file `ALPS2017
 download_data("https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_DEF_HZ.GRD","ALPS2017_DEF_HZ.GRD")
 data_file                       =   CSV.File("ALPS2017_DEF_HZ.GRD",datarow=18,header=false,delim=' ')
 data                            =   ParseColumns_CSV_File(data_file, 10)
-lon_Hz, lat_Hz, Ve_Hz, Vn_Hz    =   data[:,1], data[:,2], data[:,3],  data[:,4];
-nothing #hide
+lon_Hz, lat_Hz, Ve_Hz, Vn_Hz    =   data[:,1], data[:,2], data[:,3], data[:,4]
 ```
 
 Let's plot the data as well:
@@ -150,8 +147,7 @@ for i in eachindex(lon_Hz)
     Vn[ind] .= Vn_Hz[i];
 end
 
-Vmagnitude          =   sqrt.(Ve.^2 + Vn.^2 + Vz.^2);  # velocity magnitude in mm/yr
-nothing #hide
+Vmagnitude          =   sqrt.(Ve.^2 + Vn.^2 + Vz.^2)  # velocity magnitude in mm/yr
 ```
 
 ## 4. Interpolate topography on grid
@@ -177,8 +173,7 @@ We now want to interpolate the elevation on the GPS grid locations.
 Lon_vec     =   NumValue(Elevation.lon)[:,1,1];
 Lat_vec     =   NumValue(Elevation.lat)[1,:,1];
 interpol    =   LinearInterpolation((Lon_vec, Lat_vec), NumValue(Elevation.depth)[:,:,1]);      # create interpolation object
-height      =   interpol.(lon,lat)/1e3;
-nothing #hide
+height      =   interpol.(lon,lat)/1e3
 ```
 
 At this stage we have `lon/lat/height` of all points as well as velocity components
