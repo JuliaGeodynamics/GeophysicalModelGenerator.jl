@@ -110,6 +110,7 @@ makedocs(;
             "Tools" => "man/tools.md",
             "Visualisation" => "man/visualise.md",
             "Gravity code" => "man/gravity_code.md",
+            "Geodynamic setups" => "man/geodynamic_setups.md",
             "LaMEM" => "man/lamem.md",
             "Profile Processing" => "man/profile_processing.md"
         ],
