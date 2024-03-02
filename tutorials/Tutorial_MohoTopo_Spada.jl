@@ -75,20 +75,14 @@ depth = [data_Moho1.depth.val; data_Moho2.depth.val; data_Moho3.depth.val];
 data_Moho_combined = GeoData(lon, lat, depth, (MohoDepth=depth*km,))
 
 # Next, we define a regular lon/lat grid
-Lon,Lat,Depth = LonLatDepthGrid(4.1:0.1:11.9,42.5:.1:49,-30km);
+Lon, Lat, Depth  = LonLatDepthGrid(4.1:0.1:11.9,42.5:.1:49,-30km)
 
-# And we will use a nearest neighbor interpolation method to fit a surface through the data. This has the advantage that it will take the discontinuities into account. We will use the package [NearestNeighbors.jl](https://github.com/KristofferC/NearestNeighbors.jl) for this, which you may have to install first
-using NearestNeighbors
-kdtree = KDTree([lon'; lat'])
-idxs, dists = knn(kdtree, [Lon[:]'; Lat[:]'], 1, true)
+# We will use a nearest neighbor interpolation method to fit a surface through the data, which has the advantage that it will take the discontinuities into account. 
+# This can be done with `nearest_point_indices`
+idx = nearest_point_indices(Lon,Lat, lon[:],lat[:])
+Depth = depth[idx]
 
-# `idxs` contains the indices of the closest points to the grid in (Lon,Lat). Next
-Depth = zeros(size(Lon));
-for i=1:length(idxs)
-    Depth[i] = depth[idxs[i]][1]
-end     
 # Now, we can create a `GeoData` structure with the regular surface and save it to paraview:
-
 data_Moho = GeoData(Lon, Lat, Depth, (MohoDepth=Depth,))
 Write_Paraview(data_Moho, "Spada_Moho_combined")
 
@@ -97,4 +91,8 @@ Write_Paraview(data_Moho, "Spada_Moho_combined")
 
 # ## 5. Julia script
 # The full julia script that does it all is given [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/tree/main/tutorials/Tutorial_MohoTopo_Spada.jl). You need to be in the same directory as in the data file, after which you can run it in julia with
-include("Tutorial_MohoTopo_Spada.jl")
+#include("Tutorial_MohoTopo_Spada.jl")
+
+#src Note: The markdown page is generated using:
+#src Literate.markdown("tutorials/Tutorial_MohoTopo_Spada.jl","docs/src/man",keepcomments=true, execute=false, codefence = "```julia" => "```")
+
