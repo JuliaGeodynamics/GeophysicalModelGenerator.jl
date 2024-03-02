@@ -9,7 +9,7 @@ using GeoParams
 # These are routines that help to create input geometries, such as slabs with a given angle
 #
 
-export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!, AddLayer!, AddPolygon!,
+export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!, AddLayer!, addPolygon!,
         makeVolcTopo,
         ConstantTemp, LinearTemp, HalfspaceCoolingTemp, SpreadingRateTemp, LithosphericTemp,
         ConstantPhase, LithosphericPhases,
@@ -471,7 +471,7 @@ function inPoly(PolyX, PolyY, x, y)
 end
 
 
-function AddPolygon!(Phase, Temp, Grid::AbstractGeneralGrid;                 # required input
+function addPolygon!(Phase, Temp, Grid::AbstractGeneralGrid;                 # required input
     xlim=Tuple{}, ylim=Tuple{2}, zlim=Tuple{},     # limits of the box
     Origin=nothing, StrikeAngle=0, DipAngle=0,      # origin & dip/strike
     phase = ConstantPhase(1),                       # Sets the phase number(s) in the box
@@ -483,7 +483,7 @@ X,Y,Z = coordinate_grids(Grid)
 
 indx = zeros(length(X))
 
-# find points of the total script within the polygone, only in 2D due to the symetric structures and index of y
+# find points of the total script within the polygon, only in 2D due to the symmetric structures and index of y
 for i = 1:length(X)#(indy)
 
     # working but not the fastest
@@ -492,7 +492,7 @@ for i = 1:length(X)#(indy)
     end
 end
 
-# get all indices which are in the polygone separated
+# get all indices which are in the polygon separated
 ind = findall(x->x>0,indx)
 
 
