@@ -238,9 +238,9 @@ function aboveSurface(Data::GeoData, DataSurface::GeoData; above=true)
     DepthSurface = DepthSurface*unit(DataSurface.depth.val[1])
 
     if above
-        Above       =   Data.depth.val .> DepthSurface;
+        Above    =   Data.depth.val .> DepthSurface;
     else
-        Above       =   Data.depth.val .< DepthSurface;
+        Above    =   Data.depth.val .< DepthSurface;
     end
 
     return Above
@@ -322,8 +322,6 @@ Determines if points within the 3D Data_Cart structure are below the Cartesian s
 function belowSurface(Data_Cart::CartData, DataSurface_Cart::CartData)
     return aboveSurface(Data_Cart::CartData, DataSurface_Cart::CartData; above=false)
 end
-
-
 
 """
     Surf_interp = interpolateDataOnSurface(V::ParaviewData, Surf::ParaviewData)
