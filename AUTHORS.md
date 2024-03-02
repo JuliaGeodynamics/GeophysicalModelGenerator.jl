@@ -21,6 +21,7 @@ are listed in alphabetical order:
 * Albert De Montserrat
 * Luca De Siena
 * Lukas Fuchs
+* Jacob Frasunkiewicz
 * Andrea Piccolo
 * Hendrik Rachona
 * Christian Schuler
