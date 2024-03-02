@@ -71,7 +71,7 @@ Grid_3D =PointData2NearestGrid(EQ_cart, Grid_3D, radius_factor=3)
 Phases = zeros(Int64,size(Grid_3D.x))
 
 # Points that are below the surface are set to one:
-Below = BelowSurface(Grid_3D, Topo_model);
+Below = belowSurface(Grid_3D, Topo_model);
 Phases[Below] .= 1
 
 # Lets assume that the crust is 15 km thick

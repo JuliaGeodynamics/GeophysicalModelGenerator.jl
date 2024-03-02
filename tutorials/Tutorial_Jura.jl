@@ -48,7 +48,7 @@ download_data("https://zenodo.org/records/10726801/files/BMes_Spline_longlat.tif
 # Now, import the GeoTIFF as:
 Basement = ImportGeoTIFF("BMes_Spline_longlat.tif", fieldname=:Basement, removeNaN_z=true)
 # the `removeNaN_z` option removes `NaN` values from the dataset and instead uses the z-value of the nearest point.
-# That is important if you want to use this surface to generate a 3D model setup (using `BelowSurface`, for example).
+# That is important if you want to use this surface to generate a 3D model setup (using `belowSurface`, for example).
 
 # The thesis also provides a few interpreted vertical cross-sections. As before, we import them as a screenshot and estimate the lower-left and upper right corners. 
 # In this particular case, we are lucky that the `lon/lat` values are indicated on the cross-section.
@@ -125,8 +125,8 @@ Basement_cart = ProjectCartData(TopoGeology_cart, Basement, proj)
 CrossSection_1_cart = Convert2CartData(CrossSection_1,proj)
 
 # for visualization, it is nice if we can remove the part of the cross-section that is above the topography.
-# We can do that with the `BelowSurface` routine which returns a Boolean to indicate whether points are below or above the surface 
-below = BelowSurface(CrossSection_1_cart, TopoGeology_cart)
+# We can do that with the `belowSurface` routine which returns a Boolean to indicate whether points are below or above the surface 
+below = belowSurface(CrossSection_1_cart, TopoGeology_cart)
 
 # We can add that to the cross-section with:
 CrossSection_1_cart = AddField(CrossSection_1_cart,"rocks",Int64.(below))
@@ -164,11 +164,11 @@ Basement_comp_surf    = InterpolateDataFields2D(Basement_cart_rot,    Computatio
 Phases = zeros(Int8,size(ComputationalGrid.x)) #Define rock types
 
 # Set everything below the topography to 1
-id = BelowSurface(ComputationalGrid, GeologyTopo_comp_surf)
+id = belowSurface(ComputationalGrid, GeologyTopo_comp_surf)
 Phases[id] .= 1
 
 # The basement is set to 2
-id = BelowSurface(ComputationalGrid, Basement_comp_surf)
+id = belowSurface(ComputationalGrid, Basement_comp_surf)
 Phases[id] .= 2
 
 # Add to the computational grid:

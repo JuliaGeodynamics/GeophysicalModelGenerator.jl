@@ -1,5 +1,6 @@
 # This contains a number of routines that deal with surfaces
-export remove_NaN_Surface!, drape_on_topo, is_surface
+export remove_NaN_Surface!, drape_on_topo, is_surface, fit_surface_to_points
+export aboveSurface, belowSurface
 import Base: +,-
 
 """
@@ -15,7 +16,6 @@ function is_surface(surf::AbstractGeneralGrid)
     end
     return issurf
 end
-
 
 function  +(a::_T, b::_T) where _T<:AbstractGeneralGrid 
     @assert size(a) == size(b)
@@ -111,7 +111,6 @@ function drape_on_topo(Topo::GeoData, Data::GeoData)
             data_new    = tuple([data_array[:,:,:,c] for c in 1:size(data_array,4)]...)       # transform 4D matrix to tuple
 
         else
-
             # scalar field
             data_new        =   zeros(typeof(Data.fields[i][1]), size(Topo.lon.val,1),size(Topo.lon.val,2),size(Topo.lon.val,3));
             data_new        =   Data.fields[i][idx]                                 # interpolate data field
@@ -151,12 +150,175 @@ end
 
 
 """
-    surf_new = project_points_to_surface(X::Array, Y::Array, lon_pt::Vector, lat_pt::Vector, depth_pt::Vector)
+    surf_new = fit_surface_to_points(surf::GeoData, lon_pt::Vector, lat_pt::Vector, depth_pt::Vector)
 
-This changes the depth value of the surface `surf` to the `depth` value of the closest-by-points in (`lon_pt`,`lat_pt`, `depth_pt`) 
+This fits the `depth` values of the surface `surf` to the `depth` value of the closest-by-points in (`lon_pt`,`lat_pt`, `depth_pt`) 
 
 """
-function project_points_to_surface(surf::GeoData, lon_pt::Vector, lat_pt::Vector, depth_pt::Vector)
+function fit_surface_to_points(surf::GeoData, lon_pt::Vector, lat_pt::Vector, depth_pt::Vector)
+    @assert is_surface(surf)
+    
+    idx = nearest_point_indices(NumValue(surf.lon),NumValue(surf.lat),  lon_pt, lat_pt);
+    depth = NumValue(surf.depth)
+    depth[idx] .= depth_pt[idx];
 
+    surf_new = surf
+    surf_new.depth .= depth
+    return surf_new
 end
 
+
+"""
+    surf_new = fit_surface_to_points(surf::CartData, lon_pt::Vector, lat_pt::Vector, depth_pt::Vector)
+
+This fits the `depth` values of the surface `surf` to the `depth` value of the closest-by-points in (`lon_pt`,`lat_pt`, `depth_pt`) 
+
+"""
+function fit_surface_to_points(surf::CartData, X_pt::Vector, Y_pt::Vector, Z_pt::Vector)
+    @assert is_surface(surf)
+    
+    idx = nearest_point_indices(NumValue(surf.x),NumValue(surf.y),  X_pt[:], Y_pt[:]);
+    depth = NumValue(surf.z)
+    depth = Z_pt[idx]
+
+    surf_new = deepcopy(surf)
+    surf_new.z.val .= depth
+    return surf_new
+end
+
+
+
+"""
+    aboveSurface(Data::GeoData, DataSurface::GeoData; above=true)
+
+Returns a boolean array of size(Data.Lon), which is true for points that are above the surface DataSurface (or for points below if above=false).
+
+This can be used, for example, to mask points above/below the Moho in a volumetric dataset or in a profile.
+
+# Example
+First we create a 3D data set and a 2D surface:
+```julia
+julia> Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
+julia> Data            =   Depth*2;
+julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon))
+GeoData
+  size  : (11, 11, 13)
+  lon   ϵ [ 10.0 : 20.0]
+  lat   ϵ [ 30.0 : 40.0]
+  depth ϵ [ -300.0 km : 0.0 km]
+  fields: (:Depthdata, :LonData)
+julia> Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,-40km);
+julia> Data_Moho       =   GeoData(Lon,Lat,Depth+Lon*km, (MohoDepth=Depth,))
+  GeoData
+    size  : (11, 11, 1)
+    lon   ϵ [ 10.0 : 20.0]
+    lat   ϵ [ 30.0 : 40.0]
+    depth ϵ [ -30.0 km : -20.0 km]
+    fields: (:MohoDepth,)
+```
+Next, we intersect the surface with the data set:
+```julia
+julia> Above       =   aboveSurface(Data_set3D, Data_Moho);
+```
+Now, `Above` is a boolean array that is true for points above the surface and false for points below and at the surface.
+
+"""
+function aboveSurface(Data::GeoData, DataSurface::GeoData; above=true)
+
+    if size(DataSurface.lon)[3]!=1
+        error("It seems that DataSurface is not a surface")
+    end
+
+    # Create interpolation object for surface
+    Lon_vec     =  DataSurface.lon.val[:,1,1];
+    Lat_vec     =  DataSurface.lat.val[1,:,1];
+    interpol    =  linear_interpolation((Lon_vec, Lat_vec), ustrip.(DataSurface.depth.val[:,:,1]));            # create interpolation object
+
+    DepthSurface = interpol.(Data.lon.val,Data.lat.val);
+    DepthSurface = DepthSurface*unit(DataSurface.depth.val[1])
+
+    if above
+        Above       =   Data.depth.val .> DepthSurface;
+    else
+        Above       =   Data.depth.val .< DepthSurface;
+    end
+
+    return Above
+end
+
+"""
+    Below = belowSurface(Data::GeoData, DataSurface::GeoData)
+
+Determines if points within the 3D `Data` structure are below the GeoData surface `DataSurface`
+"""
+function belowSurface(Data::GeoData, DataSurface::GeoData)
+    return aboveSurface(Data::GeoData, DataSurface::GeoData; above=false)
+end
+
+"""
+    Above = aboveSurface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData; above=true)
+
+Determines if points within the 3D `Data_Cart` structure are above the Cartesian surface `DataSurface_Cart`
+"""
+function aboveSurface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData; above=true)
+
+    Data            =   GeoData(ustrip.(Data_Cart.x.val),       ustrip.(Data_Cart.y.val),        ustrip.(Data_Cart.z.val), Data_Cart.fields)
+    DataSurface     =   GeoData(ustrip.(DataSurface_Cart.x.val),ustrip.(DataSurface_Cart.y.val), ustrip.(DataSurface_Cart.z.val), DataSurface_Cart.fields )
+
+    return Above    =   aboveSurface(Data, DataSurface; above=above)
+end
+
+"""
+    Above = aboveSurface(Data_Cart::CartData, DataSurface_Cart::CartData; above=true)
+
+Determines if points within the 3D `Data_Cart` structure are above the Cartesian surface `DataSurface_Cart`
+"""
+function aboveSurface(Data_Cart::CartData, DataSurface_Cart::CartData; above=true)
+
+    Data            =   GeoData(ustrip.(Data_Cart.x.val),       ustrip.(Data_Cart.y.val),        ustrip.(Data_Cart.z.val), Data_Cart.fields)
+    DataSurface     =   GeoData(ustrip.(DataSurface_Cart.x.val),ustrip.(DataSurface_Cart.y.val), ustrip.(DataSurface_Cart.z.val), DataSurface_Cart.fields )
+
+    return Above    =   aboveSurface(Data, DataSurface; above=above)
+end
+
+"""
+    Above = aboveSurface(Grid::CartGrid, DataSurface_Cart::CartData; above=true)
+
+Determines if points described by the `Grid` CartGrid structure are above the Cartesian surface `DataSurface_Cart`
+"""
+function aboveSurface(Grid::CartGrid, DataSurface_Cart::CartData; above=true)
+
+    X,Y,Z = XYZGrid(Grid.coord1D...)
+    Data = CartData(Grid,(Z=Z,))
+
+    return aboveSurface(Data, DataSurface_Cart; above=above)
+end
+
+
+"""
+    Below = belowSurface(Grid::CartGrid, DataSurface_Cart::CartData)
+
+    Determines if points described by the `Grid` CartGrid structure are above the Cartesian surface `DataSurface_Cart`
+"""
+function belowSurface(Grid::CartGrid, DataSurface_Cart::CartData)
+    return aboveSurface(Grid, DataSurface_Cart; above=false)
+end
+
+
+"""
+    Below = belowSurface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData)
+
+Determines if points within the 3D Data_Cart structure are below the Cartesian surface DataSurface_Cart
+"""
+function belowSurface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData)
+    return aboveSurface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData; above=false)
+end
+
+"""
+    Below = belowSurface(Data_Cart::CartData, DataSurface_Cart::CartData)
+
+Determines if points within the 3D Data_Cart structure are below the Cartesian surface DataSurface_Cart
+"""
+function belowSurface(Data_Cart::CartData, DataSurface_Cart::CartData)
+    return aboveSurface(Data_Cart::CartData, DataSurface_Cart::CartData; above=false)
+end
