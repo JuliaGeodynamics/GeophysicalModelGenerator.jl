@@ -1,4 +1,4 @@
-# Campi Flegrei Volcano Tutorial using cartesian coordinates
+# Campi Flegrei Volcano tutorial using cartesian coordinates
 
 ## Goal
 
