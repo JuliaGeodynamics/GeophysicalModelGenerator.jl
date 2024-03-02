@@ -47,7 +47,7 @@ Geology  = Screenshot_To_GeoData("SchoriM_Encl_01_Jura-map_A1.png", lowerleft, u
 You can "drape" this image on the topographic map with
 
 ```julia
-TopoGeology = DrapeOnTopo(Topo, Geology)
+TopoGeology = drape_on_topo(Topo, Geology)
 ```
 
 ```julia

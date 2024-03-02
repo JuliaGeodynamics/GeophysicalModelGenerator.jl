@@ -27,7 +27,7 @@ upperright = [8.948117154811715, 47.781282316442606, 0.0]
 Geology  = Screenshot_To_GeoData("SchoriM_Encl_01_Jura-map_A1.png", lowerleft, upperright, fieldname=:geology_colors) # name should have "colors" in it
 
 # You can "drape" this image on the topographic map with
-TopoGeology = DrapeOnTopo(Topo, Geology)
+TopoGeology = drape_on_topo(Topo, Geology)
 # ```julia
 # GeoData 
 #   size      : (3721, 2641, 1)

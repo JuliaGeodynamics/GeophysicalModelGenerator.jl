@@ -19,6 +19,9 @@ end
 @testset "Transformations" begin
     include("test_transformation.jl")
 end
+@testset "Surfaces" begin
+    include("test_surfaces.jl")
+end
 
 @testset "LaMEM" begin
     include("test_lamem.jl")

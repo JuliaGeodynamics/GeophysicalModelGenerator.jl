@@ -18,7 +18,7 @@ GeophysicalModelGenerator.PointData2NearestGrid
 GeophysicalModelGenerator.Convert2UTMzone
 GeophysicalModelGenerator.Convert2CartData
 GeophysicalModelGenerator.ProjectCartData
-GeophysicalModelGenerator.DrapeOnTopo
+GeophysicalModelGenerator.drape_on_topo
 GeophysicalModelGenerator.LithostaticPressure!
 GeophysicalModelGenerator.CountMap
 ```
