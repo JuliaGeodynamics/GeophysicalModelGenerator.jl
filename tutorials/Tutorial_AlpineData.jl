@@ -1,4 +1,6 @@
 # # Alpine Data Visualization
+#
+# ## Goal
 # This is a tutorial to:
 # 1. Download datasets from known sources
 # 2. Process and unify these datasets with `GeophysicalModelGenerator`
@@ -7,7 +9,7 @@
 #
 # This is a rather lengthy tutorial that combines different other tutorials, but it will guide you through all the steps necessary to obtain a somewhat comprehensive view of the European Alps and their subsurface from a geodynamical point of view.
 
-#  ## 1. Surface Topography
+# ## 1. Surface Topography
 # In many cases, we want to add topographic data to our visualization. Here we use [GMT.jl](https://github.com/GenericMappingTools/GMT.jl) to download data from a certain region, and transfer that to `GMG`. 
 # To add the GMT package, simply add it with the julia package manager:
 # ```julia

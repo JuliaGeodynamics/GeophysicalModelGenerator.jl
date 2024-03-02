@@ -1,6 +1,6 @@
 # # Import and visualize GPS data
 #
-# ## Aim
+# ## Goal
 # In this tutorial, we discuss how to read the GPS data of Sanchez et al. (2018) https://essd.copernicus.org/articles/10/1503/2018/#section7,
 # which can be downloaded from: https://doi.pangaea.de/10.1594/PANGAEA.886889
 # You will also learn how to visualize them as vector data in Paraview.
