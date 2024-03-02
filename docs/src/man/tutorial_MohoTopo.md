@@ -109,7 +109,7 @@ The result is shown here, where the previous points are colored white and are a 
 
 #### 4. Julia script
 
-The full julia script that does it all is given [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/main/tutorial/MohoTopo_Spada.jl). You need to be in the same directory as in the data file, after which you can run it in julia with
+The full julia script that does it all is given [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/main/tutorials/MohoTopo_Spada.jl). You need to be in the same directory as in the data file, after which you can run it in julia with
 ```julia
 julia> include("MohoTopo_Spada.jl")
 ```
