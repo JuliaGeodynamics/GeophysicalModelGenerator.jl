@@ -51,20 +51,28 @@ include("surface_functions.jl")
 # GMT routines
 
 """
+        ImportTopo     
 Optional routine that imports topography. It requires you to load `GMT`
 """
 function ImportTopo end
+
+"""
+        ImportGeoTIFF     
+Optional routine that imports GeoTIFF images. It requires you to load `GMT`
+"""
 function ImportGeoTIFF end
 export ImportTopo, ImportGeoTIFF
 
 # GLMakie routines
 
 """
+        Visualise
 Interactive widget that allows you to explore a 3D data set `DataSet` in an interactive manner.
-It requires you to load `GLMakie`
+It requires you to load `GLMakie`.
 """
 function Visualise end
 export Visualise
+
 
 
 end
