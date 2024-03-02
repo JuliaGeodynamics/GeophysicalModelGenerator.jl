@@ -1,6 +1,4 @@
 # This contains a number of routines that deal with surfaces
-using NearestNeighbors
-
 export remove_NaN_Surface!, drape_on_topo, is_surface
 import Base: +,-
 
@@ -71,17 +69,16 @@ This drapes fields of a data set `Data` on the topography `Topo`
 
 """
 function drape_on_topo(Topo::GeoData, Data::GeoData)
-
+    @assert is_surface(Topo)
+    @assert is_surface(Data)
+   
     Lon,Lat,_   =   LonLatDepthGrid( Topo.lon.val[:,1,1], Topo.lat.val[1,:,1],Topo.depth.val[1,1,:]);
 
     # use nearest neighbour to interpolate data
-    coord       =   [vec(Data.lon.val)'; vec(Data.lat.val)'];
-    kdtree      =   KDTree(coord; leafsize = 10);
-    points      =   [vec(Lon)';vec(Lat)'];
-    idx,_       =   nn(kdtree, points);
+    idx         =   nearest_point_indices(Lon,Lat, vec(Data.lon.val), vec(Data.lat.val) ); 
 
-    idx_out     = findall(  (Lon .<  minimum(Data.lon.val)) .| (Lon .>  maximum(Data.lon.val)) .|
-                            (Lat .<  minimum(Data.lat.val)) .| (Lat .>  maximum(Data.lat.val)) )
+    idx_out     =   findall(  (Lon .<  minimum(Data.lon.val)) .| (Lon .>  maximum(Data.lon.val)) .|
+                              (Lat .<  minimum(Data.lat.val)) .| (Lat .>  maximum(Data.lat.val)) )
 
     fields_new  = Topo.fields;
     field_names = keys(Data.fields);
@@ -139,6 +136,9 @@ end
 Drapes Cartesian Data on topography
 """
 function drape_on_topo(Topo::CartData, Data::CartData)
+    @assert is_surface(Topo)
+    @assert is_surface(Data)
+    
     Topo_lonlat = GeoData(ustrip.(Topo.x.val),ustrip.(Topo.y.val), ustrip.(Topo.z.val), Topo.fields )
     Data_lonlat = GeoData(ustrip.(Data.x.val),ustrip.(Data.y.val), ustrip.(Data.z.val), Data.fields )
 
@@ -151,10 +151,12 @@ end
 
 
 """
+    surf_new = project_points_to_surface(X::Array, Y::Array, lon_pt::Vector, lat_pt::Vector, depth_pt::Vector)
 
-This projects 3D points described by the vectors `lon_pt`,`lat_pt`, `depth_pt` to a GeoData surface `surf`
+This changes the depth value of the surface `surf` to the `depth` value of the closest-by-points in (`lon_pt`,`lat_pt`, `depth_pt`) 
 
 """
 function project_points_to_surface(surf::GeoData, lon_pt::Vector, lat_pt::Vector, depth_pt::Vector)
 
 end
+

@@ -33,6 +33,7 @@ export load
 include("data_types.jl")
 include("data_import.jl")
 include("coord_conversion.jl")
+include("nearest_points.jl")
 include("utils.jl")
 include("Paraview_output.jl")
 include("transformation.jl")

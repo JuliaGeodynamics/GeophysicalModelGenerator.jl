@@ -13,6 +13,9 @@ end
 @testset "Gravity model" begin
     include("test_voxel_gravity.jl")
 end
+@testset "Nearest points" begin
+    include("test_nearest_points.jl")
+end
 @testset "Utils" begin
     include("test_utils.jl")
 end
