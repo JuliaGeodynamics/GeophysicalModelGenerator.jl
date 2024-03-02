@@ -105,6 +105,7 @@ makedocs(;
             "Data Structures" =>  "man/datastructures.md",
             "Data Import" =>  "man/dataimport.md",
             "Projection" =>  "man/projection.md",
+            "Surfaces" =>  "man/surfaces.md",
             "Paraview output" => "man/paraview_output.md",
             "Tools" => "man/tools.md",
             "Visualisation" => "man/visualise.md",

@@ -120,7 +120,7 @@ Phases = zeros(Int64,size(Grid_3D.x))
 Points that are below the surface are set to one:
 
 ```julia
-Below = BelowSurface(Grid_3D, Topo_model);
+Below = belowSurface(Grid_3D, Topo_model);
 Phases[Below] .= 1
 ```
 
