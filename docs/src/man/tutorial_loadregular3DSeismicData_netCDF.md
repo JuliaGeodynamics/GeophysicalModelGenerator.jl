@@ -1,4 +1,4 @@
-# 2 - 3D tomography model that is given as a netCDF file
+# 3D tomography model that is given as a netCDF file
 
 ## Goal
 This explains how to load a 3D seismic data set that is given in netCDF format, and plot it in paraview. The example is a shear-wave velocity model of the Alpine-Mediterranean region, described in:

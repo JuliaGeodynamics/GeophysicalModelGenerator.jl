@@ -1,4 +1,4 @@
-# 11 - Read in UTM data
+# Read in UTM data
 
 ## Goal
 

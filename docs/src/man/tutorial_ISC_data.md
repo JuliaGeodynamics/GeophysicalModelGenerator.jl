@@ -1,4 +1,4 @@
-# 10 - Plot ISC earthquake data
+# Plot ISC earthquake data
 
 ## Goal
 This explains how to load earthquake data obtained from the ISC catalogue.

@@ -1,4 +1,4 @@
-# 15 - How to create a movie that shows the temporal evolution of seismicity
+# How to create a movie that shows the temporal evolution of seismicity
 ## Goal
 
 This tutorial creates a movie of the spatial variations in seismicity using the earthquakes previously visualized at Campi Flegrei caldera. We visualize it against the travel-time model and tomography:
