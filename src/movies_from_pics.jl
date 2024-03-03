@@ -9,7 +9,7 @@ using FFMPEG
 export movie_from_images
 
 """
-    movie_from_images(; dir=pwd(), file=nothing, outfile=nothing, framerate=10, copy_to_current_dir=true, type=:mp4_default)
+    movie_from_images(; dir=pwd(), file=nothing, outfile=nothing, framerate=10, copy_to_current_dir=true, type=:mp4_default, collect=true)
 
 The typical way to create animations with `Paraview` is to use the `Save Animation` option to save a series of `*.png` images.
 
@@ -25,7 +25,7 @@ Optional options
 - `type`: type of movie that is created; possible options are:
     -  `:mp4_default`: Default option that saves a well-compressed `mp4` movie that works well for us on ipad and embedded in a powerpoint presentation.
     -  `:mov_hires`: Higher-resolution quicktime movie (larger filesize & not compatible with windows)
-
+- `collect`: surpresses output of `FFMPEG` if `true` (default).
 """
 function movie_from_images(; dir=pwd(), file=nothing, outfile=nothing, framerate=10, copy_to_current_dir=true, type=:mp4_default)
     curdir = pwd();
@@ -51,16 +51,16 @@ function movie_from_images(; dir=pwd(), file=nothing, outfile=nothing, framerate
     if type==:mp4_default
         # this produces an *.mp4 movie that looks good on an ipad
         outfile_ext = outfile*".mp4"
-        cmd = `$ffmpeg -y -framerate $framerate -f image2 -i $file.%0$(le)d.$fileext  -vf pad="""width=ceil(iw/2)*2:height=ceil(ih/2)*2""" -f mp4 -vcodec libx264 -pix_fmt yuv420p $outfile_ext`
+        cmd = `-y -framerate $framerate -f image2 -i $file.%0$(le)d.$fileext  -vf pad="""width=ceil(iw/2)*2:height=ceil(ih/2)*2""" -f mp4 -vcodec libx264 -pix_fmt yuv420p $outfile_ext`
     elseif type==:mov_hires
         outfile_ext = outfile*".mov"
-        cmd = `$ffmpeg -y -f image2 -framerate $framerate -i $file.%0$(le)d.$fileext  -c:v prores_ks -profile:v 1  $outfile_ext`
+        cmd = `-y -f image2 -framerate $framerate -i $file.%0$(le)d.$fileext  -c:v prores_ks -profile:v 1  $outfile_ext`
     else
         error("unknown movie type $type")
     end
 
     # run
-    @ffmpeg_env run(cmd)
+    FFMPEG.exe(cmd, collect = true)
 
     result = joinpath(pwd(),outfile_ext)
     if copy_to_current_dir
