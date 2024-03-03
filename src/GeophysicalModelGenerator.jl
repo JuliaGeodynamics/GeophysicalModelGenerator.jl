@@ -43,6 +43,7 @@ include("stl.jl")
 include("ProfileProcessing.jl")
 include("IO.jl")
 include("event_counts.jl")
+include("movies_from_pics.jl")
 
 # Add optional routines (only activated when the packages are loaded)
 

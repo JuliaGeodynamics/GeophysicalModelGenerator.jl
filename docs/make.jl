@@ -111,6 +111,7 @@ makedocs(;
             "Gravity code" => "man/gravity_code.md",
             "LaMEM" => "man/lamem.md",
             "Profile Processing" => "man/profile_processing.md"
+            "Movies" => "man/movies.md"
         ],
         "List of functions"  => "man/listfunctions.md",
         "Authors" => "man/authors.md",

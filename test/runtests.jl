@@ -47,7 +47,9 @@ end
 @testset "Event counts" begin
     include("test_event_counts.jl")
 end
-
+@testset "Create movie" begin
+    include("test_create_movie.jl")
+end
 
 # Cleanup 
 foreach(rm, filter(endswith(".vts"), readdir()))
