@@ -25,7 +25,7 @@ Optional options
 - `type`: type of movie that is created; possible options are:
     -  `:mp4_default`: Default option that saves a well-compressed `mp4` movie that works well for us on ipad and embedded in a powerpoint presentation.
     -  `:mov_hires`: Higher-resolution quicktime movie (larger filesize & not compatible with windows)
-- `collect`: surpresses output of `FFMPEG` if `true` (default).
+- `collect`: suppresses output of `FFMPEG` if `true` (default).
 """
 function movie_from_images(; dir=pwd(), file=nothing, outfile=nothing, framerate=10, copy_to_current_dir=true, type=:mp4_default)
     curdir = pwd();
