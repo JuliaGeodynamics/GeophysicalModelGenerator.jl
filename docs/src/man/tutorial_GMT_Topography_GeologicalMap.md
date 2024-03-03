@@ -1,4 +1,4 @@
-# Extract topographic data uand drape a geological map on top of it (given as raster graphics)
+# Extract topographic data and drape a geological map on top of it (given as raster graphics)
 
 ## Goal
 
