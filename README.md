@@ -31,7 +31,7 @@ Some of the key features are:
 - Handle both scalar and vector data sets.
 - Grab screenshots of cross-sections or maps in published papers and view them in 3D (together with other data).
 - Create a consistent overview that includes all available data of a certain region.
-- Create initial model setups for the 3D geodynamic code [LaMEM](https://bitbucket.org/bkaus/lamem/src/master/).
+- Create initial model setups for the 3D geodynamic code [LaMEM](https://github.com/UniMainzGeo/LaMEM).
 - Import LaMEM timesteps.
 
 All data is transformed into either a `GeoData` or a `UTMData`  structure which contains info about `longitude/latitude/depth`, `ew/ns/depth` coordinates along with an arbitrary number of scalar/vector datasets, respectively. All data can be exported to Paraview with the `Write_Paraview` routine, which transfers the data to a `ParaviewData` structure (that contains Cartesian Earth-Centered-Earth-Fixed (ECEF) `x/y/z` coordinates, used for plotting)
@@ -44,12 +44,12 @@ First, you need to install julia on your machine. We recommend to use the binari
 Next, start julia and switch to the julia package manager using `]`, after which you can add the package.
 ```julia
 julia> ]
-(@v1.6) pkg> add GeophysicalModelGenerator
+(@v1.10) pkg> add GeophysicalModelGenerator
 ```
 You can test whether it works on your system with
 ```julia
 julia> ]
-(@v1.6) pkg> test GeophysicalModelGenerator
+(@v1.10) pkg> test GeophysicalModelGenerator
 ```
 and use it with
 ```julia
