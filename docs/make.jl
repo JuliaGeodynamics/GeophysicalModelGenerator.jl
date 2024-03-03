@@ -84,7 +84,7 @@ makedocs(;
             "Overview" =>  "man/tutorials.md",
             "1 - 3D seismic tomography from ASCII" =>  "man/tutorial_load3DSeismicData.md",
             "2 - 3D seismic tomography from netCDF" =>  "man/tutorial_loadregular3DSeismicData_netCDF.md",
-            "3 - Visualize Moho topography" =>  "man/tutorial_MohoTopo.md",
+            "3 - Visualize Moho topography" =>  "man/Tutorial_MohoTopo_Spada.md",
             "4 - Create GMT-based topography" =>  "man/tutorial_GMT_Topography.md",
             "5 - Coastlines" =>  "man/tutorial_Coastlines.md",
             "6 - Import screenshots" =>  "man/tutorial_Screenshot_To_Paraview.md",
@@ -97,7 +97,7 @@ makedocs(;
             "13 - Campi Flegrei" =>  "man/tutorial_local_Flegrei.md",
             "14 - La Palma volcano Model" =>  "man/Tutorial_LaPalma.md",
             "15 - Create movies" =>  "man/tutorial_time_Seismicity.md",
-            "16 - Fault Density Map" =>  "man/tutorial_Fault_Map.md",
+            "16 - Fault Density Map" =>  "man/Tutorial_FaultDensity.md",
             "17 - Jura tutorial" =>  "man/Tutorial_Jura.md"
         ],
         "User Guide" => Any[
@@ -105,10 +105,12 @@ makedocs(;
             "Data Structures" =>  "man/datastructures.md",
             "Data Import" =>  "man/dataimport.md",
             "Projection" =>  "man/projection.md",
+            "Surfaces" =>  "man/surfaces.md",
             "Paraview output" => "man/paraview_output.md",
             "Tools" => "man/tools.md",
             "Visualisation" => "man/visualise.md",
             "Gravity code" => "man/gravity_code.md",
+            "Geodynamic setups" => "man/geodynamic_setups.md",
             "LaMEM" => "man/lamem.md",
             "Profile Processing" => "man/profile_processing.md",
             "Movies" => "man/movies.md"

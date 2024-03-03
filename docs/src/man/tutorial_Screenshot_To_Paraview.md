@@ -1,4 +1,4 @@
-# 6 - Import profiles/maps from published papers
+# Import profiles/maps from published papers
 
 ## Goal
 Ideally, all data should be available in digital format, after which you could use the tools described in the other tutorial to transform them into `GeoData` and export them to VTK.
@@ -7,7 +7,7 @@ Yet, the reality is different and often data is not (yet) available, or papers a
 For that reason, `GeophysicalModelGenerator` has tools that allow you to transfer a screenshot from any published paper into `GeoData/Paraview` and see it in 3D at the correct geographic location. This can be done for vertical profiles and for mapviews, which gives you a quick and easy way to see those papers in a new (3D) light.
 
 Here, we explain how.
-- [6 - Import profiles/maps from published papers](#6---import-profilesmaps-from-published-papers)
+- [Import profiles/maps from published papers](#import-profilesmaps-from-published-papers)
   - [Goal](#goal)
   - [General procedure](#general-procedure)
       - [1. Download data and crop images](#1-download-data-and-crop-images)
