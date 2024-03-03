@@ -20,7 +20,6 @@ Creating consistent 3D images of geophysical and geological datasets and turning
   - [Dependencies](#dependencies)
   - [Visualising Alpine data](#visualising-alpine-data)
   - [Contributing](#contributing)
-  - [Development roadmap](#development-roadmap)
   - [Funding](#funding)
 
 ## Main features
@@ -72,10 +71,6 @@ We have used this package to interpret various data sets of the Alps (mostly ope
 If you want your data be included here as well, give us an email (or even better: send the files with julia scripts).
 ## Contributing
 You are very welcome to request new features and point out bugs by opening an issue. You can also help by adding features and creating a pull request.
-
-## Development roadmap
-In the pipeline:
-- Create an interactive tool to visualize data and to interpret datasets, based on [GLMakie](https://docs.makie.org/stable/)
 
 ## Funding
 Development of this software package was funded by the German Research Foundation (DFG grants TH2076/7-1 and KA3367/10-1), which are part of the [SPP 2017 4DMB project](http://www.spp-mountainbuilding.de) project as well as by the European Research Council under grant ERC CoG #771143 - [MAGMA](https://magma.uni-mainz.de). The project was initiated at a [TeMaS](https://temas.uni-mainz.de) workshop with researchers from Frankfurt and Mainz where we realized that it is way too timeconsuming to collect available data of a certain region.
