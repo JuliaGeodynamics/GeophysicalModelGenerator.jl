@@ -69,8 +69,9 @@ We have used this package to interpret various data sets of the Alps (mostly ope
 [https://seafile.rlp.net/d/22b0fb85550240758552/](https://seafile.rlp.net/d/22b0fb85550240758552/)
 
 If you want your data be included here as well, give us an email (or even better: send the files with julia scripts).
+
 ## Contributing
 You are very welcome to request new features and point out bugs by opening an issue. You can also help by adding features and creating a pull request.
 
 ## Funding
-Development of this software package was funded by the German Research Foundation (DFG grants TH2076/7-1 and KA3367/10-1), which are part of the [SPP 2017 4DMB project](http://www.spp-mountainbuilding.de) project as well as by the European Research Council under grant ERC CoG #771143 - [MAGMA](https://magma.uni-mainz.de). The project was initiated at a [TeMaS](https://temas.uni-mainz.de) workshop with researchers from Frankfurt and Mainz where we realized that it is way too timeconsuming to collect available data of a certain region.
+Development of this software package was funded by the German Research Foundation (DFG grants TH2076/7-1 and KA3367/10-1), which are part of the [SPP 2017 4DMB project](http://www.spp-mountainbuilding.de) project, by the European Research Council under grant ERC CoG #771143 - [MAGMA](https://magma.uni-mainz.de) and by the German Ministry of Science and Education (BMBF) as part of project DEGREE. The project was initiated at a [Terrestrial Magmatic Systems - TeMaS](https://temas.uni-mainz.de) workshop with researchers from Frankfurt and Mainz where we realized that it is way too time-consuming to collect and visualise available data of a certain region.
