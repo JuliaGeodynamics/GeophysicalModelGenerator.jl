@@ -18,7 +18,7 @@ This function combines these images to an `*.mp4` movie.
 Optional options
 ===
 - `dir`:    directory where the images are stored.
-- `file`:   filename of the image series withou extension and numbers. Required if >1 image series is stored in the same directory. By default we reconstruct this name from the available files.
+- `file`:   filename of the image series without extension and numbers. Required if >1 image series is stored in the same directory. By default we reconstruct this name from the available files.
 - `outfile`:  filename of the resulting movie without extension; if not specified, `file` is used.
 - `framerate`: number of frames/second.
 - `copy_to_current_dir`: copies the final movie to the current directory if `true` (default); otherwise it will be stored in `dir`.
