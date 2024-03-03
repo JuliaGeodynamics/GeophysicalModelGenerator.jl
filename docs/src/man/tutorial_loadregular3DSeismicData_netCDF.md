@@ -105,7 +105,7 @@ Note that we multiplied depth with -1. This is necessary to make depth to be neg
 
 #### 3. Reformat the coordinate data
 In the netCDF file, coordinates are given as 1D vectors denoting the location of nodes in a regular grid. However, `GeophysicalModelGenerator.jl` expects true 3D data, where each data point is assigned a latitude,longitude, depth and the respective property (here: `Vs`). To generate this full regular 3D grid, do the following:
-```julia-repl
+```julia
 julia> using GeophysicalModelGenerator
 Lon3D,Lat3D,Depth3D = LonLatDepthGrid(lon, lat, depth);
 ```
