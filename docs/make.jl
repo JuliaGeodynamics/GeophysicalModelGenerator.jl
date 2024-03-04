@@ -98,7 +98,8 @@ makedocs(;
             "14 - La Palma volcano Model" =>  "man/Tutorial_LaPalma.md",
             "15 - Create movies" =>  "man/tutorial_time_Seismicity.md",
             "16 - Fault Density Map" =>  "man/tutorial_Fault_Map.md",
-            "17 - Jura tutorial" =>  "man/Tutorial_Jura.md"
+            "17 - Jura tutorial" =>  "man/Tutorial_Jura.md",
+            "18 - Geometry setup " => "man/tutorial_Polygon_structures.md"
         ],
         "User Guide" => Any[
             "Installation" =>  "man/installation.md",
