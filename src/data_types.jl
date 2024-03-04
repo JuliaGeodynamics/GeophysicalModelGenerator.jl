@@ -1,7 +1,7 @@
 # This is data_types.jl
 # contains type definitions to be used in GeophysicalModelGenerator
 
-import Base: show
+import Base: show, size
 
 export  GeoData, ParaviewData, UTMData, CartData,
         LonLatDepthGrid, XYZGrid, Velocity_SphericalToCartesian!,
@@ -216,6 +216,7 @@ struct GeoData <: AbstractGeneralGrid
      end
 
 end
+size(d::GeoData) = size(d.lon.val)
 
 # Print an overview of the Geodata struct:
 function Base.show(io::IO, d::GeoData)
@@ -247,6 +248,23 @@ function Base.show(io::IO, d::GeoData)
 end
 
 
+"""
+    GeoData(lld::Tuple{Array,Array,Array})
+
+This creates a `GeoData` struct if you have a Tuple with 3D coordinates as input.
+# Example
+```julia
+julia> data = GeoData(LonLatDepthGrid(-10:10,-5:5,0))
+GeoData 
+  size      : (21, 11, 1)
+  lon       ϵ [ -10.0 : 10.0]
+  lat       ϵ [ -5.0 : 5.0]
+  depth     ϵ [ 0.0 : 0.0]
+  fields    : (:Z,)
+```
+"""
+GeoData(lld::Tuple) = GeoData(lld[1],lld[2],lld[3],(Z=lld[3],))
+
 
 """
     ParaviewData(x::GeoUnit, y::GeoUnit, z::GeoUnit, values::NamedTuple)
@@ -265,6 +283,7 @@ mutable struct ParaviewData <: AbstractGeneralGrid
     z       ::  GeoUnit
     fields  ::  NamedTuple
 end
+size(d::ParaviewData) = size(d.x.val)
 
 # Print an overview of the ParaviewData struct:
 function Base.show(io::IO, d::ParaviewData)
@@ -464,6 +483,7 @@ struct UTMData <: AbstractGeneralGrid
      end
 
 end
+size(d::UTMData) = size(d.EW.val)
 
 # Print an overview of the UTMData struct:
 function Base.show(io::IO, d::UTMData)
@@ -748,6 +768,7 @@ struct CartData <: AbstractGeneralGrid
      end
 
 end
+size(d::CartData) = size(d.x.val)
 
 # Print an overview of the UTMData struct:
 function Base.show(io::IO, d::CartData)
@@ -1032,6 +1053,7 @@ struct CartGrid{FT, D} <: AbstractGeneralGrid
     coord1D     :: NTuple{D,StepRangeLen{FT}}   # Tuple with 1D vectors in all directions
     coord1D_cen :: NTuple{D,StepRangeLen{FT}}   # Tuple with 1D vectors of center points in all directions
 end
+size(d::CartGrid) = d.N
 
 
 """
@@ -1148,8 +1170,6 @@ function CreateCartGrid(;
     return CartGrid(ConstantΔ,N,Δ,L,X₁,Xₙ,coord1D, coord1D_cen)
 
 end
-
-
 
 # view grid object
 function show(io::IO, g::CartGrid{FT, DIM}) where {FT, DIM}

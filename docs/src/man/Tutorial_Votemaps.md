@@ -2,7 +2,7 @@
 EditURL = "../../../tutorials/Tutorial_Votemaps.jl"
 ```
 
-# 12 - Votemaps
+# Votemaps
 
 ## Aim
 In this tutorial, your will learn how to create Votemaps that compare different tomographic models and look for similarities between different models.
@@ -14,7 +14,7 @@ We assume that you have all tomographic models already available as *.JLD2 files
 [https://seafile.rlp.net/d/22b0fb85550240758552/](https://seafile.rlp.net/d/22b0fb85550240758552/)
 
 Specifically, we will use the tomographic models of Paffrath, Zhao and Koulakov, as we have them all available in processed form
-Download the corresponding *.jld2 files to the same directory
+Download the corresponding `*.jld2` files to the same directory
 
 ```julia
 using JLD2, GeophysicalModelGenerator
