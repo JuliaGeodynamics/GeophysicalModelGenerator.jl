@@ -495,11 +495,10 @@ end
 
 """
     addPolygon!(Phase, Temp, Grid::AbstractGeneralGrid;                 # required input
-        xlim=Tuple{}, ylim=nothing, zlim=Tuple{},     # limits of the box
+            xlim=Tuple{}, ylim=Tuple{2}, zlim=Tuple{},     # limits of the box
             phase = ConstantPhase(1),                       # Sets the phase number(s) in the box
-            T=nothing ) 
-
-Adds a cylinder with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
+            T=nothing )    
+Adds a polygon with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
 
 
 Parameters
@@ -519,37 +518,50 @@ Example
 
 Polygon with constant phase and temperature:
 
-
-
-
-
+```julia
+julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
+LaMEM Grid:
+  nel         : (32, 32, 32)
+  marker/cell : (3, 3, 3)
+  markers     : (96, 96, 96)
+  x           ϵ [-3.0 : 3.0]
+  y           ϵ [-2.0 : 2.0]
+  z           ϵ [-2.0 : 0.0]
+julia> Phases = zeros(Int32,   size(Grid.X));
+julia> Temp   = zeros(Float64, size(Grid.X));
+julia> addPolygon!(Phase, Temp, Cart; xlim=(0.0,0.0, 1.6, 2.0),ylim=(0.0,0.8), zlim=(0.0,-1.0,-2.0,0.0), phase = ConstantPhase(8), T=ConstantTemp(30))
+julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
+julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
+1-element Vector{String}:
+ "LaMEM_ModelSetup.vts"
+```
 
 """
 
 
 function addPolygon!(Phase, Temp, Grid::AbstractGeneralGrid;                 # required input
-    xlim=Tuple{}, ylim=nothing, zlim=Tuple{},     # limits of the box
+    xlim=Tuple{}, ylim=Tuple{2}, zlim=Tuple{},     # limits of the box
     phase = ConstantPhase(1),                       # Sets the phase number(s) in the box
     T=nothing )                                     # Sets the thermal structure (various functions are available)
 
 # Retrieve 3D data arrays for the grid
 X,Y,Z = coordinate_grids(Grid)
 
-# Limits of block
-if ylim==nothing
-ylim = (minimum(Y), maximum(Y))
-end
 
-# initialize vector
 indx = zeros(length(X))
 
 # find points of the total script within the polygone, only in 2D due to the symetric structures and index of y
-for i = 1:length(X)
-    indx[i] = inPoly(xlim,zlim, X[i],Z[i])
+for i = 1:length(X)#(indy)
+
+    # working but not the fastest
+    if Y[i] >= ylim[1] && Y[i]<=ylim[2] 
+        indx[i] = inPoly(xlim,zlim, X[i], Z[i])
+    end
 end
 
 # get all indices which are in the polygone separated
 ind = findall(x->x>0,indx)
+
 
 # Compute thermal structure accordingly. See routines below for different options
 if T != nothing
@@ -561,48 +573,6 @@ Phase[ind] = Compute_Phase(Phase[ind], Temp[ind], X[ind], Y[ind], Z[ind], phase)
 
 return nothing
 end
-
-
-
-using GeophysicalModelGenerator, GeometricalPredicates
-
-
-# number of cells in every direction
-nx = 100
-ny = 100
-nz = 200
-
-# define domain size
-x        = LinRange(0.0,800.0,nx)
-y        = LinRange(0.0,800.0,ny)
-z        = LinRange(-660,50,nz)
-X,Y,Z    = XYZGrid(x, y, z);
-Cart     = CartData(X,Y,Z, (Data=Z,))
-
-# initialize phase and temperature matrix
-Phase   = ones(Int32,size(X))
-Temp    = ones(Float64,size(X))*1350
-
-# add different phases: crust->2, Mantle Lithosphere->3 Mantle->1
-AddBox!(Phase, Temp, Cart; xlim=(0.0,800.0),ylim=(0.0,800.0), zlim=(-800.0,0.0), phase = LithosphericPhases(Layers=[15 30 100 800], Phases=[2 3 1 5], Tlab=1300 ), T=LinearTemp(Ttop=20, Tbot=1600) )#T=HalfspaceCoolingTemp(Tsurface=20.0, Tmantle=1350, Age=120, Adiabat=0.4)
-
-
-# add sediment basin # depending on resolution show and angle it is not shown in paraview
-addPolygon!(Phase, Temp, Cart; xlim=(0.0,0.0, 160.0, 200.0),ylim=(0.0,800.0), zlim=(0.0,-10.0,-20.0,0.0), phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30))
-
-# add thinning of the continental crust attached to the slab and its thickness 
-addPolygon!(Phase, Temp, Cart; xlim=(0.0, 200.0, 0.0),ylim=(0.0,800.0), zlim=(-100.0,-150.0,-150.0), phase = ConstantPhase(5), T=LinearTemp(Ttop=1000, Tbot=1100))
-
-# add accretionary prism 
-addPolygon!(Phase, Temp, Cart; xlim=(800.1, 600.0, 800.1),ylim=(0.0,800.0), zlim=(0.0,0.0,-60.0), phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30))
-
-
-# add air phase 0
-addBox!(Phase, Temp, Cart; xlim=(0.0,800.0),ylim=(0.0,800.0), zlim=(0.0,50.0), phase = ConstantPhase(0), T=ConstantTemp(20.0))
-
-# # Save data to paraview:
-Data_Final      =   CartData(X,Y,Z,(Phase=Phase,Temp=Temp)) 
-Write_Paraview(Data_Final, "Sedimentary_basin")
 
 
 
