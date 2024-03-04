@@ -20,8 +20,8 @@ are listed in alphabetical order:
 * Pascal Aellig
 * Albert De Montserrat
 * Luca De Siena
-* Lukas Fuchs
 * Jacob Frasunkiewicz
+* Lukas Fuchs
 * Andrea Piccolo
 * Hendrik Rachona
 * Christian Schuler
