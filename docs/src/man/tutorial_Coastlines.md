@@ -1,4 +1,4 @@
-# 5 - Add coastlines 
+# Add coastlines 
 
 ## Goal
 
