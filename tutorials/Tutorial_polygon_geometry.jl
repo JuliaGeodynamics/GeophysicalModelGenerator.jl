@@ -22,7 +22,7 @@ AddBox!(Phase, Temp, Cart; xlim=(0.0,800.0),ylim=(0.0,800.0), zlim=(-800.0,0.0),
 
 
 
-# xlim: x-coordiates of the points, same ordering as zlim
+# xlim: x-coordinates of the points, same ordering as zlim
 # zlim: z-coordinates of the points, same ordering as xlim
 # ylim: limits the object within the two ylim values
 # unlimited number of points possible to create the polygon
