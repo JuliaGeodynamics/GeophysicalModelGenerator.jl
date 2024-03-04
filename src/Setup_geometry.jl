@@ -9,7 +9,7 @@ using GeoParams
 # These are routines that help to create input geometries, such as slabs with a given angle
 #
 
-export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!, AddLayer!, AddPolygon!,
+export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!, AddLayer!, addPolygon!,
         makeVolcTopo,
         ConstantTemp, LinearTemp, HalfspaceCoolingTemp, SpreadingRateTemp, LithosphericTemp,
         ConstantPhase, LithosphericPhases,
@@ -471,7 +471,54 @@ function inPoly(PolyX, PolyY, x, y)
 end
 
 
-function AddPolygon!(Phase, Temp, Grid::AbstractGeneralGrid;                 # required input
+"""
+addPolygon!(Phase, Temp, Grid::AbstractGeneralGrid;                 # required input
+    xlim=Tuple{}, ylim=Tuple{2}, zlim=Tuple{},     # limits of the box
+    Origin=nothing, StrikeAngle=0, DipAngle=0,      # origin & dip/strike
+    phase = ConstantPhase(1),                       # Sets the phase number(s) in the box
+    T=nothing )                                     # Sets the thermal structure (various functions are available)
+
+
+Adds an Polygon with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
+
+
+Parameters
+====
+- Phase - Phase array (consistent with Grid)
+- Temp  - Temperature array (consistent with Grid)
+- Grid  - Grid structure (usually obtained with ReadLaMEM_InputFile)
+- xlim  - location of the points in z-direction, same ordering as zlim
+- ylim  - font/back extension of the polygon
+- zlim  - location of the points in z-direction, same ordering as xlim
+- phase - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
+- T - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
+
+Example
+========
+
+Polygon with constant phase and temperature:
+```julia
+julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
+LaMEM Grid:
+  nel         : (32, 32, 32)
+  marker/cell : (3, 3, 3)
+  markers     : (96, 96, 96)
+  x           ϵ [-3.0 : 3.0]
+  y           ϵ [-2.0 : 2.0]
+  z           ϵ [-2.0 : 0.0]
+julia> Phases = zeros(Int32,   size(Grid.X));
+julia> Temp   = zeros(Float64, size(Grid.X));
+julia> addPolygon!(Phase, Temp, Cart; xlim=(0.0, 2.0, 0.0),ylim=(0.5,1.5), zlim=(-1.0,-1.5,-1.5), phase = ConstantPhase(5), T=ConstantTemp(Ttop=400))
+julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
+julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
+1-element Vector{String}:
+ "LaMEM_ModelSetup.vts"
+```
+
+"""
+
+
+function addPolygon!(Phase, Temp, Grid::AbstractGeneralGrid;                 # required input
     xlim=Tuple{}, ylim=Tuple{2}, zlim=Tuple{},     # limits of the box
     Origin=nothing, StrikeAngle=0, DipAngle=0,      # origin & dip/strike
     phase = ConstantPhase(1),                       # Sets the phase number(s) in the box

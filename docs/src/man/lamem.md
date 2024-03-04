@@ -20,6 +20,7 @@ GeophysicalModelGenerator.AddBox!
 GeophysicalModelGenerator.AddSphere!
 GeophysicalModelGenerator.AddEllipsoid!
 GeophysicalModelGenerator.AddCylinder!
+GeophysicalModelGenerator.addPolygon!
 GeophysicalModelGenerator.makeVolcTopo
 GeophysicalModelGenerator.ConstantTemp
 GeophysicalModelGenerator.LinearTemp

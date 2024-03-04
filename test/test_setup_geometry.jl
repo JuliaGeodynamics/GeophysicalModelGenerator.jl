@@ -15,6 +15,8 @@ AddBox!(Phases,Temp,Grid, xlim=(2,4), zlim=(-15,-10), phase=ConstantPhase(3), Di
 AddEllipsoid!(Phases,Temp,Grid, cen=(4,15,-17), axes=(1,2,3), StrikeAngle=90, DipAngle=45, phase=ConstantPhase(2), T=ConstantTemp(600))
 @test sum(Temp[1,1,:]) ≈ 14850.0
 
+
+
 # CartData 
 X,Y,Z               =   XYZGrid(1.0:1:10.0, 11.0:1:20.0, -20:1:-10);
 Data                =   zeros(size(X));
@@ -36,6 +38,10 @@ Phases              =   zeros(Int32,  Grid.N...);
 AddBox!(Phases,Temp,Grid, xlim=(2,4), zlim=(4,8), phase=ConstantPhase(3), DipAngle=10, T=LinearTemp(Tbot=1350, Ttop=200))
 
 @test maximum(Phases) == 3
+
+# add accretionary prism 
+addPolygon!(Phase, Temp, Cart; xlim=(1, 2, 1),ylim=(0.0,1.0), zlim=(2.0,3.0,3.0), phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30))
+@test maximum(Phases) == 8
 
 # Create a CartData structure from it
 Data = CartData(Grid, (T=Temp, Phases=Phases))
