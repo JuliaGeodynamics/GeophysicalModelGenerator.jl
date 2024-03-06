@@ -1644,12 +1644,12 @@ function LithostaticPressure!(Plithos::Array{T,N}, Density::Array{T,N}, dz::Numb
 end
 
 """
-    inPolygon!(PolyX::Vector, PolyY::Vector, X::Matrix, Y::Matrix, INSIDE::Matrix; fast=false)
+    inPolygon!(INSIDE::Matrix, PolyX::Vector, PolyY::Vector, X::Matrix, Y::Matrix; fast=false)
 
 Checks if points given by matrices `X` and `Y` are in or on (both cases return true) a polygon given by `PolyX` and `PolyY`. Boolean `fast` will trigger faster version that may miss points that are exactly on the edge of the polygon. Speedup is a factor of 3.
 
 """
-function inPolygon!(PolyX::Vector{T}, PolyY::Vector{T}, X::Matrix{T}, Y::Matrix{T}, INSIDE::Matrix{Bool}; fast=false) where T <: Real
+function inPolygon!(INSIDE::Matrix{Bool}, PolyX::Vector{T}, PolyY::Vector{T}, X::Matrix{T}, Y::Matrix{T}; fast=false) where T <: Real
     iSteps = collect(eachindex(PolyX))
     jSteps = [length(PolyX); collect(1:length(PolyX)-1)]
 
@@ -1669,12 +1669,12 @@ function inPolygon!(PolyX::Vector{T}, PolyY::Vector{T}, X::Matrix{T}, Y::Matrix{
 end
 
 """
-    inPolygon!(PolyX::Vector, PolyY::Vector, X::Vector, Y::Vector, INSIDE::Vector; fast=false)
+    inPolygon!(inside::Vector, PolyX::Vector, PolyY::Vector, x::Vector, y::Vector; fast=false)
 
-Same as above but `X`, `Y` and `INSIDE` are vectors.
+Same as above but `inside`, `X` and `Y` and are vectors.
 
 """
-function inPolygon!(PolyX::Vector{T}, PolyY::Vector{T}, x::Vector{T}, y::Vector{T}, inside::Vector{Bool}; fast=false) where T <: Real
+function inPolygon!(inside::Vector{Bool}, PolyX::Vector{T}, PolyY::Vector{T}, x::Vector{T}, y::Vector{T}; fast=false) where T <: Real
     iSteps = collect(eachindex(PolyX))
     jSteps = [length(PolyX); collect(1:length(PolyX)-1)]
 

@@ -247,7 +247,7 @@ xvec  = collect(-9:0.5:9); yvec = collect(-9:0.5:9); zvec = collect(1.:1.);
 X,Y,Z = meshgrid(xvec, yvec, zvec)
 X, Y  = X[:,:,1], Y[:,:,1]
 yN    = zeros(Bool, size(X))
-inPolygon!(PolyX, PolyY, X, Y, yN, fast=true)
+inPolygon!(yN, PolyX, PolyY, X, Y, fast=true)
 @test sum(yN) == 194
-inPolygon!(PolyX, PolyY, X, Y, yN)
+inPolygon!(yN, PolyX, PolyY, X, Y)
 @test sum(yN) == 217
