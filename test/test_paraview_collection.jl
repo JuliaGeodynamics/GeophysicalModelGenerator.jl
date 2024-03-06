@@ -5,12 +5,10 @@ using GeophysicalModelGenerator, WriteVTK
 x, y, z = 0:10, 1:6, 2:0.1:3
 times = range(0, 1; step = 1)
 
-saved_files = paraview_collection("full_simulation") do pvd
-    for (n, time) ∈ enumerate(times)
-        vtk_grid("./test_files/test_vti_$n", x, y, z) do vtk
-            vtk["Pressure"] = rand(length(x), length(y), length(z))
-            pvd[time] = vtk
-        end
+#generate `*.vti` files
+for (n, time) ∈ enumerate(times)
+    vtk_grid("./test_files/test_vti_$n", x, y, z) do vtk
+        vtk["Pressure"] = rand(length(x), length(y), length(z))
     end
 end
 
