@@ -37,6 +37,10 @@ make_paraview_collection("test2", files, time)
 @test isfile("test2.pvd")
 @test filesize("test2.pvd") == 317
 
+make_paraview_collection(; pvd_name="test3", files=files, time=time)
+@test isfile("test3.pvd")
+@test filesize("test3.pvd") == 317
+
 rm("test.pvd")
 rm("full_simulation.pvd")
 rm("test_files/test_depth3D.vts")
