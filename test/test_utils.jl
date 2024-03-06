@@ -239,3 +239,15 @@ cross_tmp = CrossSection(Data_EQ,Lon_level=16.4,section_width=10km)
 cross_tmp = CrossSection(Data_EQ,Start=(15.0,35.0),End=(17.0,37.0),section_width=10km)
 @test cross_tmp.fields.lon_proj[20] ==15.314329874961091 
 @test cross_tmp.fields.lat_proj[20] == 35.323420618580585
+
+# test inPolygon
+PolyX = [-2.,-1,0,1,2,1,3,3,8,3,3,1,2,1,0,-1,-2,-1,-3,-3,-8,-3,-3,-1,-2]
+PolyY = [3.,3,8.01,3,3,1,2,1,0,-1,-2,-1,-3,-3,-8,-3,-3,-1,-2,-1,0,1,2,1,3]
+xvec  = collect(-9:0.5:9); yvec = collect(-9:0.5:9); zvec = collect(1.:1.);
+X,Y,Z = meshgrid(xvec, yvec, zvec)
+X, Y  = X[:,:,1], Y[:,:,1]
+yN    = zeros(Bool, size(X))
+inPolygon!(yN, PolyX, PolyY, X, Y, fast=true)
+@test sum(yN) == 194
+inPolygon!(yN, PolyX, PolyY, X, Y)
+@test sum(yN) == 217
