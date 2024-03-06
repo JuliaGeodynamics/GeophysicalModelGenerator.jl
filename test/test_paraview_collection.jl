@@ -47,5 +47,6 @@ rm("test_files/test_depth3D.vts")
 rm("test_files/test_vti_1.vti")
 rm("test_files/test_vti_2.vti")
 rm("test2.pvd")
+rm("test3.pvd")
 
 end
