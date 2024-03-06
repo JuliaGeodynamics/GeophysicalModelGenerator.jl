@@ -7,6 +7,7 @@ export RotateTranslateScale
 export LithostaticPressure!
 export FlattenCrossSection
 export AddField, RemoveField
+export inPolyPoint, inPolyPointF, inPolygon!
 
 using NearestNeighbors
 
@@ -1640,4 +1641,106 @@ function LithostaticPressure!(Plithos::Array{T,N}, Density::Array{T,N}, dz::Numb
     Plithos[:] = reverse!(cumsum(reverse!(Plithos),dims=N))
 
     return nothing
+end
+
+"""
+    inPolygon!(PolyX::Vector, PolyY::Vector, X::Matrix, Y::Matrix, INSIDE::Matrix; fast=false)
+
+Checks if points given by matrices `X` and `Y` are in or on (both cases return true) a polygon given by `PolyX` and `PolyY`. Boolean `fast` will trigger faster version that may miss points that are exactly on the edge of the polygon. Speedup is a factor of 3.
+
+"""
+function inPolygon!(PolyX::Vector{T}, PolyY::Vector{T}, X::Matrix{T}, Y::Matrix{T}, INSIDE::Matrix{Bool}; fast=false) where T <: Real
+    iSteps = collect(eachindex(PolyX))
+    jSteps = [length(PolyX); collect(1:length(PolyX)-1)]
+
+    if fast
+        for j = 1 : size(X, 2)
+            for i = 1 : size(X, 1)
+                INSIDE[i,j] = inPolyPointF(PolyX, PolyY, X[i,j], Y[i,j], iSteps, jSteps)
+            end
+        end
+    else
+        for j = 1 : size(X, 2)
+            for i = 1 : size(X, 1)
+                INSIDE[i,j] = (inPolyPoint(PolyX, PolyY, X[i,j], Y[i,j], iSteps, jSteps) || inPolyPoint(PolyY, PolyX, Y[i,j], X[i,j], iSteps, jSteps))
+            end
+        end
+    end
+end
+
+"""
+    inPolygon!(PolyX::Vector, PolyY::Vector, X::Vector, Y::Vector, INSIDE::Vector; fast=false)
+
+Same as above but `X`, `Y` and `INSIDE` are vectors.
+
+"""
+function inPolygon!(PolyX::Vector{T}, PolyY::Vector{T}, x::Vector{T}, y::Vector{T}, inside::Vector{Bool}; fast=false) where T <: Real
+    iSteps = collect(eachindex(PolyX))
+    jSteps = [length(PolyX); collect(1:length(PolyX)-1)]
+
+    if fast
+        for i = eachindex(x)
+            inside[i] = inPolyPointF(PolyX, PolyY, x[i], y[i], iSteps, jSteps)
+        end
+    else
+        for i = eachindex(x)
+            inside[i] = (inPolyPoint(PolyX, PolyY, x[i], y[i], iSteps, jSteps) || inPolyPoint(PolyY, PolyX, y[i], x[i], iSteps, jSteps))
+        end
+    end
+end
+
+"""
+    inPolyPoint(PolyX::Vector, PolyY::Vector, x::Number, y::Number, iSteps::Vector, jSteps::)
+
+Checks if a point given by x and y is in or on (both cases return true) a polygon given by PolyX and PolyY, iSteps and jSteps provide the connectivity between the polygon edges. This function should be used through inPolygon!().
+
+"""
+function inPolyPoint(PolyX::Vector{T}, PolyY::Vector{T}, x::T, y::T, iSteps::Vector{Int64}, jSteps::Vector{Int64}) where T <: Real
+    inside1, inside2, inside3, inside4 = false, false, false, false
+    for (i,j) in zip(iSteps, jSteps)
+        xi = PolyX[i]
+        yi = PolyY[i]
+        xj = PolyX[j]
+        yj = PolyY[j]
+
+        con1 = ((yi > y) != (yj > y))
+        con2 = ((yi >= y) != (yj >= y))
+        if con1 && (x > (xj - xi) * (y - yi) / (yj - yi + eps()) + xi)
+            inside1 = !inside1
+        end
+
+        if con1 && (x >= (xj - xi) * (y - yi) / (yj - yi + eps()) + xi)
+            inside2 = !inside2
+        end
+
+        if con2 && (x > (xj - xi) * (y - yi) / (yj - yi + eps()) + xi)
+            inside3 = !inside3
+        end
+
+        if con2 && (x >= (xj - xi) * (y - yi) / (yj - yi + eps()) + xi)
+            inside4 = !inside4
+        end
+    end
+    return ((inside1 || inside2) || (inside3 || inside4))
+end
+
+"""
+    inPolyPointF(PolyX::Vector, PolyY::Vector, x::Number, y::Number, iSteps::Vector, jSteps::)
+
+Faster version of inPolyPoint() but will miss some points that are on the edge of the polygon.
+
+"""
+function inPolyPointF(PolyX::Vector{T}, PolyY::Vector{T}, x::T, y::T, iSteps::Vector{Int64}, jSteps::Vector{Int64}) where T <: Real
+    inside = false
+    for (i,j) in zip(iSteps, jSteps)
+        xi = PolyX[i]
+        yi = PolyY[i]
+        xj = PolyX[j]
+        yj = PolyY[j]
+
+        if ((yi > y) != (yj > y)) && (x > (xj - xi) * (y - yi) / (yj - yi + eps()) + xi)
+            inside = !inside
+        end
+    end
+    return inside
 end
