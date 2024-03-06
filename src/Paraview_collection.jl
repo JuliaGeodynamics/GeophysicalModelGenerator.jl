@@ -1,6 +1,8 @@
 using LightXML
 using WriteVTK, Printf
 
+export make_paraview_collection
+
 """
     make_paraview_collection(; dir=pwd(), pvd_name=nothing, files=nothing, file_extension = ".vtk", time = nothing)
 
