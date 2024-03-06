@@ -1,5 +1,5 @@
 using Test
-
+using GeophysicalModelGenerator
 @testset "Paraview collection" begin
 
 x, y, z = 0:10, 1:6, 2:0.1:3
