@@ -193,7 +193,7 @@ AddBox!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0, 0.0),
 # inclined slab
 Temp    = ones(Float64,size(Cart))*1350;
 AddBox!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0,0),StrikeAngle=0, DipAngle=45, phase = ConstantPhase(5), T=TsMK);
-@test sum(Temp)  ≈ 3.5133669349123573e8
+@test sum(Temp)  ≈ 3.5125017626287365e8
 
 
 

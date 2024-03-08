@@ -1070,7 +1070,7 @@ function Compute_ThermalStructure(Temp, X, Y, Z,Phase, s::McKenzie_subducting_sl
 
     # Thickness of the layer: 
     D0          =   (maximum(Z)-minimum(Z));
-    Zshift      =   Z .- Z[1]       # McKenzie model is defined with Z = 0 at the bottom of the slab
+    Zshift      =   Z .- Z[end]       # McKenzie model is defined with Z = 0 at the bottom of the slab
 
     # Convert subduction velocity from cm/yr -> m/s; 
     convert_velocity = 1/(100.0*365.25*60.0*60.0*24.0);
