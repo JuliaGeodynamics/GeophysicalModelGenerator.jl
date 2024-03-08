@@ -184,7 +184,7 @@ TsMK = McKenzie_subducting_slab(Tsurface = 20.0, Tmantle = 1350.0, v_cm_yr = 4.0
 @test TsMK.it == 36
 
 # Add a box with a McKenzie thermal structure
-#AddBox!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(0.0,-80.0),StrikeAngle=0, DipAngle=45, phase = ConstantPhase(5), T=TsMK);
+AddBox!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0,0),StrikeAngle=0, DipAngle=45, phase = ConstantPhase(5), T=TsMK);
 
  
  
