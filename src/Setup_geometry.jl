@@ -1065,7 +1065,7 @@ end
 
 Compute the temperature field of a `McKenzie_subducting_slab` scenario 
 """
-function Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::McKenzie_subducting_slab)
+function Compute_ThermalStructure(Temp, X, Y, Z,Phase, s::McKenzie_subducting_slab)
     @unpack Tsurface, Tmantle, Adiabat, v_cm_yr, κ, it = s
 
     # Thickness of the layer: 
