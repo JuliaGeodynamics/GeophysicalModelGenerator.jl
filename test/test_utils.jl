@@ -251,3 +251,8 @@ inPolygon!(yN, PolyX, PolyY, X, Y, fast=true)
 @test sum(yN) == 194
 inPolygon!(yN, PolyX, PolyY, X, Y)
 @test sum(yN) == 217
+X, Y, yN = X[:], Y[:], yN[:]
+inPolygon!(yN, PolyX, PolyY, X, Y, fast=true)
+@test sum(yN) == 194
+inPolygon!(yN, PolyX, PolyY, X, Y)
+@test sum(yN) == 217

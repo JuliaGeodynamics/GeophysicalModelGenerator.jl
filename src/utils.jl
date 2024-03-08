@@ -1650,19 +1650,16 @@ Checks if points given by matrices `X` and `Y` are in or on (both cases return t
 
 """
 function inPolygon!(INSIDE::Matrix{Bool}, PolyX::Vector{T}, PolyY::Vector{T}, X::Matrix{T}, Y::Matrix{T}; fast=false) where T <: Real
-    iSteps = collect(eachindex(PolyX))
-    jSteps = [length(PolyX); collect(1:length(PolyX)-1)]
-
     if fast
         for j = 1 : size(X, 2)
             for i = 1 : size(X, 1)
-                INSIDE[i,j] = inPolyPointF(PolyX, PolyY, X[i,j], Y[i,j], iSteps, jSteps)
+                INSIDE[i,j] = inPolyPointF(PolyX, PolyY, X[i,j], Y[i,j])
             end
         end
     else
         for j = 1 : size(X, 2)
             for i = 1 : size(X, 1)
-                INSIDE[i,j] = (inPolyPoint(PolyX, PolyY, X[i,j], Y[i,j], iSteps, jSteps) || inPolyPoint(PolyY, PolyX, Y[i,j], X[i,j], iSteps, jSteps))
+                INSIDE[i,j] = (inPolyPoint(PolyX, PolyY, X[i,j], Y[i,j]) || inPolyPoint(PolyY, PolyX, Y[i,j], X[i,j]))
             end
         end
     end
@@ -1675,16 +1672,13 @@ Same as above but `inside`, `X` and `Y` and are vectors.
 
 """
 function inPolygon!(inside::Vector{Bool}, PolyX::Vector{T}, PolyY::Vector{T}, x::Vector{T}, y::Vector{T}; fast=false) where T <: Real
-    iSteps = collect(eachindex(PolyX))
-    jSteps = [length(PolyX); collect(1:length(PolyX)-1)]
-
     if fast
         for i = eachindex(x)
-            inside[i] = inPolyPointF(PolyX, PolyY, x[i], y[i], iSteps, jSteps)
+            inside[i] = inPolyPointF(PolyX, PolyY, x[i], y[i])
         end
     else
         for i = eachindex(x)
-            inside[i] = (inPolyPoint(PolyX, PolyY, x[i], y[i], iSteps, jSteps) || inPolyPoint(PolyY, PolyX, y[i], x[i], iSteps, jSteps))
+            inside[i] = (inPolyPoint(PolyX, PolyY, x[i], y[i]) || inPolyPoint(PolyY, PolyX, y[i], x[i]))
         end
     end
 end
@@ -1695,9 +1689,13 @@ end
 Checks if a point given by x and y is in or on (both cases return true) a polygon given by PolyX and PolyY, iSteps and jSteps provide the connectivity between the polygon edges. This function should be used through inPolygon!().
 
 """
-function inPolyPoint(PolyX::Vector{T}, PolyY::Vector{T}, x::T, y::T, iSteps::Vector{Int64}, jSteps::Vector{Int64}) where T <: Real
+function inPolyPoint(PolyX::Vector{T}, PolyY::Vector{T}, x::T, y::T) where T <: Real
     inside1, inside2, inside3, inside4 = false, false, false, false
-    for (i,j) in zip(iSteps, jSteps)
+    n = length(PolyX)
+    for i in eachindex(PolyX)
+        j   = i-1
+        j += n * (j<1)
+        xi = PolyX[i]
         xi = PolyX[i]
         yi = PolyY[i]
         xj = PolyX[j]
@@ -1730,9 +1728,12 @@ end
 Faster version of inPolyPoint() but will miss some points that are on the edge of the polygon.
 
 """
-function inPolyPointF(PolyX::Vector{T}, PolyY::Vector{T}, x::T, y::T, iSteps::Vector{Int64}, jSteps::Vector{Int64}) where T <: Real
+function inPolyPointF(PolyX::Vector{T}, PolyY::Vector{T}, x::T, y::T) where T <: Real
     inside = false
-    for (i,j) in zip(iSteps, jSteps)
+    n = length(PolyX)
+    for i in eachindex(PolyX)
+        j   = i-1
+        j += n * (j<1)
         xi = PolyX[i]
         yi = PolyY[i]
         xj = PolyX[j]
