@@ -13,7 +13,8 @@ export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!, AddLayer!,
         makeVolcTopo,
         ConstantTemp, LinearTemp, HalfspaceCoolingTemp, SpreadingRateTemp, LithosphericTemp,
         ConstantPhase, LithosphericPhases,
-        Compute_ThermalStructure, Compute_Phase
+        Compute_ThermalStructure, Compute_Phase,
+        McKenzie_subducting_slab, LinearWeightedTemperature
 
 
 """
@@ -1032,3 +1033,127 @@ end
 
 # allow AbstractGeneralGrid instead of Z and Ztop
 Compute_Phase(Phase, Temp, Grid::LaMEM_grid, s::LithosphericPhases) = Compute_Phase(Phase, Temp, Grid.X, Grid.Y, Grid.Z, s::LithosphericPhases, Ztop=maximum(Grid.coord_z))
+
+
+
+"""
+    McKenzie_subducting_slab
+
+Thermal structure by McKenzie for a subducted slab that is fully embedded in the mantle.
+
+Parameters
+===
+- Tsurface:     Top T [C]
+- Tmantle:      Bottom T [C]
+- Adiabat:      Adiabatic gradient in K/km
+- v_cm_yr:      Subduction velocity [cm/yr]
+- κ:            Thermal diffusivity [m2/s]
+- it:           Number iterations employed in the harmonic summation
+
+"""
+@with_kw_noshow mutable struct McKenzie_subducting_slab <: AbstractThermalStructure
+    Tsurface::Float64 = 20.0       # top T
+    Tmantle::Float64  = 1350.0     # bottom T
+    Adiabat::Float64  = 0.4        # Adiabatic gradient in K/km
+    v_cm_yr::Float64  = 2.0        # velocity of subduction [cm/yr]
+    κ::Float64        = 1e-6       # Thermal diffusivity [m2/s]
+    it::Int64         = 36         # number of harmonic summation (look Mckenzie formula)
+end
+
+""" 
+    Compute_ThermalStructure(Temp, X, Y, Z, s::McKenzie_subducting_slab)
+
+Compute the temperature field of a `McKenzie_subducting_slab` scenario 
+"""
+function Compute_ThermalStructure(Temp, X, Y, Z, s::McKenzie_subducting_slab)
+    @unpack Tsurface, Tmantle, Adiabat, Age, v_cm_yr, κ, it = s
+
+    # Thickness of the layer: 
+    D0          =   Z[end]-Z[1];
+
+    # Convert subduction velocity from cm/yr -> m/s; 
+    convert_velocity = 1/(100.0*365.25*60.0*60.0*24.0);
+
+    v_s = v_cm_yr*convert_velocity;
+    
+    # calculate the Reynolds number
+    Re = (v_s*D0*1000)/2/κ;
+
+    # McKenzie model
+    sc = 1/D0
+
+    σ  = zeros(size(Temp));
+
+    # Dividi et impera
+    for i=1:it
+        a   = (-1).^(i)./(i.*pi)
+        b   = (Re .- (Re.^2 .+ i .^2. *pi .^2) .^(0.5)) .*X .*sc;
+        c   = sin.(i .*pi .*(1 .- abs.(Z .*sc))) ;
+        e   = exp.(b);
+        σ .+= a.*e.*c
+    end
+
+    Temp           .= (Tmantle)* .+2 .*(Tmantle-Tsurface).*σ;
+    
+    return Temp
+end
+
+"""
+    LinearWeightedTemperature
+
+Weight average structure -> correction from previous version Boris Kaus
+"""
+@with_kw_noshow mutable struct LinearWeightedTemperature <: AbstractThermalStructure 
+    w_min::Float64 = 0.0; 
+    w_max::Float64 = 1.0; 
+    crit_dist::Float64 = 100.0;
+    dir::Symbol =:X; 
+    F1::AbstractThermalStructure = ConstantTemp();
+    F2::AbstractThermalStructure = ConstantTemp();
+end
+
+"""
+    Weight average along distance
+    Do a weight average between two field along a specified direction 
+    Given a distance {could be any array, from X,Y} -> it increase from the origin the weight of 
+    F1, while F2 decreases. 
+    This function has been conceived for averaging the solution of Mckenzie and half space cooling model, but in 
+    can be used to smooth the temperature field from continent ocean: 
+    -> Select the boundary to apply; 
+    -> transform the coordinate such that dist represent the perpendicular direction along which you want to apply
+    this smoothening and in a such way that 0.0 is the point in which the weight of F1 is equal to 0.0; 
+    -> Select the points that belongs to this area -> compute the thermal fields {F1} {F2} -> then modify F. 
+"""
+function Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::LinearWeightedTemperature)
+    @unpack w_min, w_max, crit_dist,dir = s; 
+    @unpack F1, F2 = s; 
+    
+    if dir === :X
+        dist = X; 
+    elseif dir ===:Y 
+        dist = Y; 
+    else
+        dist = Z; 
+    end
+  
+    # compute the 1D thermal structures
+    Temp1 =  Compute_ThermalStructure(Temp, X, Y, Z, Phase, F1);
+    
+    Temp2 =  Compute_ThermalStructure(Temp, X, Y, Z, Phase, F2);
+
+    # Compute the weights
+    weight = w_min .+(w_max-w_min) ./(crit_dist) .*(dist)
+
+    ind_1 = findall(weight .>w_max);
+    
+    ind_2 =findall(weight .<w_min);
+
+    # Change the weight 
+    weight[ind_1] .= w_max; 
+    
+    weight[ind_2] .= w_min;
+
+    # Average
+    Temp = Temp1 .*weight+ Temp2 .*(1.0 - weight); 
+    return Temp
+end
