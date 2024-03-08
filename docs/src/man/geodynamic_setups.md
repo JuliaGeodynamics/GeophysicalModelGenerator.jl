@@ -20,4 +20,5 @@ GeophysicalModelGenerator.LithosphericTemp
 GeophysicalModelGenerator.ConstantPhase
 GeophysicalModelGenerator.Compute_Phase
 GeophysicalModelGenerator.LithosphericPhases
+GeophysicalModelGenerator.McKenzie_subducting_slab
 ```
