@@ -1065,11 +1065,11 @@ end
 
 Compute the temperature field of a `McKenzie_subducting_slab` scenario 
 """
-function Compute_ThermalStructure(Temp, X, Y, Z, s::McKenzie_subducting_slab)
+function Compute_ThermalStructure(Temp, X, Y, Z,Phase, s::McKenzie_subducting_slab)
     @unpack Tsurface, Tmantle, Adiabat, Age, v_cm_yr, κ, it = s
 
     # Thickness of the layer: 
-    D0          =   Z[end]-Z[1];
+    D0          =   maximum(Z)-minumum(Z);
 
     # Convert subduction velocity from cm/yr -> m/s; 
     convert_velocity = 1/(100.0*365.25*60.0*60.0*24.0);
@@ -1094,6 +1094,7 @@ function Compute_ThermalStructure(Temp, X, Y, Z, s::McKenzie_subducting_slab)
     end
 
     Temp           .= (Tmantle)* .+2 .*(Tmantle-Tsurface).*σ;
+    Temp           .= Temp + (Adiabat*abs.(Z))
     
     return Temp
 end
