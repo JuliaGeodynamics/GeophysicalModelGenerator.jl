@@ -1100,7 +1100,17 @@ end
 """
     LinearWeightedTemperature
 
-Weight average structure -> correction from previous version Boris Kaus
+Structure that defined a linear average temperature between two temperature fields as a function of distance
+
+Parameters
+===
+- w_min:        Minimum weight
+- w_max:        Maximum weight
+- crit_dist:    Critical distance
+- dir:          Direction of the averaging (`:X`, `:Y` or `:Z`)
+- F1:           First temperature field
+- F2:           Second temperature field
+
 """
 @with_kw_noshow mutable struct LinearWeightedTemperature <: AbstractThermalStructure 
     w_min::Float64 = 0.0; 
@@ -1136,23 +1146,23 @@ function Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::LinearWeightedTempera
     end
   
     # compute the 1D thermal structures
-    Temp1 =  Compute_ThermalStructure(Temp, X, Y, Z, Phase, F1);
-    
-    Temp2 =  Compute_ThermalStructure(Temp, X, Y, Z, Phase, F2);
+    Temp1 = zeros(size(Temp));
+    Temp2 = zeros(size(Temp));
+    Temp1 = Compute_ThermalStructure(Temp1, X, Y, Z, Phase, F1);
+    Temp2 = Compute_ThermalStructure(Temp2, X, Y, Z, Phase, F2);
 
     # Compute the weights
     weight = w_min .+(w_max-w_min) ./(crit_dist) .*(dist)
 
     ind_1 = findall(weight .>w_max);
-    
-    ind_2 =findall(weight .<w_min);
+    ind_2 = findall(weight .<w_min);
 
     # Change the weight 
     weight[ind_1] .= w_max; 
-    
     weight[ind_2] .= w_min;
+    
+    # Average temperature
+    Temp .= Temp1 .*(1.0 .- weight) + Temp2 .* weight; 
 
-    # Average
-    Temp = Temp1 .*weight+ Temp2 .*(1.0 - weight); 
     return Temp
 end

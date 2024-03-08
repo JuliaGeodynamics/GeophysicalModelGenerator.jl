@@ -190,14 +190,24 @@ Temp    = ones(Float64,size(Cart))*1350;
 AddBox!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0, 0.0), phase = ConstantPhase(5), T=TsMK);
 @test sum(Temp)  ≈ 3.518172093383281e8
 
-# inclined
+# inclined slab
 Temp    = ones(Float64,size(Cart))*1350;
 AddBox!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0,0),StrikeAngle=0, DipAngle=45, phase = ConstantPhase(5), T=TsMK);
 @test sum(Temp)  ≈ 3.5133669349123573e8
 
 
-#  T_slab = LinearWeightedTemperature(0.1,1.0,100.0,:X,TsMK,TsHC);
 
-#  AddBox!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(0.0,-80.0),StrikeAngle=0, DipAngle=45, phase = ConstantPhase(5), T=McKenzie(20.0));
+# horizontal slab, constant T
+T_slab  = LinearWeightedTemperature(0,1,600.0,:X,ConstantTemp(1000), ConstantTemp(2000));
+Temp    = ones(Float64,size(Cart))*1350;
+AddBox!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0, 0.0), phase = ConstantPhase(5), T=T_slab);
+@test sum(Temp)  ≈ 3.549127111111111e8
 
-#  Data_Final      =   CartData(X,Y,Z,(Phase=Phase,Temp=Temp)) 
+# horizontal slab, halfspace and McKenzie
+T_slab = LinearWeightedTemperature(crit_dist=600, F1=TsHC, F2=TsMK);
+Temp    = ones(Float64,size(Cart))*1350;
+AddBox!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0, 0.0), phase = ConstantPhase(5), T=T_slab);
+@test sum(Temp)  ≈ 3.499457641038468e8
+
+
+Data_Final =   AddField(Cart,"Temp",Temp)
