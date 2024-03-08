@@ -10,6 +10,9 @@ end
 @testset "Paraview" begin
     include("test_paraview.jl")
 end
+@testset "Paraview collection" begin
+    include("test_paraview_collection.jl")
+end
 @testset "Gravity model" begin
     include("test_voxel_gravity.jl")
 end
@@ -57,8 +60,7 @@ end
     include("test_create_movie.jl")
 end
 
-# Cleanup 
+# Cleanup
 foreach(rm, filter(endswith(".vts"), readdir()))
 foreach(rm, filter(endswith(".vtu"), readdir()))
 rm("./markers/",recursive=true)
-
