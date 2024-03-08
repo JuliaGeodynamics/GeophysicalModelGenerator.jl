@@ -1067,37 +1067,32 @@ Compute the temperature field of a `McKenzie_subducting_slab` scenario
 """
 function Compute_ThermalStructure(Temp, X, Y, Z,Phase, s::McKenzie_subducting_slab)
     @unpack Tsurface, Tmantle, Adiabat, v_cm_yr, κ, it = s
-    @show Tsurface, Tmantle, Adiabat, v_cm_yr, κ, it 
 
     # Thickness of the layer: 
     D0          =   (maximum(Z)-minimum(Z));
+    Zshift      =   Z .- Z[1]       # McKenzie model is defined with Z = 0 at the bottom of the slab
 
     # Convert subduction velocity from cm/yr -> m/s; 
     convert_velocity = 1/(100.0*365.25*60.0*60.0*24.0);
-
     v_s = v_cm_yr*convert_velocity;
     
-    # calculate the Reynolds number
-    Re = (v_s*D0*1000)/2/κ;
-    @show Re, κ, v_s, v_cm_yr, D0
-
+    # calculate the thermal Reynolds number
+    Re = (v_s*D0*1000)/2/κ;     # factor 1000 to transfer D0 from km to m
+    
     # McKenzie model
     sc = 1/D0
-
-    σ  = zeros(size(Temp));
-
+    σ  = ones(size(Temp));
     # Dividi et impera
     for i=1:it
-        a   = (-1).^(i)./(i.*pi)
-        b   = (Re .- (Re.^2 .+ i .^2. *pi .^2) .^(0.5)) .*X .*sc;
-        c   = sin.(i .*pi .*(1 .- abs.(Z .*sc))) ;
+        a   = (-1.0).^(i)./(i.*pi)
+        b   = (Re .- (Re.^2 .+ i^2.0 .* pi^2.0).^(0.5)) .*X .*sc;
+        c   = sin.(i .*pi .*(1 .- abs.(Zshift .*sc))) ;
         e   = exp.(b);
-        σ .+= a.*e.*c 
+        σ .+= 2*a.*e.*c 
     end
-    @show extrema(σ)
 
-    Temp           .= Tmantle .+ 2*(Tmantle-Tsurface).*σ;
-   # Temp           .= Temp + (Adiabat*abs.(Z))
+    Temp           .= Tsurface .+ (Tmantle-Tsurface).*σ;
+    Temp           .= Temp + (Adiabat*abs.(Z))
     
     return Temp
 end

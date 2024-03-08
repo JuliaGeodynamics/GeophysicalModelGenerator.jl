@@ -188,15 +188,14 @@ TsMK = McKenzie_subducting_slab(Tsurface = 20.0, Tmantle = 1350.0, v_cm_yr = 4.0
 # horizontal 
 Temp    = ones(Float64,size(Cart))*1350;
 AddBox!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0, 0.0), phase = ConstantPhase(5), T=TsMK);
-@test sum(Temp)  ≈ 3.518284446708499e8
+@test sum(Temp)  ≈ 3.518172093383281e8
 
 # inclined
 Temp    = ones(Float64,size(Cart))*1350;
 AddBox!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0,0),StrikeAngle=0, DipAngle=45, phase = ConstantPhase(5), T=TsMK);
-@test sum(Temp)  ≈ 3.51230950244323e8
+@test sum(Temp)  ≈ 3.5133669349123573e8
 
 
- 
 #  T_slab = LinearWeightedTemperature(0.1,1.0,100.0,:X,TsMK,TsHC);
 
 #  AddBox!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(0.0,-80.0),StrikeAngle=0, DipAngle=45, phase = ConstantPhase(5), T=McKenzie(20.0));
