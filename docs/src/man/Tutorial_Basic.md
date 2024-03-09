@@ -31,7 +31,7 @@ GeoData
 ````
 
 This is a so-called `GeoData` object, which is a 3D grid of seismic velocities as a function of longitude, latitude and depth, which can include various fields (here we only have a single field: `:dVp_Percentage`)
-We can save ths in `VTK` format, which is a widely used format that can for exampke be read by the 3D open-source visualization tool [Paraview](https://www.paraview.org/):
+We can save this in `VTK` format, which is a widely used format that can for exampke be read by the 3D open-source visualization tool [Paraview](https://www.paraview.org/):
 
 ```julia
 Write_Paraview(Tomo_Alps_full,"Tomo_Alps_full")
@@ -42,7 +42,7 @@ Saved file: Tomo_Alps_full.vts
 
 ````
 
-We also uploaded a dataset with the topography of the Alpine region which can be donwloaded with:
+We also uploaded a dataset with the topography of the Alpine region which can be downloaded with:
 
 ```julia
 Topo_Alps = load_GMG("https://zenodo.org/records/10738510/files/AlpsTopo.jld2?download=1")
@@ -199,7 +199,7 @@ Saved file: data_200km.vts
 ````
 
 ![Basic_Tutorial_3](../assets/img/Basic_Tutorial_3.png)
-In creating this image, I used the `Clip` tool of Paraview to only show topography above sealevel and made it 50% transparant.
+In creating this image, I used the `Clip` tool of Paraview to only show topography above sealevel and made it 50% transparent.
 
 ### 4. Cartesian data
 As you can see, the curvature or the Earth is taken into account here. Yet, for many applications it is more convenient to work in Cartesian coordinates (kilometers) rather then in geographic coordinates.

@@ -11,10 +11,10 @@ using GeophysicalModelGenerator;
 Tomo_Alps_full = load_GMG("https://zenodo.org/records/10738510/files/Paffrath_2021_SE_Pwave.jld2?download=1")
 
 # This is a so-called `GeoData` object, which is a 3D grid of seismic velocities as a function of longitude, latitude and depth, which can include various fields (here we only have a single field: `:dVp_Percentage`)
-# We can save ths in `VTK` format, which is a widely used format that can for exampke be read by the 3D open-source visualization tool [Paraview](https://www.paraview.org/):
+# We can save this in `VTK` format, which is a widely used format that can for exampke be read by the 3D open-source visualization tool [Paraview](https://www.paraview.org/):
 Write_Paraview(Tomo_Alps_full,"Tomo_Alps_full")
 
-# We also uploaded a dataset with the topography of the Alpine region which can be donwloaded with:
+# We also uploaded a dataset with the topography of the Alpine region which can be downloaded with:
 Topo_Alps = load_GMG("https://zenodo.org/records/10738510/files/AlpsTopo.jld2?download=1")
 
 # Different than the 3D tomographic model, the topography has size 1 for the last index which indicates that this is a 3D surface. As you can see, the depth varies, which is because it is a warped surface.
@@ -94,7 +94,7 @@ Write_Paraview(Cross_vert,"Cross_vert");
 Write_Paraview(data_200km,"data_200km");
 
 # ![Basic_Tutorial_3](../assets/img/Basic_Tutorial_3.png)
-# In creating this image, I used the `Clip` tool of Paraview to only show topography above sealevel and made it 50% transparant.
+# In creating this image, I used the `Clip` tool of Paraview to only show topography above sealevel and made it 50% transparent.
 #
 # ### 4. Cartesian data
 # As you can see, the curvature or the Earth is taken into account here. Yet, for many applications it is more convenient to work in Cartesian coordinates (kilometers) rather then in geographic coordinates.
