@@ -1,9 +1,12 @@
 # Geodynamic model setups
 
-In order to generate geodynamic simulations from setups created with `GeophysicalModelGenerator.jl`, we provide a few routines that directly create setups 
+In order to generate numerical simulations from setups created with `GeophysicalModelGenerator.jl`, we provide a few routines that directly create setups. 
 
 The routines provided here have the following functionality:
 - Add lithospheric boxes to a setup, that may have a layered structure and various thermal structures
+- Add various geometries (spheres, cuylinders, ellipsoids)
+- Add lithospheric structure
+- Add various 1D thermal structures (and possibilities to combine them)
 
 ```@docs
 GeophysicalModelGenerator.AddBox!

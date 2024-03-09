@@ -130,11 +130,7 @@ The result is shown here, where the previous points are colored white and are a 
 ![DataPoints_Moho_surface](../assets/img/Tutorial_MohoSpada_Surface_Paraview.png)
 
 ## 5. Julia script
-The full julia script that does it all is given [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/tree/main/tutorials/Tutorial_MohoTopo_Spada.jl). You need to be in the same directory as in the data file, after which you can run it in julia with
-
-```julia
-#include("Tutorial_MohoTopo_Spada.jl")
-```
+The full julia script that does it all is given [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/tree/main/tutorials/Tutorial_MohoTopo_Spada.jl).
 
 ---
 
