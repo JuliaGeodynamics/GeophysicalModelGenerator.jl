@@ -5,7 +5,7 @@ push!(LOAD_PATH, dirname(@__DIR__))
 using GeophysicalModelGenerator
 
 # Importing these activates package extensions
-import GLMakie, GMT
+using GLMakie, GMT
 
 #DocMeta.setdocmeta!(GeophysicalModelGenerator, :DocTestSetup, :(using GeophysicalModelGenerator); recursive=true)
 
