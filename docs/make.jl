@@ -14,6 +14,7 @@ GMG_root_dir = dirname(@__DIR__)
 
 license = read(joinpath(GMG_root_dir, "LICENSE.md"), String)
 write(joinpath(@__DIR__, "src", "man", "license.md"), license)
+
 # Copy list of authors to not need to synchronize it manually
 authors_text = read(joinpath(GMG_root_dir, "AUTHORS.md"), String)
 # authors_text = replace(authors_text, "in the [LICENSE.md](LICENSE.md) file" => "under [License](@ref)")
@@ -113,7 +114,7 @@ makedocs(;
             "Tools" => "man/tools.md",
             "Visualisation" => "man/visualise.md",
             "Gravity code" => "man/gravity_code.md",
-            "Geodynamic setups" => "man/geodynamic_setups.md",
+            "Numerical model setups" => "man/geodynamic_setups.md",
             "LaMEM" => "man/lamem.md",
             "Profile Processing" => "man/profile_processing.md",
             "Movies" => "man/movies.md"
