@@ -90,8 +90,7 @@ Write_Paraview(data_Moho, "Spada_Moho_combined")
 # ![DataPoints_Moho_surface](../assets/img/Tutorial_MohoSpada_Surface_Paraview.png)
 
 # ## 5. Julia script
-# The full julia script that does it all is given [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/tree/main/tutorials/Tutorial_MohoTopo_Spada.jl). You need to be in the same directory as in the data file, after which you can run it in julia with
-#include("Tutorial_MohoTopo_Spada.jl")
+# The full julia script that does it all is given [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/tree/main/tutorials/Tutorial_MohoTopo_Spada.jl). 
 
 #src Note: The markdown page is generated using:
 #src Literate.markdown("tutorials/Tutorial_MohoTopo_Spada.jl","docs/src/man",keepcomments=true, execute=false, codefence = "```julia" => "```")
