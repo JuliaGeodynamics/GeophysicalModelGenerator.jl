@@ -102,6 +102,7 @@ makedocs(;
             "17 - Fault Density Map" =>  "man/Tutorial_FaultDensity.md",
             "18 - Alpine data integration" =>  "man/Tutorial_AlpineData.md",
             "19 - Jura tutorial" =>  "man/Tutorial_Jura.md"
+            "20 - 2D model setups" => "man/Tutorial_NumericalModel_2D.md"
         ],
         "User Guide" => Any[
             "Installation" =>  "man/installation.md",
@@ -117,7 +118,7 @@ makedocs(;
             "Numerical model setups" => "man/geodynamic_setups.md",
             "LaMEM" => "man/lamem.md",
             "Profile Processing" => "man/profile_processing.md",
-            "Movies" => "man/movies.md"
+            "Movies" => "man/movies.md"            
         ],
         "List of functions"  => "man/listfunctions.md",
         "Authors" => "man/authors.md",
