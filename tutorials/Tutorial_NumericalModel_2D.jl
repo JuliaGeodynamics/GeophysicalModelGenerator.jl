@@ -20,10 +20,10 @@ z = range(-660,0,    nz);
 Grid2D = CartData(XYZGrid(x,0,z))
 
 # Now we create an integer array that will hold the `Phases` information (which usually refers to the material or rock type in the simulation)
-Phases = zeros(Int64,size(Grid2D));
+Phases = zeros(Int64, nx, 1, nz);
 
 # In many (geodynamic) models, one also has to define the temperature, so lets initiate it
-Temp = ones(Float64,size(Grid2D))*1350;
+Temp = fill(1350.0, nx, 1, nz);
 
 # #### Mechanical setup
 
