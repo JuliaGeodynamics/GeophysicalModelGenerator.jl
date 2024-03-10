@@ -66,7 +66,7 @@ Grid2D = addField(Grid2D,(;Phases, Temp))
 Write_Paraview(Grid2D,"Grid2D_SubductionHalfspaceCooling");
 # ![Mechanical2D_Tutorial_3](../assets/img/Mechanical2D_Tutorial_3.png) 
 
-# Note that you can specify several 1D thermal structures, such as 
+# Note that you can specify other 1D thermal profiles, such as 
 # - `ConstantTemp`
 # - `LinearTemp`
 # - `HalfspaceCoolingTemp`
