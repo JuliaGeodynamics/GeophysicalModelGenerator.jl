@@ -42,7 +42,7 @@ Write_Paraview(Grid2D,"Grid2D_SubductionMechanical");
 
 # #### Add lithospheric layers
 # In many geodynamic models, the lithosphere consists of a crust and mantle (or upper crust, lower crust and mantle lithosphere).
-# We can use the function `LithosphericPhases` for this which is a simple way to set a lithospheric layering
+# We can use the function `LithosphericPhases` for this, which is a simple way to set a lithospheric layering
 lith = LithosphericPhases(Layers=[15 55], Phases=[1 2])
 
 # and set the slab again:
