@@ -6,7 +6,7 @@ export InterpolateDataFields2D, InterpolateDataFields, InterpolateTopographyOnPl
 export RotateTranslateScale
 export LithostaticPressure!
 export FlattenCrossSection
-export AddField, RemoveField
+export addField, RemoveField
 export inPolyPoint, inPolyPointF, inPolygon!
 
 using NearestNeighbors
@@ -30,12 +30,12 @@ function meshgrid(vx::AbstractVector{T}, vy::AbstractVector{T},
 end
 
 """
-    V = AddField(V::AbstractGeneralGrid,field_name::String,data::Any)
+    V = addField(V::AbstractGeneralGrid,field_name::String,data::Any)
 
 Add Fields Data to GeoData or CartData
 
 """
-function AddField(V::AbstractGeneralGrid,field_name::String,data::Any)
+function addField(V::AbstractGeneralGrid,field_name::String,data::Any)
     fields_new  = V.fields;     new_field   =   NamedTuple{(Symbol(field_name),)}((data,));
     fields_new  =   merge(fields_new, new_field); # replace the field in fields_new
 
@@ -44,11 +44,25 @@ function AddField(V::AbstractGeneralGrid,field_name::String,data::Any)
     elseif isa(V,CartData)
         V = CartData(V.x.val,V.y.val,V.z.val,fields_new)
     else
-        error("AddField is only implemented for GeoData and CartData structures")
+        error("addField is only implemented for GeoData and CartData structures")
     end
 
     return V
 end
+
+"""
+    V = addField(V::CartData,new_fields::NamedTuple)
+
+Add `new_fields` fields to a `CartData` dataset
+"""
+addField(V::CartData,new_fields::NamedTuple) = CartData(V.x.val, V.y.val, V.z.val, merge(V.fields, new_fields))
+
+"""
+    V = addField(V::GeoData,new_fields::NamedTuple)
+
+Add `new_fields` fields to a `GeoData` dataset
+"""
+addField(V::GeoData,new_fields::NamedTuple) = GeoData(V.lon.val, V.lat.val, V.depth.val, merge(V.fields, new_fields))
 
 # this function is taken from @JeffreySarnoff
 function dropnames(namedtuple::NamedTuple, names::Tuple{Vararg{Symbol}})
@@ -525,7 +539,7 @@ function CrossSection(DataSet::AbstractGeneralGrid; dims=(100,100), Interpolate=
         DataProfile = CrossSectionVolume(DataSet; dims, Interpolate, Depth_level, Lat_level, Lon_level, Start, End, Depth_extent)
 
         # add field that has coordinates along the profile
-        DataProfile =   AddField(DataProfile,"FlatCrossSection", FlattenCrossSection(DataProfile))
+        DataProfile =   addField(DataProfile,"FlatCrossSection", FlattenCrossSection(DataProfile))
     end
 
     return DataProfile
@@ -544,9 +558,9 @@ Data_Cross              = CrossSection(DataSet, dims=(100,100), Interpolate=true
 
 x_new = FlattenCrossSection(Data_Cross)
 
-This flattened CrossSection can be added to original Data_Cross by AddField()
+This flattened CrossSection can be added to original Data_Cross by addField()
 
-Data_Cross = AddField(Data_Cross,"FlatCrossSection", x_new)
+Data_Cross = addField(Data_Cross,"FlatCrossSection", x_new)
 CartData
     size    : (100, 100, 1)
     x       ϵ [ 0.0 : 99.9]
@@ -578,7 +592,7 @@ end
     julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)));
     julia> Data_cross      =   CrossSection(Data_set3D, Start=(10,30),End=(20,40))
     julia> x_profile       =   FlattenCrossSection(Data_cross)
-    julia> Data_cross      =   AddField(Data_cross,"x_profile",x_profile)
+    julia> Data_cross      =   addField(Data_cross,"x_profile",x_profile)
 
     ```
 """
@@ -856,7 +870,7 @@ function InterpolateDataFields_CrossSection(V::CartData, X,Y,Z, X_cross)
                 data_new = round.(Int64,data_new)
             end
         end
-        Data_extract = AddField(Data_extract,String(field_names[i]),data_new)
+        Data_extract = addField(Data_extract,String(field_names[i]),data_new)
     end
 
     return Data_extract

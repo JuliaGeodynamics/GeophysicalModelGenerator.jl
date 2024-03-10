@@ -239,7 +239,7 @@ function combine_VolData(VolData::NamedTuple; lat=nothing, lon=nothing, depth=no
         for (j,name) in enumerate(names_fields)
             name_new_field = DataSet_Names[i]*"_"*name # name of new field includes name of dataset
             # Note: we use ustrip here, and thereby remove the values, as the cross-section routine made problems
-            DataSetRef = AddField(DataSetRef,name_new_field, ustrip.(DataSet_interp.fields[j]))
+            DataSetRef = addField(DataSetRef,name_new_field, ustrip.(DataSet_interp.fields[j]))
         end
     end
 
@@ -263,7 +263,7 @@ function CreateProfileVolume!(Profile::ProfileData, VolData::AbstractGeneralGrid
 
         # flatten cross section and add this data to the structure
         x_profile = FlattenCrossSection(cross_tmp,Start=Profile.start_lonlat)
-        cross_tmp = AddField(cross_tmp,"x_profile",x_profile)
+        cross_tmp = addField(cross_tmp,"x_profile",x_profile)
 
     else
         # take a horizontal cross section
@@ -292,7 +292,7 @@ function CreateProfileSurface!(Profile::ProfileData, DataSet::NamedTuple; DimsSu
 
             # flatten cross section and add this data to the structure
             x_profile   = FlattenCrossSection(data,Start=Profile.start_lonlat)
-            data        = AddField(data,"x_profile",x_profile)
+            data        = addField(data,"x_profile",x_profile)
 
             # add the data set as a NamedTuple
             data_NT     = NamedTuple{(DataSetName[idata],)}((data,))
@@ -327,7 +327,7 @@ function CreateProfilePoint!(Profile::ProfileData, DataSet::NamedTuple; section_
 
             # flatten cross section and add this data to the structure
             x_profile   = FlattenCrossSection(data,Start=Profile.start_lonlat)
-            data        = AddField(data,"x_profile",x_profile)
+            data        = addField(data,"x_profile",x_profile)
 
             # add the data set as a NamedTuple
             data_NT     = NamedTuple{(DataSetName[idata],)}((data,))
