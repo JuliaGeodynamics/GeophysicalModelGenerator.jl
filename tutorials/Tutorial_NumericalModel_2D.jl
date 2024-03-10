@@ -56,7 +56,7 @@ Write_Paraview(Grid2D,"Grid2D_SubductionMechanicalLayered");
 
 # #### Add halfspace cooling thermal structure
 # So far, we only created the mechanical structure but not the thermal one.
-# We can do that by specifying a thermal structure 
+# We can do that by specifying a thermal structure. For example, we can use the half-space cooling model:
 therm = HalfspaceCoolingTemp(Age=40)
 AddBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = lith, T=therm);
 AddBox!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = lith, T = therm, DipAngle=30);
