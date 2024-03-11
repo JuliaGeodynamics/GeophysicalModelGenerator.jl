@@ -128,7 +128,8 @@ AddBox!(Phases, Temp, Grid; xlim=(200,700), ylim=(0, 100.0), zlim=(-200.0, 15), 
 AddBox!(Phases, Temp, Grid; xlim=(200,700), ylim=(-1000, 0.0), zlim=(-110.0, 15), phase = lith,  T=McKenzie_subducting_slab(Tsurface=0,v_cm_yr=3), DipAngle=30);
 AddBox!(Phases, Temp, Grid; xlim=(200,700), ylim=(0, 1000), zlim=(-110.0, 15), phase = lith,  T=McKenzie_subducting_slab(Tsurface=0,v_cm_yr=3), DipAngle=35);
 
-replace!(Temp, NaN => 0.0);
+ind=findall(isnan.(Temp)); Temp[ind] .= 0;
+```
 
 Add them to the `CartData` dataset:
 
