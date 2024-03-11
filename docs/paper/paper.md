@@ -1,7 +1,7 @@
 ---
 title: 'GeophysicalModelGenerator.jl: A Julia package to visualize geoscientific data and create numerical model setups'
 tags:
-  - Julia
+  - julia
   - geosciences
   - geodynamics
   - tectonics
