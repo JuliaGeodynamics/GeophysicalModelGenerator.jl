@@ -111,6 +111,7 @@ makedocs(;
             "Projection" =>  "man/projection.md",
             "Paraview output" => "man/paraview_output.md",
             "Paraview collection" => "man/paraview_collection.md",
+            "Surfaces" =>  "man/surfaces.md",
             "Tools" => "man/tools.md",
             "Visualisation" => "man/visualise.md",
             "Gravity code" => "man/gravity_code.md",
