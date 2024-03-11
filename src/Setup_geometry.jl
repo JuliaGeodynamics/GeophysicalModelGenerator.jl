@@ -10,7 +10,7 @@ using  ScatteredInterpolation
 # These are routines that help to create input geometries, such as slabs with a given angle
 #
 
-export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!, AddLayer!, create_slab!,
+export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!, AddLayer!, addSlab!,
         makeVolcTopo,
         ConstantTemp, LinearTemp, HalfspaceCoolingTemp, SpreadingRateTemp, LithosphericTemp,
         ConstantPhase, LithosphericPhases,
@@ -1190,41 +1190,44 @@ that can be projected to a linear segment, an user can discretize it, and can cr
 The type of bending can be further customize, but certain geometry can be tricky with the actual finding slab. In the future,
 we can introduce structures that handle that and use multiple dispatch of the function finding slab to handle the most tricky geometries
 
-n_seg_xy     = Number of segment through which the trench strike is discretize (for now, is one by default)
-A            = The first point of the trench  | The coordinate will be transformed and rotated as a function of the
-B            = The second point of the trench | slope of the segment, and w.r.t. to the point A.
-n_seg        = The number of segment through which the slab is discretize along the dip
-L0           = The length of the slab
-D0           = The thickness of the slab
-Lb           = Critical distance through which apply the bending angle functions Lb ∈ [0,L0];
-θ_max        = maximum angle of bending ∈ [0°,90°].
-direction    = the direction of the dip
+Parameters
+===
+
+- `n_seg_xy`  - Number of segment through which the trench strike is discretize (for now, is one by default)
+- `A`         - The first point of the trench  | The coordinate will be transformed and rotated as a function of the
+- `B`         - The second point of the trench | slope of the segment, and w.r.t. to the point A.
+- `n_seg`     - The number of segment through which the slab is discretize along the dip
+- `L0`        - The length of the slab
+- `D0`        - The thickness of the slab
+- `Lb`        - Critical distance through which apply the bending angle functions Lb ∈ [0,L0];
+- `θ_max`     - maximum angle of bending ∈ [0°,90°].
+- `direction` - the direction of the dip
                The rotation of the coordinate system is done as such that the new X is parallel to the segment. Since the
                rotation is anticlockwise the coordinate y has specific values: direction tells if the subduction is directed along
                the positive or negative direction of the new y coordinate system. In practice, it apply an additional transformation
                to y by multiplying it with -1 or +1;
-type_bending = is the type of bending angle of the slab for now can be :Linear, :Ribe.
-    The angle of slab changes as a function of l (∈ [0,L0]). l is the actual distance along the slab length from
+- `d_decoupling` - depth at which the slab is fully submerged into the mantle.
+- `type_bending` - is the type of bending angle of the slab [`:Linear`, `:Ribe`].
+    The angle of slab changes as a function of `l` (∈ [0,L0]). `l` is the actual distance along the slab length from
     the trench.
-    In case of :Linear θ(l) = ((θ_max - 0.0)/(Lb-0))*l;
-    In case of :Ribe   θ(l) =  θ_max*l^2*((3*Lb-2*l))/(Lb^3) (ref*);
+    In case of `:Linear` θ(l) = ((θ_max - 0.0)/(Lb-0))*l;
+    In case of `:Ribe`   θ(l) =  θ_max*l^2*((3*Lb-2*l))/(Lb^3) (ref*);
     (ref*) Ribe 2010 [Bending mechanics and mode selection in free subduction: a thin-sheet analysis]
     For l>Lb, θ(l) = θ_max;
-    [Dev] Potential development: using the elastic bending differential equation and numerically integrate
-WZ           = Thickness of the weakzone.
-d_decoupling = depth at which the slab is fully submerged into the mantle.
+#    [Dev] Potential development: using the elastic bending differential equation and numerically integrate
+#- `WZ` - Thickness of the weakzone.
 
 """
 @with_kw_noshow mutable struct Trench <: Trench_slab
     n_seg_xy::Int64 =  1                # Number of segment of the trench plane view (for now, 1 segment)
     A::Array{Float64} =  (0.0,0.0)      # Coordinate 1 {set of coordinates}
     B::Array{Float64} =  (0.0,1.0)      # Coordinate 2 {set of coordinates}
-    θ_max::Float64 = 45                 # max bending angle, (must be converted into radians)
-    direction::Float64 = 1.0            # Direction of the bending angle.
     n_seg::Int64 = 50                   # definition segment
     L0:: Float64 = 400                  # length of the slab
     D0:: Float64 = 100                  # thickness of the slab
     Lb:: Float64 = 200                  # Length at which all the bending is happening (Lb<=L0)
+    θ_max::Float64 = 45                 # max bending angle, (must be converted into radians)
+    direction::Float64 = 1.0            # Direction of the bending angle.
     d_decoupling:: Float64 = 100        # decoupling depth of the slab
     type_bending::Symbol = :Ribe        # Mode Ribe | Linear | Customize
 end
@@ -1289,7 +1292,6 @@ function compute_slab_surface!(D0::Float64,L0::Float64,Lb::Float64,n_seg::Int64,
     end
 
     return Top,Bottom; #{Filling the structure?}
-
 end
 
 """
@@ -1367,9 +1369,8 @@ then interpolates the distance from the top, and the current length from the cor
 function find_slab!(X,Y,Z,d,ls,θ_max,A,B,Top,Bottom,seg_slab,D0,L0,direction)
 
     # Create the XT,YT
-    XT = zeros(size(X));
-
-    YT = zeros(size(Y));
+    XT = zero(X);
+    YT = zero(Y);
 
     # Function to transform the coordinate
     xb = transform_coordinate!(X,Y,Z,XT,YT,A,B,direction);
@@ -1452,14 +1453,14 @@ function find_slab!(X,Y,Z,d,ls,θ_max,A,B,Top,Bottom,seg_slab,D0,L0,direction)
 end
 
 """
-    create_slab!(X::Array{Float64},Y::Array{Float64},Z::Array{Float64},Ph::Array{Int32},T::Array{Float64},t::Trench,strat,temp)
+    addSlab!(X::Array{Float64},Y::Array{Float64},Z::Array{Float64},Ph::Array{Int32},T::Array{Float64},t::Trench,strat,temp)
 
 Main function that creates the slab. Unpack the variable from the structure, create two arrays that contains the information of l and d.
     l and d are the array containing the length of the slab per each coordinate belonging to the slab, and the distance from the surface.
     In this function compute_slab_surface and find_slab are called. And after d and ls are computed, it fill up the temperature and phase arrays
 
 """
-function create_slab!(X::Array{Float64},Y::Array{Float64},Z::Array{Float64},Ph::Array{Int32},T::Array{Float64},t::Trench,strat,temp)
+function addSlab!(X::Array{Float64},Y::Array{Float64},Z::Array{Float64},Ph::Array{Int32},T::Array{Float64},t::Trench,strat,temp)
 
     d = ones(size(X)).*NaN64;
 
