@@ -113,7 +113,7 @@ one can use it with:
 julia> using GeophysicalModelGenerator
 ```
 
-As a first example, we will download a 3D seismic tomography dataset for the Alpine region (from `@Paffrath_Friederich_Schmid_Handy_2021`):
+As a first example, we will download a 3D seismic tomography dataset for the Alpine region (from @Paffrath_Friederich_Schmid_Handy_2021):
 ```julia
 julia> Tomo_Alps_full = load_GMG(
   "https://zenodo.org/records/10738510/files/Paffrath_2021_SE_Pwave.jld2?download=1")
@@ -155,7 +155,7 @@ Saved file: Tomo_Alps.vts
 julia> Write_Paraview(Topo_Alps,"Topo_Alps")
 Saved file: Topo_Alps.vts
 ```
-And open it with Paraview (see Figure \autoref{fig:example_basic} a).
+And open it with Paraview (see \autoref{fig:basic}a).
 We can create vertical and horizontal cross-sections through the data with:
 ```julia
 julia> Cross_200km = CrossSection(Tomo_Alps, Depth_level=-200, Interpolate=true);
@@ -163,9 +163,9 @@ julia> Cross_vert  = CrossSection(Tomo_Alps, Start=(5,47), End=(15,44));
 julia> Write_Paraview(Cross_vert, "Cross_vert");
 julia> Write_Paraview(Cross_200km,"Cross_200km");
 ```
-and visualize them along with the volumetric data (Fig. \autoref{fig:basic}a).
+and visualize them along with the volumetric data (\autoref{fig:basic}a).
 
-![Example of visualising 3D seismic data of the Alps. \label{fig:basic} using a) geographic coordinates (`GeoData`) or b) Projected to cartesian coordinates (`CartData`).  ](Basic_Tutorial.png){ width=100% }
+![Example of visualising 3D seismic data of the Alps, using a) geographic coordinates (`GeoData`) or b) cartesian coordinates (`CartData`) projected from geographic coordinates. Shown are topography as well as several slices through the 3D seismic tomography P-wave model of [@Paffrath_Friederich_Schmid_Handy_2021].  \label{fig:basic} ](Basic_Tutorial.png){ width=100% }
 
 One complication with geographic data is that Paraview does not have native support for geographic coordinates, and accordingly it is not always straightforward to use the build-in tools, for example, to create slices through the data. 
 In addition, many numerical models work in (orthogonal) cartesian rather than in spherical coordinates, which appears to be a good first-order approximation for many geodynamic applications [@Macherel_Räss_Schmalholz_2024].
@@ -210,7 +210,7 @@ CartData
 julia> Write_Paraview(Tomo_rect,"Tomo_rect");
 julia> Write_Paraview(Topo_rect,"Topo_rect");
 ```
-We can now use the build-in tools of Paraview to visualize the data (see Figure \autoref{fig:example_basic} b), and perhaps use the data as inspiration to create an initial numerical model setup. It is also possible to interpolate other seismic tomography datasets to the same grid and subsequently compute a "votemap" to count in how many tomographic models a specific seismic anomaly is present.
+We can now use the build-in tools of Paraview to visualize the data (see \autoref{fig:basic} b), and use this as inspiration to create an initial numerical model setup. It is also possible to interpolate other seismic tomography datasets to the same grid and subsequently compute a "votemap" to count in how many tomographic models a specific seismic anomaly is present.
 
 
 # Examples of usage
@@ -219,26 +219,26 @@ We can now use the build-in tools of Paraview to visualize the data (see Figure 
 ### Visualize data of the Alps
 The European Alps are among the best studied mountain belts on the planet, and have therefore been the focus of numerous geological and geophysical studies. Different seismic tomography model have been published (using different parameterisations and datasets), and those do not necessarily agree with each other. 
 
-In the tutorial `Tutorial_AlpineData.jl`, users learn how to load the topography of the region, import Moho data, load and visualize GPS vectors, import and plot earthquake locations, along with cross-sections through the model (Figure \autoref{fig:alps}).
+In `Tutorial_AlpineData.jl`, users learn how to load the topography of the region, import Moho data, load and visualize GPS vectors, import and plot earthquake locations, along with cross-sections through the model (\autoref{fig:alps}).
 
 ![Example of combined data of the Alps, which shows the GPS surface velocity (arrows), topography, earthquake locations (grey dots) and cross-sections through a recent anisotropic P-wave tomography model by [@Rappisi_VanderBeek_Faccenda_Morelli_Molinari_2022]. \label{fig:alps}](../src/assets/img/GMG_AlpineData.png){ width=90% }
 
 ### La Palma volcanic eruption
-The 2019 Cumbre Viejo eruption in La Palma, Canary Islands, was accompanied by seismic activity. In `Tutorial_LaPalma.jl` users learn to generate a cartesian block model of the island, import seismicity and use that to generate a 3D volumetric seismic activity map (Fig. \autoref{fig:lapalma}). 
+The 2019 Cumbre Viejo eruption in La Palma, Canary Islands, was accompanied by seismic activity. In `Tutorial_LaPalma.jl`, users learn to generate a cartesian block model of the island, import seismicity and use that to generate a 3D volumetric seismic activity map (\autoref{fig:lapalma}). 
 
 ![Example of a model of La Palma which shows seismicity during the 2019 Cumbre Viejo eruption. \label{fig:lapalma}](../src/assets/img/Tutorial_LaPalma.png){ width=100% }
 
 
 ### Jura mountains
-The Jura mountains are a small-scale fold and thrust belt located in the Switzerland and France. Thanks to seismic cross-sections and boreholes, quite a bit of information is available about its structure at depth, which was used by Marc Schori to generate extensive 3D models of the subsurface including thickness maps of various geological units, generate a new geological map of the region, and create balanced reconstructions [@Schori_2021].  
+The Jura mountains are a small-scale fold and thrust belt located in the Switzerland and France. Thanks to seismic cross-sections and boreholes, quite a bit of information is available about its structure at depth, which was used to generate extensive 3D models of the subsurface including thickness maps of various geological units, generate a new geological map of the region, and create balanced reconstructions [@Schori_2021].  
 
-In `Tutorial_Jura.jl` users learn how to drape the geological map over the topography, import surfaces (such as the basement topography) from GeoTIFF images, and include screenshots from geological cross-sections. The data is rotated and transferred to cartesian coordinates such that we obtain a 3D block model that runs perpendicular to the strike of the mountain range (Figure \autoref{fig:jura}).
+In `Tutorial_Jura.jl` users learn how to drape the geological map over the topography, import surfaces from GeoTIFF images (such as basement topography), and include screenshots from geological cross-sections. The data is rotated and transferred to cartesian coordinates such that we obtain a 3D block model that is perpendicular to the strike of the mountain range (\autoref{fig:jura}).
 
 ![Example of creating a 3D cartesian block model that runs perpendicular to the Jura mountains, combining surface geology, with screenshots from interpreted cross-sections (gray drawing), and digital data of the the basement topography [using data of @Schori_2021]. \label{fig:jura}](../src/assets/img/Jura_2.png){ width=100% }
 
 
 ### Slab model setup 
-In `Tutorial_NumericalModel_3D` we illustrate how to generate a 3D geodynamic model setup, with a subducting slab, a mid oceanic ridge and an overriding plate. The thermal structure of the subducting part of the slab is based on an analytical solution that takes heating from the surrounding, hot, mantle into account, whereas the thermal structure of the oceanic slab increases away from the ridge. 
+In `Tutorial_NumericalModel_3D.jl`, users learn how to generate a 3D geodynamic model setup with subducting slabs, a mid oceanic ridge and an overriding plate. The thermal structure of the subducting part of the slab is based on an analytical solution that takes heating from the surrounding, hot, mantle into account, whereas the thermal structure of the oceanic slab increases away from the ridge. 
 
 
 # Acknowledgements
