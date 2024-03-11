@@ -1,4 +1,16 @@
 ---
+header-includes:
+- |
+  ```{=latex}
+  \directlua{luaotfload.add_fallback(
+               "myfallback",
+               {"NotoColorEmoji:mode=harf;"}
+             )}
+  \setmainfont[RawFeature={fallback=myfallback}]{LatinModernRoman}
+  \setmonofont[RawFeature={fallback=myfallback}]{LatinModernMono}
+  ```
+---
+---
 title: 'GeophysicalModelGenerator.jl: A Julia package to visualize geoscientific data and create numerical model setups'
 tags:
   - Julia
@@ -170,23 +182,23 @@ and visualize them along with the volumetric data (\autoref{fig:basic}a).
 One complication with geographic data is that Paraview does not have native support for geographic coordinates, and accordingly it is not always straightforward to use the build-in tools, for example, to create slices through the data. 
 In addition, many numerical models work in (orthogonal) cartesian rather than in spherical coordinates, which appears to be a good first-order approximation for many geodynamic applications [@Macherel_Räss_Schmalholz_2024].
 
-`GeophysicalModelGenerator.jl` includes tools to transfer the data from geographic to cartesian coordinates, which requires defining a projection point, along which we projection is performed:
+`GeophysicalModelGenerator.jl` includes tools to transfer the data from geographic to cartesian coordinates, which requires defining a point, along which the projection is performed:
 ```julia
 julia> proj = ProjectionPoint(Lon=12.0,Lat =43)
 ProjectionPoint(43.0, 12.0, 255466.98055255096, 4.765182932801006e6, 33, true)
 ```
-We can simply project the topography to cartesian data with:
+We can now project the topography with:
 ```julia
 julia> Topo_cart = Convert2CartData(Topo_Alps, proj)
 CartData 
     size    : (961, 841, 1)
-    x       $\epsilon$ [ -748.7493528015041 : 695.3491277129204]
+    x       ϵ [ -748.7493528015041 : 695.3491277129204]
     y       ϵ [ -781.2344794653393 : 831.6826244089501]
     z       ϵ [ -4.181 : 4.377]
     fields  : (:Topography,)
 ```
-which returns a `CartData` (cartesian data) structure. The disadvantage of doing this projection is that the resulting cartesian grid is no longer orthogonal which is a problem for some Cartesian numerical models (e.g., using finite difference discretisations).
-We can project the data on a orthogonal grid as well, by first creating orthogonal grids for the tomography and topography:
+which returns a `CartData` (cartesian data) structure. The disadvantage of doing this projection is that the resulting cartesian grid is no longer strictly orthogonal which is a problem for some Cartesian numerical models (e.g., using finite difference discretisations).
+We can project the data on a orthogonal grid as well, by first creating appropriately sized orthogonal grids for the tomography and topography:
 ```julia
 julia> Tomo_rect = CartData(XYZGrid(-550.0:10:600, -500.0:10:700, -600.0:5:-17))
 CartData 
