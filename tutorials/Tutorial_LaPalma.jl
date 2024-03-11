@@ -19,7 +19,7 @@ Topo = ImportTopo(lon = [-18.2, -17.5], lat=[28.4, 29.0], file="@earth_relief_15
 # Next, lets load the seismicity. The earthquake data is available on [https://www.ign.es/web/ign/portal/vlc-catalogo](https://www.ign.es/web/ign/portal/vlc-catalogo). 
 # We have filtered them and prepared a file with earthquake locations up to early November 2021 (from january 2021).
 # Download that:
-#download_data("","EQ_events_all_info5_LaPalma_2021.dat")
+download_data("https://zenodo.org/records/10738510/files/EQ_events_all_info5_LaPalma_2021.dat","EQ_events_all_info5_LaPalma_2021.dat")
 data_EQ = readdlm("EQ_events_all_info5_LaPalma_2021.dat")
 
 # It has the following format:
