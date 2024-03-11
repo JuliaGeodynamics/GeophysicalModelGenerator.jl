@@ -18,9 +18,10 @@ println("Loading GMT routines within GMG")
 
 
 """
-    Topo = ImportTopo(limits; file::String="@earth_relief_01m.grd") 
+    Topo = ImportTopo(limits; file::String="@earth_relief_01m.grd", maxattempts=5) 
     
-Uses `GMT` to download the topography of a certain region, specified with limits=[lon_min, lon_max, lat_min, lat_max] 
+Uses `GMT` to download the topography of a certain region, specified with limits=[lon_min, lon_max, lat_min, lat_max].
+Sometimes download fails because of the internet connection. We do `maxattempts` to download it.
 
 Note: 
 ====
@@ -64,7 +65,7 @@ julia> Write_Paraview(Topo,"Topo_Alps")
  "Topo_Alps.vts"
 ```
 """
-function ImportTopo(limits; file::String="@earth_relief_01m.grd")
+function ImportTopo(limits; file::String="@earth_relief_01m.grd", maxattempts=5)
 
     # Correct if negative values are given (longitude coordinates that are west)
     ind = findall(limits[1:2] .< 0); 
@@ -74,8 +75,22 @@ function ImportTopo(limits; file::String="@earth_relief_01m.grd")
       limits[1:2] = sort(limits[1:2])   
     end
 
-    # Download topo file  
-    G               =   gmtread(file, limits=limits, grid=true);
+    # Download topo file  - add a few attempts to do so
+    G = [];
+    attempt = 0
+    while attempt<maxattempts
+      try
+        G       =   gmtread(file, limits=limits, grid=true);
+        break
+      catch
+        @warn "Failed downloading GMT topography on attempt $attempt/$maxattempts"
+        sleep(5)  # wait a few sec
+      end
+      attempt += 1
+    end
+    if isempty(G)
+      error("Could not download GMT topography data")
+    end
 
     # Transfer to GeoData
     nx,ny           =   size(G.z,2), size(G.z,1)
@@ -88,7 +103,7 @@ function ImportTopo(limits; file::String="@earth_relief_01m.grd")
 end
 
 """
-  ImportTopo(; lat::Vector{2}, lon::Vector{2}, file::String="@earth_relief_01m.grd")
+  ImportTopo(; lat::Vector{2}, lon::Vector{2}, file::String="@earth_relief_01m.grd", maxattempts=5)
 
 Imports topography (using GMT), by specifying keywords for latitude and longitude ranges
 
@@ -103,7 +118,7 @@ julia> Topo = ImportTopo(lon=(-50, -40), lat=(-10,-5), file="@earth_relief_30s.g
 ```
 
 """
-ImportTopo(; lat=[37,49], lon=[4,20], file::String="@earth_relief_01m.grd") = ImportTopo([lon[1],lon[2], lat[1], lat[2]], file=file)
+ImportTopo(; lat=[37,49], lon=[4,20], file::String="@earth_relief_01m.grd", maxattempts=5) = ImportTopo([lon[1],lon[2], lat[1], lat[2]], file=file, maxattempts=maxattempts)
 
 
 """
