@@ -485,9 +485,9 @@ Parameters
 - Phase - Phase array (consistent with Grid)
 - Temp  - Temperature array (consistent with Grid)
 - Grid  - Grid structure (usually obtained with ReadLaMEM_InputFile)
-- xlim  - x-cooridnate of the polygon points, same ordering as zlim, number of points unlimited
-- ylim  - y-cooridnate, limition in length possible (two values (start and stop))
-- zlim  - z-cooridnate of the polygon points, same ordering as xlim, number of points unlimited
+- xlim  - x-coordinate of the polygon points, same ordering as zlim, number of points unlimited
+- ylim  - y-coordinate, limitation in length possible (two values (start and stop))
+- zlim  - z-coordinate of the polygon points, same ordering as xlim, number of points unlimited
 - phase - specifies the phase of the box. See `ConstantPhase()`
 - T - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
 
@@ -543,7 +543,7 @@ end
 
 # Compute thermal structure accordingly. See routines below for different options
 if T != nothing
-Temp[ind] = Compute_ThermalStructure(Temp[ind], X[ind], Y[ind], Z[ind], T)
+Temp[ind] = Compute_ThermalStructure(Temp[ind], X[ind], Y[ind], Z[ind], Phase[ind], T)
 end
 
 # Set the phase. Different routines are available for that - see below.

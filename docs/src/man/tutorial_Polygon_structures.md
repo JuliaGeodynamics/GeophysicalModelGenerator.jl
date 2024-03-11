@@ -40,12 +40,12 @@ AddBox!(Phase, Temp, Cart; xlim=(0.0,800.0),ylim=(0.0,800.0), zlim=(0.0,50.0), p
  ```
 
 
-#### 2. Add polygon struture
+#### 2. Add polygon structure
 For including the geological structures of a passive margin into the model via the polygon function, depths down to 150 km are focused on. With the polygon function, it is possible to create different shapes. In the example, the sediment basin shows a more trapezial (2D in x-/z-direction) shape, while the thinning of the plate is a more triangular (2D in x-/z-direction). More complex structures are possible to build in the background model due to the non-limitation number of points in the x- and z-direction. In y-direction only the length can be varied and is set by two values. The shape is not changeable. The x- and z-values of the points need to be in the same order for selecting the correct point (P1(1/3), P2(2/2) --> xlim(1,2), ylim(3,2)).
 
 
 ```julia
-# xlim: x-coordiates of the points, same ordering as zlim
+# xlim: x-coordinates of the points, same ordering as zlim
 # zlim: z-coordinates of the points, same ordering as xlim
 # ylim: limits the object within the two ylim values
 # unlimited number of points possible to create the polygon

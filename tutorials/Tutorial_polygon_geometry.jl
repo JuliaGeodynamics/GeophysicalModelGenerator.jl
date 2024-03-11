@@ -21,7 +21,7 @@ Temp    = ones(Float64,size(X))*1350
 AddBox!(Phase, Temp, Cart; xlim=(0.0,800.0),ylim=(0.0,800.0), zlim=(-800.0,0.0), phase = LithosphericPhases(Layers=[15 30 100 800], Phases=[2 3 1 5], Tlab=1300 ), T=LinearTemp(Ttop=20, Tbot=1600) )#T=HalfspaceCoolingTemp(Tsurface=20.0, Tmantle=1350, Age=120, Adiabat=0.4)
 
 
-# xlim: x-coordiates of the points, same ordering as zlim
+# xlim: x-coordinates of the points, same ordering as zlim
 # zlim: z-coordinates of the points, same ordering as xlim
 # ylim: limits the object within the two ylim values
 # unlimited number of points possible to create the polygon
