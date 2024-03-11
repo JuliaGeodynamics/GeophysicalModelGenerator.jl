@@ -103,7 +103,7 @@ function addStripes!(Phase, Grid::AbstractGeneralGrid;                # required
 
     ph_ind  = findall(Phase .== phase.phase);
 
-    ind = []
+    ind = Int64[]
     if stripAxes[1] == 1
         indX     = findall( abs.(Xrot[ph_ind] .% stripeSpacing) .<= stripeWidth/2.0);
         ind = vcat(ind,indX);
