@@ -1,16 +1,4 @@
 ---
-header-includes:
-- |
-  ```{=latex}
-  \directlua{luaotfload.add_fallback(
-               "myfallback",
-               {"U+03F5=$\epsilon$"}
-             )}
-  \setmainfont[RawFeature={fallback=myfallback}]{LatinModernRoman}
-  \setmonofont[RawFeature={fallback=myfallback}]{LatinModernMono}
-  ```
----
----
 title: 'GeophysicalModelGenerator.jl: A Julia package to visualize geoscientific data and create numerical model setups'
 tags:
   - Julia
@@ -128,35 +116,17 @@ julia> using GeophysicalModelGenerator
 As a first example, we will download a 3D seismic tomography dataset for the Alpine region (from @Paffrath_Friederich_Schmid_Handy_2021):
 ```julia
 julia> Tomo_Alps_full = load_GMG(
-  "https://zenodo.org/records/10738510/files/Paffrath_2021_SE_Pwave.jld2?download=1")
-GeoData 
-  size      : (162, 130, 42)
-  lon       ϵ [ -13.3019 : 35.3019]
-  lat       ϵ [ 30.7638 : 61.2362]
-  depth     ϵ [ -606.0385 : 31.0385]
-  fields    : (:dVp_Percentage,)
+  "https://zenodo.org/records/10738510/files/Paffrath_2021_SE_Pwave.jld2?download=1");
 ```
 We can download the topography for the Alpine region with:
 ```julia
 julia> Topo_Alps = load_GMG(
-  "https://zenodo.org/records/10738510/files/AlpsTopo.jld2?download=1")
-GeoData 
-  size      : (961, 841, 1)
-  lon       ϵ [ 4.0 : 20.0]
-  lat       ϵ [ 36.0 : 50.0]
-  depth     ϵ [ -4.181 : 4.377]
-  fields    : (:Topography,)
+  "https://zenodo.org/records/10738510/files/AlpsTopo.jld2?download=1");
 ```
 
 The seismic data covers a much wider region that the Alps itself, but in much of that region there is poor data coverage. We can therefore extract a part of the data that has coverage:
 ```julia
-julia> Tomo_Alps = ExtractSubvolume(Tomo_Alps_full, Lon_level=(4,20), Lat_level=(36,50), Depth_level=(-600,-10))
-GeoData 
-  size      : (54, 60, 39)
-  lon       ϵ [ 3.9057 : 19.9057]
-  lat       ϵ [ 35.9606 : 49.8976]
-  depth     ϵ [ -606.0385 : -15.5769]
-  fields    : (:dVp_Percentage,)
+julia> Tomo_Alps = ExtractSubvolume(Tomo_Alps_full, Lon_level=(4,20), Lat_level=(36,50), Depth_level=(-600,-10));
 ```
 
 At this stage, we can save the data to `VTK`  format:
@@ -164,7 +134,7 @@ At this stage, we can save the data to `VTK`  format:
 julia> Write_Paraview(Tomo_Alps,"Tomo_Alps");
 Saved file: Tomo_Alps.vts
 
-julia> Write_Paraview(Topo_Alps,"Topo_Alps")
+julia> Write_Paraview(Topo_Alps,"Topo_Alps");
 Saved file: Topo_Alps.vts
 ```
 And open it with Paraview (see \autoref{fig:basic}a).
@@ -189,36 +159,18 @@ ProjectionPoint(43.0, 12.0, 255466.98055255096, 4.765182932801006e6, 33, true)
 ```
 We can now project the topography with:
 ```julia
-julia> Topo_cart = Convert2CartData(Topo_Alps, proj)
-CartData 
-    size    : (961, 841, 1)
-    x       ϵ [ -748.7493528015041 : 695.3491277129204]
-    y       ϵ [ -781.2344794653393 : 831.6826244089501]
-    z       ϵ [ -4.181 : 4.377]
-    fields  : (:Topography,)
+julia> Topo_cart = Convert2CartData(Topo_Alps, proj);
 ```
 which returns a `CartData` (cartesian data) structure. The disadvantage of doing this projection is that the resulting cartesian grid is no longer strictly orthogonal which is a problem for some Cartesian numerical models (e.g., using finite difference discretisations).
 We can project the data on a orthogonal grid as well, by first creating appropriately sized orthogonal grids for the tomography and topography:
 ```julia
-julia> Tomo_rect = CartData(XYZGrid(-550.0:10:600, -500.0:10:700, -600.0:5:-17))
-CartData 
-    size    : (116, 121, 117)
-    x       ϵ [ -550.0 : 600.0]
-    y       ϵ [ -500.0 : 700.0]
-    z       ϵ [ -600.0 : -20.0]
-    fields  : (:Z,)
+julia> Tomo_rect = CartData(XYZGrid(-550.0:10:600, -500.0:10:700, -600.0:5:-17));
 julia> Topo_rect = CartData(XYZGrid(-550.0:1:600, -500.0:1:700, 0)); 
 ```
 Next, we can project the data to the orthogonal grids with:
 ```julia
 julia> Topo_rect = ProjectCartData(Topo_rect, Topo_Alps, proj);
-julia> Tomo_rect = ProjectCartData(Tomo_rect, Tomo_Alps, proj)
-CartData 
-    size    : (116, 121, 117)
-    x       ϵ [ -550.0 : 600.0]
-    y       ϵ [ -500.0 : 700.0]
-    z       ϵ [ -600.0 : -20.0]
-    fields  : (:dVp_Percentage,)
+julia> Tomo_rect = ProjectCartData(Tomo_rect, Tomo_Alps, proj);
 julia> Write_Paraview(Tomo_rect,"Tomo_rect");
 julia> Write_Paraview(Topo_rect,"Topo_rect");
 ```
