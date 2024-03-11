@@ -3,18 +3,18 @@ using Printf
 using Parameters        # helps setting default parameters in structures
 using SpecialFunctions: erfc
 using GeoParams
-
+import  ScatteredInterpolation as SInt 
 # Setup_geometry
 #
 # These are routines that help to create input geometries, such as slabs with a given angle
 #
 
-export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!, AddLayer!,
+export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!, AddLayer!, create_slab!,
         makeVolcTopo,
         ConstantTemp, LinearTemp, HalfspaceCoolingTemp, SpreadingRateTemp, LithosphericTemp,
         ConstantPhase, LithosphericPhases,
         Compute_ThermalStructure, Compute_Phase,
-        McKenzie_subducting_slab, LinearWeightedTemperature
+        McKenzie_subducting_slab, LinearWeightedTemperature, Trench
 
 
 """
@@ -1178,6 +1178,9 @@ function Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::LinearWeightedTempera
     return Temp
 end
 
+
+abstract type trench_slab end
+
 """
     Trench structure
 [Dev Comments]: I wanted to leave some fields for future implementation. For example, if you take an arbitrary path
@@ -1222,7 +1225,7 @@ d_decoupling = depth at which the slab is fully submerged into the mantle.
     Lb:: Float64    = 200       # Length at which all the bending is happening (Lb<=L0)
     d_decoupling:: Float64 = 100       # decoupling depth of the slab
     type_bending::Symbol = :Ribe     # Mode Ribe | Linear | Costumize
-    WZ:: Float64       = 50        # thickness of the weak zone
+    #WZ:: Float64       = 50        # thickness of the weak zone [PlaceHolder]
 end
 
 """
@@ -1233,7 +1236,7 @@ in n segments, and computing the average bending angle {which is a function of t
 assuming that the trench is at 0.0, and assuming a positive θ_max angle.
 
 """
-function compute_slab_surface!(D0::Float64,L0::Float64,Lb::Float64,WZ::Float64,n_seg::Int64,θ_max::Float64,type_bending::Symbol)
+function compute_slab_surface!(D0::Float64,L0::Float64,Lb::Float64,n_seg::Int64,θ_max::Float64,type_bending::Symbol)
     # Convert θ_max into radians
     θ_max = θ_max*pi/180;
 
@@ -1246,8 +1249,8 @@ function compute_slab_surface!(D0::Float64,L0::Float64,Lb::Float64,WZ::Float64,n
     MidS    = zeros(n_seg+1,2);
     MidS[1,2] = -D0./2;
 
-    WZ_surf     = zeros(n_seg+1,2);
-    WZ_surf[1,2] = WZ;
+    #WZ_surf     = zeros(n_seg+1,2);
+    #WZ_surf[1,2] = WZ;
     # Initialize the length.
     l = 0.0;   # initial length
 
@@ -1275,15 +1278,15 @@ function compute_slab_surface!(D0::Float64,L0::Float64,Lb::Float64,WZ::Float64,n
         Bottom[it+1,2] = MidS[it+1,2]-0.5.*D0.*abs(cos(θ_mean));
         # Compute the top surface for the weak zone
 
-        WZ_surf[it+1,1] = MidS[it+1,1]+(0.5.*D0+WZ).*abs(sin(θ_mean));
+        #WZ_surf[it+1,1] = MidS[it+1,1]+(0.5.*D0+WZ).*abs(sin(θ_mean));
 
-        WZ_surf[it+1,2] = MidS[it+1,2]+(0.5.*D0+WZ).*abs(cos(θ_mean));
+        #WZ_surf[it+1,2] = MidS[it+1,2]+(0.5.*D0+WZ).*abs(cos(θ_mean));
         # update l and it
         l = ln;
         it = it+1;
     end
 
-    return Top,Bottom,WZ_surf; #{Filling the structure?}
+    return Top,Bottom; #{Filling the structure?}
 
     end
 
@@ -1425,9 +1428,9 @@ function find_slab!(X,Y,Z,d,ls,θ_max,A,B,Top,Bottom,seg_slab,D0,L0,direction)
         # Interpolations
         points = [pa[1] pa[2];pb[1] pb[2];pc[1] pc[2];pd[1] pd[2]]'
 
-        itp1 = interpolate(Shepard(), points, D);
+        itp1 = SInt.interpolate(Shepard(), points, D);
 
-        itp2 = interpolate(Shepard(), points, L);
+        itp2 = SInt.interpolate(Shepard(), points, L);
 
         # Loop over the chosen particles and interpolate the current value of L and D.
         particle_n = length(ind_seg)
@@ -1436,9 +1439,9 @@ function find_slab!(X,Y,Z,d,ls,θ_max,A,B,Top,Bottom,seg_slab,D0,L0,direction)
 
             point_ = [YT[ind_seg[ip]],Z[ind_seg[ip]]];
 
-            d[ind_seg[ip]] = evaluate(itp1,point_)[1];
+            d[ind_seg[ip]] = SInt.evaluate(itp1,point_)[1];
 
-            ls[ind_seg[ip]] = evaluate(itp2,point_)[1];
+            ls[ind_seg[ip]] = SInt.evaluate(itp2,point_)[1];
         end
 
         #Update l
@@ -1473,7 +1476,7 @@ function create_slab!(X::Array{Float64},Y::Array{Float64},Z::Array{Float64},Ph::
 
     n_seg_xy = t.n_seg_xy;
 
-    WZ = t.WZ;
+    #WZ = t.WZ;
 
     # Allocate d-l array and A,B
 
@@ -1493,7 +1496,7 @@ function create_slab!(X::Array{Float64},Y::Array{Float64},Z::Array{Float64},Ph::
         # Compute Top-Bottom surface
         # Or loop over the segment of the top/bottom surface and inpolygon each element or
 
-        Top,Bottom,WZ_surf =compute_slab_surface!(D0,L0,Lb,WZ,n_seg,abs(θ_max),t.type_bending);
+        Top,Bottom =compute_slab_surface!(D0,L0,Lb,n_seg,abs(θ_max),t.type_bending);
 
         find_slab!(X,Y,Z,d,ls,t.θ_max,A,B,Top,Bottom,t.n_seg,t.D0,t.L0,t.direction);
 
@@ -1505,11 +1508,19 @@ function create_slab!(X::Array{Float64},Y::Array{Float64},Z::Array{Float64},Ph::
 
         ind = findall((-D0 .<= d .<= 0.0));
 
+        if typeof(temp) == LinearWeightedTemperature
+            l_decouplingind = findall(Top[:,2].<=-t.d_decoupling);
+
+            l_decoupling = Top[l_decouplingind[1],1];
+    
+            temp.crit_dist = l_decoupling; 
+            
+        end
         # Compute thermal structure accordingly. See routines below for different options {Future: introducing the length along the trench for having lateral varying properties along the trench}
-        T[ind] = Compute_ThermalStructure(T[ind], X[ind], ls[ind], d[ind],Phase,temp);
+        T[ind] = Compute_ThermalStructure(T[ind], ls[ind], Y[ind], d[ind],Ph[ind],temp);
 
         # Set the phase. Different routines are available for that - see below.
-        Ph[ind] = Compute_Phase(Ph[ind], T[ind], X[ind], ls[ind], d[ind], strat)
+        Ph[ind] = Compute_Phase(Ph[ind], T[ind], ls[ind], Y[ind], d[ind], strat)
 
         # Place holder of the weak zone: it is simply using the find slab routine, and cutting it at d_decoupling.
 

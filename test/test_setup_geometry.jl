@@ -1,7 +1,6 @@
 # test setting geometries in the different grid types
 using Test, GeophysicalModelGenerator, GeoParams
 
-
 # GeoData
 Lon3D,Lat3D,Depth3D =   LonLatDepthGrid(1.0:1:10.0, 11.0:1:20.0, (-20:1:-10)*km);
 Data                =   zeros(size(Lon3D));
@@ -211,3 +210,48 @@ AddBox!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0, 0.0),
 
 
 Data_Final =   AddField(Cart,"Temp",Temp)
+
+# Test the Bending slab geometry
+
+# Create CartGrid struct
+x        = LinRange(0.0,1200.0,128);
+y        = LinRange(0.0,1200.0,128);
+z        = LinRange(-660,50,128);
+Cart     = CartData(XYZGrid(x, y, z));
+X,Y,Z    = XYZGrid(x, y, z);
+
+
+# initialize phase and temperature matrix
+Phase   = ones(Int32,size(Cart));
+Temp    = ones(Float64,size(Cart))*1350;
+
+t1 = Trench(n_seg_xy=1, A = [400.0,400.0],B = [800.0,800.0],θ_max = 45.0, direction = 1.0, n_seg = 50, L0 = 600.0, D0 = 80.0, Lb = 500.0,d_decoupling = 100.0, type_bending =:Ribe)
+@test t1.θ_max == 45.0
+@test t1.D0 == 80.0
+@test t1.L0 == 600.0
+@test t1.Lb == 500.0
+
+strat=LithosphericPhases(Layers=[5 7 88], Phases = [2 3 4], Tlab=nothing)
+TsHC = HalfspaceCoolingTemp(Tsurface=20.0, Tmantle=1350, Age=30, Adiabat=0.4)
+temp = TsHC;
+
+create_slab!(X,Y,Z,Phase,Temp,t1,strat,temp)
+
+Phase   = ones(Int32,size(Cart));
+Temp    = ones(Float64,size(Cart))*1350;
+TsMK = McKenzie_subducting_slab(Tsurface = 20.0, Tmantle = 1350.0, v_cm_yr = 4.0, Adiabat = 0.0)
+temp = TsMK 
+t1 = Trench(n_seg_xy=1, A = [400.0,400.0],B = [800.0,800.0],θ_max = 90.0, direction = 1.0, n_seg = 50, L0 = 600.0, D0 = 80.0, Lb = 500.0,d_decoupling = 100.0, type_bending =:Ribe)
+
+
+Phase   = ones(Int32,size(Cart));
+Temp    = ones(Float64,size(Cart))*1350;
+TsHC = HalfspaceCoolingTemp(Tsurface=20.0, Tmantle=1350, Age=120, Adiabat=0.4)
+TsMK = McKenzie_subducting_slab(Tsurface = 20.0, Tmantle = 1350.0, v_cm_yr = 4.0, Adiabat = 0.0)
+T_slab = LinearWeightedTemperature(crit_dist=600, F1=TsHC, F2=TsMK);
+t1 = Trench(n_seg_xy=1, A = [400.0,400.0],B = [800.0,800.0],θ_max = 90.0, direction = 1.0, n_seg = 50, L0 = 600.0, D0 = 80.0, Lb = 500.0,d_decoupling = 100.0, type_bending =:Ribe)
+
+
+create_slab!(X,Y,Z,Phase,Temp,t1,strat,T_slab)
+
+Data_Final      =   CartData(X,Y,Z,(Phase=Phase,Temp=Temp)) 
