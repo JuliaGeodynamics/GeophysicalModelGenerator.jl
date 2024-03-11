@@ -24,13 +24,13 @@ authors:
     orcid: 0000-0002-3615-5923
     affiliation: 4
   - name: Jacob Frasukiewicz
-    #orcid: 0000-0003-1185-3730
+    orcid: 0009-0002-5049-4259
     affiliation: 1
   - name: Lukas Fuchs
     orcid: 0000-0002-9165-6384
     affiliation: 5
   - name: Andrea Piccolo
-    #orcid: 0000-0003-1185-3730
+    orcid: 0000-0003-3074-6041
     affiliation: 2
   - name: Hendrick Ranocha
     orcid: 0000-0002-3456-2277
@@ -82,11 +82,11 @@ The aim of the `GeophysicalModelGenerator.jl` package is therefore two-fold:
 Many geoscientists likely have their own python/matlab/bash scripts to visualize their own data and thus perform part of this job already. Yet, having all functionality in one place in an easy to use package will likely facilitate sharing data and their interpretations. 
 
 # Related software packages
-Perhaps the most widely used package in geophysics to create figures or maps is the Generic Mapping Tools ([`GMT`](https://www.generic-mapping-tools.org)), which also provides a Julia interface [GMT.jl](https://github.com/GenericMappingTools/GMT.jl) `[@Wessel_Luis_Uieda_Scharroo_Wobbe_Smith_Tian_2019]`. It mostly focuses on generating (beautiful) maps and postscript/pdf images and is therefore not ideally suited for interactive 3D data visualisation or to generate input models for numerical codes.
+Perhaps the most widely used package in geophysics to create figures or maps is the Generic Mapping Tools ([`GMT`](https://www.generic-mapping-tools.org)), which also provides a Julia interface [GMT.jl](https://github.com/GenericMappingTools/GMT.jl) [@Wessel_Luis_Uieda_Scharroo_Wobbe_Smith_Tian_2019]. It mostly focuses on generating (beautiful) maps and postscript/pdf images and is therefore not ideally suited for interactive 3D data visualisation or to generate input models for numerical codes.
  
-The [`Geodynamic World Builder`](https://github.com/GeodynamicWorldBuilder/WorldBuilder) is a C++ library to create model setups `[@se-10-1785-2019]`. The focus is on generating input models for geodynamic simulations, such as an initial subduction zone and related thermal structure. It has C and Fortran wrappers and can thus be embedded in geodynamic codes. Users of the `Geodynamic World Builder` have to generate JSON files to define the model geometry, which is less interactive than by using the Julia `REPL`. In the currently available version, there is no straightforward way to integrate existing geophysical/geological data in the workflow and compare model results with them.   
+The [`Geodynamic World Builder`](https://github.com/GeodynamicWorldBuilder/WorldBuilder) is a C++ library to create model setups [@se-10-1785-2019]. The focus is on generating input models for geodynamic simulations, such as an initial subduction zone and related thermal structure. It has C and Fortran wrappers and can thus be embedded in geodynamic codes. Users of the `Geodynamic World Builder` have to generate JSON files to define the model geometry, which is less interactive than by using the Julia `REPL`. In the currently available version, there is no straightforward way to integrate existing geophysical/geological data in the workflow and compare model results with them.   
 
-[GemPy](https://www.gempy.org) is a Python-based, open-source geomodeling library that can construct 3D geological models of folded structures, fault networks and unconformities, while taking uncertainties into account `[@DeLaVarga_Schaaf_Wellmann_2019]`. It's focus is on creating geometric models rather than on integrating a wide variety of geoscientific datasets.
+[GemPy](https://www.gempy.org) is a Python-based, open-source geomodeling library that can construct 3D geological models of folded structures, fault networks and unconformities, while taking uncertainties into account [@DeLaVarga_Schaaf_Wellmann_2019]. It's focus is on creating geometric models rather than on integrating a wide variety of geoscientific datasets.
 
 There are also a number of commercial software solutions: 
 - [Petrel subsurface software](https://www.software.slb.com/products/petrel) (by Schlumberger), which is mostly used by the hydrocarbon industry and is particularly powerful in integrating seismic reflection and well-data, 
@@ -165,7 +165,7 @@ and visualize them along with the volumetric data (Fig. \autoref{fig:basic}a).
 ![Example of visualising 3D seismic data of the Alps. \label{fig:basic} using a) geographic coordinates (`GeoData`) or b) Projected to cartesian coordinates (`CartData`).  ](Basic_Tutorial.png){ width=100% }
 
 One complication with geographic data is that Paraview does not have native support for geographic coordinates, and accordingly it is not always straightforward to use the build-in tools, for example, to create slices through the data. 
-In addition, many numerical models work in (orthogonal) cartesian rather than in spherical coordinates, which appears to be a good first-order approximation for many geodynamic applications `[@Macherel_Räss_Schmalholz_2024]`.
+In addition, many numerical models work in (orthogonal) cartesian rather than in spherical coordinates, which appears to be a good first-order approximation for many geodynamic applications [@Macherel_Räss_Schmalholz_2024].
 
 `GeophysicalModelGenerator.jl` includes tools to transfer the data from geographic to cartesian coordinates, which requires defining a projection point, along which we projection is performed:
 ```julia
@@ -218,7 +218,7 @@ The European Alps are among the best studied mountain belts on the planet, and h
 
 In the tutorial `Tutorial_AlpineData.jl`, users learn how to load the topography of the region, import Moho data, load and visualize GPS vectors, import and plot earthquake locations, along with cross-sections through the model (Figure \autoref{fig:alps}).
 
-![Example of combined data of the Alps, which shows the GPS surface velocity (arrows), topography, earthquake locations (grey dots) and cross-sections through a recent anisotropic P-wave tomography model by `[@Rappisi_VanderBeek_Faccenda_Morelli_Molinari_2022]`. \label{fig:alps}](../src/assets/img/GMG_AlpineData.png){ width=90% }
+![Example of combined data of the Alps, which shows the GPS surface velocity (arrows), topography, earthquake locations (grey dots) and cross-sections through a recent anisotropic P-wave tomography model by [@Rappisi_VanderBeek_Faccenda_Morelli_Molinari_2022]. \label{fig:alps}](../src/assets/img/GMG_AlpineData.png){ width=90% }
 
 ### La Palma volcanic eruption
 The 2019 Cumbre Viejo eruption in La Palma, Canary Islands, was accompanied by seismic activity. In `Tutorial_LaPalma.jl` users learn to generate a cartesian block model of the island, import seismicity and use that to generate a 3D volumetric seismic activity map (Fig. \autoref{fig:lapalma}). 
@@ -227,11 +227,11 @@ The 2019 Cumbre Viejo eruption in La Palma, Canary Islands, was accompanied by s
 
 
 ### Jura mountains
-The Jura mountains are a small-scale fold and thrust belt located in the Switzerland and France. Thanks to seismic cross-sections and boreholes, quite a bit of information is available about its structure at depth, which was used by Marc Schori to generate extensive 3D models of the subsurface including thickness maps of various geological units, generate a new geological map of the region, and create balanced reconstructions `[@Schori_2021]`.  
+The Jura mountains are a small-scale fold and thrust belt located in the Switzerland and France. Thanks to seismic cross-sections and boreholes, quite a bit of information is available about its structure at depth, which was used by Marc Schori to generate extensive 3D models of the subsurface including thickness maps of various geological units, generate a new geological map of the region, and create balanced reconstructions [@Schori_2021].  
 
 In `Tutorial_Jura.jl` users learn how to drape the geological map over the topography, import surfaces (such as the basement topography) from GeoTIFF images, and include screenshots from geological cross-sections. The data is rotated and transferred to cartesian coordinates such that we obtain a 3D block model that runs perpendicular to the strike of the mountain range (Figure \autoref{fig:jura}).
 
-![Example of creating a 3D cartesian block model that runs perpendicular to the Jura mountains, combining surface geology, with screenshots from interpreted cross-sections (gray drawing), and digital data of the the basement topography [using data of `@Schori_2021`]. \label{fig:jura}](../src/assets/img/Jura_2.png){ width=100% }
+![Example of creating a 3D cartesian block model that runs perpendicular to the Jura mountains, combining surface geology, with screenshots from interpreted cross-sections (gray drawing), and digital data of the the basement topography [using data of @Schori_2021]. \label{fig:jura}](../src/assets/img/Jura_2.png){ width=100% }
 
 
 ### Slab model setup 
