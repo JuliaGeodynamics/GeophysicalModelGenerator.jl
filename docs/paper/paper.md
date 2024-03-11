@@ -4,7 +4,7 @@ header-includes:
   ```{=latex}
   \directlua{luaotfload.add_fallback(
                "myfallback",
-               {"NotoColorEmoji:mode=harf;"}
+               {"U+03F5=$\epsilon$"}
              )}
   \setmainfont[RawFeature={fallback=myfallback}]{LatinModernRoman}
   \setmonofont[RawFeature={fallback=myfallback}]{LatinModernMono}
