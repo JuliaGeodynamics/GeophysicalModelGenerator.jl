@@ -89,8 +89,11 @@ The [`Geodynamic World Builder`](https://github.com/GeodynamicWorldBuilder/World
 [GemPy](https://www.gempy.org) is a Python-based, open-source geomodeling library that can construct 3D geological models of folded structures, fault networks and unconformities, while taking uncertainties into account [@DeLaVarga_Schaaf_Wellmann_2019]. It's focus is on creating geometric models rather than on integrating a wide variety of geoscientific datasets.
 
 There are also a number of commercial software solutions: 
+
 - [Petrel subsurface software](https://www.software.slb.com/products/petrel) (by Schlumberger), which is mostly used by the hydrocarbon industry and is particularly powerful in integrating seismic reflection and well-data, 
+
 - [GOCAD Mining Suite](https://www.mirageoscience.com/mining-industry-software/gocad-mining-suite/) (by MiraGeoscience) helps generate geometric models of the sub surface in the vicinity of mines, based on sparse geological measurements and drillhole data.
+
 - [GeoModeller](https://www.intrepid-geophysics.com/products/geomodeller/) (by Intrepid Geophysics) creates surface-near geometric geological models by implicit modelling of surface measurements while taking geophysical constraints into account.    
 
 In all cases, the commercial license fees are far beyond what most researchers can afford, even if reduced license fees are often available for academia. The closed-source nature of the software packages makes them also non-extendable by the community.
@@ -152,7 +155,7 @@ Saved file: Tomo_Alps.vts
 julia> Write_Paraview(Topo_Alps,"Topo_Alps")
 Saved file: Topo_Alps.vts
 ```
-And open it with Paraview (see Figure \autoref{fig:example_basic}).
+And open it with Paraview (see Figure \autoref{fig:example_basic} a).
 We can create vertical and horizontal cross-sections through the data with:
 ```julia
 julia> Cross_200km = CrossSection(Tomo_Alps, Depth_level=-200, Interpolate=true);
