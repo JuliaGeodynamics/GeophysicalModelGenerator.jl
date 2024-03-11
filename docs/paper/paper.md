@@ -20,33 +20,33 @@ authors:
   - name: Albert de Montserrat
     orcid: 0000-0003-1694-3735 
     affiliation: 3
- - name: Luca de Siena
-    orcid: 0000-0002-3615-5923
-    affiliation: 4
- - name: Jacob Frasukiewicz
-    #orcid: 0000-0003-1185-3730
+  - name: Luca de Siena
+     orcid: 0000-0002-3615-5923
+     affiliation: 4
+  - name: Jacob Frasukiewicz
+     #orcid: 0000-0003-1185-3730
+     affiliation: 1
+  - name: Lukas Fuchs
+     orcid: 0000-0002-9165-6384
+     affiliation: 5
+  - name: Andrea Piccolo
+     #orcid: 0000-0003-1185-3730
+     affiliation: 2
+  - name: Hendrick Ranocha
+    orcid: 0000-0002-3456-2277
     affiliation: 1
- - name: Lukas Fuchs
-    orcid: 0000-0002-9165-6384
-    affiliation: 5
- - name: Andrea Piccolo
-    #orcid: 0000-0003-1185-3730
+  - name: Nicolas Riel
+    orcid: 0000-0002-5037-5519
+    affiliation: 1
+  - name: Christian Schuler
+    #orcid: 0000-0002-6107-0403
+    affiliation: 1
+  - name: Arne Spang
+    orcid: 0000-0002-6107-0403
     affiliation: 2
- - name: Hendrick Ranocha
-   orcid: 0000-0002-3456-2277
-   affiliation: 1
- - name: Nicolas Riel
-   orcid: 0000-0002-5037-5519
-   affiliation: 1
- - name: Christian Schuler
-   #orcid: 0000-0002-6107-0403
-   affiliation: 1
- - name: Arne Spang
-   orcid: 0000-0002-6107-0403
-   affiliation: 2
- - name: Tatjana Weiler
-   #orcid: 0000-0002-6107-0403
-   affiliation: 2
+  - name: Tatjana Weiler
+    #orcid: 0000-0002-6107-0403
+    affiliation: 2
 
 affiliations:
  - name: Johannes Gutenberg University Mainz, Germany
