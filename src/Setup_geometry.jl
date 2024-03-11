@@ -3,7 +3,8 @@ using Printf
 using Parameters        # helps setting default parameters in structures
 using SpecialFunctions: erfc
 using GeoParams
-import  ScatteredInterpolation as SInt 
+using  ScatteredInterpolation
+
 # Setup_geometry
 #
 # These are routines that help to create input geometries, such as slabs with a given angle
@@ -28,17 +29,17 @@ Adds a box with phase & temperature structure to a 3D model setup.  This simplif
 
 Parameters
 ====
-- Phase - Phase array (consistent with Grid)
-- Temp  - Temperature array (consistent with Grid)
-- Grid -  grid structure (usually obtained with ReadLaMEM_InputFile, but can also be other grid types)
-- xlim -  left/right coordinates of box
-- ylim -  front/back coordinates of box [optional; if not specified we use the whole box]
-- zlim -  bottom/top coordinates of box
-- Origin - the origin, used to rotate the box around. Default is the left-front-top corner
-- StrikeAngle - strike angle of slab
-- DipAngle - dip angle of slab
-- phase - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
-- T - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`,`LithosphericTemp()`
+- `Phase` - Phase array (consistent with Grid)
+- `Temp`  - Temperature array (consistent with Grid)
+- `Grid` -  grid structure (usually obtained with ReadLaMEM_InputFile, but can also be other grid types)
+- `xlim` -  left/right coordinates of box
+- `ylim` -  front/back coordinates of box [optional; if not specified we use the whole box]
+- `zlim` -  bottom/top coordinates of box
+- `Origin` - the origin, used to rotate the box around. Default is the left-front-top corner
+- `StrikeAngle` - strike angle of slab
+- `DipAngle` - dip angle of slab
+- `phase` - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
+- `T` - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`,`LithosphericTemp()`
 
 
 Examples
@@ -100,7 +101,6 @@ function AddBox!(Phase, Temp, Grid::AbstractGeneralGrid;                 # requi
 
     Rot3D!(Xrot,Yrot,Zrot, StrikeAngle, DipAngle)
 
-
     # Set phase number & thermal structure in the full domain
     ztop = maximum(zlim) - Origin[3]
     zbot = minimum(zlim) - Origin[3]
@@ -134,14 +134,14 @@ This simplifies creating model geometries in geodynamic models
 
 Parameters
 ====
-- Phase - Phase array (consistent with Grid)
-- Temp  - Temperature array (consistent with Grid)
-- Grid -  grid structure (usually obtained with ReadLaMEM_InputFile, but can also be other grid types)
-- xlim -  left/right coordinates of box
-- ylim -  front/back coordinates of box
-- zlim -  bottom/top coordinates of box
-- phase - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
-- T - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
+- `Phase` - Phase array (consistent with Grid)
+- `Temp`  - Temperature array (consistent with Grid)
+- `Grid` -  grid structure (usually obtained with ReadLaMEM_InputFile, but can also be other grid types)
+- `xlim` -  left/right coordinates of box
+- `ylim` -  front/back coordinates of box
+- `zlim` -  bottom/top coordinates of box
+- `phase` - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
+- `T` - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
 
 
 Examples
@@ -1133,16 +1133,18 @@ Parameters
 end
 
 """
-    Weight average along distance
-    Do a weight average between two field along a specified direction 
-    Given a distance {could be any array, from X,Y} -> it increase from the origin the weight of 
-    F1, while F2 decreases. 
-    This function has been conceived for averaging the solution of Mckenzie and half space cooling model, but in 
-    can be used to smooth the temperature field from continent ocean: 
-    -> Select the boundary to apply; 
-    -> transform the coordinate such that dist represent the perpendicular direction along which you want to apply
-    this smoothening and in a such way that 0.0 is the point in which the weight of F1 is equal to 0.0; 
-    -> Select the points that belongs to this area -> compute the thermal fields {F1} {F2} -> then modify F. 
+    Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::LinearWeightedTemperature)
+    
+Weight average along distance
+Do a weight average between two field along a specified direction 
+Given a distance {could be any array, from X,Y} -> it increase from the origin the weight of 
+F1, while F2 decreases. 
+This function has been conceived for averaging the solution of Mckenzie and half space cooling model, but in 
+can be used to smooth the temperature field from continent ocean: 
+-> Select the boundary to apply; 
+-> transform the coordinate such that dist represent the perpendicular direction along which you want to apply
+this smoothening and in a such way that 0.0 is the point in which the weight of F1 is equal to 0.0; 
+-> Select the points that belongs to this area -> compute the thermal fields {F1} {F2} -> then modify F. 
 """
 function Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::LinearWeightedTemperature)
     @unpack w_min, w_max, crit_dist,dir = s; 
@@ -1179,7 +1181,7 @@ function Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::LinearWeightedTempera
 end
 
 
-abstract type trench_slab end
+abstract type Trench_slab end
 
 """
     Trench structure
@@ -1213,19 +1215,18 @@ WZ           = Thickness of the weakzone.
 d_decoupling = depth at which the slab is fully submerged into the mantle.
 
 """
-@with_kw_noshow mutable struct Trench <: trench_slab
-    n_seg_xy::Int64 =  1     # Number of segment of the trench plane view (for now, 1 segment)
-    A::Array{Float64}       =  (0.0,0.0)  # Coordinate 1 {set of coordinates}
-    B::Array{Float64}     =  (0.0,1.0)  # Coordinate 2 {set of coordinates}
-    θ_max::Float64 = 45 # max bending angle, (must be converted into radians)
-    direction::Float64 = 1.0 # Direction of the bending angle.
-    n_seg::Int64       = 50         # definition segment
-    L0:: Float64       = 400        # length of the slab
-    D0:: Float64      = 100        # thickness of the slab
-    Lb:: Float64    = 200       # Length at which all the bending is happening (Lb<=L0)
-    d_decoupling:: Float64 = 100       # decoupling depth of the slab
-    type_bending::Symbol = :Ribe     # Mode Ribe | Linear | Customize
-    #WZ:: Float64       = 50        # thickness of the weak zone [PlaceHolder]
+@with_kw_noshow mutable struct Trench <: Trench_slab
+    n_seg_xy::Int64 =  1                # Number of segment of the trench plane view (for now, 1 segment)
+    A::Array{Float64} =  (0.0,0.0)      # Coordinate 1 {set of coordinates}
+    B::Array{Float64} =  (0.0,1.0)      # Coordinate 2 {set of coordinates}
+    θ_max::Float64 = 45                 # max bending angle, (must be converted into radians)
+    direction::Float64 = 1.0            # Direction of the bending angle.
+    n_seg::Int64 = 50                   # definition segment
+    L0:: Float64 = 400                  # length of the slab
+    D0:: Float64 = 100                  # thickness of the slab
+    Lb:: Float64 = 200                  # Length at which all the bending is happening (Lb<=L0)
+    d_decoupling:: Float64 = 100        # decoupling depth of the slab
+    type_bending::Symbol = :Ribe        # Mode Ribe | Linear | Customize
 end
 
 """
@@ -1237,6 +1238,7 @@ assuming that the trench is at 0.0, and assuming a positive θ_max angle.
 
 """
 function compute_slab_surface!(D0::Float64,L0::Float64,Lb::Float64,n_seg::Int64,θ_max::Float64,type_bending::Symbol)
+    
     # Convert θ_max into radians
     θ_max = θ_max*pi/180;
 
@@ -1288,15 +1290,19 @@ function compute_slab_surface!(D0::Float64,L0::Float64,Lb::Float64,n_seg::Int64,
 
     return Top,Bottom; #{Filling the structure?}
 
-    end
+end
 
 """
     compute_bending_angle!(θ_max,Lb,l,type)
-θ_max = maximum bending angle
-Lb    = length at which the function of bending is applied (Lb<=L0)
-l     = current position within the slab
-type  = type of bending {Ribe}{Linear}{Customize}
+
 function that computes the θ(l).
+
+Parameters
+===
+`θ_max` = maximum bending angle
+`Lb`    = length at which the function of bending is applied (Lb<=L0)
+`l`     = current position within the slab
+`type`  = type of bending [`:Ribe`,`:Linear`]
 """
 function compute_bending_angle!(θ_max::Float64,Lb::Float64,l::Float64,type::Symbol)
     if l>Lb
@@ -1312,11 +1318,11 @@ end
 
 """
        transform_coordinate!(X,Y,Z,XT,YT,A,B,direction)
+
 Transform the coordinate such that the new x axis (XT) is parallel to the segment A-B of the slab. The rotation is
 anticlockwise. If θ_max is negative, it multiplies YT with the sign of the angle, changing the dip of the subduction.
 It returns Bn -> which is the point B coordinate in the new transformed system.
 """
-
 function transform_coordinate!(X,Y,Z,XT,YT,A,B,direction)
 
     # find the slope of AB points
@@ -1326,7 +1332,6 @@ function transform_coordinate!(X,Y,Z,XT,YT,A,B,direction)
 
     # Shift the origin
     XT .= X .-A[1];
-
     YT .= Y .-A[2];
 
     Bn = zeros(3);
@@ -1343,24 +1348,21 @@ function transform_coordinate!(X,Y,Z,XT,YT,A,B,direction)
     YT .= YT*direction;
 
     #Find Point B in the new coordinate system
-    roty = [cosd(-0) 0 sind(-0) ; 0 1 0 ; -sind(-0) 0  cosd(-0)];
+    roty = [cosd(-0)          0              sind(-0) ; 0 1 0 ; -sind(-0) 0  cosd(-0)];
+    rotz = [cosd(angle_rot) -sind(angle_rot)        0 ; sind(angle_rot) cosd(angle_rot) 0 ; 0 0 1]
 
-    rotz = [cosd(angle_rot) -sind(angle_rot) 0 ; sind(angle_rot) cosd(angle_rot) 0 ; 0 0 1]
-
-    Bn = rotz* Bn;
-
+    Bn = rotz*Bn;
     Bn = roty*Bn;
 
     return Bn
-
 end
 
 """
     find_slab!(X,Y,Z,d,ls,θ_max,A,B,Top,Bottom,seg_slab,D0,L0)
+
 Function that finds the slab. It loops over the Top and Bottom surface of the slab.
 It creates small polygons where and check if in the transformed coordinate system there are particles belonging to that polygon
 then interpolates the distance from the top, and the current length from the corners.
-
 """
 function find_slab!(X,Y,Z,d,ls,θ_max,A,B,Top,Bottom,seg_slab,D0,L0,direction)
 
@@ -1428,9 +1430,9 @@ function find_slab!(X,Y,Z,d,ls,θ_max,A,B,Top,Bottom,seg_slab,D0,L0,direction)
         # Interpolations
         points = [pa[1] pa[2];pb[1] pb[2];pc[1] pc[2];pd[1] pd[2]]'
 
-        itp1 = SInt.interpolate(Shepard(), points, D);
+        itp1 = ScatteredInterpolation.interpolate(Shepard(), points, D);
 
-        itp2 = SInt.interpolate(Shepard(), points, L);
+        itp2 = ScatteredInterpolation.interpolate(Shepard(), points, L);
 
         # Loop over the chosen particles and interpolate the current value of L and D.
         particle_n = length(ind_seg)
@@ -1439,9 +1441,9 @@ function find_slab!(X,Y,Z,d,ls,θ_max,A,B,Top,Bottom,seg_slab,D0,L0,direction)
 
             point_ = [YT[ind_seg[ip]],Z[ind_seg[ip]]];
 
-            d[ind_seg[ip]] = SInt.evaluate(itp1,point_)[1];
+            d[ind_seg[ip]] = ScatteredInterpolation.evaluate(itp1,point_)[1];
 
-            ls[ind_seg[ip]] = SInt.evaluate(itp2,point_)[1];
+            ls[ind_seg[ip]] = ScatteredInterpolation.evaluate(itp2,point_)[1];
         end
 
         #Update l

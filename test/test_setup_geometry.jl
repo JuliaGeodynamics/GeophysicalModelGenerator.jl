@@ -220,7 +220,6 @@ z        = LinRange(-660,50,128);
 Cart     = CartData(XYZGrid(x, y, z));
 X,Y,Z    = XYZGrid(x, y, z);
 
-
 # initialize phase and temperature matrix
 Phase   = ones(Int32,size(Cart));
 Temp    = ones(Float64,size(Cart))*1350;
@@ -231,21 +230,21 @@ t1 = Trench(n_seg_xy=1, A = [400.0,400.0],B = [800.0,800.0],θ_max = 45.0, direc
 @test t1.L0 == 600.0
 @test t1.Lb == 500.0
 
-strat=LithosphericPhases(Layers=[5 7 88], Phases = [2 3 4], Tlab=nothing)
+strat = LithosphericPhases(Layers=[5 7 88], Phases = [2 3 4], Tlab=nothing)
 TsHC = HalfspaceCoolingTemp(Tsurface=20.0, Tmantle=1350, Age=30, Adiabat=0.4)
 temp = TsHC;
 
 create_slab!(X,Y,Z,Phase,Temp,t1,strat,temp)
 
-Phase   = ones(Int32,size(Cart));
-Temp    = ones(Float64,size(Cart))*1350;
+Phase = ones(Int32,size(Cart));
+Temp = fill(1350.0,size(Cart));
 TsMK = McKenzie_subducting_slab(Tsurface = 20.0, Tmantle = 1350.0, v_cm_yr = 4.0, Adiabat = 0.0)
 temp = TsMK 
 t1 = Trench(n_seg_xy=1, A = [400.0,400.0],B = [800.0,800.0],θ_max = 90.0, direction = 1.0, n_seg = 50, L0 = 600.0, D0 = 80.0, Lb = 500.0,d_decoupling = 100.0, type_bending =:Ribe)
 
 
-Phase   = ones(Int32,size(Cart));
-Temp    = ones(Float64,size(Cart))*1350;
+Phase = ones(Int32,size(Cart));
+Temp = fill(1350.0,size(Cart));
 TsHC = HalfspaceCoolingTemp(Tsurface=20.0, Tmantle=1350, Age=120, Adiabat=0.4)
 TsMK = McKenzie_subducting_slab(Tsurface = 20.0, Tmantle = 1350.0, v_cm_yr = 4.0, Adiabat = 0.0)
 T_slab = LinearWeightedTemperature(crit_dist=600, F1=TsHC, F2=TsMK);
