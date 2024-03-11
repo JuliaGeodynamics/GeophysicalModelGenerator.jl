@@ -1443,7 +1443,6 @@ function find_slab!(X,Y,Z,d,ls,θ_max,A,B,Top,Bottom,seg_slab,D0,L0,direction)
             point_ = [YT[ind_seg[ip]],Z[ind_seg[ip]]];
 
             d[ind_seg[ip]] = ScatteredInterpolation.evaluate(itp1,point_)[1];
-
             ls[ind_seg[ip]] = ScatteredInterpolation.evaluate(itp2,point_)[1];
         end
 
