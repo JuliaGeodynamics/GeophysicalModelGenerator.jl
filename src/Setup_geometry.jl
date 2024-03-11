@@ -9,7 +9,7 @@ using GeoParams
 # These are routines that help to create input geometries, such as slabs with a given angle
 #
 
-export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!, AddLayer!, addPolygon!,addStripes!,
+export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!, AddLayer!, addPolygon!, addStripes!,
         makeVolcTopo,
         ConstantTemp, LinearTemp, HalfspaceCoolingTemp, SpreadingRateTemp, LithosphericTemp,
         ConstantPhase, LithosphericPhases,
@@ -580,24 +580,20 @@ end
 
 
 """
-    function addPolygon!(Phase, Temp, Grid::AbstractGeneralGrid;    # required input
-        xlim=Vector(), ylim=Vector(2), zlim=Vector(),               # limits of the box
-        phase = ConstantPhase(1),                                   # Sets the phase number(s) in the box
-        T=nothing )   
-Adds a polygon with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
+        addPolygon!(Phase, Temp, Grid::AbstractGeneralGrid; xlim::Vector(), ylim=Vector(2), zlim=Vector(), phase = ConstantPhase(1), T=nothing )   
 
+Adds a polygon with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
 
 Parameters
 ====
-- Phase - Phase array (consistent with Grid)
-- Temp  - Temperature array (consistent with Grid)
-- Grid  - Grid structure (usually obtained with ReadLaMEM_InputFile)
-- xlim  - x-coordinate of the polygon points, same ordering as zlim, number of points unlimited
-- ylim  - y-coordinate, limitation in length possible (two values (start and stop))
-- zlim  - z-coordinate of the polygon points, same ordering as xlim, number of points unlimited
-- phase - specifies the phase of the box. See `ConstantPhase()`
-- T - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
-
+- `Phase` - Phase array (consistent with Grid)
+- `Temp`  - Temperature array (consistent with Grid)
+- `Grid`  - Grid structure (usually obtained with ReadLaMEM_InputFile)
+- `xlim`  - `x`-coordinate of the polygon points, same ordering as zlim, number of points unlimited
+- `ylim`  - `y`-coordinate, limitation in length possible (two values (start and stop))
+- `zlim`  - `z`-coordinate of the polygon points, same ordering as xlim, number of points unlimited
+- `phase` - specifies the phase of the box. See `ConstantPhase()`
+- `T` - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
 
 Example
 ========
@@ -623,10 +619,8 @@ julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
 ```
 
 """
-
-
 function addPolygon!(Phase, Temp, Grid::AbstractGeneralGrid;    # required input
-    xlim=Vector(), ylim=Vector(2), zlim=Vector(),               # limits of the box
+    xlim::Vector=[], ylim::Vector=[], zlim::Vector=[],          # limits of the box
     phase = ConstantPhase(1),                                   # Sets the phase number(s) in the box
     T=nothing )                                                 # Sets the thermal structure (various functions are available)
 
@@ -638,7 +632,6 @@ ind_slice = zeros(Bool,size(X[:,1,:]))
 
 # find points within the polygon, only in 2D
 for i = 1:size(Y)[2]
-
     if Y[1,i,1] >= ylim[1] && Y[1,i,1]<=ylim[2] 
         inPolygon!(ind_slice, xlim,zlim, X[:,i,:], Z[:,i,:])
         ind[:,i,:] = ind_slice
@@ -650,7 +643,7 @@ end
 
 # Compute thermal structure accordingly. See routines below for different options
 if T != nothing
-Temp[ind] = Compute_ThermalStructure(Temp[ind], X[ind], Y[ind], Z[ind], Phase[ind], T)
+   Temp[ind] = Compute_ThermalStructure(Temp[ind], X[ind], Y[ind], Z[ind], Phase[ind], T)
 end
 
 # Set the phase. Different routines are available for that - see below.
@@ -658,12 +651,6 @@ Phase[ind] = Compute_Phase(Phase[ind], Temp[ind], X[ind], Y[ind], Z[ind], phase)
 
 return nothing
 end
-
-
-
-
-
-
 
 """
 makeVolcTopo(Grid::LaMEM_grid; center::Array{Float64, 1}, height::Float64, radius::Float64, crater::Float64,
@@ -893,7 +880,6 @@ function Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp)
     kappa       =   1e-6;
     SecYear     =   3600*24*365
     dz          =   Z[end]-Z[1];
-
 
     MantleAdiabaticT    =   Tmantle .+ Adiabat*abs.(Z);   # Adiabatic temperature of mantle
 
