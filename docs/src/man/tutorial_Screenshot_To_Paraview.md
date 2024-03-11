@@ -11,10 +11,10 @@ Here, we explain how.
   - [Goal](#goal)
   - [General procedure](#general-procedure)
       - [1. Download data and crop images](#1-download-data-and-crop-images)
-      - [2. Read data of a cross-section & create VTS file](#2-read-data-of-a-cross-section--create-vts-file)
-      - [3. Read data of a mapview & create *.vts file](#3-read-data-of-a-mapview--create-vts-file)
+      - [2. Read data of a cross-section \& create VTS file](#2-read-data-of-a-cross-section--create-vts-file)
+      - [3. Read data of a mapview \& create \*.vts file](#3-read-data-of-a-mapview--create-vts-file)
       - [4. Using an automatic digitizer to pick points on map](#4-using-an-automatic-digitizer-to-pick-points-on-map)
-      - [5. Creating a multiblock Paraview/*.vtm file](#5-creating-a-multiblock-paraviewvtm-file)
+      - [5. Creating a multiblock Paraview/\*.vtm file](#5-creating-a-multiblock-paraviewvtm-file)
       - [6. Julia script](#6-julia-script)
 ## General procedure
 #### 1. Download data and crop images

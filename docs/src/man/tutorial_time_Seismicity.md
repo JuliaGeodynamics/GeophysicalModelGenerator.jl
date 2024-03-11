@@ -1,5 +1,4 @@
-# How to create a movie to show seismic distribution through time
-
+# How to create a movie that shows the temporal evolution of seismicity
 ## Goal
 
 This tutorial creates a movie of the spatial variations in seismicity using the earthquakes previously visualized at Campi Flegrei caldera. We visualize it against the travel-time model and tomography:
@@ -29,8 +28,8 @@ julia> p3                  = chop(p2,head=0,tail = length(p2)-p2last[1]+1);
 julia> output_path         = string(p3,"/");
 julia> movie               = Movie_Paraview(name=string(p3,"/TemporalSeismicity"), Initialize=true);
 julia> if isdir(string(p3,"/TemporalSeismicity"))==0
-julia>     mkdir(string(p3,"/TemporalSeismicity"));
-julia> end
+           mkdir(string(p3,"/TemporalSeismicity"));
+       end
 
 ```
 
@@ -41,11 +40,11 @@ julia> data                = readdlm("SeismicLocations/Seismicity_UTM_1983_1984.
 julia> l                   = length(data[:,1]);
 julia> dates               = Date.(zeros(l,1))
 julia> for i = 1:l
-julia>     df              = DateFormat("yyyymmdd");
-julia>     t1              = string("19",@sprintf("%5.o", data[i,1]));
-julia>     t2              = Date(t1[1:8],df);
-julia>     dates[i,1]      = t2;
-julia> end
+           df              = DateFormat("yyyymmdd");
+           t1              = string("19",@sprintf("%5.o", data[i,1]));
+           t2              = Date(t1[1:8],df);
+           dates[i,1]      = t2;
+       end
 julia> WE                  = data[:,2];
 julia> SN                  = data[:,3];
 julia> depth               = data[:,4];
@@ -60,23 +59,22 @@ julia> nt                  = 50;
 julia> dt                  = Dates.Day(nt);
 julia> t                   = minimum(dates):dt:maximum(dates);
 julia> for itime = 1:length(t)-1
-julia>    name            = string(p3,"/TemporalSeismicity/", string(itime));
-julia>    tt=findall(x->(x>=t[itime]) & (x<=t[itime+1]),dates);
-julia>    we             = WE[tt];
-julia>    sn             = SN[tt];
-julia>    Depth1          = depth[tt];
-julia>    DN              = dates_num[tt];
-julia>    label_time      = Dates.value(DN[end]);
-julia>    if size(tt,1)>1
-julia>        Data_set    = UTMData(we, sn, Depth1, 33, true, (Depth=Depth1*km,Timedata=DN));
-julia>        movie       = Write_Paraview(Data_set, name,pvd=movie,time=label_time,PointsData=true);
-julia>    end
-julia>end
+           name            = string(p3,"/TemporalSeismicity/", string(itime));
+           tt=findall(x->(x>=t[itime]) & (x<=t[itime+1]),dates);
+           we             = WE[tt];
+           sn             = SN[tt];
+           Depth1          = depth[tt];
+           DN              = dates_num[tt];
+           label_time      = Dates.value(DN[end]);
+           if size(tt,1)>1
+               Data_set    = UTMData(we, sn, Depth1, 33, true, (Depth=Depth1*km,Timedata=DN));
+               movie       = Write_Paraview(Data_set, name,pvd=movie,time=label_time,PointsData=true);
+           end
+       end
 julia>Movie_Paraview(pvd=movie, Finalize=true)
-
 ```
 
-This tutorial has created a new *TemporalSeismicity.pvd* that can be loaded in Paraview.
+This tutorial has created a new *TemporalSeismicity.pvd* file that can be loaded in Paraview.
 
 ![Tutorial_SeismicTime_PVD](../assets/img/Tutorial_SeismicityTime_2.png)
 

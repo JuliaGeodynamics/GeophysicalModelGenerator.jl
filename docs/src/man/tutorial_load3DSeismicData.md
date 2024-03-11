@@ -109,7 +109,7 @@ julia> unique(lat[ind])
 
 #### 3.1 Reshape data and save to paraview
 Next, we reshape the vectors with lon/lat/depth data into 3D matrixes:
-```
+```julia
 julia> resolution =  (length(unique(lon)), length(unique(lat)), length(unique(depth)))
 (121, 94, 101)
 julia> Lon          = reshape(lon,      resolution);
@@ -124,13 +124,12 @@ julia> iz=findall(x -> x==-101.0, Depth[1,1,:])
 1-element Vector{Int64}:
  91
 julia> data=dVp_perc_3D[:,:,iz];
-julia> heatmap(unique(lon), unique(lat),data[:,:,1]', c=:roma,title="$(Depth[1,1,iz]) km")
+heatmap(unique(lon), unique(lat),data[:,:,1]', c=:roma,title="$(Depth[1,1,iz]) km")
 ```
 ![DataPoints](../assets/img/Tutorial_Zhao_LatLon_data_101km.png)
-
 So this looks good.
 
-Next we create a paraview file:
+Next, we create a paraview file:
 ```julia
 julia> using GeophysicalModelGenerator
 julia> Data_set    =   GeoData(Lon,Lat,Depth,(dVp_Percentage=dVp_perc_3D,))
@@ -146,24 +145,20 @@ julia> Write_Paraview(Data_set, "Zhao_etal_2016_dVp_percentage")
 ```
 
 #### 4. Plotting data in Paraview
-In paraview you should open the `*.vts` file, and press `Apply` (left menu) after doing that. Once you did that you can select `dVp_Percentage` and `Surface` (see red ellipses below)/.
+In paraview, you should open the `*.vts` file, and press `Apply` (left menu) after doing that. Once you did that you can select `dVp_Percentage` and `Surface` (see red ellipses below).
 In paraview you can open the file and visualize it. 
-
 ![Paraview_1](../assets/img/Tutorial_Zhao_Paraview_1.png)
-
 This visualisation employs the default colormap, which is not particularly good.
 
-You can change that by importing the roma colormap (using the link described earlier). For this, open the colormap editor and click the one with the heart on the right hand side. Next, import roma and select it.
-
+You can change that by importing the `roma` colormap (using the link described earlier). For this, open the colormap editor and click the one with the heart on the right hand side. Next, import `roma` and select it.
 ![Paraview_2](../assets/img/Tutorial_Zhao_Paraview_2.png)
 
 In order to change the colorrange select the button in the red ellipse and change the lower/upper bound.
 ![Paraview_3](../assets/img/Tutorial_Zhao_Paraview_3.png)
 
-If you want to create a horizontal cross-section @ 200 km depth, you need to select the `Slice` tool, select `Sphere` as a clip type, set the center to `[0,0,0]` and set the radius to `6171` (=radius earth - 200 km).
+If you want to create a horizontal cross-section at 200 km depth, you need to select the `Slice` tool, select `Sphere` as a clip type, set the center to `[0,0,0]` and set the radius to `6171` (=radius earth - 200 km).
 
 ![Paraview_4](../assets/img/Tutorial_Zhao_Paraview_4.png)
-
 
 After pushing `Apply`, you'll see this:
 
@@ -173,9 +168,9 @@ If you want to plot iso-surfaces (e.g. at -3%), you can use the `Clip` option ag
 
 ![Paraview_6](../assets/img/Tutorial_Zhao_Paraview_6.png)
 
+Note that using geographic coordinates is slightly cumbersome in Paraview. If your area is not too large, it may be advantageous to transfer all data to cartesian coordinates, in which case it is easier to create slices through the model. This is explained in some of the other tutorials.
 
 #### 5. Extract and plot cross-sections of the data
-
 In many cases you would like to create cross-sections through the 3D data sets as well, and visualize that in Paraview. That is in principle possible in Paraview as well (using the `Slice` tool, as described above). Yet, in many cases we want to have it at a specific depth, or through pre-defined `lon/lat` coordinates.
 
 There is a simple way to achieve this using the `CrossSection` function.
@@ -210,7 +205,7 @@ As you see, this cross-section is not taken at exactly 10 degrees longitude. Tha
 
 If you wish to interpolate the data, specify `Interpolate=true`:
 ```julia
-julia> Data_cross  =   CrossSection(Data_set, Lon_level=10, Interpolate=true)
+julia> Data_cross = CrossSection(Data_set, Lon_level=10, Interpolate=true)
 GeoData 
   size  : (1, 100, 100)
   lon   ϵ [ 10.0 : 10.0]
@@ -234,7 +229,6 @@ julia> Write_Paraview(Data_cross, "Zhao_CrossSection_diagonal")
 ```
 
 Here an image that shows the resulting cross-sections: 
-
 ![Paraview_7](../assets/img/Tutorial_Zhao_Paraview_7.png)
 
 #### 6. Extract a (3D) subset of the data
@@ -265,26 +259,22 @@ GeoData
   fields: (:dVp_Percentage,)
 julia> Write_Paraview(Data_subset, "Zhao_Subset_interp")
 ```
-## Load and save data to disk
-It would be useful to save the 3D data set we just created to disk, such that we can easily load it again at a later stage and create cross-sections etc, or compare it with other models. 
-It is quite easy to do so with the [JLD2.jl](https://github.com/JuliaIO/JLD2.jl) package:
+#### 7. Load and save data to disk
+It would be useful to save the 3D data set we just created to disk, such that we can easily load it again at a later stage and create cross-sections etc, or compare it with other models. This can be done with the `save_GMG` function:
 ```julia
-julia> using JLD2
-julia> jldsave("Zhao_Pwave.jld2"; Data_set)
+julia> save_GMG("Zhao_Pwave", Data_set)
 ```
 
 If you, at a later stage, want to load this file again do it as follows:
 ```julia
-julia> using JLD2, GeophysicalModelGenerator
-julia> Data_set_Zhao2016_Vp = load_object("Zhao_Pwave.jld2")
+julia> Data_set_Zhao2016_Vp = load_GMG("Zhao_Pwave")
 ```
 
 
-## Julia script
-
+#### 8. Julia script
 The full julia script that does it all is given [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/main/tutorial/Alps_VpModel_Zhao_etal_JGR2016.jl). You need to be in the same directory as in the data file, after which you can run it in julia with
 ```julia
-julia> include("Alps_VpModel_Zhao_etal_JGR2016.jl")
+include("Alps_VpModel_Zhao_etal_JGR2016.jl")
 ```
 
 

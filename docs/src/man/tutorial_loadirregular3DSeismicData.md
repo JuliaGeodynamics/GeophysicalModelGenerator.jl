@@ -95,8 +95,12 @@ julia> scatter!(Lon[:,:,1],Lat[:,:,1],color=:white, markersize=1.5, markertype="
 
 Next, we need a method to interpolate the irregular datapoints @ a certain depth level to the white data points.
 
-There are a number of ways to do this, for example by employing [GMT.jl](https://github.com/GenericMappingTools/GMT.jl), or by using [GeoStats.jl](https://juliaearth.github.io/GeoStats.jl/stable/index.html).
-In this example, we will employ GeoStats. If you haven't installed it yet, do that with
+There are a number of ways to do this: 
+- Using the nearest point to the regular grid points (by using the `nearest_point_indices` function) 
+- Employ [GMT.jl](https://github.com/GenericMappingTools/GMT.jl)
+- Use [GeoStats.jl](https://juliaearth.github.io/GeoStats.jl/stable/index.html).
+  
+In this example, we will employ `GeoStats`. If you haven't installed it yet, do that with
 ```julia
 julia> ]
 (@v1.6) pkg> add GeoStats

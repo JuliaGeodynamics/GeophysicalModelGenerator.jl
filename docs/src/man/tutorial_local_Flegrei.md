@@ -1,4 +1,4 @@
-# Km-scale volcano tutorial using cartesian coordinates
+# Campi Flegrei Volcano tutorial using cartesian coordinates
 
 ## Goal
 
@@ -29,7 +29,7 @@ Make sure that you are in the unzipped directory.
 
 #### 2. Geomorphology
 
-Load both the the shape (.shp) files contained in "./Geomorphology/*.shp" inside Paraview. In the following figures we show the Cartesian representation (not geolocalized - left) and the UTM (UTM). Our shape files can only be loaded in the cartesian:
+Load both the the shape (.shp) files contained in `./Geomorphology/*.shp` inside Paraview. In the following figures we show the Cartesian representation (not geolocalized - left) and the UTM (UTM). Our shape files can only be loaded in the cartesian:
 
 ![Tutorial_Flegrei_Geomorphology](../assets/img/Flegrei_Geomorphology.png)
 
@@ -37,7 +37,7 @@ To reproduce it, represent the coastline as data points with black solid color a
 
 #### 3. Earthquakes
 
-Now let's plot earthquake data provided as text files. Start loading the data contained in "./SeismicLocations/*.txt".
+Now let's plot earthquake data provided as text files. Start loading the data contained in `./SeismicLocations/*.txt`.
 The first column gives us a temporal marker we can use to plot earthquakes in different periods.
 
 ```julia
@@ -63,7 +63,7 @@ The colour scale distinguishes earthquakes of different decades. Notice the prog
 
 #### 4. Velocity model
 
-Using the Alps tutorial it is easy to create a paraview file from the Vp, Vs and Vp/Vs model in "./TravelTmeTomography/modvPS.dat" for both cartesian and UTM coordinates.
+Using the Alps tutorial it is easy to create a paraview file from the Vp, Vs and Vp/Vs model in `./TravelTmeTomography/modvPS.dat` for both cartesian and UTM coordinates.
 
 ```julia
 julia> using DelimitedFiles, GeophysicalModelGenerator
@@ -94,52 +94,52 @@ Including the Vp/Vs model in the previous Paraview file workspace:
 
 #### 5. Horizontal slices of shear velocity on irregular grid
 
-Using ambient noise you can map shear wave velocity at different depths. The models at each depth are contained in the files "./NoiseTomography/*.txt". We read them consecutively in a "for" loop:
+Using ambient noise you can map shear wave velocity at different depths. The models at each depth are contained in the files `./NoiseTomography/*.txt`. We read them consecutively in a "for" loop:
 
 ```julia
-julia> list_files        = glob("AmbientNoiseTomography/*.txt");
-julia> li                = size(list_files, 1);
+julia> list_files = glob("AmbientNoiseTomography/*.txt");
+julia> li         = size(list_files, 1);
 julia> for i = 1:li
-julia>   nameFile        = list_files[i];
-julia>   name_vts        = name_vts[24:26];
-julia>   data            = readdlm(nameFile, '\t', Float64);
-julia>   WE              = data[:,1];
-julia>   SN              = data[:,2];
-julia>   depth           = data[:,3];
-julia>   Vs              = data[:,4];
+          nameFile   = list_files[i];
+          name_vts   = name_vts[24:26];
+          data       = readdlm(nameFile, '\t', Float64);
+          WE         = data[:,1];
+          SN         = data[:,2];
+          depth      = data[:,3];
+          Vs         = data[:,4];
 ```
 However these models are too wide, so it is better to constrain them:
 
 ```julia
-julia>   findall( (WE .>= 419000) .& (WE.<=435000) .& (SN.>=4514000) .& (SN.<=4528000) );
-julia>   WE              = WE[ind];
-julia>   SN              = SN[ind];
-julia>   depth           = depth[ind];
-julia>   Vs              = Vs[ind];
+         findall( (WE .>= 419000) .& (WE.<=435000) .& (SN.>=4514000) .& (SN.<=4528000) );
+         WE       = WE[ind];
+         SN       = SN[ind];
+         depth    = depth[ind];
+         Vs       = Vs[ind];
 ```
 Also, nodes are irregular, hence we create a 3D regular UTM:
 
 ```julia
-julia>  l                = length(WE);
-julia>  n_WE             = minimum(WE):100:maximum(WE);
-julia>  n_SN             = minimum(SN):100:maximum(SN);
-julia>  we, sn, Depth    = XYZGrid(n_WE, n_SN, depth[1]);
-julia>  Vs_3D            = zeros(size(Depth));
-julia>  Cgrid            = GeoStats.CartesianGrid((size(we, 1), size(we, 2)), (minimum(we), minimum(sn)), (we[2,2,1] - we[1,1,1], sn[2,2,1] - sn[1,1,1]))
-julia>  coord            = PointSet([WE[:]'; SN[:]']);
-julia>  Geo              = georef((Vs = Vs[:],), coord);
-julia>  P                = EstimationProblem(Geo, Cgrid, :Vs);
-julia>  S                = IDW(:Vs => (;neighbors=2));
-julia>  sol              = solve(P, S);
-julia>  sol_Vs           = values(sol).Vs;
-julia>  Vs_2D            = reshape(sol_Vs, size(domain(sol)));
-julia>  Vs_3D[:,:,1]     = Vs_2D;
-julia>  Data_set_Cart    = CartData(we, sn, Depth, (Vs = Vs_3D  * (km / s),))
-julia>  Write_Paraview(Data_set_Cart, "CF_Noise" * name_vts * "_Cartesian")
-julia>  Data_set         = UTMData(we, sn, Depth, 33, true, (Vs = Vs_3D*(km / s),));
-julia>  Data_set_UTM     = convert(GeophysicalModelGenerator.GeoData, Data_set);
-julia>  Write_Paraview(Data_set_UTM, "CF_Noise_UTM_"*name_vts)
-julia>  end
+        l                = length(WE);
+        n_WE             = minimum(WE):100:maximum(WE);
+        n_SN             = minimum(SN):100:maximum(SN);
+        we, sn, Depth    = XYZGrid(n_WE, n_SN, depth[1]);
+        Vs_3D            = zeros(size(Depth));
+        Cgrid            = GeoStats.CartesianGrid((size(we, 1), size(we, 2)), (minimum(we), minimum(sn)), (we[2,2,1] - we[1,1,1], sn[2,2,1] - sn[1,1,1]))
+        coord            = PointSet([WE[:]'; SN[:]']);
+        Geo              = georef((Vs = Vs[:],), coord);
+        P                = EstimationProblem(Geo, Cgrid, :Vs);
+        S                = IDW(:Vs => (;neighbors=2));
+        sol              = solve(P, S);
+        sol_Vs           = values(sol).Vs;
+        Vs_2D            = reshape(sol_Vs, size(domain(sol)));
+        Vs_3D[:,:,1]     = Vs_2D;
+        Data_set_Cart    = CartData(we, sn, Depth, (Vs = Vs_3D  * (km / s),))
+        Write_Paraview(Data_set_Cart, "CF_Noise" * name_vts * "_Cartesian")
+        Data_set         = UTMData(we, sn, Depth, 33, true, (Vs = Vs_3D*(km / s),));
+        Data_set_UTM     = convert(GeophysicalModelGenerator.GeoData, Data_set);
+        Write_Paraview(Data_set_UTM, "CF_Noise_UTM_"*name_vts)
+    end
 ```
 This is one of the horizontal sections created by the code in the previous model in both reference systems:
 

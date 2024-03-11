@@ -3,11 +3,9 @@
 ## Goal
 
 The aim of this tutorial is to show you how you can read in data that is given in UTM coordinates.
-The example we use is the 3D density model of the Alps derived by Spooner et al. (2010), which you can download following the link from
+The example we use is the 3D density model of the Alps derived by Spooner et al. (2010), which you can download following the link from:
 
 Spooner, Cameron; Scheck-Wenderoth, Magdalena; Götze, Hans-Jürgen; Ebbing, Jörg; Hetényi, György (2019): 3D ALPS: 3D Gravity Constrained Model of Density Distribution Across the Alpine Lithosphere. V. 2.0. GFZ Data Services. https://doi.org/10.5880/GFZ.4.5.2019.004
-
-
 
 ## Steps
 
@@ -33,7 +31,7 @@ So we have 5 columns with data values, and the data is separated by spaces.
 We can load that in julia as:
 ```julia
 julia> using DelimitedFiles, GeophysicalModelGenerator
-julia> data=readdlm("2019-004_Spooner_Lithospheric Mantle.txt",skipstart=4)
+julia> data = readdlm("2019-004_Spooner_Lithospheric Mantle.txt",skipstart=4)
 1023×5 Matrix{Float64}:
  286635.0  4.89862e6  -24823.3  70418.1  3305.0
  286635.0  4.91862e6  -25443.5  69410.0  3305.0
@@ -46,7 +44,7 @@ julia> data=readdlm("2019-004_Spooner_Lithospheric Mantle.txt",skipstart=4)
 ```
 We can read the numerical data from the file with:
 ```julia    
-julia> ew, ns, depth, thick, rho  =   data[:,1], data[:,2], data[:,3], data[:,4], data[:,5];
+julia> ew,ns,depth,thick,rho = data[:,1], data[:,2], data[:,3], data[:,4], data[:,5];
 ```
 
 #### 2. Check & reshape vertical velocity
@@ -55,12 +53,12 @@ The data is initially available as 1D columns, which needs to be reshaped into 2
 We first reshape it into 2D arrays (using `reshape`). Yet, if we later want to visualize a perturbed surface in paraview, we need to save this as a 3D array (with 1 as 3rd dimension).
 
 ```julia
-julia> res = ( length(unique(ns)), length(unique(ew)), 1)
-julia> EW  =  reshape(ew,res) 
-julia> NS  =  reshape(ns,res)
-julia> Depth =  reshape(depth,res)
-julia> T     =  reshape(thick,res)
-julia> Rho   =  reshape(rho,res)
+julia> res   = (length(unique(ns)), length(unique(ew)), 1)
+julia> EW    = reshape(ew,res) 
+julia> NS    = reshape(ns,res)
+julia> Depth = reshape(depth,res)
+julia> T     = reshape(thick,res)
+julia> Rho   = reshape(rho,res)
 ```
 Next we can examine `EW`: 
 ```julia
@@ -78,15 +76,14 @@ julia> EW
  286635.0  306635.0  326635.0  346635.0  366635.0  386635.0  406635.0     826635.0  846635.0  866635.0  886635.0  906635.0  926635.0
  286635.0  306635.0  326635.0  346635.0  366635.0  386635.0  406635.0  …  826635.0  846635.0  866635.0  886635.0  906635.0  926635.0
 ```
-So, on fact, the EW array varies in the 2nd dimension. It should, however, vary in the first dimension which is why we need to apply a permutation & switch the first and second dimensions:
+So, on fact, the `EW` array varies in the 2nd dimension. It should, however, vary in the first dimension which is why we need to apply a permutation & switch the first and second dimensions:
 ```julia
-julia> EW  =  permutedims(EW,[2 1 3]) 
-julia> NS  =  permutedims(NS,[2 1 3]) 
-julia> Depth =  permutedims(Depth,[2 1 3]) 
-julia> T     =  permutedims(T,[2 1 3]) 
-julia> Rho   =  permutedims(Rho,[2 1 3]) 
+julia> EW    = permutedims(EW,[2 1 3]) 
+julia> NS    = permutedims(NS,[2 1 3]) 
+julia> Depth = permutedims(Depth,[2 1 3]) 
+julia> T     = permutedims(T,[2 1 3]) 
+julia> Rho   = permutedims(Rho,[2 1 3]) 
 ```
-
 
 #### 3. Create UTMData structure
 Next we can add the data to the `UTMData` structure. In this, we use the information that the UTM zone was `32 North`.
@@ -104,8 +101,7 @@ UTMData
 
 
 #### 4. Saving and plotting in Paraview
-
-We can transfer this into a GeoData structure as:
+We can transfer this into a `GeoData` structure as:
 
 ```julia 
 julia> Data_LM_lonlat = convert(GeoData,Data_LM)
@@ -118,7 +114,6 @@ GeoData
 ```
 
 and save it to Paraview in the usual way
-
 ```julia
 julia> Write_Paraview(Data_LM_lonlat, "Data_LM_lonlat")
 ```

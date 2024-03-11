@@ -3,19 +3,22 @@
 We have a number of functions with which we can extract sub-data from a 2D or 3D `GeoData` structure.
 
 ```@docs
-GeophysicalModelGenerator.CrossSection
-GeophysicalModelGenerator.ExtractSubvolume
-GeophysicalModelGenerator.InterpolateDataFields
-GeophysicalModelGenerator.VoteMap
-GeophysicalModelGenerator.SubtractHorizontalMean
-GeophysicalModelGenerator.AboveSurface
-GeophysicalModelGenerator.BelowSurface
-GeophysicalModelGenerator.InterpolateDataOnSurface
-GeophysicalModelGenerator.ParseColumns_CSV_File
-GeophysicalModelGenerator.RotateTranslateScale!
-GeophysicalModelGenerator.Convert2UTMzone
-GeophysicalModelGenerator.Convert2CartData
-GeophysicalModelGenerator.ProjectCartData
-GeophysicalModelGenerator.DrapeOnTopo
-GeophysicalModelGenerator.LithostaticPressure!
+CrossSection
+ExtractSubvolume
+InterpolateDataFields
+VoteMap
+SubtractHorizontalMean
+aboveSurface
+belowSurface
+interpolateDataOnSurface
+InterpolateTopographyOnPlane
+ParseColumns_CSV_File
+RotateTranslateScale!
+PointData2NearestGrid
+Convert2UTMzone
+Convert2CartData
+ProjectCartData
+drape_on_topo
+LithostaticPressure!
+CountMap
 ```

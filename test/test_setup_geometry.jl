@@ -1,5 +1,5 @@
 # test setting geometries in the different grid types
-using Test, GeophysicalModelGenerator
+using Test, GeophysicalModelGenerator, GeoParams
 
 
 # GeoData
@@ -76,23 +76,138 @@ Phases              =   Compute_Phase(Phases, Temp, Grid, LP);
 @test Phases[1,1,25]    == 1
 @test Phases[1,1,73]    == 0
 
-
-# test AboveSurface with the Grid object
-Grid        =   CreateCartGrid(size=(10,20,30),x=(0.,10), y=(0.,10), z=(-10.,2.))
-@test Grid.Δ[2] ≈ 0.5263157894736842
-
-Temp        =   ones(Float64, Grid.N...)*1350;
-Phases      =   zeros(Int32,  Grid.N...);
-
-
-Topo_cart   =   CartData(XYZGrid(-1:.2:20,-12:.2:13,0));
-ind         =   AboveSurface(Grid, Topo_cart);
-@test sum(ind[1,1,:]) == 5
-
-ind         =   BelowSurface(Grid, Topo_cart);
-@test sum(ind[1,1,:]) == 25
-
 # Create Grid & nondimensionalize it
 CharDim     =   GEO_units();
 Grid        =   CreateCartGrid(size=(10,20,30),x=(0.0km,10km), y=(0.0km, 10km), z=(-10.0km, 2.0km), CharDim=CharDim)
 @test Grid.Δ[2] ≈ 0.0005263157894736842
+
+
+# test 1D-explicit thermal solver for AddBox -----------
+nel         =   96
+Grid        =   CreateCartGrid(size=(nel,nel,nel),x=(-200.,200.), y=(-200.,200.), z=(-200.,0))
+Temp        =   zeros(Float64, Grid.N...);
+Phases      =   zeros(Int64,  Grid.N...);
+
+# 1) horizontally layer lithosphere; UpperCrust,LowerCrust,Mantle
+AddBox!(Phases,Temp,Grid, xlim=(-100,100), zlim=(-100,0), Origin=(0.0,0.0,0.0),
+    phase=LithosphericPhases(Layers=[20 15 65], Phases = [1 2 3], Tlab=nothing), 
+    DipAngle=0.0, T=LithosphericTemp(nz=201))
+
+@test sum(Temp[Int64(nel/2),Int64(nel/2),:]) ≈ 36131.638045729735
+
+# 2) inclined lithosphere; UpperCrust,LowerCrust,Mantle
+Temp    =   zeros(Float64, Grid.N...);
+Phases  =   zeros(Int64,  Grid.N...);
+
+AddBox!(Phases,Temp,Grid, xlim=(-100,100), zlim=(-100,0), Origin=(0.0,0.0,0.0),
+    phase=LithosphericPhases(Layers=[20 15 65], Phases = [1 2 3], Tlab=nothing), 
+    DipAngle=30.0, T=LithosphericTemp(nz=201))
+
+@test sum(Temp[Int64(nel/2),Int64(nel/2),:]) ≈ 41912.18172533137
+
+# 3) inclined lithosphere with respect to the default origin; UpperCrust,LowerCrust,Mantle
+Temp    =   zeros(Float64, Grid.N...);
+Phases  =   zeros(Int64,  Grid.N...);
+
+AddBox!(Phases,Temp,Grid, xlim=(-100,100), zlim=(-100,0),
+    phase=LithosphericPhases(Layers=[20 15 65], Phases = [1 2 3], Tlab=nothing), 
+    DipAngle=30.0, T=LithosphericTemp(nz=201))
+
+@test sum(Temp[Int64(nel/2),Int64(nel/2),:]) ≈ 41316.11499878003
+
+# 4) inclined lithosphere with only two layers
+Temp    =   zeros(Float64, Grid.N...);
+Phases  =   zeros(Int64,  Grid.N...);
+
+ρM=3.0e3            # Density [ kg/m^3 ]
+CpM=1.0e3           # Specific heat capacity [ J/kg/K ]
+kM=2.3              # Thermal conductivity [ W/m/K ]
+HM=0.0              # Radiogenic heat source per mass [H] = W/kg; [H] = [Q/rho]
+ρUC=2.7e3           # Density [ kg/m^3 ]
+CpUC=1.0e3          # Specific heat capacity [ J/kg/K ]
+kUC=3.0             # Thermal conductivity [ W/m/K ]
+HUC=617.0e-12       # Radiogenic heat source per mass [H] = W/kg; [H] = [Q/rho]
+
+rheology = (
+        # Name              = "UpperCrust",
+        SetMaterialParams(;
+            Phase               =   1,
+            Density             =   ConstantDensity(; ρ=ρUC),
+            HeatCapacity        =   ConstantHeatCapacity(; Cp=CpUC),
+            Conductivity        =   ConstantConductivity(; k=kUC),
+            RadioactiveHeat     =   ConstantRadioactiveHeat(; H_r=HUC*ρUC),     # [H] = W/m^3
+        ),
+        # Name              = "LithosphericMantle",
+        SetMaterialParams(;
+            Phase               =   2,
+            Density             =   ConstantDensity(; ρ=ρM),
+            HeatCapacity        =   ConstantHeatCapacity(; Cp=CpM),
+            Conductivity        =   ConstantConductivity(; k=kM),
+            RadioactiveHeat     =   ConstantRadioactiveHeat(; H_r=HM*ρM),       # [H] = W/m^3
+        ),
+    );
+
+AddBox!(Phases,Temp,Grid, xlim=(-100,100), zlim=(-100,0),
+    phase=LithosphericPhases(Layers=[20 80], Phases = [1 2], Tlab=nothing), 
+    DipAngle=30.0, T=LithosphericTemp(rheology=rheology,nz=201))
+
+@test sum(Temp[Int64(nel/2),Int64(nel/2),:]) ≈ 40513.969831615716
+
+# 5) using flux lower boundary conditions
+Temp    =   zeros(Float64, Grid.N...);
+Phases  =   zeros(Int64,  Grid.N...);
+
+AddBox!(Phases,Temp,Grid, xlim=(-100,100), zlim=(-100,0),
+    phase=LithosphericPhases(Layers=[20 15 65], Phases = [1 2 3], Tlab=nothing), 
+    DipAngle=30.0, T=LithosphericTemp(lbound="flux",nz=201))
+
+@test sum(Temp[Int64(nel/2),Int64(nel/2),:]) ≈ 37359.648604722104
+
+
+# Test the McKenzie thermal structure
+
+# Create CartGrid struct
+x        = LinRange(0.0,1200.0,64);
+y        = LinRange(0.0,1200.0,64);
+z        = LinRange(-660,50,64);
+Cart     = CartData(XYZGrid(x, y, z));
+
+# initialize phase and temperature matrix
+Phase   = ones(Int32,size(Cart));
+Temp    = ones(Float64,size(Cart))*1350;
+
+# Create thermal structures
+TsHC = HalfspaceCoolingTemp(Tsurface=20.0, Tmantle=1350, Age=120, Adiabat=0.4)
+TsMK = McKenzie_subducting_slab(Tsurface = 20.0, Tmantle = 1350.0, v_cm_yr = 4.0, Adiabat = 0.0)
+
+@test TsMK.v_cm_yr == 4.0
+@test TsMK.it == 36
+
+# Add a box with a McKenzie thermal structure
+
+# horizontal 
+Temp    = ones(Float64,size(Cart))*1350;
+AddBox!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0, 0.0), phase = ConstantPhase(5), T=TsMK);
+@test sum(Temp)  ≈ 3.518172093383281e8
+
+# inclined slab
+Temp    = ones(Float64,size(Cart))*1350;
+AddBox!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0,0),StrikeAngle=0, DipAngle=45, phase = ConstantPhase(5), T=TsMK);
+@test sum(Temp)  ≈ 3.5125017626287365e8
+
+
+
+# horizontal slab, constant T
+T_slab  = LinearWeightedTemperature(0,1,600.0,:X,ConstantTemp(1000), ConstantTemp(2000));
+Temp    = ones(Float64,size(Cart))*1350;
+AddBox!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0, 0.0), phase = ConstantPhase(5), T=T_slab);
+@test sum(Temp)  ≈ 3.549127111111111e8
+
+# horizontal slab, halfspace and McKenzie
+T_slab = LinearWeightedTemperature(crit_dist=600, F1=TsHC, F2=TsMK);
+Temp    = ones(Float64,size(Cart))*1350;
+AddBox!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0, 0.0), phase = ConstantPhase(5), T=T_slab);
+@test sum(Temp)  ≈ 3.499457641038468e8
+
+
+Data_Final =   AddField(Cart,"Temp",Temp)

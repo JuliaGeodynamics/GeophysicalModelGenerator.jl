@@ -32,9 +32,10 @@ export load
 # add files for specific tasks
 include("data_types.jl")
 include("data_import.jl")
-include("coord_conversion.jl")
+include("nearest_points.jl")
 include("utils.jl")
 include("Paraview_output.jl")
+include("Paraview_collection.jl")
 include("transformation.jl")
 include("voxel_gravity.jl")
 include("LaMEM_io.jl")
@@ -42,26 +43,37 @@ include("Setup_geometry.jl")
 include("stl.jl")
 include("ProfileProcessing.jl")
 include("IO.jl")
+include("event_counts.jl")
+include("surface_functions.jl")
+include("movies_from_pics.jl")
 
 # Add optional routines (only activated when the packages are loaded)
 
 # GMT routines
 
 """
+        ImportTopo
 Optional routine that imports topography. It requires you to load `GMT`
 """
 function ImportTopo end
+
+"""
+        ImportGeoTIFF
+Optional routine that imports GeoTIFF images. It requires you to load `GMT`
+"""
 function ImportGeoTIFF end
 export ImportTopo, ImportGeoTIFF
 
 # GLMakie routines
 
 """
+        Visualise
 Interactive widget that allows you to explore a 3D data set `DataSet` in an interactive manner.
-It requires you to load `GLMakie`
+It requires you to load `GLMakie`.
 """
 function Visualise end
 export Visualise
+
 
 
 end

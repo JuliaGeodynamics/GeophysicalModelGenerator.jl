@@ -10,6 +10,16 @@ Vx1,Vy1,Vz1     =   Data1*3,Data1*4,Data1*5
 Data_set2D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data1,LonData1=Lon, Velocity=(Vx1,Vy1,Vz1)))  
 @test_throws ErrorException CrossSection(Data_set2D, Depth_level=-10)
 
+# Test interpolation of depth to a given cartesian XY-plane
+x = 11:19
+y = 31:39
+plane1 = InterpolateDataFields2D(Data_set2D, x, y)
+proj   = ProjectionPoint()
+plane2 = InterpolateDataFields2D(Data_set2D, proj, x, y)
+
+@test plane1 == plane2
+@test all(==(-50e0), plane1)
+
 # Create 3D volume with some fake data
 Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
 Data            =   Depth*2;                # some data
@@ -158,15 +168,15 @@ Data_Moho       =   GeoData(Lon,Lat,Depth,(MohoDepth=Depth,LonData=Lon,TestData=
 
 
 # Test intersecting a surface with 2D or 3D data sets
-Above       =   AboveSurface(Data_set3D, Data_Moho);            # 3D regular ordering
+Above       =   aboveSurface(Data_set3D, Data_Moho);            # 3D regular ordering
 @test Above[1,1,12]==true
 @test Above[1,1,11]==false
 
-Above       =   AboveSurface(Data_set3D_reverse, Data_Moho);    #  3D reverse depth ordering
+Above       =   aboveSurface(Data_set3D_reverse, Data_Moho);    #  3D reverse depth ordering
 @test Above[1,1,2]==true
 @test Above[1,1,3]==false
 
-Above       =   AboveSurface(Data_sub_cross, Data_Moho);        # 2D cross-section
+Above       =   aboveSurface(Data_sub_cross, Data_Moho);        # 2D cross-section
 @test Above[end]==true
 @test Above[1]==false
 
@@ -229,3 +239,20 @@ cross_tmp = CrossSection(Data_EQ,Lon_level=16.4,section_width=10km)
 cross_tmp = CrossSection(Data_EQ,Start=(15.0,35.0),End=(17.0,37.0),section_width=10km)
 @test cross_tmp.fields.lon_proj[20] ==15.314329874961091 
 @test cross_tmp.fields.lat_proj[20] == 35.323420618580585
+
+# test inPolygon
+PolyX = [-2.,-1,0,1,2,1,3,3,8,3,3,1,2,1,0,-1,-2,-1,-3,-3,-8,-3,-3,-1,-2]
+PolyY = [3.,3,8.01,3,3,1,2,1,0,-1,-2,-1,-3,-3,-8,-3,-3,-1,-2,-1,0,1,2,1,3]
+xvec  = collect(-9:0.5:9); yvec = collect(-9:0.5:9); zvec = collect(1.:1.);
+X,Y,Z = meshgrid(xvec, yvec, zvec)
+X, Y  = X[:,:,1], Y[:,:,1]
+yN    = zeros(Bool, size(X))
+inPolygon!(yN, PolyX, PolyY, X, Y, fast=true)
+@test sum(yN) == 194
+inPolygon!(yN, PolyX, PolyY, X, Y)
+@test sum(yN) == 217
+X, Y, yN = X[:], Y[:], yN[:]
+inPolygon!(yN, PolyX, PolyY, X, Y, fast=true)
+@test sum(yN) == 194
+inPolygon!(yN, PolyX, PolyY, X, Y)
+@test sum(yN) == 217

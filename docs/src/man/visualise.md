@@ -63,5 +63,5 @@ julia> Visualise(Data_Cart, Topography=Topo_Cart)
 ```
 
 ```@docs
-GeophysicalModelGenerator.Visualise
+Visualise
 ```

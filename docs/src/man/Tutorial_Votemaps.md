@@ -1,5 +1,5 @@
 ```@meta
-EditURL = "<unknown>/Tutorial_Votemaps.jl"
+EditURL = "../../../tutorials/Tutorial_Votemaps.jl"
 ```
 
 # Votemaps
@@ -14,7 +14,7 @@ We assume that you have all tomographic models already available as *.JLD2 files
 [https://seafile.rlp.net/d/22b0fb85550240758552/](https://seafile.rlp.net/d/22b0fb85550240758552/)
 
 Specifically, we will use the tomographic models of Paffrath, Zhao and Koulakov, as we have them all available in processed form
-Download the corresponding *.jld2 files to the same directory
+Download the corresponding `*.jld2` files to the same directory
 
 ```julia
 using JLD2, GeophysicalModelGenerator
@@ -58,10 +58,10 @@ The result of this gives a feeling which features are consistent between the 3 m
 So how do we create Votemaps?
 Doing this is rather simple:
 
-````@example Tutorial_Votemaps
+```julia
 Data_VoteMap = VoteMap( [Pwave_Paffrath,       PSwave_Koulakov,    Pwave_Zhao],
                         ["dVp_Percentage>3.0","dVp_percentage>2.0","dVp_Percentage>2.0"], dims=(100,100,100))
-````
+```
 
 This will look at the common `lon`,`lat`,`depth` ranges between all 3 models, interpret each of the models to a common grid of size `(100,100,100)` and apply each of the criteria specified
 The resulting `GeoData` struct looks like:

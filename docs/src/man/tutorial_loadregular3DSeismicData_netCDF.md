@@ -12,12 +12,12 @@ The data is can be downloaded from [https://ds.iris.edu/files/products/emc/emc-f
 
 #### 2. Read data into Julia
 The main data-file, `El-Sharkawy-etal-G3.2020-MeRE2020-Mediterranean-0.0.nc`, is given as netCDF file. To read in data of this type, it is necessary to load an appropriate package. Here, we will use the [https://github.com/JuliaGeo/NetCDF.jl](NetCDF.jl) package. Download and install the package with:
- ```julia-repl
+ ```julia
 julia> using Pkg
 julia> Pkg.add("NetCDF")
 ```
 First, let us have a look at the contents of this file (assuming that you are in the same directory where the file is located):
- ```julia-repl
+ ```julia
 julia> using NetCDF
 julia> filename = ("El-Sharkawy-etal-G3.2020-MeRE2020-Mediterranean-0.0.nc")
 julia> ncinfo("El-Sharkawy-etal-G3.2020-MeRE2020-Mediterranean-0.0.nc")
@@ -82,7 +82,7 @@ Vs                            display_name                  S Velocity (km/s)
 ```
 As you can see, there is quite some information present in this file. The most important information here are the different variables stored in this file:
 
-```julia-repl
+```julia
 ##### Variables #####
 
 Name                                            Type                    Dimensions
@@ -92,9 +92,9 @@ latitude                                        FLOAT                   latitude
 longitude                                       FLOAT                   longitude
 Vs                                              FLOAT                   longitude latitude depth
 ```
-Here we can see that there are four variables in this file, three of them (depth,latitude, longitude) having a single dimension and the fourth one (Vs) having dimensions of the three previous variables. The three one-dimensional vectors therefore denote a regular grid of coordinates defining the locations where Vs is stored.
+Here we can see that there are four variables in this file, three of them (`depth`,`latitude`, `longitude`) having a single dimension and the fourth one (`Vs`) having dimensions of the three previous variables. The three one-dimensional vectors therefore denote a regular grid of coordinates defining the locations where `Vs` is stored.
 To load this data, we can now simply use the command *ncread*:
-```julia-repl
+```julia
 julia> lat = ncread(filename,"latitude")
 julia> lon = ncread(filename,"longitude")
 julia> depth = ncread(filename,"depth")
@@ -104,15 +104,15 @@ julia> depth = -1 .* depth
 Note that we multiplied depth with -1. This is necessary to make depth to be negative, as that is what `GeophysicalModelGenerator.jl` expects.
 
 #### 3. Reformat the coordinate data
-In the netCDF file, coordinates are given as 1D vectors denoting the location of nodes in a regular grid. However, `GeophysicalModelGenerator.jl` expects true 3D data, where each data point is assigned a latitude,longitude, depth and the respective property (here: Vs). To generate this full regular 3D grid, do the following:
-```julia-repl
+In the netCDF file, coordinates are given as 1D vectors denoting the location of nodes in a regular grid. However, `GeophysicalModelGenerator.jl` expects true 3D data, where each data point is assigned a latitude,longitude, depth and the respective property (here: `Vs`). To generate this full regular 3D grid, do the following:
+```julia
 julia> using GeophysicalModelGenerator
 Lon3D,Lat3D,Depth3D = LonLatDepthGrid(lon, lat, depth);
 ```
 #### 4. Generate Paraview file
 Once the 3D coordinate matrix has been generated, producing a Paraview file is done with the following command
 ```julia
-julia> Data_set    =   GeoData(Lon3D,Lat3D,Depth3D,(Vs_km_s=Vs_3D,))
+julia> Data_set = GeoData(Lon3D,Lat3D,Depth3D,(Vs_km_s=Vs_3D,))
 GeoData
   size  : (100, 100, 301)
   lon   ϵ [ 29.0 - 51.0]
@@ -137,7 +137,7 @@ If you want to clip the data set @ 200 km depth, you need to select the `Clip` t
 
 #### 6. Julia script
 
-The full julia script that does it all is given [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/main/tutorial/MeRe_ElSharkawy.jl). You need to be in the same directory as in the data file, after which you can run it in julia with
+The full julia script that does it all is given [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/main/tutorials/MeRe_ElSharkawy.jl). You need to be in the same directory as in the data file, after which you can run it in julia with
 ```julia
 julia> include("MeRe_ElSharkawy.jl")
 ```

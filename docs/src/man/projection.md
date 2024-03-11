@@ -101,7 +101,8 @@ So this interpolates the topographic data from the `GeoData` to the orthogonal c
 
 You can do similar projections with full 3D data sets or pointwise data. 
 
-#### 3. List of functions
+#### 3. List of relevant functions
+
 ```@docs
 GeophysicalModelGenerator.Convert2CartData
 GeophysicalModelGenerator.ProjectCartData

@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2021 Boris Kaus, Marcel Thielmann and Authors (see AUTHORS.md)
+Copyright (c) 2021 Boris Kaus, Marcel Thielmann and Authors (see [AUTHORS.md](AUTHORS.md))
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

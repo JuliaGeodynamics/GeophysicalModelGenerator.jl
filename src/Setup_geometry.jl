@@ -2,6 +2,7 @@ using Base: Int64, Float64, NamedTuple
 using Printf
 using Parameters        # helps setting default parameters in structures
 using SpecialFunctions: erfc
+using GeoParams
 
 # Setup_geometry
 #
@@ -10,9 +11,10 @@ using SpecialFunctions: erfc
 
 export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!, AddLayer!,
         makeVolcTopo,
-        ConstantTemp, LinearTemp, HalfspaceCoolingTemp, SpreadingRateTemp,
+        ConstantTemp, LinearTemp, HalfspaceCoolingTemp, SpreadingRateTemp, LithosphericTemp,
         ConstantPhase, LithosphericPhases,
-        Compute_ThermalStructure, Compute_Phase
+        Compute_ThermalStructure, Compute_Phase,
+        McKenzie_subducting_slab, LinearWeightedTemperature
 
 
 """
@@ -36,7 +38,7 @@ Parameters
 - StrikeAngle - strike angle of slab
 - DipAngle - dip angle of slab
 - phase - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
-- T - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
+- T - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`,`LithosphericTemp()`
 
 
 Examples
@@ -100,20 +102,22 @@ function AddBox!(Phase, Temp, Grid::AbstractGeneralGrid;                 # requi
 
 
     # Set phase number & thermal structure in the full domain
-    ztop = zlim[2] - Origin[3]
-    zbot = zlim[1] - Origin[3]
-    ind = findall(  (Xrot .>= (xlim[1] - Origin[1])) .& (Xrot .<= (xlim[2] - Origin[1])) .&
-                    (Yrot .>= (ylim[1] - Origin[2])) .& (Yrot .<= (ylim[2] - Origin[2])) .&
+    ztop = maximum(zlim) - Origin[3]
+    zbot = minimum(zlim) - Origin[3]
+    ind = findall(  (Xrot .>= (minimum(xlim) - Origin[1])) .& (Xrot .<= (maximum(xlim) - Origin[1])) .&
+                    (Yrot .>= (minimum(ylim) - Origin[2])) .& (Yrot .<= (maximum(ylim) - Origin[2])) .&
                     (Zrot .>= zbot) .& (Zrot .<= ztop)  )
 
-
     # Compute thermal structure accordingly. See routines below for different options
-    if T != nothing
-        Temp[ind] = Compute_ThermalStructure(Temp[ind], Xrot[ind], Yrot[ind], Zrot[ind], T)
+    if T != nothing 
+        if isa(T,LithosphericTemp)
+            Phase[ind] = Compute_Phase(Phase[ind], Temp[ind], Xrot[ind], Yrot[ind], Zrot[ind], phase)
+        end
+        Temp[ind] = Compute_ThermalStructure(Temp[ind], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind], T)
     end
 
-    # Set the phase. Different routines are available for that - see below.
-    Phase[ind] = Compute_Phase(Phase[ind], Temp[ind], Xrot[ind], Yrot[ind], Zrot[ind], phase)
+    # Set the phase. Different routines are available for that - see below.    
+    Phase[ind] = Compute_Phase(Phase[ind], Temp[ind], Xrot[ind], Yrot[ind], Zrot[ind], phase)        
 
     return nothing
 end
@@ -206,7 +210,7 @@ function AddLayer!(Phase, Temp, Grid::AbstractGeneralGrid;      # required input
 
     # Compute thermal structure accordingly. See routines below for different options
     if !isnothing(T)
-        Temp[ind] = Compute_ThermalStructure(Temp[ind], X[ind], Y[ind], Z[ind], T)
+        Temp[ind] = Compute_ThermalStructure(Temp[ind], X[ind], Y[ind], Z[ind], Phase[ind], T)
     end
 
     # Set the phase. Different routines are available for that - see below.
@@ -273,7 +277,7 @@ function AddSphere!(Phase, Temp, Grid::AbstractGeneralGrid;      # required inpu
 
     # Compute thermal structure accordingly. See routines below for different options
     if T != nothing
-        Temp[ind] = Compute_ThermalStructure(Temp[ind], X[ind], Y[ind], Z[ind], T)
+        Temp[ind] = Compute_ThermalStructure(Temp[ind], X[ind], Y[ind], Z[ind], Phase[ind], T)
     end
 
     # Set the phase. Different routines are available for that - see below.
@@ -357,7 +361,7 @@ function AddEllipsoid!(Phase, Temp, Grid::AbstractGeneralGrid;      # required i
 
     # Compute thermal structure accordingly. See routines below for different options
     if T != nothing
-        Temp[ind] = Compute_ThermalStructure(Temp[ind], Xrot[ind], Yrot[ind], Zrot[ind], T)
+        Temp[ind] = Compute_ThermalStructure(Temp[ind], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind], T)
     end
 
     # Set the phase. Different routines are available for that - see below.
@@ -438,7 +442,7 @@ function AddCylinder!(Phase, Temp, Grid::AbstractGeneralGrid;   # required input
 
     # Compute thermal structure accordingly. See routines below for different options
     if T != nothing
-        Temp[ind] = Compute_ThermalStructure(Temp[ind], X[ind], Y[ind], Z[ind], T)
+        Temp[ind] = Compute_ThermalStructure(Temp[ind], X[ind], Y[ind], Z[ind], Phase[ind], T)
     end
 
     # Set the phase. Different routines are available for that - see below.
@@ -593,7 +597,7 @@ Parameters
     T = 1000
 end
 
-function Compute_ThermalStructure(Temp, X, Y, Z, s::ConstantTemp)
+function Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::ConstantTemp)
     Temp .= s.T
     return Temp
 end
@@ -615,7 +619,7 @@ Parameters
     Tbot = 1350
 end
 
-function Compute_ThermalStructure(Temp, X, Y, Z, s::LinearTemp)
+function Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::LinearTemp)
     @unpack Ttop, Tbot  = s
 
     dz   = Z[end]-Z[1];
@@ -645,7 +649,7 @@ Parameters
     Adiabat = 0        # Adiabatic gradient in K/km
 end
 
-function Compute_ThermalStructure(Temp, X, Y, Z, s::HalfspaceCoolingTemp)
+function Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::HalfspaceCoolingTemp)
     @unpack Tsurface, Tmantle, Age, Adiabat  = s
 
     kappa       =   1e-6;
@@ -688,7 +692,7 @@ Parameters
     maxAge  = 60       # maximum thermal age of plate [Myrs]
 end
 
-function Compute_ThermalStructure(Temp, X, Y, Z, s::SpreadingRateTemp)
+function Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp)
     @unpack Tsurface, Tmantle, Adiabat, MORside, SpreadingVel, AgeRidge, maxAge  = s
 
     kappa       =   1e-6;
@@ -723,7 +727,225 @@ function Compute_ThermalStructure(Temp, X, Y, Z, s::SpreadingRateTemp)
     return Temp
 end
 
+"""
+    LithosphericTemp(Tsurface=0.0, Tpot=1350.0, dTadi=0.5, 
+                        ubound="const", lbound="const, utbf = 50.0e-3, ltbf = 10.0e-3, 
+                        age = 120.0, dtfac = 0.9, nz = 201, 
+                        rheology = example_CLrheology() 
+                    )
 
+Calculates a 1D temperature profile [C] for variable thermal parameters including radiogenic heat source and 
+    linearly interpolates the temperature profile onto the box. The thermal parameters are defined in 
+    rheology and the structure of the lithosphere is define by LithosphericPhases().
+
+
+Parameters
+========
+- Tsurface  : surface temperature [C]
+- Tpot      : potential mantle temperature [C]
+- dTadi     : adiabatic gradient [K/km]
+- ubound    : Upper thermal boundary condition ["const","flux"] 
+- lbound    : Lower thermal boundary condition ["const","flux"]
+- utbf      : Upper thermal heat flux [W/m]; if ubound == "flux"
+- ltbf      : Lower thermal heat flux [W/m]; if lbound == "flux"
+- age       : age of the lithosphere [Ma]
+- dtfac     : Diffusion stability criterion to calculate T_age
+- nz        : Grid spacing for the 1D profile within the box
+- rheology  : Structure containing the thermal parameters for each phase [default example_CLrheology]
+
+"""
+@with_kw_noshow mutable struct LithosphericTemp <: AbstractThermalStructure
+    Tsurface = 0.0      # top T [C]
+    Tpot = 1350.0       # potential T [C]
+    dTadi = 0.5         # adiabatic gradient in K/km
+    ubound = "const"    # Upper thermal boundary condition
+    lbound = "const"    # lower thermal boundary condition
+    utbf = 50.0e-3      # q [W/m^2]; if ubound = "flux"
+    ltbf = 10.0e-3      # q [W/m^2]; if lbound = "flux"
+    age = 120.0         # Lithospheric age [Ma]
+    dtfac = 0.9         # Diffusion stability criterion
+    nz = 201            
+    rheology = example_CLrheology()
+end
+
+struct Thermal_parameters{A}
+    ρ::A
+    Cp::A
+    k::A
+    ρCp::A
+    H::A
+    function Thermal_parameters(ni)
+        ρ   =   zeros(ni)
+        Cp  =   zeros(ni)
+        k   =   zeros(ni)
+        ρCp =   zeros(ni)
+        H   =   zeros(ni)
+        new{typeof(ρ)}(ρ,Cp,k,ρCp,H)
+    end
+end
+
+function Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::LithosphericTemp)
+    @unpack Tsurface, Tpot, dTadi, ubound, lbound, utbf, ltbf, age, 
+        dtfac, nz, rheology = s
+
+    # Create 1D depth profile within the box
+    z   =   LinRange(round(maximum(Z)),round(minimum(Z)),nz)    # [km]
+    z   =   @. z*1e3                                            # [m] 
+    dz  =   z[2] - z[1]                                         # Gride resolution
+
+    # Initialize 1D arrays for explicit solver
+    T       =   zeros(nz)    
+    phase   =   Int64.(zeros(nz))
+
+    # Assign phase id from Phase to 1D phase array
+    phaseid     =   (minimum(Phase):1:maximum(Phase))    
+    ztop        =   round(maximum(Z[findall(Phase .== phaseid[1])]))
+    zlayer      =   zeros(length(phaseid))
+    for i = 1:length(phaseid)
+        # Calculate layer thickness from Phase array
+        zlayer[i]   =   round(minimum(Z[findall(Phase .== phaseid[i])]))
+        zlayer[i]   =   zlayer[i]*1.0e3
+    end
+    for i = 1:length(phaseid)
+        # Assign phase ids
+        ind         =   findall((z .>= zlayer[i]) .&  (z .<= ztop))    
+        phase[ind]  .=  phaseid[i]
+        ztop        =   zlayer[i]
+    end
+
+    # Setup initial T-profile
+    Tpot        =   Tpot + 273.15                   # Potential temp [K]  
+    Tsurface    =   Tsurface + 273.15               # Surface temperature [ K ]
+    T           =   @. Tpot + abs.(z./1.0e3)*dTadi  # Initial T-profile [ K ]    
+    T[1]        =   Tsurface   
+    
+    args        = (;)
+    thermal_parameters  = Thermal_parameters(nz)   
+    
+    ## Update thermal parameters ======================================== #
+    compute_density!(thermal_parameters.ρ,rheology,phase,args)
+    compute_heatcapacity!(thermal_parameters.Cp,rheology,phase,args)
+    compute_conductivity!(thermal_parameters.k,rheology,phase,args)
+    thermal_parameters.ρCp  .=   @. thermal_parameters.Cp * thermal_parameters.ρ
+    compute_radioactive_heat!(thermal_parameters.H,rheology,phase,args)
+
+    # Thermal diffusivity [ m^2/s ]
+    κ       =   maximum(thermal_parameters.k) / 
+        minimum(thermal_parameters.ρ) / minimum(thermal_parameters.Cp)
+    ## =================================================================== #
+    ## Time stability criterion ========================================= #
+    tfac    =   60.0*60.0*24.0*365.25   # Seconds per year
+    age     =   age*1.0e6*tfac          # Age in seconds
+    dtexp   =   dz^2.0/2.0/κ            # Stability criterion for explicit
+    dt      =   dtfac*dtexp             # [s]
+    nit     =   Int64(ceil(age/dt))     # Number of iterations
+    time    =   zeros(nit)              # Time array
+    
+    for i = 1:nit
+        if i > 1
+            time[i]   =   time[i-1] + dt
+        end
+        SolveDiff1Dexplicit_vary!(
+            T,
+            thermal_parameters,
+            ubound,lbound,
+            utbf,ltbf,
+            dz,
+            dt)
+    end
+
+    interp_linear_T = linear_interpolation(-z./1.0e3, T.-273.15)      # create interpolation object
+    Temp = interp_linear_T(-Z)
+    
+    return Temp
+end
+
+function SolveDiff1Dexplicit_vary!(    
+    T,
+    thermal_parameters,
+    ubound,lbound,
+    utbf,ltbf,
+    di,
+    dt
+)    
+    nz      =   length(T)
+    T0      =   T
+
+    if ubound == "const"
+        T[1]    =   T0[1]
+    elseif ubound == "flux"
+        kB      =   (thermal_parameters.k[2] + thermal_parameters.k[1])/2.0
+        kA      =   (thermal_parameters.k[1] + thermal_parameters.k[1])/2.0
+        a       =   (dt*(kA + kB)) / (di^2.0 * thermal_parameters.ρCp[1])
+        b       =   1 - (dt*(kA + kB)) / (di^2.0 * thermal_parameters.ρCp[1])        
+        c       =   (dt*2.0*utbf)/(di * thermal_parameters.ρCp[1])
+        T[1]    =   a*T0[2] + b*T0[1] + c + 
+                thermal_parameters.H[1]*dt/thermal_parameters.ρCp[1]
+    end
+    if lbound == "const"
+        T[nz]   =   T0[nz]
+    elseif lbound == "flux"
+        kB      =   (thermal_parameters.k[nz] + thermal_parameters.k[nz])/2.0
+        kA      =   (thermal_parameters.k[nz] + thermal_parameters.k[nz-1])/2.0
+        a       =   (dt*(kA + kB)) / (di^2.0 * thermal_parameters.ρCp[nz])
+        b       =   1 - (dt*(kA + kB)) / (di^2.0 * thermal_parameters.ρCp[nz])
+        c       =   -(dt*2.0*ltbf) / (di * thermal_parameters.ρCp[nz])
+        T[nz]   =   a*T0[nz-1] + b*T0[nz] + c
+    end
+
+    kAi     =   @. (thermal_parameters.k[1:end-2] + thermal_parameters.k[2:end-1])/2.0
+    kBi     =   @. (thermal_parameters.k[2:end-1] + thermal_parameters.k[3:end])/2.0
+    ai      =   @. (kBi*dt)/(di^2.0*thermal_parameters.ρCp[2:end-1])
+    bi      =   @. 1.0 - (dt*(kAi + kBi))/(di^2.0*thermal_parameters.ρCp[2:end-1])
+    ci      =   @. (kAi*dt)/(di^2.0*thermal_parameters.ρCp[2:end-1])
+    T[2:end-1]   =   @. ai*T0[3:end] + bi*T0[2:end-1] + ci*T0[1:end-2] + 
+                    thermal_parameters.H[2:end-1]*dt/thermal_parameters.ρCp[2:end-1]
+    return T    
+end
+
+function example_CLrheology(;    
+    ρM=3.0e3,           # Density [ kg/m^3 ]
+    CpM=1.0e3,          # Specific heat capacity [ J/kg/K ]
+    kM=2.3,             # Thermal conductivity [ W/m/K ]
+    HM=0.0,             # Radiogenic heat source per mass [H] = W/kg; [H] = [Q/rho]
+    ρUC=2.7e3,          # Density [ kg/m^3 ]
+    CpUC=1.0e3,         # Specific heat capacity [ J/kg/K ]
+    kUC=3.0,            # Thermal conductivity [ W/m/K ]
+    HUC=617.0e-12,      # Radiogenic heat source per mass [H] = W/kg; [H] = [Q/rho]
+    ρLC=2.9e3,          # Density [ kg/m^3 ]
+    CpLC=1.0e3,         # Specific heat capacity [ J/kg/K ]
+    kLC=2.0,            # Thermal conductivity [ W/m/K ]
+    HLC=43.0e-12,       # Radiogenic heat source per mass [H] = W/kg; [H] = [Q/rho]
+)    
+
+    rheology = (
+        # Name              = "UpperCrust",
+        SetMaterialParams(;
+            Phase               =   1,
+            Density             =   ConstantDensity(; ρ=ρUC),
+            HeatCapacity        =   ConstantHeatCapacity(; Cp=CpUC),
+            Conductivity        =   ConstantConductivity(; k=kUC),
+            RadioactiveHeat     =   ConstantRadioactiveHeat(; H_r=HUC*ρUC),     # [H] = W/m^3
+        ),
+        # Name              = "LowerCrust",
+        SetMaterialParams(;
+            Phase               =   2,
+            Density             =   ConstantDensity(; ρ=ρLC),
+            HeatCapacity        =   ConstantHeatCapacity(; Cp=CpLC),
+            Conductivity        =   ConstantConductivity(; k=kLC),
+            RadioactiveHeat     =   ConstantRadioactiveHeat(; H_r=HLC*ρLC),     # [H] = W/m^3
+        ),
+        # Name              = "LithosphericMantle",
+        SetMaterialParams(;
+            Phase               =   3,
+            Density             =   ConstantDensity(; ρ=ρM),
+            HeatCapacity        =   ConstantHeatCapacity(; Cp=CpM),
+            Conductivity        =   ConstantConductivity(; k=kM),
+            RadioactiveHeat     =   ConstantRadioactiveHeat(; H_r=HM*ρM),       # [H] = W/m^3
+        ),
+    )
+    return rheology
+end
 
 abstract type AbstractPhaseNumber end
 
@@ -811,3 +1033,147 @@ end
 
 # allow AbstractGeneralGrid instead of Z and Ztop
 Compute_Phase(Phase, Temp, Grid::LaMEM_grid, s::LithosphericPhases) = Compute_Phase(Phase, Temp, Grid.X, Grid.Y, Grid.Z, s::LithosphericPhases, Ztop=maximum(Grid.coord_z))
+
+
+
+"""
+    McKenzie_subducting_slab
+
+Thermal structure by McKenzie for a subducted slab that is fully embedded in the mantle.
+
+Parameters
+===
+- Tsurface:     Top T [C]
+- Tmantle:      Bottom T [C]
+- Adiabat:      Adiabatic gradient in K/km
+- v_cm_yr:      Subduction velocity [cm/yr]
+- κ:            Thermal diffusivity [m2/s]
+- it:           Number iterations employed in the harmonic summation
+
+"""
+@with_kw_noshow mutable struct McKenzie_subducting_slab <: AbstractThermalStructure
+    Tsurface::Float64 = 20.0       # top T
+    Tmantle::Float64  = 1350.0     # bottom T
+    Adiabat::Float64  = 0.4        # Adiabatic gradient in K/km
+    v_cm_yr::Float64  = 2.0        # velocity of subduction [cm/yr]
+    κ::Float64        = 1e-6       # Thermal diffusivity [m2/s]
+    it::Int64         = 36         # number of harmonic summation (look Mckenzie formula)
+end
+
+""" 
+    Compute_ThermalStructure(Temp, X, Y, Z, s::McKenzie_subducting_slab)
+
+Compute the temperature field of a `McKenzie_subducting_slab`. Uses the analytical solution
+of McKenzie (1969) ["Speculations on the consequences and causes of plate motions"]. The functions assumes
+that the bottom of the slab is the coordinate Z=0. Internally the function shifts the coordinate. 
+Parameters
+=============================
+Temp Temperature array
+X    X Array 
+Y    Y Array 
+Z    Z Array 
+Phase Phase array 
+s    McKenzie_subducting_slab
+
+"""
+function Compute_ThermalStructure(Temp, X, Y, Z,Phase, s::McKenzie_subducting_slab)
+    @unpack Tsurface, Tmantle, Adiabat, v_cm_yr, κ, it = s
+
+    # Thickness of the layer: 
+    D0          =   (maximum(Z)-minimum(Z));
+    Zshift      =   Z .- Z[end]       # McKenzie model is defined with Z = 0 at the bottom of the slab
+
+    # Convert subduction velocity from cm/yr -> m/s; 
+    convert_velocity = 1/(100.0*365.25*60.0*60.0*24.0);
+    v_s = v_cm_yr*convert_velocity;
+    
+    # calculate the thermal Reynolds number
+    Re = (v_s*D0*1000)/2/κ;     # factor 1000 to transfer D0 from km to m
+    
+    # McKenzie model
+    sc = 1/D0
+    σ  = ones(size(Temp));
+    # Dividi et impera
+    for i=1:it
+        a   = (-1.0).^(i)./(i.*pi)
+        b   = (Re .- (Re.^2 .+ i^2.0 .* pi^2.0).^(0.5)) .*X .*sc;
+        c   = sin.(i .*pi .*(1 .- abs.(Zshift .*sc))) ;
+        e   = exp.(b);
+        σ .+= 2*a.*e.*c 
+    end
+
+    Temp           .= Tsurface .+ (Tmantle-Tsurface).*σ;
+    Temp           .= Temp + (Adiabat*abs.(Z))
+    
+    return Temp
+end
+
+"""
+    LinearWeightedTemperature
+
+Structure that defined a linear average temperature between two temperature fields as a function of distance
+
+Parameters
+===
+- w_min:        Minimum weight
+- w_max:        Maximum weight
+- crit_dist:    Critical distance
+- dir:          Direction of the averaging (`:X`, `:Y` or `:Z`)
+- F1:           First temperature field
+- F2:           Second temperature field
+
+"""
+@with_kw_noshow mutable struct LinearWeightedTemperature <: AbstractThermalStructure 
+    w_min::Float64 = 0.0; 
+    w_max::Float64 = 1.0; 
+    crit_dist::Float64 = 100.0;
+    dir::Symbol =:X; 
+    F1::AbstractThermalStructure = ConstantTemp();
+    F2::AbstractThermalStructure = ConstantTemp();
+end
+
+"""
+    Weight average along distance
+    Do a weight average between two field along a specified direction 
+    Given a distance {could be any array, from X,Y} -> it increase from the origin the weight of 
+    F1, while F2 decreases. 
+    This function has been conceived for averaging the solution of Mckenzie and half space cooling model, but in 
+    can be used to smooth the temperature field from continent ocean: 
+    -> Select the boundary to apply; 
+    -> transform the coordinate such that dist represent the perpendicular direction along which you want to apply
+    this smoothening and in a such way that 0.0 is the point in which the weight of F1 is equal to 0.0; 
+    -> Select the points that belongs to this area -> compute the thermal fields {F1} {F2} -> then modify F. 
+"""
+function Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::LinearWeightedTemperature)
+    @unpack w_min, w_max, crit_dist,dir = s; 
+    @unpack F1, F2 = s; 
+    
+    if dir === :X
+        dist = X; 
+    elseif dir ===:Y 
+        dist = Y; 
+    else
+        dist = Z; 
+    end
+  
+    # compute the 1D thermal structures
+    Temp1 = zeros(size(Temp));
+    Temp2 = zeros(size(Temp));
+    Temp1 = Compute_ThermalStructure(Temp1, X, Y, Z, Phase, F1);
+    Temp2 = Compute_ThermalStructure(Temp2, X, Y, Z, Phase, F2);
+
+    # Compute the weights
+    weight = w_min .+(w_max-w_min) ./(crit_dist) .*(dist)
+
+    ind_1 = findall(weight .>w_max);
+    ind_2 = findall(weight .<w_min);
+
+    # Change the weight 
+    weight[ind_1] .= w_max; 
+    weight[ind_2] .= w_min;
+    
+    # Average temperature
+    Temp .= Temp1 .*(1.0 .- weight) + Temp2 .* weight; 
+
+    return Temp
+end
