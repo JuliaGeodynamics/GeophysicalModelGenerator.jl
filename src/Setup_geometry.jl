@@ -1177,3 +1177,343 @@ function Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::LinearWeightedTempera
 
     return Temp
 end
+
+"""
+    Trench structure
+[Dev Comments]: I wanted to leave some fields for future implementation. For example, if you take an arbitrary path
+that can be projected to a linear segment, an user can discretize it, and can create an arbitrary trench geometry.
+The type of bending can be further customize, but certain geometry can be tricky with the actual finding slab. In the future,
+we can intorduce structures that handle that and use multiple dispatch of the function finding slab to handle the most tricky geometries
+
+n_seg_xy     = Number of segment through which the trench strike is discretize (for now, is one by default)
+A            = The first point of the trench  | The coordinate will be transformed and rotated as a function of the
+B            = The second point of the trench | slope of the segment, and w.r.t. to the point A.
+n_seg        = The number of segment through which the slab is discretize along the dip
+L0           = The length of the slab
+D0           = The thickness of the slab
+Lb           = Critical distance through which apply the bending angle functions Lb ∈ [0,L0];
+θ_max        = maximum angle of bending ∈ [0°,90°].
+direction    = the direction of the dip
+               The rotation of the coordinate system is done as such that the new X is parallel to the segment. Since the
+               rotation is anticlockwise the coordinate y has specific values: direction tells if the subduction is directed along
+               the positive or negative direction of the new y coordinate system. In practice, it apply an additional transformation
+               to y by multiplying it with -1 or +1;
+type_bending = is the type of bending angle of the slab for now can be :Linear, :Ribe.
+    The angle of slab changes as a function of l (∈ [0,L0]). l is the actual distance along the slab length from
+    the trench.
+    In case of :Linear θ(l) = ((θ_max - 0.0)/(Lb-0))*l;
+    In case of :Ribe   θ(l) =  θ_max*l^2*((3*Lb-2*l))/(Lb^3) (ref*);
+    (ref*) Ribe 2010 [Bending mechanics and mode selection in free subduction: a thin-sheet analysis]
+    For l>Lb, θ(l) = θ_max;
+    [Dev] Potential development: using the elastic bending differnetial equation and numerically integrate
+WZ           = Thickness of the weakzone.
+d_decoupling = depth at which the slab is fully submerged into the mantle.
+
+"""
+@with_kw_noshow mutable struct Trench <: trench_slab
+    n_seg_xy::Int64 =  1     # Number of segment of the trench plane view (for now, 1 segment)
+    A::Array{Float64}       =  (0.0,0.0)  # Coordinate 1 {set of coordinates}
+    B::Array{Float64}     =  (0.0,1.0)  # Coordinate 2 {set of coordinates}
+    θ_max::Float64 = 45 # max bending angle, (must be converted into radians)
+    direction::Float64 = 1.0 # Direction of the bending angle.
+    n_seg::Int64       = 50         # definition segment
+    L0:: Float64       = 400        # length of the slab
+    D0:: Float64      = 100        # thickness of the slab
+    Lb:: Float64    = 200       # Length at which all the bending is happening (Lb<=L0)
+    d_decoupling:: Float64 = 100       # decoupling depth of the slab
+    type_bending::Symbol = :Ribe     # Mode Ribe | Linear | Costumize
+    WZ:: Float64       = 50        # thickness of the weak zone
+end
+
+"""
+    compute_slab_surface!(D0::Float64,L0::Float64,Lb::Float64,WZ::Float64,n_seg::Int64,θ_max::Float64,type_bending::Symbol)
+
+Compute the coordinate of the slab top, bottom surface using the mid surface of the slab as reference. It computes it by discretizing the slab surface
+in n segments, and computing the average bending angle {which is a function of the current length of the slab}. Then compute the coordinate
+assuming that the trench is at 0.0, and assuming a positive θ_max angle.
+
+"""
+function compute_slab_surface!(D0::Float64,L0::Float64,Lb::Float64,WZ::Float64,n_seg::Int64,θ_max::Float64,type_bending::Symbol)
+    # Convert θ_max into radians
+    θ_max = θ_max*pi/180;
+
+    # Allocate the top,mid and bottom surface, and the weakzone
+    Top = zeros(n_seg+1,2);
+
+    Bottom = zeros(n_seg+1,2);
+    Bottom[1,2] = -D0;
+
+    MidS    = zeros(n_seg+1,2);
+    MidS[1,2] = -D0./2;
+
+    WZ_surf     = zeros(n_seg+1,2);
+    WZ_surf[1,2] = WZ;
+    # Initialize the length.
+    l = 0.0;   # initial length
+
+    it = 1;  # iteration
+
+    dl = L0/n_seg; # dl
+
+    while l<L0
+        ln = l+dl
+        # Compute the mean angle within the segment
+        θ_mean = (compute_bending_angle!(θ_max,Lb,l,type_bending)+compute_bending_angle!(θ_max,Lb,ln,type_bending))./2;
+        # Compute the mid surface coordinate
+        MidS[it+1,1] = MidS[it,1]+dl*cos(θ_mean);
+
+        MidS[it+1,2] = MidS[it,2]-dl.*sin(θ_mean);
+        #Compute the top surface coordinate
+
+        Top[it+1,1] = MidS[it+1,1]+0.5.*D0.*abs(sin(θ_mean));
+
+        Top[it+1,2] = MidS[it+1,2]+0.5.*D0.*abs(cos(θ_mean));
+        #Compute the bottom surface coordinate
+
+        Bottom[it+1,1] = MidS[it+1,1]-0.5.*D0.*abs(sin(θ_mean));
+
+        Bottom[it+1,2] = MidS[it+1,2]-0.5.*D0.*abs(cos(θ_mean));
+        # Compute the top surface for the weak zone
+
+        WZ_surf[it+1,1] = MidS[it+1,1]+(0.5.*D0+WZ).*abs(sin(θ_mean));
+
+        WZ_surf[it+1,2] = MidS[it+1,2]+(0.5.*D0+WZ).*abs(cos(θ_mean));
+        # update l and it
+        l = ln;
+        it = it+1;
+    end
+
+    return Top,Bottom,WZ_surf; #{Filling the structure?}
+
+    end
+
+"""
+    compute_bending_angle!(θ_max,Lb,l,type)
+θ_max = maximum bending angle
+Lb    = length at which the function of bending is applied (Lb<=L0)
+l     = current position within the slab
+type  = type of bending {Ribe}{Linear}{Customize}
+function that computes the θ(l).
+"""
+function compute_bending_angle!(θ_max::Float64,Lb::Float64,l::Float64,type::Symbol)
+    if l>Lb
+        return θ_max
+    elseif type === :Ribe
+        # Compute theta
+        return θ_max*l^2*((3*Lb-2*l))/(Lb^3);
+    elseif type === :Linear
+        # Compute the actual angle
+        return l*(θ_max-0)/(Lb);
+    end
+end
+
+"""
+       transform_coordinate!(X,Y,Z,XT,YT,A,B,direction)
+Transform the coordinate such that the new x axis (XT) is parallel to the segment A-B of the slab. The rotation is
+anticlockwise. If θ_max is negative, it multiplies YT with the sign of the angle, changing the dip of the subduction.
+It returns Bn -> which is the point B coordinate in the new transformed system.
+"""
+
+function transform_coordinate!(X,Y,Z,XT,YT,A,B,direction)
+
+    # find the slope of AB points
+    s = (B[2]-A[2])/(B[1]-A[1])
+
+    angle_rot = -atand(s);
+
+    # Shift the origin
+    XT .= X .-A[1];
+
+    YT .= Y .-A[2];
+
+    Bn = zeros(3);
+
+    Bn[1] = B[1]-A[1];
+
+    Bn[2] = B[2]-A[2];
+
+    Bn[3] = 0.0;
+
+    # Transform the coordinates
+    Rot3D!(XT,YT,Z, angle_rot, 0);
+
+    YT .= YT*direction;
+
+    #Find Point B in the new coordinate system
+    roty = [cosd(-0) 0 sind(-0) ; 0 1 0 ; -sind(-0) 0  cosd(-0)];
+
+    rotz = [cosd(angle_rot) -sind(angle_rot) 0 ; sind(angle_rot) cosd(angle_rot) 0 ; 0 0 1]
+
+    Bn = rotz* Bn;
+
+    Bn = roty*Bn;
+
+    return Bn
+
+end
+
+"""
+    find_slab!(X,Y,Z,d,ls,θ_max,A,B,Top,Bottom,seg_slab,D0,L0)
+Function that finds the slab. It loops over the Top and Bottom surface of the slab.
+It creates small poligons where and check if in the transformed coordinate system there are particles belonging to that polygo
+then interpolates the distance from the top, and the current length from the corners.
+
+"""
+function find_slab!(X,Y,Z,d,ls,θ_max,A,B,Top,Bottom,seg_slab,D0,L0,direction)
+
+    # Create the XT,YT
+    XT = zeros(size(X));
+
+    YT = zeros(size(Y));
+
+    # Function to transform the coordinate
+    xb = transform_coordinate!(X,Y,Z,XT,YT,A,B,direction);
+
+    # dl
+    dl = L0/seg_slab;
+
+    l = 0  # length at the trench position
+
+    # Construct the slab
+    for i = 1:(seg_slab-1)
+
+        ln = l+dl;
+
+        pa = (Top[i,1],Top[i,2]); # D = 0 | L = l
+
+        pb = (Bottom[i,1],Bottom[i,2]); # D = -D0 | L=l
+
+        pc = (Bottom[i+1,1],Bottom[i+1,2]); # D = -D0 |L=L+dl
+
+        pd = (Top[i+1,1],Top[i+1,2]) # D = 0| L = L+dl
+
+        # Create the polygon
+        poly_y = [pa[1],pb[1],pc[1],pd[1]];
+
+        poly_z = [pa[2],pb[2],pc[2],pd[2]];
+
+        # find a sub set of particles
+        ymin = minimum(poly_y);
+
+        ymax = maximum(poly_y);
+
+        zmin = minimum(poly_z);
+
+        zmax = maximum(poly_z);
+
+        ind_s = findall(0.0.<= XT.<= xb[1] .&& ymin .<= YT .<= ymax .&& zmin .<= Z .<= zmax);
+
+        # Find the particles
+        yp = YT[ind_s];
+
+        zp = Z[ind_s];
+
+        # Initialize the ind that are going to be used by inpoly
+        ind = zeros(Bool,size(zp));
+
+        # inPoly! [Written by Arne Spang, must be updated with the new version]
+        inPolygon!(ind,poly_y,poly_z,yp,zp);
+
+        # indexes of the segment
+        ind_seg = ind_s[ind]
+
+        # Prepare the variable to interpolate {I put here because to allow also a variation of thickness of the slab}
+        D = [0.0,-D0,-D0,0.0];
+
+        L = [l,l,ln,ln];
+
+        # Interpolations
+        points = [pa[1] pa[2];pb[1] pb[2];pc[1] pc[2];pd[1] pd[2]]'
+
+        itp1 = interpolate(Shepard(), points, D);
+
+        itp2 = interpolate(Shepard(), points, L);
+
+        # Loop over the chosen particles and interpolate the current value of L and D.
+        particle_n = length(ind_seg)
+
+        for ip = 1:particle_n
+
+            point_ = [YT[ind_seg[ip]],Z[ind_seg[ip]]];
+
+            d[ind_seg[ip]] = evaluate(itp1,point_)[1];
+
+            ls[ind_seg[ip]] = evaluate(itp2,point_)[1];
+        end
+
+        #Update l
+        l = ln;
+    end
+end
+
+"""
+    create_slab!(X::Array{Float64},Y::Array{Float64},Z::Array{Float64},Ph::Array{Int32},T::Array{Float64},t::Trench,strat,temp)
+
+Main function that creates the slab. Unpack the variable from the structure, create two arrays that contains the information of l and d.
+    l and d are the array containing the length of the slab per each coordinate belonging to the slab, and the distance from the surface.
+    In this function compute_slab_surface and find_slab are called. And after d and ls are computed, it fill up the temperature and phase arrays
+
+"""
+function create_slab!(X::Array{Float64},Y::Array{Float64},Z::Array{Float64},Ph::Array{Int32},T::Array{Float64},t::Trench,strat,temp)
+
+    d = ones(size(X)).*NaN64;
+
+    # -> l = length from the trench along the slab
+    ls = ones(size(X)).*NaN64;
+
+    D0 = t.D0;
+
+    L0 = t.L0;
+
+    n_seg = t.n_seg;
+
+    Lb    = t.Lb;
+
+    θ_max = t.θ_max;
+
+    n_seg_xy = t.n_seg_xy;
+
+    WZ = t.WZ;
+
+    # Allocate d-l array and A,B
+
+    A = zeros(Float64,2,1);
+    B = zeros(Float64,2,1);
+
+    #Loop over the segment of the slab
+    # In theory this loop would loop all the segment of the trench, but if I introduce a n_seg_xy = 1, it throws me an error concerning the iteration. I tried to fix, but the the error message is mysterious
+
+    #for is =1:1
+        is = 1;
+        A[1] = t.A[is];
+        A[2] = t.A[is+1];
+        B[1] = t.B[is];
+        B[2] = t.B[is+1];
+
+        # Compute Top-Bottom surface
+        # Or loop over the segment of the top/bottom surface and inpolygon each element or
+
+        Top,Bottom,WZ_surf =compute_slab_surface!(D0,L0,Lb,WZ,n_seg,abs(θ_max),t.type_bending);
+
+        find_slab!(X,Y,Z,d,ls,t.θ_max,A,B,Top,Bottom,t.n_seg,t.D0,t.L0,t.direction);
+
+        l_decouplingind = findall(Top[:,2].<=-t.d_decoupling);
+
+        l_decoupling = Top[l_decouplingind[1],1];
+
+        # Function to fill up the temperature and the phase. I need to personalize addbox!
+
+        ind = findall((-D0 .<= d .<= 0.0));
+
+        # Compute thermal structure accordingly. See routines below for different options {Future: introducing the length along the trench for having lateral varying properties along the trench}
+        T[ind] = Compute_ThermalStructure(T[ind], X[ind], ls[ind], d[ind],Phase,temp);
+
+        # Set the phase. Different routines are available for that - see below.
+        Ph[ind] = Compute_Phase(Ph[ind], T[ind], X[ind], ls[ind], d[ind], strat)
+
+        # Place holder of the weak zone: it is simply using the find slab routine, and cutting it at d_decoupling.
+
+    #end
+
+end
+
