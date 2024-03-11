@@ -71,7 +71,9 @@ function load_GMG(filename::String, dir=pwd(); maxattempts=5)
     data =  load_object(file_ext)
 
     # remove local temporary file
-    rm(local_filename)
+    if contains(filename,"http")
+        rm(local_filename)
+    end
 
     return data
 end 
