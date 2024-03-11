@@ -102,7 +102,7 @@ makedocs(;
             "17 - Fault Density Map" =>  "man/Tutorial_FaultDensity.md",
             "18 - Alpine data integration" =>  "man/Tutorial_AlpineData.md",
             "19 - Jura tutorial" =>  "man/Tutorial_Jura.md", 
-            "20 - Build geometry setup with polygon.md" =>  "man/tutorial_Polygon_structures.md"
+            "20 - Build geometry from polygons" =>  "man/tutorial_Polygon_structures.md"
         ],
         "User Guide" => Any[
             "Installation" =>  "man/installation.md",
