@@ -1186,7 +1186,7 @@ abstract type trench_slab end
 [Dev Comments]: I wanted to leave some fields for future implementation. For example, if you take an arbitrary path
 that can be projected to a linear segment, an user can discretize it, and can create an arbitrary trench geometry.
 The type of bending can be further customize, but certain geometry can be tricky with the actual finding slab. In the future,
-we can intorduce structures that handle that and use multiple dispatch of the function finding slab to handle the most tricky geometries
+we can introduce structures that handle that and use multiple dispatch of the function finding slab to handle the most tricky geometries
 
 n_seg_xy     = Number of segment through which the trench strike is discretize (for now, is one by default)
 A            = The first point of the trench  | The coordinate will be transformed and rotated as a function of the
@@ -1208,7 +1208,7 @@ type_bending = is the type of bending angle of the slab for now can be :Linear, 
     In case of :Ribe   θ(l) =  θ_max*l^2*((3*Lb-2*l))/(Lb^3) (ref*);
     (ref*) Ribe 2010 [Bending mechanics and mode selection in free subduction: a thin-sheet analysis]
     For l>Lb, θ(l) = θ_max;
-    [Dev] Potential development: using the elastic bending differnetial equation and numerically integrate
+    [Dev] Potential development: using the elastic bending differential equation and numerically integrate
 WZ           = Thickness of the weakzone.
 d_decoupling = depth at which the slab is fully submerged into the mantle.
 
@@ -1224,7 +1224,7 @@ d_decoupling = depth at which the slab is fully submerged into the mantle.
     D0:: Float64      = 100        # thickness of the slab
     Lb:: Float64    = 200       # Length at which all the bending is happening (Lb<=L0)
     d_decoupling:: Float64 = 100       # decoupling depth of the slab
-    type_bending::Symbol = :Ribe     # Mode Ribe | Linear | Costumize
+    type_bending::Symbol = :Ribe     # Mode Ribe | Linear | Customize
     #WZ:: Float64       = 50        # thickness of the weak zone [PlaceHolder]
 end
 
@@ -1358,7 +1358,7 @@ end
 """
     find_slab!(X,Y,Z,d,ls,θ_max,A,B,Top,Bottom,seg_slab,D0,L0)
 Function that finds the slab. It loops over the Top and Bottom surface of the slab.
-It creates small poligons where and check if in the transformed coordinate system there are particles belonging to that polygo
+It creates small polygons where and check if in the transformed coordinate system there are particles belonging to that polygon
 then interpolates the distance from the top, and the current length from the corners.
 
 """
@@ -1514,7 +1514,7 @@ function create_slab!(X::Array{Float64},Y::Array{Float64},Z::Array{Float64},Ph::
             l_decoupling = Top[l_decouplingind[1],1];
     
             temp.crit_dist = l_decoupling; 
-            
+
         end
         # Compute thermal structure accordingly. See routines below for different options {Future: introducing the length along the trench for having lateral varying properties along the trench}
         T[ind] = Compute_ThermalStructure(T[ind], ls[ind], Y[ind], d[ind],Ph[ind],temp);
