@@ -39,9 +39,6 @@ AddBox!(Phases,Temp,Grid, xlim=(2,4), zlim=(4,8), phase=ConstantPhase(3), DipAng
 
 @test maximum(Phases) == 3
 
-# add accretionary prism 
-addPolygon!(Phase, Temp, Cart; xlim=(1, 2, 1),ylim=(0.0,1.0), zlim=(2.0,3.0,3.0), phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30))
-@test maximum(Phases) == 8
 
 # Create a CartData structure from it
 Data = CartData(Grid, (T=Temp, Phases=Phases))
@@ -217,3 +214,22 @@ AddBox!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0, 0.0),
 
 
 Data_Final =   AddField(Cart,"Temp",Temp)
+
+# test polygon structure
+
+x        = LinRange(0.0,1200.0,64);
+y        = LinRange(0.0,1200.0,64);
+z        = LinRange(-660,50,64);
+Cart     = CartData(XYZGrid(x, y, z));
+
+# initialize phase and temperature matrix
+Phase   = ones(Int32,(length(x),length(y),length(z)));
+Temp    = ones(Float64,(length(x),length(y),length(z)))*1350;
+
+AddBox!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0, 0.0), phase = ConstantPhase(5), T=T=ConstantTemp(120.0));
+
+# add accretionary prism 
+addPolygon!(Phase, Temp, Cart; xlim=[500.0, 200.0, 500.0],ylim=[100.0,400.0], zlim=[0.0,0.0,-60.0], phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30))
+
+@test maximum(Phase) == 8
+@test minimum(Temp) == 21.40845070422536

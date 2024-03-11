@@ -9,7 +9,7 @@ using GeoParams
 # These are routines that help to create input geometries, such as slabs with a given angle
 #
 
-export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!, AddLayer!, addPolygon!
+export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!, AddLayer!, addPolygon!,
         makeVolcTopo,
         ConstantTemp, LinearTemp, HalfspaceCoolingTemp, SpreadingRateTemp, LithosphericTemp,
         ConstantPhase, LithosphericPhases,
@@ -472,33 +472,11 @@ end
 
 
 
-
-function inPoly(PolyX, PolyY, x, y)
-    inside = false
-    iSteps = collect(eachindex(PolyX))
-    jSteps = [length(PolyX); collect(1:length(PolyX)-1)]
-
-    for (i,j) in zip(iSteps, jSteps)
-        xi = PolyX[i]
-        yi = PolyY[i]
-        xj = PolyX[j]
-        yj = PolyY[j]
-
-        if ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi + eps()) + xi)
-
-            inside = !inside
-        end
-    end
-
-    return inside
-end
-
-
 """
-    addPolygon!(Phase, Temp, Grid::AbstractGeneralGrid;                 # required input
-            xlim=Tuple{}, ylim=Tuple{2}, zlim=Tuple{},     # limits of the box
-            phase = ConstantPhase(1),                       # Sets the phase number(s) in the box
-            T=nothing )    
+    function addPolygon!(Phase, Temp, Grid::AbstractGeneralGrid;    # required input
+        xlim=Vector(), ylim=Vector(2), zlim=Vector(),               # limits of the box
+        phase = ConstantPhase(1),                                   # Sets the phase number(s) in the box
+        T=nothing )   
 Adds a polygon with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
 
 
@@ -510,7 +488,7 @@ Parameters
 - xlim  - x-cooridnate of the polygon points, same ordering as zlim, number of points unlimited
 - ylim  - y-cooridnate, limition in length possible (two values (start and stop))
 - zlim  - z-cooridnate of the polygon points, same ordering as xlim, number of points unlimited
-- phase - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
+- phase - specifies the phase of the box. See `ConstantPhase()`
 - T - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
 
 
@@ -540,28 +518,27 @@ julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
 """
 
 
-function addPolygon!(Phase, Temp, Grid::AbstractGeneralGrid;                 # required input
-    xlim=Tuple{}, ylim=Tuple{2}, zlim=Tuple{},     # limits of the box
-    phase = ConstantPhase(1),                       # Sets the phase number(s) in the box
-    T=nothing )                                     # Sets the thermal structure (various functions are available)
+function addPolygon!(Phase, Temp, Grid::AbstractGeneralGrid;    # required input
+    xlim=Vector(), ylim=Vector(2), zlim=Vector(),               # limits of the box
+    phase = ConstantPhase(1),                                   # Sets the phase number(s) in the box
+    T=nothing )                                                 # Sets the thermal structure (various functions are available)
 
 # Retrieve 3D data arrays for the grid
 X,Y,Z = coordinate_grids(Grid)
 
+ind = zeros(Bool,size(X))
+ind_slice = zeros(Bool,size(X[:,1,:]))
 
-indx = zeros(length(X))
+# find points within the polygon, only in 2D
+for i = 1:size(Y)[2]
 
-# find points of the total script within the polygone, only in 2D due to the symetric structures and index of y
-for i = 1:length(X)#(indy)
-
-    # working but not the fastest
-    if Y[i] >= ylim[1] && Y[i]<=ylim[2] 
-        indx[i] = inPoly(xlim,zlim, X[i], Z[i])
+    if Y[1,i,1] >= ylim[1] && Y[1,i,1]<=ylim[2] 
+        inPolygon!(ind_slice, xlim,zlim, X[:,i,:], Z[:,i,:])
+        ind[:,i,:] = ind_slice
+    else
+        ind[:,i,:] = zeros(size(X[:,1,:]))
     end
 end
-
-# get all indices which are in the polygone separated
-ind = findall(x->x>0,indx)
 
 
 # Compute thermal structure accordingly. See routines below for different options

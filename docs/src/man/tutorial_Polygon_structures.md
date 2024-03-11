@@ -8,7 +8,7 @@ This tutorial visualizes simplified geological as it is done here for a passive 
 ## Steps
 
 #### 1. Set up your simplified background model
-Before adding specific geological features, a general simplified model setup is necessary. The construction is made by using the AddBox function. For the model the discontinuities are in 15, 45, 145, and 945 km depth.
+Before adding specific geological features, a general simplified model setup is necessary. The construction is made by using the addBox function. For the model the discontinuities are in 15, 45, 145, and 945 km depth.
 
 ```julia
 using GeophysicalModelGenerator
@@ -33,12 +33,14 @@ Temp    = ones(Float64,size(X))*1350
 # add different phases: crust->2, Mantle Lithosphere->3 Mantle->1
 AddBox!(Phase, Temp, Cart; xlim=(0.0,800.0),ylim=(0.0,800.0), zlim=(-800.0,0.0), phase = LithosphericPhases(Layers=[15 30 100 800], Phases=[2 3 1 5], Tlab=1300 ), T=LinearTemp(Ttop=20, Tbot=1600))
 
+
+# add air phase 0
 AddBox!(Phase, Temp, Cart; xlim=(0.0,800.0),ylim=(0.0,800.0), zlim=(0.0,50.0), phase = ConstantPhase(0), T=ConstantTemp(20.0))
 
  ```
 
 
-#### 2. Add polygone sturture
+#### 2. Add polygon struture
 For including the geological structures of a passive margin into the model via the polygon function, depths down to 150 km are focused on. With the polygon function, it is possible to create different shapes. In the example, the sediment basin shows a more trapezial (2D in x-/z-direction) shape, while the thinning of the plate is a more triangular (2D in x-/z-direction). More complex structures are possible to build in the background model due to the non-limitation number of points in the x- and z-direction. In y-direction only the length can be varied and is set by two values. The shape is not changeable. The x- and z-values of the points need to be in the same order for selecting the correct point (P1(1/3), P2(2/2) --> xlim(1,2), ylim(3,2)).
 
 
@@ -48,18 +50,18 @@ For including the geological structures of a passive margin into the model via t
 # ylim: limits the object within the two ylim values
 # unlimited number of points possible to create the polygon
 
-# add sediment basin # depending on resolution show and angle if it the edge is visible in paraview
-addPolygon!(Phase, Temp, Cart; xlim=(0.0,0.0, 160.0, 200.0),ylim=(100.0,300.0), zlim=(0.0,-10.0,-20.0,0.0), phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30))
+# add sediment basin 
+addPolygon!(Phase, Temp, Cart; xlim=[0.0,0.0, 160.0, 200.0],ylim=[100.0,300.0], zlim=[0.0,-10.0,-20.0,0.0], phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30))
 
 # add thinning of the continental crust attached to the slab and its thickness 
-addPolygon!(Phase, Temp, Cart; xlim=(0.0, 200.0, 0.0),ylim=(500.0,800.0), zlim=(-100.0,-150.0,-150.0), phase = ConstantPhase(5), T=LinearTemp(Ttop=1000, Tbot=1100))
+addPolygon!(Phase, Temp, Cart; xlim=[0.0, 200.0, 0.0],ylim=[500.0,800.0], zlim=[-100.0,-150.0,-150.0], phase = ConstantPhase(5), T=LinearTemp(Ttop=1000, Tbot=1100))
 
 # add accretionary prism 
-addPolygon!(Phase, Temp, Cart; xlim=(800.1, 600.0, 800.1),ylim=(100.0,800.0), zlim=(0.0,0.0,-60.0), phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30))
+addPolygon!(Phase, Temp, Cart; xlim=[800.0, 600.0, 800.0],ylim=[100.0,800.0], zlim=[0.0,0.0,-60.0], phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30))
 
  ```
 
-#### 3. Export the final model setup to a paraview file
+#### 3. Export final model setup to a paraview file
 For visualisation and comparison to actual measured data, the mode setup is saved to a paraview file.
 
 ```julia
