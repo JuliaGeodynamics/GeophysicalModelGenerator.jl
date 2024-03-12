@@ -454,6 +454,7 @@ end
 # Internal function that rotates the coordinates
 function Rot3D!(X,Y,Z, StrikeAngle, DipAngle)
 
+    #=
     # rotation matrixes
     roty = [cosd(-DipAngle) 0 sind(-DipAngle) ; 0 1 0 ; -sind(-DipAngle) 0  cosd(-DipAngle)];
     rotz = [cosd(StrikeAngle) -sind(StrikeAngle) 0 ; sind(StrikeAngle) cosd(StrikeAngle) 0 ; 0 0 1]
@@ -466,9 +467,38 @@ function Rot3D!(X,Y,Z, StrikeAngle, DipAngle)
         Y[i] = CoordRot[2];
         Z[i] = CoordRot[3];
     end
+    =#
+
+    # precompute trigonometric functions (expensive!)
+    sindStrikeAngle, cosStrikeAngle  = sincosd(StrikeAngle)
+    sinDipAngle, cosDipAngle         = sincosd(-DipAngle)   # note the minus here to be consistent with the earlier version of the code
+    for i in eachindex(X)
+        X[i], Y[i], Z[i] = Rot3D(X[i], Y[i], Z[i], cosStrikeAngle, sindStrikeAngle, cosDipAngle, sinDipAngle)
+    end
 
     return nothing
 end
+
+"""
+    xrot, yrot, zrot = Rot3D(X::Number,Y::Number,Z::Number, cosStrikeAngle, sindStrikeAngle, cosDipAngle, sinDipAngle)
+
+Perform rotation for a point in 3D space
+"""
+function Rot3D(X::Number,Y::Number,Z::Number, cosStrikeAngle, sindStrikeAngle, cosDipAngle, sinDipAngle)
+
+    # rotation matrixes
+    #roty = [cosd(-DipAngle) 0 sind(-DipAngle) ; 0 1 0 ; -sind(-DipAngle) 0  cosd(-DipAngle)];
+    roty = [cosDipAngle 0 sinDipAngle ; 0 1 0 ; -sinDipAngle 0  cosDipAngle];       # note that dip-angle is changed from before!
+    rotz = [cosStrikeAngle -sindStrikeAngle 0 ; sindStrikeAngle cosStrikeAngle 0 ; 0 0 1]
+
+    CoordVec = [X, Y, Z]
+    CoordRot =  rotz*CoordVec;
+    CoordRot =  roty*CoordRot;
+    
+    return CoordRot[1], CoordRot[2], CoordRot[3]
+end
+
+
 
 """
 makeVolcTopo(Grid::LaMEM_grid; center::Array{Float64, 1}, height::Float64, radius::Float64, crater::Float64,
@@ -1061,7 +1091,7 @@ Parameters
 end
 
 """ 
-    Compute_ThermalStructure(Temp, X, Y, Z, s::McKenzie_subducting_slab)
+    Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::McKenzie_subducting_slab)
 
 Compute the temperature field of a `McKenzie_subducting_slab`. Uses the analytical solution
 of McKenzie (1969) ["Speculations on the consequences and causes of plate motions"]. The functions assumes
@@ -1069,11 +1099,11 @@ that the bottom of the slab is the coordinate Z=0. Internally the function shift
 Parameters
 =============================
 Temp Temperature array
-X    X Array 
-Y    Y Array 
-Z    Z Array 
-Phase Phase array 
-s    McKenzie_subducting_slab
+- `X`    X Array 
+- `Y`    Y Array 
+- `Z`    Z Array 
+- `Phase` Phase array 
+- `s`    McKenzie_subducting_slab
 
 """
 function Compute_ThermalStructure(Temp, X, Y, Z,Phase, s::McKenzie_subducting_slab)
@@ -1181,21 +1211,18 @@ function Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::LinearWeightedTempera
 end
 
 
-abstract type Trench_slab end
+abstract type AbstractTrenchSlab end
 
 """
     Trench structure
-[Dev Comments]: I wanted to leave some fields for future implementation. For example, if you take an arbitrary path
-that can be projected to a linear segment, an user can discretize it, and can create an arbitrary trench geometry.
-The type of bending can be further customize, but certain geometry can be tricky with the actual finding slab. In the future,
-we can introduce structures that handle that and use multiple dispatch of the function finding slab to handle the most tricky geometries
+
+Structure that defines the geometry of the trench and the slab.
 
 Parameters
 ===
 
-- `n_seg_xy`  - Number of segment through which the trench strike is discretize (for now, is one by default)
-- `A`         - The first point of the trench  | The coordinate will be transformed and rotated as a function of the
-- `B`         - The second point of the trench | slope of the segment, and w.r.t. to the point A.
+- `Start`     - Start of the trench (`x`,`y`) coordinates
+- `End`       - End of the trench (`x`,`y`) coordinates
 - `n_seg`     - The number of segment through which the slab is discretize along the dip
 - `L0`        - The length of the slab
 - `D0`        - The thickness of the slab
@@ -1210,26 +1237,29 @@ Parameters
 - `type_bending` - is the type of bending angle of the slab [`:Linear`, `:Ribe`].
     The angle of slab changes as a function of `l` (∈ [0,L0]). `l` is the actual distance along the slab length from
     the trench.
-    In case of `:Linear` θ(l) = ((θ_max - 0.0)/(Lb-0))*l;
-    In case of `:Ribe`   θ(l) =  θ_max*l^2*((3*Lb-2*l))/(Lb^3) (ref*);
-    (ref*) Ribe 2010 [Bending mechanics and mode selection in free subduction: a thin-sheet analysis]
+    In case:
+        - `:Linear` 
+            ```math θ(l) = ((θ_max - 0.0)/(Lb-0))*l ```;
+        - `:Ribe` 
+            ```math θ(l) =  θ_max*l^2*((3*Lb-2*l))/(Lb^3) ```;
+            which is taken from Ribe 2010 [Bending mechanics and mode selection in free subduction: a thin-sheet analysis]
+
     For l>Lb, θ(l) = θ_max;
 #    [Dev] Potential development: using the elastic bending differential equation and numerically integrate
 #- `WZ` - Thickness of the weakzone.
 
 """
-@with_kw_noshow mutable struct Trench <: Trench_slab
-    n_seg_xy::Int64 =  1                # Number of segment of the trench plane view (for now, 1 segment)
-    A::Array{Float64} =  (0.0,0.0)      # Coordinate 1 {set of coordinates}
-    B::Array{Float64} =  (0.0,1.0)      # Coordinate 2 {set of coordinates}
-    n_seg::Int64 = 50                   # definition segment
-    L0:: Float64 = 400                  # length of the slab
-    D0:: Float64 = 100                  # thickness of the slab
-    Lb:: Float64 = 200                  # Length at which all the bending is happening (Lb<=L0)
-    θ_max::Float64 = 45                 # max bending angle, (must be converted into radians)
-    direction::Float64 = 1.0            # Direction of the bending angle.
-    d_decoupling:: Float64 = 100        # decoupling depth of the slab
-    type_bending::Symbol = :Ribe        # Mode Ribe | Linear | Customize
+@with_kw_noshow mutable struct Trench{Nseg} <: AbstractTrenchSlab
+    Start::NTuple{Nseg,Float64} =  (0.0,0.0)   # Start (x,y) coordinates of trench (in mapview)
+    End::NTuple{Nseg,Float64} =  (0.0,1.0)     # End (x,y) coordinates of trench (in mapview)
+    n_seg::Int64 = 50                          # number of segments in downdip direction
+    L0:: Float64 = 400.0                       # length of the slab
+    D0:: Float64 = 100.0                       # thickness of the slab
+    Lb:: Float64 = 200.0                       # Length at which all the bending is happening (Lb<=L0)
+    θ_max::Float64 = 45.0                      # max bending angle, (must be converted into radians)
+    direction::Float64 = 1.0                   # Direction of the bending angle.
+    d_decoupling:: Float64 = 100               # decoupling depth of the slab
+    type_bending::Symbol = :Ribe               # Mode Ribe | Linear | Customize
 end
 
 """
@@ -1249,7 +1279,7 @@ Next, it compute the coordinates assuming that the trench is at 0.0, and assumin
 """
 function compute_slab_surface(trench::Trench)
 
-    @unpack D0, L0, n_seg, Lb, θ_max, n_seg_xy, A, B, type_bending, direction = trench;
+    @unpack D0, L0, n_seg, Lb, θ_max, type_bending, direction = trench;
 
     # Convert θ_max into radians
     θ_max *=  π / 180;
@@ -1325,6 +1355,7 @@ function compute_bending_angle(θ_max::Float64,Lb::Float64,l::Float64,type::Symb
     return θ
 end
 
+#=
 """
        transform_coordinate!(X,Y,Z,XT,YT,A,B,direction)
 
@@ -1332,29 +1363,29 @@ Transform the coordinate such that the new x axis (XT) is parallel to the segmen
 anticlockwise. If θ_max is negative, it multiplies YT with the sign of the angle, changing the dip of the subduction.
 It returns Bn -> which is the point B coordinate in the new transformed system.
 """
-function transform_coordinate!(X,Y,Z,XT,YT,A,B,direction)
+function transform_coordinate!(X,Y,Z,XT,YT,Start,End,direction)
 
     # find the slope of AB points
-    s = (B[2]-A[2])/(B[1]-A[1])
+    s = (End[2]-Start[2])/(End[1]-Start[1])
 
     angle_rot = -atand(s);
 
     # Shift the origin
-    XT .= X .-A[1];
-    YT .= Y .-A[2];
+    XT .= X .- Start[1];
+    YT .= Y .- Start[2];
 
     Bn = zeros(3);
 
-    Bn[1] = B[1]-A[1];
+    Bn[1] = End[1]-Start[1];
 
-    Bn[2] = B[2]-A[2];
+    Bn[2] = End[2]-Start[2];
 
     Bn[3] = 0.0;
 
     # Transform the coordinates
     Rot3D!(XT,YT,Z, angle_rot, 0);
 
-    YT .= YT*direction;
+    YT .*= direction;  
 
     #Find Point B in the new coordinate system
     roty = [cosd(-0)          0              sind(-0) ; 0 1 0 ; -sind(-0) 0  cosd(-0)];
@@ -1365,22 +1396,25 @@ function transform_coordinate!(X,Y,Z,XT,YT,A,B,direction)
 
     return Bn
 end
+=#
 
 """
-    find_slab!(ls, d, X,Y,Z, θ_max, A, B, Top, Bottom, seg_slab, D0, L0)
+    find_slab!(ls, d, X,Y,Z, Start, End, Top, Bottom, seg_slab, D0, L0)
 
 Function that finds the perpendicular distance to the top and bottom of the slab `d`, and the current length of the slab `l`.
 
-
 """
-function find_slab!(ls, d, X,Y,Z, θ_max, A,B,Top,Bottom,seg_slab,D0,L0,direction)
+function find_slab!(ls, d, X,Y,Z, Start, End,Top,Bottom,seg_slab,D0,L0,direction)
 
-    # Create the XT,YT
-    XT = zero(X);
-    YT = zero(Y);
+    # Perform rotation of 3D coordinates along the angle from Start -> End:
+    Xrot = X .- Start[1];
+    Yrot = Y .- Start[2];
+    StrikeAngle = -atand((End[2]-Start[2])/(End[1]-Start[1]))
+    Rot3D!(Xrot,Yrot,Z, StrikeAngle, 0.0)
 
-    # Function to transform the coordinate
-    xb = transform_coordinate!(X,Y,Z,XT,YT,A,B,direction);
+    xb = Rot3D(End[1]-Start[1],End[2]-Start[2], 0.0, cosd(StrikeAngle), sind(StrikeAngle), 1.0, 0.0)
+    
+    #xb1 = transform_coordinate!(X,Y,Z,Xrot,Yrot,Start,End,direction);
 
     # dl
     dl = L0/seg_slab;
@@ -1409,10 +1443,10 @@ function find_slab!(ls, d, X,Y,Z, θ_max, A,B,Top,Bottom,seg_slab,D0,L0,directio
         zmin = minimum(poly_z);
         zmax = maximum(poly_z);
 
-        ind_s = findall(0.0.<= XT.<= xb[1] .&& ymin .<= YT .<= ymax .&& zmin .<= Z .<= zmax);
+        ind_s = findall(0.0.<= Xrot.<= xb[1] .&& ymin .<= Yrot .<= ymax .&& zmin .<= Z .<= zmax);
 
         # Find the particles
-        yp = YT[ind_s];
+        yp = Yrot[ind_s];
 
         zp = Z[ind_s];
 
@@ -1442,7 +1476,7 @@ function find_slab!(ls, d, X,Y,Z, θ_max, A,B,Top,Bottom,seg_slab,D0,L0,directio
 
         for ip = 1:particle_n
 
-            point_ = [YT[ind_seg[ip]],Z[ind_seg[ip]]];
+            point_ = [Yrot[ind_seg[ip]],Z[ind_seg[ip]]];
 
             d[ind_seg[ip]] = ScatteredInterpolation.evaluate(itp1,point_)[1];
             ls[ind_seg[ip]] = ScatteredInterpolation.evaluate(itp2,point_)[1];
@@ -1459,10 +1493,10 @@ end
 Internal routine which finds distance perpendicular (`d`) and along (`ls`) the slab, as specified in `trench`. 
 """
 function find_slab_distance!(ls, d, trench, Top, Bottom, X,Y,Z)
-    @unpack D0, L0, n_seg, Lb, θ_max, n_seg_xy, A, B, type_bending, direction = trench;
+    @unpack D0, L0, n_seg, Start, End, direction = trench;
 
     # Finds the distance to the slab 
-    GeophysicalModelGenerator.find_slab!(ls, d, X,Y,Z, θ_max,A,B,Top,Bottom,n_seg,D0,L0,direction);
+    GeophysicalModelGenerator.find_slab!(ls, d, X,Y,Z, Start,End, Top,Bottom,n_seg,D0,L0,direction);
 
     return nothing
 end
@@ -1532,7 +1566,7 @@ function addSlab!(Phase, Temp, Grid::AbstractGeneralGrid,  trench::Trench;      
         Temp[ind] = Compute_ThermalStructure(Temp[ind], ls[ind], Y[ind], d[ind], Phase[ind],T);
     end
 
-    # Set the phase. Different routines are available for that - see below.
+    # Set the phase
     Phase[ind] = Compute_Phase(Phase[ind], Temp[ind], ls[ind], Y[ind], d[ind], phase)
 
     # Place holder of the weak zone: it is simply using the find slab routine, and cutting it at d_decoupling.
