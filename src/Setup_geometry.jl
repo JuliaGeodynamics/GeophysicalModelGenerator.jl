@@ -3,7 +3,6 @@ using Printf
 using Parameters        # helps setting default parameters in structures
 using SpecialFunctions: erfc
 using GeoParams
-using ScatteredInterpolation
 using StaticArrays
 
 # Setup_geometry
@@ -1475,7 +1474,7 @@ function find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench::Trench)
     xb = Rot3D(End[1]-Start[1],End[2]-Start[2], 0.0, cosd(StrikeAngle), sind(StrikeAngle), 1.0, 0.0)
     
     # dl
-    dl = Length/n_seg;
+    dl = trench.Length/n_seg;
     l = 0  # length at the trench position
     D = @SVector [Top[1,2], Bottom[1,2], Bottom[1,2],Top[1,2] ]
 
@@ -1510,20 +1509,11 @@ function find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench::Trench)
         # indexes of the segment
         ind_seg = ind_s[ind]
 
-        # Prepare the variable to interpolate {I put here because to allow also a variation of thickness of the slab}
-        L = @SVector [l,l,ln,ln];
-
-        # Interpolations
-        points = @SMatrix [pa[1] pb[1] pc[1] pd[1]; pa[2] pb[2] pc[2] pd[2]]
-
-        itp1 = ScatteredInterpolation.interpolate(Shepard(), points, D);
-        itp2 = ScatteredInterpolation.interpolate(Shepard(), points, L);
-        
         # Loop over the chosen particles and interpolate the current value of L and D.
         for ip in ind_seg
-            point_ = [Yrot[ip], Z[ip]];
-            d[ip]  = ScatteredInterpolation.evaluate(itp1,point_)[1];
-            ls[ip] = ScatteredInterpolation.evaluate(itp2,point_)[1];
+            point_ = (Yrot[ip], Z[ip]);
+            d[ip]  = -distance_to_linesegment(point_, pa, pd)
+            ls[ip]  = distance_to_linesegment(point_, pb, pa) + l
         end
         
         #Update l
@@ -1531,6 +1521,40 @@ function find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench::Trench)
     end
 end
 
+
+"""
+    distance_to_linesegment(p::NTuple{2,_T}, v::NTuple{2,_T}, w::NTuple{2,_T})
+
+Computes the distance normal distance from a point `p` to a line segment defined by the points `v` and `w`.
+"""
+function distance_to_linesegment(p::NTuple{2,_T}, v::NTuple{2,_T}, w::NTuple{2,_T})  where _T<:Number
+    dx = w[1] - v[1]
+    dy = w[2] - v[2]
+    l2 = dx*dx + dy*dy  # i.e. |w-v|^2 -  avoid a sqrt
+    if l2 == 0.0
+        dx = p[1] - v[1]
+        dy = p[2] - v[2]
+        return sqrt(dx*dx + dy*dy)   # v == w case
+    end
+    # Consider the line extending the segment, parameterized as v + t (w - v).
+    # We find projection of point p onto the line. 
+    # It falls where t = [(p-v) . (w-v)] / |w-v|^2
+    t = ((p[1] - v[1])*dx + (p[2] - v[2])*dy) / l2
+    if t < 0.0
+        dx = p[1] - v[1]
+        dy = p[2] - v[2]
+        return sqrt(dx*dx + dy*dy)       # Beyond the 'v' end of the segment
+    elseif t > 1.0
+        dx = p[1] - w[1]
+        dy = p[2] - w[2]
+        return sqrt(dx*dx + dy*dy)  # Beyond the 'w' end of the segment
+    end
+    projection_x = v[1] + t * dx
+    projection_y = v[2] + t * dy
+    dx = p[1] - projection_x
+    dy = p[2] - projection_y
+    return sqrt(dx*dx + dy*dy)
+end
 
 """
     addSlab!(Phase, Temp, Grid::AbstractGeneralGrid,  trench::Trench; phase = ConstantPhase(1), T = nothing)
