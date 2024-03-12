@@ -1510,9 +1510,7 @@ function find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench::Trench)
     
     # dl
     dl = L0/n_seg;
-
     l = 0  # length at the trench position
-
     D = @SVector [0.0, -D0,-D0,0.0]
 
     # Construct the slab
@@ -1527,8 +1525,8 @@ function find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench::Trench)
         pd = (Top[i+1,1],Top[i+1,2]) # D = 0| L = L+dl
 
         # Create the polygon
-        poly_y = [pa[1],pb[1],pc[1],pd[1]];
-        poly_z = [pa[2],pb[2],pc[2],pd[2]];
+        poly_y = @SVector [pa[1],pb[1],pc[1],pd[1]];
+        poly_z = @SVector [pa[2],pb[2],pc[2],pd[2]];
 
         # find a sub set of particles
         ymin,ymax = extrema(poly_y);
@@ -1542,33 +1540,25 @@ function find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench::Trench)
 
         # Initialize the ind that are going to be used by inpoly
         ind = zeros(Bool,size(zp));
-
-        # inPoly! [Written by Arne Spang, must be updated with the new version]
-        inPolygon!(ind,poly_y,poly_z,yp,zp);
+        inPolygon!(ind,poly_y,poly_z,yp,zp);        # determine whether points are inside the polygon or not
 
         # indexes of the segment
         ind_seg = ind_s[ind]
 
         # Prepare the variable to interpolate {I put here because to allow also a variation of thickness of the slab}
-
         L = @SVector [l,l,ln,ln];
 
         # Interpolations
-        points = [pa[1] pa[2];pb[1] pb[2];pc[1] pc[2];pd[1] pd[2]]'
+        points = @SMatrix [pa[1] pb[1] pc[1] pd[1]; pa[2] pb[2] pc[2] pd[2]]
 
         itp1 = ScatteredInterpolation.interpolate(Shepard(), points, D);
-
         itp2 = ScatteredInterpolation.interpolate(Shepard(), points, L);
 
         # Loop over the chosen particles and interpolate the current value of L and D.
-        particle_n = length(ind_seg)
-
-        for ip = 1:particle_n
-
-            point_ = [Yrot[ind_seg[ip]],Z[ind_seg[ip]]];
-
-            d[ind_seg[ip]] = ScatteredInterpolation.evaluate(itp1,point_)[1];
-            ls[ind_seg[ip]] = ScatteredInterpolation.evaluate(itp2,point_)[1];
+        for ip in ind_seg
+            point_ = [Yrot[ip], Z[ip]];
+            d[ip]  = ScatteredInterpolation.evaluate(itp1,point_)[1];
+            ls[ip] = ScatteredInterpolation.evaluate(itp2,point_)[1];
         end
 
         #Update l

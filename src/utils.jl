@@ -1671,7 +1671,7 @@ end
 Same as above but `inside`, `X` and `Y` and are vectors.
 
 """
-function inPolygon!(inside::Vector{Bool}, PolyX::Vector{T}, PolyY::Vector{T}, x::Vector{T}, y::Vector{T}; fast=false) where T <: Real
+function inPolygon!(inside::Vector{Bool}, PolyX::AbstractVector{T}, PolyY::AbstractVector{T}, x::Vector{T}, y::Vector{T}; fast=false) where T <: Real
     if fast
         for i = eachindex(x)
             inside[i] = inPolyPointF(PolyX, PolyY, x[i], y[i])
@@ -1689,7 +1689,7 @@ end
 Checks if a point given by x and y is in or on (both cases return true) a polygon given by PolyX and PolyY, iSteps and jSteps provide the connectivity between the polygon edges. This function should be used through inPolygon!().
 
 """
-function inPolyPoint(PolyX::Vector{T}, PolyY::Vector{T}, x::T, y::T) where T <: Real
+function inPolyPoint(PolyX::AbstractVector{T}, PolyY::AbstractVector{T}, x::T, y::T) where T <: Real
     inside1, inside2, inside3, inside4 = false, false, false, false
     n = length(PolyX)
     for i in eachindex(PolyX)
