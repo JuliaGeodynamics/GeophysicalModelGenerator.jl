@@ -18,7 +18,6 @@ export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!, AddLayer!, addSlab!, a
         McKenzie_subducting_slab, LinearWeightedTemperature, Trench
 
 
-
 """
     addStripes!(Phase, Grid::AbstractGeneralGrid;
         stripAxes       = (1,1,0),
@@ -1627,7 +1626,7 @@ function addSlab!(Phase, Temp, Grid::AbstractGeneralGrid,  trench::Trench;      
         ls_weakzone = fill(NaN,size(Grid));      # -> l = length from the trench along the slab
         find_slab_distance!(ls_weakzone, d_weakzone, X,Y,Z, WeakZone, Top, trench);  
 
-        ind = findall( (0.0 .<= d_weakzone .<= trench.WeakzoneThickness) .& (Z .>-trench.d_decoupling) );
+        ind = findall( (-trench.WeakzoneThickness .<= d_weakzone .<= 0.0) .& (Z .>-trench.d_decoupling) );
         Phase[ind] .= trench.WeakzonePhase
     end
 
