@@ -1496,9 +1496,9 @@ julia> Phase = ones(Int64,size(Cart));
 julia> Temp  = fill(1350.0,size(Cart));
 # Define the trench:
 julia> trench= Trench(n_seg_xy=1, A = [400.0,400.0],B = [800.0,800.0],θ_max = 45.0, direction = 1.0, n_seg = 50, L0 = 600.0, D0 = 80.0, Lb = 500.0,d_decoupling = 100.0, type_bending =:Ribe)
-julia> strat = LithosphericPhases(Layers=[5 7 88], Phases = [2 3 4], Tlab=nothing)
+julia> phase = LithosphericPhases(Layers=[5 7 88], Phases = [2 3 4], Tlab=nothing)
 julia> TsHC  = HalfspaceCoolingTemp(Tsurface=20.0, Tmantle=1350, Age=30, Adiabat=0.4)
-julia> addSlab!(Phase, Temp, Cart, trench, phase = strat, T = TsHC)
+julia> addSlab!(Phase, Temp, Cart, trench, phase = phase, T = TsHC)
 ```
 
 """
