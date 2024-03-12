@@ -1,7 +1,6 @@
 # test setting geometries in the different grid types
 using Test, GeophysicalModelGenerator, GeoParams
 
-
 # GeoData
 Lon3D,Lat3D,Depth3D =   LonLatDepthGrid(1.0:1:10.0, 11.0:1:20.0, (-20:1:-10)*km);
 Data                =   zeros(size(Lon3D));
@@ -34,8 +33,10 @@ Temp                =   ones(Float64, Grid.N...)*1350;
 Phases              =   zeros(Int32,  Grid.N...);
 
 AddBox!(Phases,Temp,Grid, xlim=(2,4), zlim=(4,8), phase=ConstantPhase(3), DipAngle=10, T=LinearTemp(Tbot=1350, Ttop=200))
-
 @test maximum(Phases) == 3
+
+addStripes!(Phases, Grid,stripAxes=(1,1,1),stripeWidth=0.2,stripeSpacing=1,Origin=nothing, StrikeAngle=0, DipAngle=10,phase = ConstantPhase(3),stripePhase = ConstantPhase(4))
+@test maximum(Phases) == 4
 
 # Create a CartData structure from it
 Data = CartData(Grid, (T=Temp, Phases=Phases))
@@ -211,3 +212,58 @@ AddBox!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0, 0.0),
 
 
 Data_Final =   addField(Cart,"Temp",Temp)
+
+# Test the Bending slab geometry
+
+# Create CartGrid struct
+x        = LinRange(0.0,1200.0,128);
+y        = LinRange(0.0,1200.0,128);
+z        = LinRange(-660,50,128);
+Cart     = CartData(XYZGrid(x, y, z));
+X,Y,Z    = XYZGrid(x, y, z);
+
+# initialize phase and temperature matrix
+Phase   = ones(Int32,size(Cart));
+Temp    = fill(1350.0,size(Cart));
+
+t1 = Trench(Start = (400.0,400.0), End = (800.0,800.0),θ_max = 45, direction = 1.0, n_seg = 50, L0 = 600.0, D0 = 80.0, Lb = 500.0,d_decoupling = 100.0, type_bending =:Ribe)
+@test t1.θ_max == 45.0
+@test t1.D0 == 80.0
+@test t1.L0 == 600.0
+@test t1.Lb == 500.0
+
+phase = LithosphericPhases(Layers=[5 7 88], Phases = [2 3 4], Tlab=nothing)
+TsHC = HalfspaceCoolingTemp(Tsurface=20.0, Tmantle=1350, Age=30, Adiabat=0.4)
+temp = TsHC;
+
+addSlab!(Phase,Temp,Cart, t1, phase=phase, T = TsHC)
+@test Temp[84,84,110]  ≈ 1142.25814954244
+@test extrema(Phase) == (1, 4)
+
+# with weak zone
+t1 = Trench(Start = (400.0,400.0), End = (800.0,800.0),θ_max = 45, direction = 1.0, n_seg = 50, L0 = 600.0, D0 = 80.0, Lb = 500.0,d_decoupling = 100.0, WeakzoneThickness=10, WeakzonePhase=9)
+Phase   = ones(Int32,size(Cart));
+Temp    = fill(1350.0,size(Cart));
+addSlab!(Phase,Temp,Cart, t1, phase=phase, T = TsHC)
+@test extrema(Phase) == (1, 9)
+
+#Data_Final      =   CartData(X,Y,Z,(Phase=Phase,Temp=Temp)) 
+#Write_Paraview(Data_Final, "Data_Final");
+
+Phase = ones(Int32,size(Cart));
+Temp = fill(1350.0,size(Cart));
+TsMK = McKenzie_subducting_slab(Tsurface = 20.0, Tmantle = 1350.0, v_cm_yr = 4.0, Adiabat = 0.0)
+temp = TsMK 
+
+Phase = ones(Int32,size(Cart));
+Temp = fill(1350.0,size(Cart));
+TsHC = HalfspaceCoolingTemp(Tsurface=20.0, Tmantle=1350, Age=120, Adiabat=0.4)
+TsMK = McKenzie_subducting_slab(Tsurface = 20.0, Tmantle = 1350.0, v_cm_yr = 4.0, Adiabat = 0.0)
+T_slab = LinearWeightedTemperature(crit_dist=600, F1=TsHC, F2=TsMK);
+phase = LithosphericPhases(Layers=[5 7 88], Phases = [2 3 4], Tlab=nothing)
+t1 = Trench(Start = (400.0,400.0), End = (800.0,800.0),θ_max = 90.0, direction = 1.0, n_seg = 50, L0 = 600.0, D0 = 80.0, Lb = 500.0,d_decoupling = 100.0, type_bending =:Ribe,   WeakzoneThickness=10, WeakzonePhase=9)
+
+addSlab!(Phase,Temp,Cart, t1, phase=phase, T = T_slab)
+@test Temp[84,84,110]  ≈ 718.8406936737412
+
+Data_Final      =   CartData(X,Y,Z,(Phase=Phase,Temp=Temp)) 
