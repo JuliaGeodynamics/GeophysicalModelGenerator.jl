@@ -1203,7 +1203,7 @@ function Compute_ThermalStructure(Temp, X, Y, Z,Phase, s::McKenzie_subducting_sl
     @unpack Tsurface, Tmantle, Adiabat, v_cm_yr, κ, it = s
 
     # Thickness of the layer: 
-    D0          =   (maximum(Z)-minimum(Z));
+    Thickness          =   (maximum(Z)-minimum(Z));
     Zshift      =   Z .- Z[end]       # McKenzie model is defined with Z = 0 at the bottom of the slab
 
     # Convert subduction velocity from cm/yr -> m/s; 
@@ -1211,10 +1211,10 @@ function Compute_ThermalStructure(Temp, X, Y, Z,Phase, s::McKenzie_subducting_sl
     v_s = v_cm_yr*convert_velocity;
     
     # calculate the thermal Reynolds number
-    Re = (v_s*D0*1000)/2/κ;     # factor 1000 to transfer D0 from km to m
+    Re = (v_s*Thickness*1000)/2/κ;     # factor 1000 to transfer Thickness from km to m
     
     # McKenzie model
-    sc = 1/D0
+    sc = 1/Thickness
     σ  = ones(size(Temp));
     # Dividi et impera
     for i=1:it
@@ -1317,9 +1317,9 @@ Parameters
 - `Start`     - Start of the trench (`x`,`y`) coordinates
 - `End`       - End of the trench (`x`,`y`) coordinates
 - `n_seg`     - The number of segment through which the slab is discretize along the dip
-- `L0`        - The length of the slab
-- `D0`        - The thickness of the slab
-- `Lb`        - Critical distance through which apply the bending angle functions Lb ∈ [0,L0];
+- `Length`    - The length of the slab
+- `Thickness` - The thickness of the slab
+- `Lb`        - Critical distance through which apply the bending angle functions Lb ∈ [0,Length];
 - `θ_max`     - maximum angle of bending ∈ [0°,90°].
 - `direction` - the direction of the dip
                The rotation of the coordinate system is done as such that the new X is parallel to the segment. Since the
@@ -1328,7 +1328,7 @@ Parameters
                to y by multiplying it with -1 or +1;
 - `d_decoupling` - depth at which the slab is fully submerged into the mantle.
 - `type_bending` - is the type of bending angle of the slab [`:Linear`, `:Ribe`].
-    The angle of slab changes as a function of `l` (∈ [0,L0]). `l` is the actual distance along the slab length from
+    The angle of slab changes as a function of `l` (∈ [0,Length]). `l` is the actual distance along the slab length from
     the trench.
     In case:
         - `:Linear` 
@@ -1346,11 +1346,11 @@ Parameters
     Start::NTuple{Nseg,Float64} =  (0.0,0.0)   # Start (x,y) coordinates of trench (in mapview)
     End::NTuple{Nseg,Float64} =  (0.0,1.0)     # End (x,y) coordinates of trench (in mapview)
     n_seg::Int64 = 50                          # number of segments in downdip direction
-    L0:: Float64 = 400.0                       # length of the slab
-    D0:: Float64 = 100.0                       # thickness of the slab
-    Lb:: Float64 = 200.0                       # Length at which all the bending is happening (Lb<=L0)
+    Length:: Float64 = 400.0                   # length of the slab
+    Thickness:: Float64 = 100.0                # thickness of the slab
+    Lb:: Float64 = 200.0                       # Length at which all the bending is happening (Lb<=Length)
     θ_max::Float64 = 45.0                      # max bending angle, (must be converted into radians)
-    direction::Float64 = 1.0                   # Direction of the bending angle.
+    direction::Float64 = 1.0                   # Direction of the bending angle (from left to right or right to left)
     d_decoupling:: Float64 = 100               # decoupling depth of the slab
     type_bending::Symbol = :Ribe               # Mode Ribe | Linear | Customize
     WeakzoneThickness::Float64 = 0.0           # Thickness of the weakzone 
@@ -1374,7 +1374,7 @@ Next, it compute the coordinates assuming that the trench is at 0.0, and assumin
 """
 function compute_slab_surface(trench::Trench)
 
-    @unpack D0, L0, n_seg, Lb, θ_max, type_bending, direction, WeakzoneThickness = trench;
+    @unpack Thickness, Length, n_seg, Lb, θ_max, type_bending, direction, WeakzoneThickness = trench;
 
     # Convert θ_max into radians
     θ_max *=  π / 180;
@@ -1383,17 +1383,17 @@ function compute_slab_surface(trench::Trench)
     Top           = zeros(n_seg+1,2);
     Bottom        = zeros(n_seg+1,2);
     WeakZone      = zeros(n_seg+1,2);
-    Bottom[1,2]   = -D0;
+    Bottom[1,2]   = -Thickness;
     WeakZone[1,2] = WeakzoneThickness;
     MidS          = zeros(n_seg+1,2);
-    MidS[1,2]     = -D0/2;
+    MidS[1,2]     = -Thickness/2;
 
     # Initialize the length.
     l   = 0.0;      # initial length
     it  = 1;        # iteration
 
-    dl  = L0/n_seg; # dl
-    while l<L0
+    dl  = Length/n_seg; # dl
+    while l<Length
 
         # Compute the mean angle within the segment
         θ   = compute_bending_angle(θ_max, Lb, l   , type_bending)
@@ -1407,16 +1407,16 @@ function compute_slab_surface(trench::Trench)
         MidS[it+1,2] = MidS[it,2] - dl * sinθ;
 
         # Top surface coordinates (x,z)
-        Top[it+1,1] = MidS[it+1,1] + 0.5 * D0 * abs(sinθ);
-        Top[it+1,2] = MidS[it+1,2] + 0.5 * D0 * abs(cosθ);
+        Top[it+1,1] = MidS[it+1,1] + 0.5 * Thickness * abs(sinθ);
+        Top[it+1,2] = MidS[it+1,2] + 0.5 * Thickness * abs(cosθ);
 
         # Bottom surface coordinate
-        Bottom[it+1,1] = MidS[it+1,1] - 0.5 * D0 * abs(sinθ);
-        Bottom[it+1,2] = MidS[it+1,2] - 0.5 * D0 * abs(cosθ);
+        Bottom[it+1,1] = MidS[it+1,1] - 0.5 * Thickness * abs(sinθ);
+        Bottom[it+1,2] = MidS[it+1,2] - 0.5 * Thickness * abs(cosθ);
 
         # Compute the top surface for the weak zone
-        WeakZone[it+1,1] = MidS[it+1,1] + (0.5 * D0 + WeakzoneThickness) * abs(sinθ);
-        WeakZone[it+1,2] = MidS[it+1,2] + (0.5 * D0 + WeakzoneThickness) * abs(cosθ);
+        WeakZone[it+1,1] = MidS[it+1,1] + (0.5 * Thickness + WeakzoneThickness) * abs(sinθ);
+        WeakZone[it+1,2] = MidS[it+1,2] + (0.5 * Thickness + WeakzoneThickness) * abs(cosθ);
 
         # update l
         l  = l + dl;
@@ -1433,7 +1433,7 @@ function that computes the bending angle `θ` as a function of length along the 
 Parameters
 ===
 `θ_max` = maximum bending angle
-`Lb`    = length at which the function of bending is applied (Lb<=L0)
+`Lb`    = length at which the function of bending is applied (Lb<=Length)
 `l`     = current position within the slab
 `type`  = type of bending [`:Ribe`,`:Linear`]
 
@@ -1459,7 +1459,7 @@ Function that finds the perpendicular distance to the top and bottom of the slab
 
 """
 function find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench::Trench)
-    @unpack D0, L0, n_seg, Start, End, direction = trench;
+    @unpack Thickness, Length, n_seg, Start, End, direction = trench;
 
     # Perform rotation of 3D coordinates along the angle from Start -> End:
     Xrot = X .- Start[1];
@@ -1470,9 +1470,9 @@ function find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench::Trench)
     xb = Rot3D(End[1]-Start[1],End[2]-Start[2], 0.0, cosd(StrikeAngle), sind(StrikeAngle), 1.0, 0.0)
     
     # dl
-    dl = L0/n_seg;
+    dl = Length/n_seg;
     l = 0  # length at the trench position
-    #D = @SVector [0.0, -D0,-D0,0.0]
+    #D = @SVector [0.0, -Thickness,-Thickness,0.0]
 
     D = @SVector [Top[1,2], Bottom[1,2], Bottom[1,2],Top[1,2] ]
 
@@ -1481,9 +1481,9 @@ function find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench::Trench)
         ln = l+dl;
 
         pa = (Top[i,1], Top[i,2]);       # D = 0 | L = l
-        pb = (Bottom[i,1], Bottom[i,2]); # D = -D0 | L=l
+        pb = (Bottom[i,1], Bottom[i,2]); # D = -Thickness | L=l
 
-        pc = (Bottom[i+1,1],Bottom[i+1,2]); # D = -D0 |L=L+dl
+        pc = (Bottom[i+1,1],Bottom[i+1,2]); # D = -Thickness |L=L+dl
         pd = (Top[i+1,1],Top[i+1,2]) # D = 0| L = L+dl
 
         # Create the polygon
@@ -1555,7 +1555,7 @@ julia> Cart  = CartData(XYZGrid(x, y, z));
 julia> Phase = ones(Int64,size(Cart));
 julia> Temp  = fill(1350.0,size(Cart));
 # Define the trench:
-julia> trench= Trench(Start = (400.0,400.0), End = (800.0,800.0), θ_max = 45.0, direction = 1.0, n_seg = 50, L0 = 600.0, D0 = 80.0, Lb = 500.0, d_decoupling = 100.0, type_bending =:Ribe)
+julia> trench= Trench(Start = (400.0,400.0), End = (800.0,800.0), θ_max = 45.0, direction = 1.0, n_seg = 50, Length = 600.0, Thickness = 80.0, Lb = 500.0, d_decoupling = 100.0, type_bending =:Ribe)
 julia> phase = LithosphericPhases(Layers=[5 7 88], Phases = [2 3 4], Tlab=nothing)
 julia> TsHC  = HalfspaceCoolingTemp(Tsurface=20.0, Tmantle=1350, Age=30, Adiabat=0.4)
 julia> addSlab!(Phase, Temp, Cart, trench, phase = phase, T = TsHC)
@@ -1578,7 +1578,7 @@ function addSlab!(Phase, Temp, Grid::AbstractGeneralGrid,  trench::Trench;      
     find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench);  
     
     # Function to fill up the temperature and the phase. 
-    ind = findall((-trench.D0 .<= d .<= 0.0));
+    ind = findall((-trench.Thickness .<= d .<= 0.0));
     
     if isa(T, LinearWeightedTemperature)
         l_decouplingind = findall(Top[:,2].<=-trench.d_decoupling);

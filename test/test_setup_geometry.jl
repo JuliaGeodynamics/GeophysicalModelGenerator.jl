@@ -226,10 +226,10 @@ X,Y,Z    = XYZGrid(x, y, z);
 Phase   = ones(Int32,size(Cart));
 Temp    = fill(1350.0,size(Cart));
 
-t1 = Trench(Start = (400.0,400.0), End = (800.0,800.0),θ_max = 45, direction = 1.0, n_seg = 50, L0 = 600.0, D0 = 80.0, Lb = 500.0,d_decoupling = 100.0, type_bending =:Ribe)
+t1 = Trench(Start = (400.0,400.0), End = (800.0,800.0),θ_max = 45, direction = 1.0, n_seg = 50, Length = 600.0, Thickness = 80.0, Lb = 500.0,d_decoupling = 100.0, type_bending =:Ribe)
 @test t1.θ_max == 45.0
-@test t1.D0 == 80.0
-@test t1.L0 == 600.0
+@test t1.Thickness == 80.0
+@test t1.Length == 600.0
 @test t1.Lb == 500.0
 
 phase = LithosphericPhases(Layers=[5 7 88], Phases = [2 3 4], Tlab=nothing)
@@ -241,7 +241,7 @@ addSlab!(Phase,Temp,Cart, t1, phase=phase, T = TsHC)
 @test extrema(Phase) == (1, 4)
 
 # with weak zone
-t1 = Trench(Start = (400.0,400.0), End = (800.0,800.0),θ_max = 45, direction = 1.0, n_seg = 50, L0 = 600.0, D0 = 80.0, Lb = 500.0,d_decoupling = 100.0, WeakzoneThickness=10, WeakzonePhase=9)
+t1 = Trench(Start = (400.0,400.0), End = (800.0,800.0),θ_max = 45, direction = 1.0, n_seg = 50, Length = 600.0, Thickness = 80.0, Lb = 500.0,d_decoupling = 100.0, WeakzoneThickness=10, WeakzonePhase=9)
 Phase   = ones(Int32,size(Cart));
 Temp    = fill(1350.0,size(Cart));
 addSlab!(Phase,Temp,Cart, t1, phase=phase, T = TsHC)
@@ -261,7 +261,7 @@ TsHC = HalfspaceCoolingTemp(Tsurface=20.0, Tmantle=1350, Age=120, Adiabat=0.4)
 TsMK = McKenzie_subducting_slab(Tsurface = 20.0, Tmantle = 1350.0, v_cm_yr = 4.0, Adiabat = 0.0)
 T_slab = LinearWeightedTemperature(crit_dist=600, F1=TsHC, F2=TsMK);
 phase = LithosphericPhases(Layers=[5 7 88], Phases = [2 3 4], Tlab=nothing)
-t1 = Trench(Start = (400.0,400.0), End = (800.0,800.0),θ_max = 90.0, direction = 1.0, n_seg = 50, L0 = 600.0, D0 = 80.0, Lb = 500.0,d_decoupling = 100.0, type_bending =:Ribe,   WeakzoneThickness=10, WeakzonePhase=9)
+t1 = Trench(Start = (400.0,400.0), End = (800.0,800.0),θ_max = 90.0, direction = 1.0, n_seg = 50, Length = 600.0, Thickness = 80.0, Lb = 500.0,d_decoupling = 100.0, type_bending =:Ribe,   WeakzoneThickness=10, WeakzonePhase=9)
 
 addSlab!(Phase,Temp,Cart, t1, phase=phase, T = T_slab)
 @test Temp[84,84,110]  ≈ 718.8406936737412
