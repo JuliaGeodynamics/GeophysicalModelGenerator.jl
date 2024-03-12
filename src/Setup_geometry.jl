@@ -1350,7 +1350,7 @@ Parameters
     Thickness:: Float64 = 100.0                # thickness of the slab
     Lb:: Float64 = 200.0                       # Length at which all the bending is happening (Lb<=Length)
     θ_max::Float64 = 45.0                      # max bending angle, (must be converted into radians)
-    direction::Float64 = 1.0                   # Direction of the bending angle (from left to right or right to left)
+    direction::Float64 = -1.0                   # Direction of the bending angle (-1= left to right or 1.0=right to left)
     d_decoupling:: Float64 = 100               # decoupling depth of the slab
     type_bending::Symbol = :Ribe               # Mode Ribe | Linear | Customize
     WeakzoneThickness::Float64 = 0.0           # Thickness of the weakzone 
@@ -1422,6 +1422,10 @@ function compute_slab_surface(trench::Trench)
         l  = l + dl;
         it = it + 1;
     end
+    Top[:,1] *= direction
+    Bottom[:,1] *= direction
+    WeakZone[:,1] *= direction
+     
     return Top, Bottom, WeakZone 
 end
 
@@ -1464,6 +1468,7 @@ function find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench::Trench)
     # Perform rotation of 3D coordinates along the angle from Start -> End:
     Xrot = X .- Start[1];
     Yrot = Y .- Start[2];
+   
     StrikeAngle = -atand((End[2]-Start[2])/(End[1]-Start[1]))
     Rot3D!(Xrot,Yrot,Z, StrikeAngle, 0.0)
 
@@ -1472,8 +1477,6 @@ function find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench::Trench)
     # dl
     dl = Length/n_seg;
     l = 0  # length at the trench position
-    #D = @SVector [0.0, -Thickness,-Thickness,0.0]
-
     D = @SVector [Top[1,2], Bottom[1,2], Bottom[1,2],Top[1,2] ]
 
     # Construct the slab
