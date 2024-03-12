@@ -1656,7 +1656,7 @@ function addSlab!(Phase, Temp, Grid::AbstractGeneralGrid,  trench::Trench;      
     # Compute top and bottom of the slab
     Top,Bottom = compute_slab_surface(trench); 
     
-    # Find the distance to the slab (along and perpendicular)
+    # Find the distance to the slab (along & perpendicular)
     find_slab_distance!(ls, d, trench, Top, Bottom, X,Y,Z );  
     
     # Function to fill up the temperature and the phase. 
