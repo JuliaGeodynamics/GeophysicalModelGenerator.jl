@@ -267,3 +267,25 @@ addSlab!(Phase,Temp,Cart, t1, phase=phase, T = T_slab)
 @test Temp[84,84,110]  ≈ 718.8406936737412
 
 Data_Final      =   CartData(X,Y,Z,(Phase=Phase,Temp=Temp)) 
+
+
+
+# 2D slab:
+nx,nz = 512,128
+x = range(-1000,1000, nx);
+z = range(-660,0,    nz);
+Grid2D = CartData(XYZGrid(x,0,z))
+Phases = zeros(Int64, nx, 1, nz);
+Temp = fill(1350.0, nx, 1, nz);
+AddBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = ConstantPhase(1));    
+
+trench = Trench(Start=(0.0,-100.0), End=(0.0,100.0), Thickness=80.0, θ_max=30.0, Length=300, Lb=150);
+addSlab!(Phases, Temp, Grid2D, trench, phase = ConstantPhase(2));
+@test extrema(Phases) == (0, 2)
+
+# Add them to the `CartData` dataset:
+Grid2D = CartData(Grid2D.x.val, Grid2D.y.val, Grid2D.z.val ,(;Phases, Temp))
+
+#Write_Paraview(Grid2D,"Grid2D_SubductionCurvedMechanical");
+
+
