@@ -1338,8 +1338,8 @@ Parameters
             which is taken from Ribe 2010 [Bending mechanics and mode selection in free subduction: a thin-sheet analysis]
 
     For l>Lb, θ(l) = θ_max;
-#    [Dev] Potential development: using the elastic bending differential equation and numerically integrate
-#- `WZ` - Thickness of the weakzone.
+- `WeakzoneThickness` - Thickness of the weakzone [km]
+- `WeakzonePhase` - Phase of the weakzone
 
 """
 @with_kw_noshow mutable struct Trench{Nseg} <: AbstractTrenchSlab
@@ -1353,6 +1353,8 @@ Parameters
     direction::Float64 = 1.0                   # Direction of the bending angle.
     d_decoupling:: Float64 = 100               # decoupling depth of the slab
     type_bending::Symbol = :Ribe               # Mode Ribe | Linear | Customize
+    WeakzoneThickness::Float64 = 0.0           # Thickness of the weakzone 
+    WeakzonePhase::Int64 = 5                   # Phase of the weak zone
 end
 
 """
@@ -1372,17 +1374,19 @@ Next, it compute the coordinates assuming that the trench is at 0.0, and assumin
 """
 function compute_slab_surface(trench::Trench)
 
-    @unpack D0, L0, n_seg, Lb, θ_max, type_bending, direction = trench;
+    @unpack D0, L0, n_seg, Lb, θ_max, type_bending, direction, WeakzoneThickness = trench;
 
     # Convert θ_max into radians
     θ_max *=  π / 180;
 
     # Allocate the top, mid and bottom surface
-    Top         = zeros(n_seg+1,2);
-    Bottom      = zeros(n_seg+1,2);
-    Bottom[1,2] = -D0;
-    MidS        = zeros(n_seg+1,2);
-    MidS[1,2]   = -D0/2;
+    Top           = zeros(n_seg+1,2);
+    Bottom        = zeros(n_seg+1,2);
+    WeakZone      = zeros(n_seg+1,2);
+    Bottom[1,2]   = -D0;
+    WeakZone[1,2] = WeakzoneThickness;
+    MidS          = zeros(n_seg+1,2);
+    MidS[1,2]     = -D0/2;
 
     # Initialize the length.
     l   = 0.0;      # initial length
@@ -1411,14 +1415,14 @@ function compute_slab_surface(trench::Trench)
         Bottom[it+1,2] = MidS[it+1,2] - 0.5 * D0 * abs(cosθ);
 
         # Compute the top surface for the weak zone
-        #WZ_surf[it+1,1] = MidS[it+1,1] + (0.5 * D0 + WZ) * abs(sinθ);
-        #WZ_surf[it+1,2] = MidS[it+1,2] + (0.5 * D0 + WZ) * abs(cosθ);
+        WeakZone[it+1,1] = MidS[it+1,1] + (0.5 * D0 + WeakzoneThickness) * abs(sinθ);
+        WeakZone[it+1,2] = MidS[it+1,2] + (0.5 * D0 + WeakzoneThickness) * abs(cosθ);
 
         # update l
         l  = l + dl;
         it = it + 1;
     end
-    return Top, Bottom 
+    return Top, Bottom, WeakZone 
 end
 
 """
@@ -1448,49 +1452,6 @@ function compute_bending_angle(θ_max::Float64,Lb::Float64,l::Float64,type::Symb
     return θ
 end
 
-#=
-"""
-       transform_coordinate!(X,Y,Z,XT,YT,A,B,direction)
-
-Transform the coordinate such that the new x axis (XT) is parallel to the segment A-B of the slab. The rotation is
-anticlockwise. If θ_max is negative, it multiplies YT with the sign of the angle, changing the dip of the subduction.
-It returns Bn -> which is the point B coordinate in the new transformed system.
-"""
-function transform_coordinate!(X,Y,Z,XT,YT,Start,End,direction)
-
-    # find the slope of AB points
-    s = (End[2]-Start[2])/(End[1]-Start[1])
-
-    angle_rot = -atand(s);
-
-    # Shift the origin
-    XT .= X .- Start[1];
-    YT .= Y .- Start[2];
-
-    Bn = zeros(3);
-
-    Bn[1] = End[1]-Start[1];
-
-    Bn[2] = End[2]-Start[2];
-
-    Bn[3] = 0.0;
-
-    # Transform the coordinates
-    Rot3D!(XT,YT,Z, angle_rot, 0);
-
-    YT .*= direction;  
-
-    #Find Point B in the new coordinate system
-    roty = [cosd(-0)          0              sind(-0) ; 0 1 0 ; -sind(-0) 0  cosd(-0)];
-    rotz = [cosd(angle_rot) -sind(angle_rot)        0 ; sind(angle_rot) cosd(angle_rot) 0 ; 0 0 1]
-
-    Bn = rotz*Bn;
-    Bn = roty*Bn;
-
-    return Bn
-end
-=#
-
 """
     find_slab_distance!(ls, d, X,Y,Z, trench::Trench)
 
@@ -1511,11 +1472,12 @@ function find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench::Trench)
     # dl
     dl = L0/n_seg;
     l = 0  # length at the trench position
-    D = @SVector [0.0, -D0,-D0,0.0]
+    #D = @SVector [0.0, -D0,-D0,0.0]
+
+    D = @SVector [Top[1,2], Bottom[1,2], Bottom[1,2],Top[1,2] ]
 
     # Construct the slab
     for i = 1:(n_seg-1)
-
         ln = l+dl;
 
         pa = (Top[i,1], Top[i,2]);       # D = 0 | L = l
@@ -1553,19 +1515,18 @@ function find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench::Trench)
 
         itp1 = ScatteredInterpolation.interpolate(Shepard(), points, D);
         itp2 = ScatteredInterpolation.interpolate(Shepard(), points, L);
-
+        
         # Loop over the chosen particles and interpolate the current value of L and D.
         for ip in ind_seg
             point_ = [Yrot[ip], Z[ip]];
             d[ip]  = ScatteredInterpolation.evaluate(itp1,point_)[1];
             ls[ip] = ScatteredInterpolation.evaluate(itp2,point_)[1];
         end
-
+        
         #Update l
         l = ln;
     end
 end
-
 
 
 """
@@ -1608,18 +1569,17 @@ function addSlab!(Phase, Temp, Grid::AbstractGeneralGrid,  trench::Trench;      
     # Retrieve 3D data arrays for the grid
     X,Y,Z = coordinate_grids(Grid)
 
-    d = fill(NaN,size(Grid));       # -> d = distance perpendicular to the slab 
-    ls = fill(NaN,size(Grid));      # -> l = length from the trench along the slab
-
     # Compute top and bottom of the slab
-    Top,Bottom = compute_slab_surface(trench); 
+    Top,Bottom, WeakZone = compute_slab_surface(trench); 
     
     # Find the distance to the slab (along & perpendicular)
+    d = fill(NaN,size(Grid));       # -> d = distance perpendicular to the slab 
+    ls = fill(NaN,size(Grid));      # -> l = length from the trench along the slab
     find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench);  
     
     # Function to fill up the temperature and the phase. 
-    ind = findall((-trench.D0 .<= d .<= 0.0));Grid
-
+    ind = findall((-trench.D0 .<= d .<= 0.0));
+    
     if isa(T, LinearWeightedTemperature)
         l_decouplingind = findall(Top[:,2].<=-trench.d_decoupling);
         l_decoupling = Top[l_decouplingind[1],1];
@@ -1634,7 +1594,16 @@ function addSlab!(Phase, Temp, Grid::AbstractGeneralGrid,  trench::Trench;      
     # Set the phase
     Phase[ind] = Compute_Phase(Phase[ind], Temp[ind], ls[ind], Y[ind], d[ind], phase)
 
-    # Place holder of the weak zone: it is simply using the find slab routine, and cutting it at d_decoupling.
+    # Add a weak zone on top of the slab (indicated by a phase number but not by temperature)
+    if trench.WeakzoneThickness>0.0
+        d_weakzone = fill(NaN,size(Grid));       # -> d = distance perpendicular to the slab 
+        ls_weakzone = fill(NaN,size(Grid));      # -> l = length from the trench along the slab
+        find_slab_distance!(ls_weakzone, d_weakzone, X,Y,Z, WeakZone, Top, trench);  
+
+        ind = findall( (0.0 .<= d_weakzone .<= trench.WeakzoneThickness) .& (Z .>-trench.d_decoupling) );
+        Phase[ind] .= trench.WeakzonePhase
+        @info "added weak zone for " length(ind)
+    end
 
     return nothing
 end
