@@ -263,7 +263,7 @@ T_slab = LinearWeightedTemperature(crit_dist=600, F1=TsHC, F2=TsMK);
 phase = LithosphericPhases(Layers=[5 7 88], Phases = [2 3 4], Tlab=nothing)
 t1 = Trench(Start = (400.0,400.0), End = (800.0,800.0),θ_max = 90.0, direction = 1.0, n_seg = 50, L0 = 600.0, D0 = 80.0, Lb = 500.0,d_decoupling = 100.0, type_bending =:Ribe,   WeakzoneThickness=10, WeakzonePhase=9)
 
-addSlab!(Phase,Temp,Cart, t1, phase=phase, T = TsHC)
-@test Temp[84,84,110]  ≈ 713.1083054586794
+addSlab!(Phase,Temp,Cart, t1, phase=phase, T = T_slab)
+@test Temp[84,84,110]  ≈ 718.8406936737412
 
 Data_Final      =   CartData(X,Y,Z,(Phase=Phase,Temp=Temp)) 

@@ -1583,7 +1583,7 @@ function addSlab!(Phase, Temp, Grid::AbstractGeneralGrid,  trench::Trench;      
     if isa(T, LinearWeightedTemperature)
         l_decouplingind = findall(Top[:,2].<=-trench.d_decoupling);
         l_decoupling = Top[l_decouplingind[1],1];
-        temp.crit_dist = l_decoupling; 
+        T.crit_dist = l_decoupling; 
     end
 
     # Compute thermal structure accordingly. See routines below for different options {Future: introducing the length along the trench for having lateral varying properties along the trench}
@@ -1602,7 +1602,6 @@ function addSlab!(Phase, Temp, Grid::AbstractGeneralGrid,  trench::Trench;      
 
         ind = findall( (0.0 .<= d_weakzone .<= trench.WeakzoneThickness) .& (Z .>-trench.d_decoupling) );
         Phase[ind] .= trench.WeakzonePhase
-        @info "added weak zone for " length(ind)
     end
 
     return nothing
