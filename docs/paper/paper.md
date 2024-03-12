@@ -132,10 +132,7 @@ julia> Tomo_Alps = ExtractSubvolume(Tomo_Alps_full, Lon_level=(4,20), Lat_level=
 At this stage, we can save the data to `VTK`  format:
 ```julia
 julia> Write_Paraview(Tomo_Alps,"Tomo_Alps");
-Saved file: Tomo_Alps.vts
-
 julia> Write_Paraview(Topo_Alps,"Topo_Alps");
-Saved file: Topo_Alps.vts
 ```
 And open it with Paraview (see \autoref{fig:basic}a).
 We can create vertical and horizontal cross-sections through the data with:
