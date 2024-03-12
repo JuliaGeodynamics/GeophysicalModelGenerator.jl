@@ -1513,6 +1513,8 @@ function find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench::Trench)
 
     l = 0  # length at the trench position
 
+    D = @SVector [0.0, -D0,-D0,0.0]
+
     # Construct the slab
     for i = 1:(n_seg-1)
 
@@ -1548,9 +1550,8 @@ function find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench::Trench)
         ind_seg = ind_s[ind]
 
         # Prepare the variable to interpolate {I put here because to allow also a variation of thickness of the slab}
-        D = [0.0,-D0,-D0,0.0];
 
-        L = [l,l,ln,ln];
+        L = @SVector [l,l,ln,ln];
 
         # Interpolations
         points = [pa[1] pa[2];pb[1] pb[2];pc[1] pc[2];pd[1] pd[2]]'
