@@ -3,7 +3,8 @@ using Printf
 using Parameters        # helps setting default parameters in structures
 using SpecialFunctions: erfc
 using GeoParams
-using  ScatteredInterpolation
+using ScatteredInterpolation
+using StaticArrays
 
 # Setup_geometry
 #
@@ -561,21 +562,6 @@ end
 # Internal function that rotates the coordinates
 function Rot3D!(X,Y,Z, StrikeAngle, DipAngle)
 
-    #=
-    # rotation matrixes
-    roty = [cosd(-DipAngle) 0 sind(-DipAngle) ; 0 1 0 ; -sind(-DipAngle) 0  cosd(-DipAngle)];
-    rotz = [cosd(StrikeAngle) -sind(StrikeAngle) 0 ; sind(StrikeAngle) cosd(StrikeAngle) 0 ; 0 0 1]
-
-    for i in eachindex(X)
-        CoordVec = [X[i], Y[i], Z[i]]
-        CoordRot =  rotz*CoordVec;
-        CoordRot =  roty*CoordRot;
-        X[i] = CoordRot[1];
-        Y[i] = CoordRot[2];
-        Z[i] = CoordRot[3];
-    end
-    =#
-
     # precompute trigonometric functions (expensive!)
     sindStrikeAngle, cosStrikeAngle  = sincosd(StrikeAngle)
     sinDipAngle, cosDipAngle         = sincosd(-DipAngle)   # note the minus here to be consistent with the earlier version of the code
@@ -591,14 +577,14 @@ end
 
 Perform rotation for a point in 3D space
 """
-function Rot3D(X::Number,Y::Number,Z::Number, cosStrikeAngle, sindStrikeAngle, cosDipAngle, sinDipAngle)
+function Rot3D(X::_T,Y::_T,Z::_T, cosStrikeAngle::_T, sindStrikeAngle::_T, cosDipAngle::_T, sinDipAngle::_T) where _T<:Number
 
     # rotation matrixes
     #roty = [cosd(-DipAngle) 0 sind(-DipAngle) ; 0 1 0 ; -sind(-DipAngle) 0  cosd(-DipAngle)];
-    roty = [cosDipAngle 0 sinDipAngle ; 0 1 0 ; -sinDipAngle 0  cosDipAngle];       # note that dip-angle is changed from before!
-    rotz = [cosStrikeAngle -sindStrikeAngle 0 ; sindStrikeAngle cosStrikeAngle 0 ; 0 0 1]
+    roty =  @SMatrix [cosDipAngle 0 sinDipAngle ; 0 1 0 ; -sinDipAngle 0  cosDipAngle];       # note that dip-angle is changed from before!
+    rotz =  @SMatrix [cosStrikeAngle -sindStrikeAngle 0 ; sindStrikeAngle cosStrikeAngle 0 ; 0 0 1]
 
-    CoordVec = [X, Y, Z]
+    CoordVec =  @SVector [X, Y, Z]
     CoordRot =  rotz*CoordVec;
     CoordRot =  roty*CoordRot;
     
@@ -1506,12 +1492,13 @@ end
 =#
 
 """
-    find_slab!(ls, d, X,Y,Z, Start, End, Top, Bottom, seg_slab, D0, L0)
+    find_slab_distance!(ls, d, X,Y,Z, trench::Trench)
 
 Function that finds the perpendicular distance to the top and bottom of the slab `d`, and the current length of the slab `l`.
 
 """
-function find_slab!(ls, d, X,Y,Z, Start, End,Top,Bottom,seg_slab,D0,L0,direction)
+function find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench::Trench)
+    @unpack D0, L0, n_seg, Start, End, direction = trench;
 
     # Perform rotation of 3D coordinates along the angle from Start -> End:
     Xrot = X .- Start[1];
@@ -1521,20 +1508,18 @@ function find_slab!(ls, d, X,Y,Z, Start, End,Top,Bottom,seg_slab,D0,L0,direction
 
     xb = Rot3D(End[1]-Start[1],End[2]-Start[2], 0.0, cosd(StrikeAngle), sind(StrikeAngle), 1.0, 0.0)
     
-    #xb1 = transform_coordinate!(X,Y,Z,Xrot,Yrot,Start,End,direction);
-
     # dl
-    dl = L0/seg_slab;
+    dl = L0/n_seg;
 
     l = 0  # length at the trench position
 
     # Construct the slab
-    for i = 1:(seg_slab-1)
+    for i = 1:(n_seg-1)
 
         ln = l+dl;
 
-        pa = (Top[i,1],Top[i,2]);       # D = 0 | L = l
-        pb = (Bottom[i,1],Bottom[i,2]); # D = -D0 | L=l
+        pa = (Top[i,1], Top[i,2]);       # D = 0 | L = l
+        pb = (Bottom[i,1], Bottom[i,2]); # D = -D0 | L=l
 
         pc = (Bottom[i+1,1],Bottom[i+1,2]); # D = -D0 |L=L+dl
         pd = (Top[i+1,1],Top[i+1,2]) # D = 0| L = L+dl
@@ -1554,7 +1539,6 @@ function find_slab!(ls, d, X,Y,Z, Start, End,Top,Bottom,seg_slab,D0,L0,direction
 
         # Find the particles
         yp = Yrot[ind_s];
-
         zp = Z[ind_s];
 
         # Initialize the ind that are going to be used by inpoly
@@ -1592,20 +1576,6 @@ function find_slab!(ls, d, X,Y,Z, Start, End,Top,Bottom,seg_slab,D0,L0,direction
         #Update l
         l = ln;
     end
-end
-
-
-"""
-
-Internal routine which finds distance perpendicular (`d`) and along (`ls`) the slab, as specified in `trench`. 
-"""
-function find_slab_distance!(ls, d, trench, Top, Bottom, X,Y,Z)
-    @unpack D0, L0, n_seg, Start, End, direction = trench;
-
-    # Finds the distance to the slab 
-    GeophysicalModelGenerator.find_slab!(ls, d, X,Y,Z, Start,End, Top,Bottom,n_seg,D0,L0,direction);
-
-    return nothing
 end
 
 
@@ -1657,10 +1627,10 @@ function addSlab!(Phase, Temp, Grid::AbstractGeneralGrid,  trench::Trench;      
     Top,Bottom = compute_slab_surface(trench); 
     
     # Find the distance to the slab (along & perpendicular)
-    find_slab_distance!(ls, d, trench, Top, Bottom, X,Y,Z );  
+    find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench);  
     
     # Function to fill up the temperature and the phase. 
-    ind = findall((-trench.D0 .<= d .<= 0.0));
+    ind = findall((-trench.D0 .<= d .<= 0.0));Grid
 
     if isa(T, LinearWeightedTemperature)
         l_decouplingind = findall(Top[:,2].<=-trench.d_decoupling);
