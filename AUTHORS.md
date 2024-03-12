@@ -23,7 +23,7 @@ are listed in alphabetical order:
 * Jacob Frasunkiewicz
 * Lukas Fuchs
 * Andrea Piccolo
-* Hendrik Rachona
+* Hendrik Ranocha
 * Christian Schuler
 * Arne Spang
 * Tatjana Weiler

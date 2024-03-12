@@ -36,9 +36,10 @@ Temp                =   ones(Float64, Grid.N...)*1350;
 Phases              =   zeros(Int32,  Grid.N...);
 
 AddBox!(Phases,Temp,Grid, xlim=(2,4), zlim=(4,8), phase=ConstantPhase(3), DipAngle=10, T=LinearTemp(Tbot=1350, Ttop=200))
-
 @test maximum(Phases) == 3
 
+addStripes!(Phases, Grid,stripAxes=(1,1,1),stripeWidth=0.2,stripeSpacing=1,Origin=nothing, StrikeAngle=0, DipAngle=10,phase = ConstantPhase(3),stripePhase = ConstantPhase(4))
+@test maximum(Phases) == 4
 
 # Create a CartData structure from it
 Data = CartData(Grid, (T=Temp, Phases=Phases))

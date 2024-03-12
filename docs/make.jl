@@ -5,7 +5,7 @@ push!(LOAD_PATH, dirname(@__DIR__))
 using GeophysicalModelGenerator
 
 # Importing these activates package extensions
-import GLMakie, GMT
+using GLMakie, GMT
 
 #DocMeta.setdocmeta!(GeophysicalModelGenerator, :DocTestSetup, :(using GeophysicalModelGenerator); recursive=true)
 
@@ -14,6 +14,7 @@ GMG_root_dir = dirname(@__DIR__)
 
 license = read(joinpath(GMG_root_dir, "LICENSE.md"), String)
 write(joinpath(@__DIR__, "src", "man", "license.md"), license)
+
 # Copy list of authors to not need to synchronize it manually
 authors_text = read(joinpath(GMG_root_dir, "AUTHORS.md"), String)
 # authors_text = replace(authors_text, "in the [LICENSE.md](LICENSE.md) file" => "under [License](@ref)")
@@ -101,7 +102,7 @@ makedocs(;
             "17 - Fault Density Map" =>  "man/Tutorial_FaultDensity.md",
             "18 - Alpine data integration" =>  "man/Tutorial_AlpineData.md",
             "19 - Jura tutorial" =>  "man/Tutorial_Jura.md", 
-            "20 - Build geometry setup with polygon.md" =>  "man/tutorial_Polygon_structures.md"
+            "20 - Build geometry from polygons" =>  "man/tutorial_Polygon_structures.md"
         ],
         "User Guide" => Any[
             "Installation" =>  "man/installation.md",
@@ -110,11 +111,14 @@ makedocs(;
             "Projection" =>  "man/projection.md",
             "Paraview output" => "man/paraview_output.md",
             "Paraview collection" => "man/paraview_collection.md",
+            "Surfaces" =>  "man/surfaces.md",
             "Tools" => "man/tools.md",
             "Visualisation" => "man/visualise.md",
             "Gravity code" => "man/gravity_code.md",
+            "Numerical model setups" => "man/geodynamic_setups.md",
             "LaMEM" => "man/lamem.md",
-            "Profile Processing" => "man/profile_processing.md"
+            "Profile Processing" => "man/profile_processing.md",
+            "Movies" => "man/movies.md"
         ],
         "List of functions"  => "man/listfunctions.md",
         "Authors" => "man/authors.md",
