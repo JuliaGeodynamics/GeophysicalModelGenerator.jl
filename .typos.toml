@@ -1,6 +1,7 @@
 [default.extend-words]
 MOR = "MOR"
 dum = "dum"
+Shepard = "Shepard"
 
 [files]
 extend-exclude = ["tutorials/*.pvsm"]

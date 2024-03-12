@@ -31,7 +31,7 @@ Parameters
 ====
 - `Phase` - Phase array (consistent with Grid)
 - `Temp`  - Temperature array (consistent with Grid)
-- `Grid` -  grid structure (usually obtained with ReadLaMEM_InputFile, but can also be other grid types)
+- `Grid` -  grid structure (can be any of the grid types in `GMG`)
 - `xlim` -  left/right coordinates of box
 - `ylim` -  front/back coordinates of box [optional; if not specified we use the whole box]
 - `zlim` -  bottom/top coordinates of box
@@ -1233,71 +1233,75 @@ Parameters
 end
 
 """
-    compute_slab_surface!(D0::Float64,L0::Float64,Lb::Float64,WZ::Float64,n_seg::Int64,θ_max::Float64,type_bending::Symbol)
+    Top, Bot = compute_slab_surface(trench::Trench)
 
-Compute the coordinate of the slab top, bottom surface using the mid surface of the slab as reference. It computes it by discretizing the slab surface
-in n segments, and computing the average bending angle {which is a function of the current length of the slab}. Then compute the coordinate
-assuming that the trench is at 0.0, and assuming a positive θ_max angle.
+Computes the (`x`,`z`) coordinates of the slab top, bottom surface using the mid surface of the slab as reference. 
 
+Parameters
+=== 
+- `trench`          - `Trench` structure that contains the relevant parameters
+
+Method
+===
+
+It computes it by discretizing the slab surface in `n_seg` segments, and computing the average bending angle (which is a function of the current length of the slab). 
+Next, it compute the coordinates assuming that the trench is at 0.0, and assuming a positive `θ_max` angle.
 """
-function compute_slab_surface!(D0::Float64,L0::Float64,Lb::Float64,n_seg::Int64,θ_max::Float64,type_bending::Symbol)
-    
+function compute_slab_surface(trench::Trench)
+
+    @unpack D0, L0, n_seg, Lb, θ_max, n_seg_xy, A, B, type_bending, direction = trench;
+
     # Convert θ_max into radians
-    θ_max = θ_max*pi/180;
+    θ_max *=  π / 180;
 
-    # Allocate the top,mid and bottom surface, and the weakzone
-    Top = zeros(n_seg+1,2);
-
-    Bottom = zeros(n_seg+1,2);
+    # Allocate the top, mid and bottom surface
+    Top         = zeros(n_seg+1,2);
+    Bottom      = zeros(n_seg+1,2);
     Bottom[1,2] = -D0;
+    MidS        = zeros(n_seg+1,2);
+    MidS[1,2]   = -D0/2;
 
-    MidS    = zeros(n_seg+1,2);
-    MidS[1,2] = -D0./2;
-
-    #WZ_surf     = zeros(n_seg+1,2);
-    #WZ_surf[1,2] = WZ;
     # Initialize the length.
-    l = 0.0;   # initial length
+    l   = 0.0;      # initial length
+    it  = 1;        # iteration
 
-    it = 1;  # iteration
-
-    dl = L0/n_seg; # dl
-
+    dl  = L0/n_seg; # dl
     while l<L0
-        ln = l+dl
+
         # Compute the mean angle within the segment
-        θ_mean = (compute_bending_angle!(θ_max,Lb,l,type_bending)+compute_bending_angle!(θ_max,Lb,ln,type_bending))./2;
-        # Compute the mid surface coordinate
-        MidS[it+1,1] = MidS[it,1]+dl*cos(θ_mean);
+        θ   = compute_bending_angle(θ_max, Lb, l   , type_bending)
+        θ_n = compute_bending_angle(θ_max, Lb, l+dl, type_bending)
+        θ_mean = (θ + θ_n)/2;
+        
+        # Mid surface coordinates (x,z)
+        sinθ, cosθ = sincos(θ_mean)
 
-        MidS[it+1,2] = MidS[it,2]-dl.*sin(θ_mean);
-        #Compute the top surface coordinate
+        MidS[it+1,1] = MidS[it,1] + dl * cosθ;
+        MidS[it+1,2] = MidS[it,2] - dl * sinθ;
 
-        Top[it+1,1] = MidS[it+1,1]+0.5.*D0.*abs(sin(θ_mean));
+        # Top surface coordinates (x,z)
+        Top[it+1,1] = MidS[it+1,1] + 0.5 * D0 * abs(sinθ);
+        Top[it+1,2] = MidS[it+1,2] + 0.5 * D0 * abs(cosθ);
 
-        Top[it+1,2] = MidS[it+1,2]+0.5.*D0.*abs(cos(θ_mean));
-        #Compute the bottom surface coordinate
+        # Bottom surface coordinate
+        Bottom[it+1,1] = MidS[it+1,1] - 0.5 * D0 * abs(sinθ);
+        Bottom[it+1,2] = MidS[it+1,2] - 0.5 * D0 * abs(cosθ);
 
-        Bottom[it+1,1] = MidS[it+1,1]-0.5.*D0.*abs(sin(θ_mean));
-
-        Bottom[it+1,2] = MidS[it+1,2]-0.5.*D0.*abs(cos(θ_mean));
         # Compute the top surface for the weak zone
+        #WZ_surf[it+1,1] = MidS[it+1,1] + (0.5 * D0 + WZ) * abs(sinθ);
+        #WZ_surf[it+1,2] = MidS[it+1,2] + (0.5 * D0 + WZ) * abs(cosθ);
 
-        #WZ_surf[it+1,1] = MidS[it+1,1]+(0.5.*D0+WZ).*abs(sin(θ_mean));
-
-        #WZ_surf[it+1,2] = MidS[it+1,2]+(0.5.*D0+WZ).*abs(cos(θ_mean));
-        # update l and it
-        l = ln;
-        it = it+1;
+        # update l
+        l  = l + dl;
+        it = it + 1;
     end
-
-    return Top,Bottom; #{Filling the structure?}
+    return Top, Bottom 
 end
 
 """
-    compute_bending_angle!(θ_max,Lb,l,type)
+    θ = compute_bending_angle(θ_max,Lb,l,type)
 
-function that computes the θ(l).
+function that computes the bending angle `θ` as a function of length along the slab `l`.
 
 Parameters
 ===
@@ -1305,17 +1309,20 @@ Parameters
 `Lb`    = length at which the function of bending is applied (Lb<=L0)
 `l`     = current position within the slab
 `type`  = type of bending [`:Ribe`,`:Linear`]
+
 """
-function compute_bending_angle!(θ_max::Float64,Lb::Float64,l::Float64,type::Symbol)
+function compute_bending_angle(θ_max::Float64,Lb::Float64,l::Float64,type::Symbol)
+    
     if l>Lb
-        return θ_max
+        θ = θ_max
     elseif type === :Ribe
         # Compute theta
-        return θ_max*l^2*((3*Lb-2*l))/(Lb^3);
+        θ =  θ_max*l^2*((3*Lb-2*l))/(Lb^3);
     elseif type === :Linear
         # Compute the actual angle
-        return l*(θ_max-0)/(Lb);
+        θ =  l*(θ_max-0)/(Lb);
     end
+    return θ
 end
 
 """
@@ -1360,13 +1367,13 @@ function transform_coordinate!(X,Y,Z,XT,YT,A,B,direction)
 end
 
 """
-    find_slab!(X,Y,Z,d,ls,θ_max,A,B,Top,Bottom,seg_slab,D0,L0)
+    find_slab!(ls, d, X,Y,Z, θ_max, A, B, Top, Bottom, seg_slab, D0, L0)
 
-Function that finds the slab. It loops over the Top and Bottom surface of the slab.
-It creates small polygons where and check if in the transformed coordinate system there are particles belonging to that polygon
-then interpolates the distance from the top, and the current length from the corners.
+Function that finds the perpendicular distance to the top and bottom of the slab `d`, and the current length of the slab `l`.
+
+
 """
-function find_slab!(X,Y,Z,d,ls,θ_max,A,B,Top,Bottom,seg_slab,D0,L0,direction)
+function find_slab!(ls, d, X,Y,Z, θ_max, A,B,Top,Bottom,seg_slab,D0,L0,direction)
 
     # Create the XT,YT
     XT = zero(X);
@@ -1385,26 +1392,21 @@ function find_slab!(X,Y,Z,d,ls,θ_max,A,B,Top,Bottom,seg_slab,D0,L0,direction)
 
         ln = l+dl;
 
-        pa = (Top[i,1],Top[i,2]); # D = 0 | L = l
-
+        pa = (Top[i,1],Top[i,2]);       # D = 0 | L = l
         pb = (Bottom[i,1],Bottom[i,2]); # D = -D0 | L=l
 
         pc = (Bottom[i+1,1],Bottom[i+1,2]); # D = -D0 |L=L+dl
-
         pd = (Top[i+1,1],Top[i+1,2]) # D = 0| L = L+dl
 
         # Create the polygon
         poly_y = [pa[1],pb[1],pc[1],pd[1]];
-
         poly_z = [pa[2],pb[2],pc[2],pd[2]];
 
         # find a sub set of particles
         ymin = minimum(poly_y);
-
         ymax = maximum(poly_y);
 
         zmin = minimum(poly_z);
-
         zmax = maximum(poly_z);
 
         ind_s = findall(0.0.<= XT.<= xb[1] .&& ymin .<= YT .<= ymax .&& zmin .<= Z .<= zmax);
@@ -1451,82 +1453,90 @@ function find_slab!(X,Y,Z,d,ls,θ_max,A,B,Top,Bottom,seg_slab,D0,L0,direction)
     end
 end
 
-"""
-    addSlab!(X::Array{Float64},Y::Array{Float64},Z::Array{Float64},Ph::Array{Int32},T::Array{Float64},t::Trench,strat,temp)
-
-Main function that creates the slab. Unpack the variable from the structure, create two arrays that contains the information of l and d.
-    l and d are the array containing the length of the slab per each coordinate belonging to the slab, and the distance from the surface.
-    In this function compute_slab_surface and find_slab are called. And after d and ls are computed, it fill up the temperature and phase arrays
 
 """
-function addSlab!(X::Array{Float64},Y::Array{Float64},Z::Array{Float64},Ph::Array{Int32},T::Array{Float64},t::Trench,strat,temp)
 
-    d = ones(size(X)).*NaN64;
+Internal routine which finds distance perpendicular (`d`) and along (`ls`) the slab, as specified in `trench`. 
+"""
+function find_slab_distance!(ls, d, trench, Top, Bottom, X,Y,Z)
+    @unpack D0, L0, n_seg, Lb, θ_max, n_seg_xy, A, B, type_bending, direction = trench;
 
-    # -> l = length from the trench along the slab
-    ls = ones(size(X)).*NaN64;
+    # Finds the distance to the slab 
+    GeophysicalModelGenerator.find_slab!(ls, d, X,Y,Z, θ_max,A,B,Top,Bottom,n_seg,D0,L0,direction);
 
-    D0 = t.D0;
+    return nothing
+end
 
-    L0 = t.L0;
 
-    n_seg = t.n_seg;
 
-    Lb    = t.Lb;
+"""
+    addSlab!(Phase, Temp, Grid::AbstractGeneralGrid,  trench::Trench; phase = ConstantPhase(1), T = nothing)
 
-    θ_max = t.θ_max;
+Adds a curved slab with phase & temperature structure to a 3D model setup.  
 
-    n_seg_xy = t.n_seg_xy;
+Parameters
+====
+- `Phase`   - Phase array (consistent with Grid)
+- `Temp`    - Temperature array (consistent with Grid)
+- `Grid`    - grid structure (can be any of the grid types in `GMG`)
+- `trench`  - Trench structure
+- `phase`   - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
+- `T`       - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`,`LithosphericTemp()`
 
-    #WZ = t.WZ;
+Examples
+========
 
-    # Allocate d-l array and A,B
+Example 1) Slab
+```julia
+julia> x     = LinRange(0.0,1200.0,128);
+julia> y     = LinRange(0.0,1200.0,128);
+julia> z     = LinRange(-660,50,128);
+julia> Cart  = CartData(XYZGrid(x, y, z));
+julia> Phase = ones(Int64,size(Cart));
+julia> Temp  = fill(1350.0,size(Cart));
+# Define the trench:
+julia> trench= Trench(n_seg_xy=1, A = [400.0,400.0],B = [800.0,800.0],θ_max = 45.0, direction = 1.0, n_seg = 50, L0 = 600.0, D0 = 80.0, Lb = 500.0,d_decoupling = 100.0, type_bending =:Ribe)
+julia> strat = LithosphericPhases(Layers=[5 7 88], Phases = [2 3 4], Tlab=nothing)
+julia> TsHC  = HalfspaceCoolingTemp(Tsurface=20.0, Tmantle=1350, Age=30, Adiabat=0.4)
+julia> addSlab!(Phase, Temp, Cart, trench, phase = strat, T = TsHC)
+```
 
-    A = zeros(Float64,2,1);
-    B = zeros(Float64,2,1);
+"""
+function addSlab!(Phase, Temp, Grid::AbstractGeneralGrid,  trench::Trench;        # required input
+        phase::AbstractPhaseNumber = ConstantPhase(1),                       # Sets the phase number(s) in the slab
+        T::AbstractThermalStructure  = nothing )                             # Sets the thermal structure (various functions are available),
+        
+    # Retrieve 3D data arrays for the grid
+    X,Y,Z = coordinate_grids(Grid)
 
-    #Loop over the segment of the slab
-    # In theory this loop would loop all the segment of the trench, but if I introduce a n_seg_xy = 1, it throws me an error concerning the iteration. I tried to fix, but the the error message is mysterious
+    d = fill(NaN,size(Grid));       # -> d = distance perpendicular to the slab 
+    ls = fill(NaN,size(Grid));      # -> l = length from the trench along the slab
 
-    #for is =1:1
-        is = 1;
-        A[1] = t.A[is];
-        A[2] = t.A[is+1];
-        B[1] = t.B[is];
-        B[2] = t.B[is+1];
-
-        # Compute Top-Bottom surface
-        # Or loop over the segment of the top/bottom surface and inpolygon each element or
-
-        Top,Bottom =compute_slab_surface!(D0,L0,Lb,n_seg,abs(θ_max),t.type_bending);
-
-        find_slab!(X,Y,Z,d,ls,t.θ_max,A,B,Top,Bottom,t.n_seg,t.D0,t.L0,t.direction);
-
-        l_decouplingind = findall(Top[:,2].<=-t.d_decoupling);
-
-        l_decoupling = Top[l_decouplingind[1],1];
-
-        # Function to fill up the temperature and the phase. I need to personalize addbox!
-
-        ind = findall((-D0 .<= d .<= 0.0));
-
-        if typeof(temp) == LinearWeightedTemperature
-            l_decouplingind = findall(Top[:,2].<=-t.d_decoupling);
-
-            l_decoupling = Top[l_decouplingind[1],1];
+    # Compute top and bottom of the slab
+    Top,Bottom = compute_slab_surface(trench); 
     
-            temp.crit_dist = l_decoupling; 
+    # Find the distance to the slab (along and perpendicular)
+    find_slab_distance!(ls, d, trench, Top, Bottom, X,Y,Z );  
+    
+    # Function to fill up the temperature and the phase. 
+    ind = findall((-trench.D0 .<= d .<= 0.0));
 
-        end
-        # Compute thermal structure accordingly. See routines below for different options {Future: introducing the length along the trench for having lateral varying properties along the trench}
-        T[ind] = Compute_ThermalStructure(T[ind], ls[ind], Y[ind], d[ind],Ph[ind],temp);
+    if isa(T, LinearWeightedTemperature)
+        l_decouplingind = findall(Top[:,2].<=-trench.d_decoupling);
+        l_decoupling = Top[l_decouplingind[1],1];
+        temp.crit_dist = l_decoupling; 
+    end
 
-        # Set the phase. Different routines are available for that - see below.
-        Ph[ind] = Compute_Phase(Ph[ind], T[ind], ls[ind], Y[ind], d[ind], strat)
+    # Compute thermal structure accordingly. See routines below for different options {Future: introducing the length along the trench for having lateral varying properties along the trench}
+    if !isnothing(T)
+        Temp[ind] = Compute_ThermalStructure(Temp[ind], ls[ind], Y[ind], d[ind], Phase[ind],T);
+    end
 
-        # Place holder of the weak zone: it is simply using the find slab routine, and cutting it at d_decoupling.
+    # Set the phase. Different routines are available for that - see below.
+    Phase[ind] = Compute_Phase(Phase[ind], Temp[ind], ls[ind], Y[ind], d[ind], phase)
 
-    #end
+    # Place holder of the weak zone: it is simply using the find slab routine, and cutting it at d_decoupling.
 
+    return nothing
 end
 

@@ -234,7 +234,11 @@ strat = LithosphericPhases(Layers=[5 7 88], Phases = [2 3 4], Tlab=nothing)
 TsHC = HalfspaceCoolingTemp(Tsurface=20.0, Tmantle=1350, Age=30, Adiabat=0.4)
 temp = TsHC;
 
-addSlab!(X,Y,Z,Phase,Temp, t1,strat,temp)
+addSlab!(Phase,Temp,Cart, t1, phase=strat, T = TsHC)
+
+Data_Final      =   CartData(X,Y,Z,(Phase=Phase,Temp=Temp)) 
+
+
 
 Phase = ones(Int32,size(Cart));
 Temp = fill(1350.0,size(Cart));
@@ -250,7 +254,7 @@ TsMK = McKenzie_subducting_slab(Tsurface = 20.0, Tmantle = 1350.0, v_cm_yr = 4.0
 T_slab = LinearWeightedTemperature(crit_dist=600, F1=TsHC, F2=TsMK);
 t1 = Trench(n_seg_xy=1, A = [400.0,400.0],B = [800.0,800.0],θ_max = 90.0, direction = 1.0, n_seg = 50, L0 = 600.0, D0 = 80.0, Lb = 500.0,d_decoupling = 100.0, type_bending =:Ribe)
 
+addSlab!(Phase,Temp,Cart, t1, phase=strat, T = TsHC)
 
-addSlab!(X,Y,Z,Phase,Temp,t1,strat,T_slab)
 
 Data_Final      =   CartData(X,Y,Z,(Phase=Phase,Temp=Temp)) 
