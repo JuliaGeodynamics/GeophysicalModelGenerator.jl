@@ -226,10 +226,10 @@ X,Y,Z    = XYZGrid(x, y, z);
 Phase   = ones(Int32,size(Cart));
 Temp    = fill(1350.0,size(Cart));
 
-t1 = Trench(Start = (400.0,400.0), End = (800.0,800.0),θ_max = 45, direction = 1.0, n_seg = 50, L0 = 600.0, D0 = 80.0, Lb = 500.0,d_decoupling = 100.0, type_bending =:Ribe)
+t1 = Trench(Start = (400.0,400.0), End = (800.0,800.0),θ_max = 45, direction = 1.0, n_seg = 50, Length = 600.0, Thickness = 80.0, Lb = 500.0,d_decoupling = 100.0, type_bending =:Ribe)
 @test t1.θ_max == 45.0
-@test t1.D0 == 80.0
-@test t1.L0 == 600.0
+@test t1.Thickness == 80.0
+@test t1.Length == 600.0
 @test t1.Lb == 500.0
 
 phase = LithosphericPhases(Layers=[5 7 88], Phases = [2 3 4], Tlab=nothing)
@@ -241,7 +241,7 @@ addSlab!(Phase,Temp,Cart, t1, phase=phase, T = TsHC)
 @test extrema(Phase) == (1, 4)
 
 # with weak zone
-t1 = Trench(Start = (400.0,400.0), End = (800.0,800.0),θ_max = 45, direction = 1.0, n_seg = 50, L0 = 600.0, D0 = 80.0, Lb = 500.0,d_decoupling = 100.0, WeakzoneThickness=10, WeakzonePhase=9)
+t1 = Trench(Start = (400.0,400.0), End = (800.0,800.0),θ_max = 45, direction = 1.0, n_seg = 50, Length = 600.0, Thickness = 80.0, Lb = 500.0,d_decoupling = 100.0, WeakzoneThickness=10, WeakzonePhase=9)
 Phase   = ones(Int32,size(Cart));
 Temp    = fill(1350.0,size(Cart));
 addSlab!(Phase,Temp,Cart, t1, phase=phase, T = TsHC)
@@ -261,9 +261,31 @@ TsHC = HalfspaceCoolingTemp(Tsurface=20.0, Tmantle=1350, Age=120, Adiabat=0.4)
 TsMK = McKenzie_subducting_slab(Tsurface = 20.0, Tmantle = 1350.0, v_cm_yr = 4.0, Adiabat = 0.0)
 T_slab = LinearWeightedTemperature(crit_dist=600, F1=TsHC, F2=TsMK);
 phase = LithosphericPhases(Layers=[5 7 88], Phases = [2 3 4], Tlab=nothing)
-t1 = Trench(Start = (400.0,400.0), End = (800.0,800.0),θ_max = 90.0, direction = 1.0, n_seg = 50, L0 = 600.0, D0 = 80.0, Lb = 500.0,d_decoupling = 100.0, type_bending =:Ribe,   WeakzoneThickness=10, WeakzonePhase=9)
+t1 = Trench(Start = (400.0,400.0), End = (800.0,800.0),θ_max = 90.0, direction = 1.0, n_seg = 50, Length = 600.0, Thickness = 80.0, Lb = 500.0,d_decoupling = 100.0, type_bending =:Ribe,   WeakzoneThickness=10, WeakzonePhase=9)
 
 addSlab!(Phase,Temp,Cart, t1, phase=phase, T = T_slab)
 @test Temp[84,84,110]  ≈ 718.8406936737412
 
 Data_Final      =   CartData(X,Y,Z,(Phase=Phase,Temp=Temp)) 
+
+
+
+# 2D slab:
+nx,nz = 512,128
+x = range(-1000,1000, nx);
+z = range(-660,0,    nz);
+Grid2D = CartData(XYZGrid(x,0,z))
+Phases = zeros(Int64, nx, 1, nz);
+Temp = fill(1350.0, nx, 1, nz);
+AddBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = ConstantPhase(1));    
+
+trench = Trench(Start=(0.0,-100.0), End=(0.0,100.0), Thickness=80.0, θ_max=30.0, Length=300, Lb=150);
+addSlab!(Phases, Temp, Grid2D, trench, phase = ConstantPhase(2));
+@test extrema(Phases) == (0, 2)
+
+# Add them to the `CartData` dataset:
+Grid2D = CartData(Grid2D.x.val, Grid2D.y.val, Grid2D.z.val ,(;Phases, Temp))
+
+#Write_Paraview(Grid2D,"Grid2D_SubductionCurvedMechanical");
+
+
