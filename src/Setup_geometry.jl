@@ -1529,11 +1529,8 @@ function find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench::Trench)
         poly_z = [pa[2],pb[2],pc[2],pd[2]];
 
         # find a sub set of particles
-        ymin = minimum(poly_y);
-        ymax = maximum(poly_y);
-
-        zmin = minimum(poly_z);
-        zmax = maximum(poly_z);
+        ymin,ymax = extrema(poly_y);
+        zmin,zmax = extrema(poly_z);
 
         ind_s = findall(0.0.<= Xrot.<= xb[1] .&& ymin .<= Yrot .<= ymax .&& zmin .<= Z .<= zmax);
 
