@@ -32,7 +32,7 @@ authors:
   - name: Andrea Piccolo
     orcid: 0000-0003-3074-6041
     affiliation: 2
-  - name: Hendrick Ranocha
+  - name: Hendrik Ranocha
     orcid: 0000-0002-3456-2277
     affiliation: 1
   - name: Nicolas Riel
