@@ -196,9 +196,5 @@ Write_Paraview(Grid2D,"Grid2D_SubductionCurvedOverriding");
 #
 # Also, if you wish to take a seismic tomography as inspiration to set a slab geometry, you can interpolate it to a `CartGrid` with the same dimensions and use that with the julia `findall` function.
 
-
-
-
-
 #src Note: The markdown page is generated using:
 #src Literate.markdown("tutorials/Tutorial_NumericalModel_2D.jl","docs/src/man",keepcomments=true, execute=true, codefence = "```julia" => "```")
