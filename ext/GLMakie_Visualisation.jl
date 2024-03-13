@@ -3,7 +3,7 @@ module GLMakie_Visualisation
 
 using Statistics
 using GeophysicalModelGenerator: LonLatDepthGrid, GeoData, CartData, km, AbstractGeneralGrid
-import GeophysicalModelGenerator: Visualise
+import GeophysicalModelGenerator: visualise
 
 # We do not check `isdefined(Base, :get_extension)` as recommended since
 # Julia v1.9.0 does not load package extensions when their dependency is
@@ -14,12 +14,12 @@ else
     using ..GLMakie
 end
 
-export Visualise
+export visualise
 
 println("Loading GLMakie extensions for GMG")
 
 """
-    Visualise(DataSet; Topography=Topo_Data, Topo_range=nothing)
+    visualise(DataSet; Topography=Topo_Data, Topo_range=nothing)
 
 This starts an interactive widget that allows you to explore a 3D data set `DataSet` in an interactive manner.
 All fields in the dataset can be explored, and if the optional parameter `Topography` is provided, the topography will be drawn on top.
@@ -27,7 +27,7 @@ All fields in the dataset can be explored, and if the optional parameter `Topogr
 Note that this requires orthogonal grids, so it will work with a `GeoData` set, or with an orthogonal `CartData` set.
 Note that you may have to use `ProjectCartData` to project it to orthogonal cartesian coordinates.
 """
-function Visualise(Data::AbstractGeneralGrid; Topography=nothing, Topo_range=nothing)
+function visualise(Data::AbstractGeneralGrid; Topography=nothing, Topo_range=nothing)
 
 
     axis_equal = false;  # in case we use x/y/z data in km, this is useful 

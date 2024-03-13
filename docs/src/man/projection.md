@@ -12,7 +12,7 @@ Converting from one coordinate system to the other is straightforward. Let's use
 
 ```julia
 julia> using GeophysicalModelGenerator, GMT
-julia> Topo = ImportTopo(lon = [-10, 45], lat=[25, 50], file="@earth_relief_20m")
+julia> Topo = importTopo(lon = [-10, 45], lat=[25, 50], file="@earth_relief_20m")
 GeoData 
   size  : (165, 75, 1)
   lon   ϵ [ -10.0 : 44.666666666666664]

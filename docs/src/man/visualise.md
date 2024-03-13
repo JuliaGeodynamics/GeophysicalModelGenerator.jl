@@ -2,7 +2,7 @@
 
 The standard visualisation way of GMG is to generate Paraview (VTK) files & look at them there.
 Yet, often we just want to have a quick look at the data without opening a new program.
-For that reason, we created the `Visualise` widget, which uses `GLMakie` and allows you to explore the data.
+For that reason, we created the `visualise` widget, which uses `GLMakie` and allows you to explore the data.
 
 It requires you to load both `GLMakie` and `GeophysicalModelGenerator`. A small example in which we load the tomography data of the alps is:
 ```julia
@@ -21,14 +21,14 @@ julia> Data = JLD2.load("Zhao_Pwave.jld2","Data_set_Zhao2016_Vp");
 ```
 At this stage you can look at it with
 ```julia
-julia> Visualise(Data);    
+julia> visualise(Data);    
 ```
 Note that this tends to take a while, the first time you do this (faster afterwards).
 
 Let's add topography to the plot as well, which requires us to first load that:
 ```julia
-julia> Topo = ImportTopo([0,18,38,52], file="@earth_relief_01m.grd");
-julia> Visualise(Data, Topography=Topo);    
+julia> Topo = importTopo([0,18,38,52], file="@earth_relief_01m.grd");
+julia> visualise(Data, Topography=Topo);    
 ```
 Which will look like:
 ![Tutorial_Visualize](../assets/img/Tutorial_Visualize.png)
@@ -59,9 +59,9 @@ CartData
 ```
 And once we have done that, you can visualize the data in the same way:
 ```julia
-julia> Visualise(Data_Cart, Topography=Topo_Cart)
+julia> visualise(Data_Cart, Topography=Topo_Cart)
 ```
 
 ```@docs
-Visualise
+visualise
 ```

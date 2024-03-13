@@ -9,7 +9,7 @@
 using GeophysicalModelGenerator, GMT
 
 # Download the topography with:
-Topo = ImportTopo(lat=[45.5,47.7], lon=[5, 8.1], file="@earth_relief_03s.grd")
+Topo = importTopo(lat=[45.5,47.7], lon=[5, 8.1], file="@earth_relief_03s.grd")
 
 
 # Next, we drape the geological map on top of the geological map. 
@@ -46,7 +46,7 @@ TopoGeology = drape_on_topo(Topo, Geology)
 download_data("https://zenodo.org/records/10726801/files/BMes_Spline_longlat.tif", "BMes_Spline_longlat.tif")
 
 # Now, import the GeoTIFF as:
-Basement = ImportGeoTIFF("BMes_Spline_longlat.tif", fieldname=:Basement, removeNaN_z=true)
+Basement = importGeoTIFF("BMes_Spline_longlat.tif", fieldname=:Basement, removeNaN_z=true)
 # the `removeNaN_z` option removes `NaN` values from the dataset and instead uses the z-value of the nearest point.
 # That is important if you want to use this surface to generate a 3D model setup (using `belowSurface`, for example).
 

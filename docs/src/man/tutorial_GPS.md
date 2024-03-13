@@ -160,10 +160,10 @@ and interpolate the elevation on the GPS grid locations
 using GMT, Interpolations
 ```
 
-We use the `ImportTopo` function to read the topography from a file:
+We use the `importTopo` function to read the topography from a file:
 
 ```julia
-Elevation   =   ImportTopo([3,17,42,50], file="@earth_relief_01m.grd");
+Elevation   =   importTopo([3,17,42,50], file="@earth_relief_01m.grd");
 nothing #hide
 ```
 
