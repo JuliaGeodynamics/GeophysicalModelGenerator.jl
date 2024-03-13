@@ -99,8 +99,8 @@ write_Paraview(data_200km,"data_200km");
 # ### 4. Cartesian data
 # As you can see, the curvature or the Earth is taken into account here. Yet, for many applications it is more convenient to work in Cartesian coordinates (kilometers) rather then in geographic coordinates.
 # `GeophysicalModelGenerator` has a number of tools for this.
-# First we need do define a `ProjectionPoint`  around which we project the data
-proj = ProjectionPoint(Lon=12.0,Lat =43)
+# First we need do define a `projectionPoint`  around which we project the data
+proj = projectionPoint(Lon=12.0,Lat =43)
 
 Topo_cart = convert2CartData(Topo_Alps, proj)
 

@@ -6,7 +6,7 @@ using GeophysicalModelGenerator
 Lon,Lat,Depth   =   lonlatdepthGrid(5:25,20:50,(-1300:100:0)km);
 Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Depth*2 + Lon*km,LonData=Lon))  
 
-proj            =   ProjectionPoint(Lon=20,Lat=35)
+proj            =   projectionPoint(Lon=20,Lat=35)
 
 # Convert this 3D dataset to a Cartesian dataset (the grid will not be orthogonal)
 Data_set3D_Cart =   convert2CartData(Data_set3D, proj)  

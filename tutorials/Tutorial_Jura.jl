@@ -68,8 +68,8 @@ CrossSection_1 = screenshotToGeoData("Schori_2020_Ornans-Miserey-v2_whiteBG.png"
 # It is often useful to have them on exactly the same size grid
 #
 # We can do this in two steps:
-# First, we define a `ProjectionPoint` along which we perform the projection
-proj = ProjectionPoint(Lon=6, Lat=46.5)
+# First, we define a `projectionPoint` along which we perform the projection
+proj = projectionPoint(Lon=6, Lat=46.5)
 
 # We can simply transfer the TopoGeology map to Cartesian values with:
 convert2CartData(Topo,proj)

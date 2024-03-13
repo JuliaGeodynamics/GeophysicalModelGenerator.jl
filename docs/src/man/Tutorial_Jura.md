@@ -100,10 +100,10 @@ Moreover, the resolution of the grids is different. Whereas the `TopoGeology` ha
 It is often useful to have them on exactly the same size grid
 
 We can do this in two steps:
-First, we define a `ProjectionPoint` along which we perform the projection
+First, we define a `projectionPoint` along which we perform the projection
 
 ```julia
-proj = ProjectionPoint(Lon=6, Lat=46.5)
+proj = projectionPoint(Lon=6, Lat=46.5)
 ```
 
 We can simply transfer the TopoGeology map to Cartesian values with:

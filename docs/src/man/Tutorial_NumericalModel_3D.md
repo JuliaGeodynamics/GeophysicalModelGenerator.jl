@@ -18,7 +18,7 @@ nx,ny,nz = 512,512,128
 x = range(-1000,1000, nx);
 y = range(-1000,1000, ny);
 z = range(-660,0,    nz);
-Grid = CartData(XYZGrid(x,y,z));
+Grid = CartData(xyzGrid(x,y,z));
 ```
 
 Now we create an integer array that will hold the `Phases` information (which usually refers to the material or rock type in the simulation)
@@ -43,7 +43,7 @@ Note that if the lowermost layer has the same phase as the mantle, you can defin
 
 ```julia
 lith = LithosphericPhases(Layers=[15 45 10], Phases=[0 1 2], Tlab=1250)
-AddBox!(Phases, Temp, Grid; xlim=(-800,0.0), ylim=(-400, 400.0), zlim=(-80.0, 0.0), phase = lith,
+addBox!(Phases, Temp, Grid; xlim=(-800,0.0), ylim=(-400, 400.0), zlim=(-80.0, 0.0), phase = lith,
         Origin=(-0,0,0),
         T=SpreadingRateTemp(SpreadingVel=3, MORside="right"), StrikeAngle=30);
 ```
@@ -51,7 +51,7 @@ AddBox!(Phases, Temp, Grid; xlim=(-800,0.0), ylim=(-400, 400.0), zlim=(-80.0, 0.
 And an an inclined part:
 
 ```julia
-AddBox!(Phases, Temp, Grid; xlim=(0,300), ylim=(-400, 400.0), zlim=(-80.0, 0.0), phase = lith,
+addBox!(Phases, Temp, Grid; xlim=(0,300), ylim=(-400, 400.0), zlim=(-80.0, 0.0), phase = lith,
         Origin=(-0,0,0),
         T=McKenzie_subducting_slab(Tsurface=0,v_cm_yr=3), DipAngle=30, StrikeAngle=30);
 ```
@@ -75,7 +75,7 @@ CartData
 Which looks like
 
 ```julia
-Write_Paraview(Grid,"Grid3D_FreeSubduction");
+write_Paraview(Grid,"Grid3D_FreeSubduction");
 ```
 
 ````
@@ -94,7 +94,7 @@ nx,ny,nz = 512,512,128
 x = range(-1000,1000, nx);
 y = range(-1000,1000, ny);
 z = range(-660,0,    nz);
-Grid = CartData(XYZGrid(x,y,z));
+Grid = CartData(xyzGrid(x,y,z));
 
 Phases = fill(2,nx,ny,nz);
 Temp = fill(1350.0, nx,ny,nz);
@@ -104,12 +104,12 @@ Overriding plate with a 30 km crust and mantle lithosphere that where T<1250 cel
 
 ```julia
 lith_cont = LithosphericPhases(Layers=[30 200 50], Phases=[3 4 2], Tlab=1250)
-AddBox!(Phases, Temp, Grid; xlim=(400,1000), ylim=(-1000, 0.0), zlim=(-240.0, 0.0), phase = lith_cont, T=HalfspaceCoolingTemp(Age=150));
-AddBox!(Phases, Temp, Grid; xlim=(200,1000), ylim=(-1000, 0.0), zlim=(-80.0, 0.0), phase = lith_cont,  T=HalfspaceCoolingTemp(Age=150));
+addBox!(Phases, Temp, Grid; xlim=(400,1000), ylim=(-1000, 0.0), zlim=(-240.0, 0.0), phase = lith_cont, T=HalfspaceCoolingTemp(Age=150));
+addBox!(Phases, Temp, Grid; xlim=(200,1000), ylim=(-1000, 0.0), zlim=(-80.0, 0.0), phase = lith_cont,  T=HalfspaceCoolingTemp(Age=150));
 
 lith_cont = LithosphericPhases(Layers=[30 200 10], Phases=[5 6 2], Tlab=1250)
-AddBox!(Phases, Temp, Grid; xlim=(400,1000), ylim=(0, 1000),    zlim=(-240.0, 0.0), phase = lith_cont, T=HalfspaceCoolingTemp(Age=200));
-AddBox!(Phases, Temp, Grid; xlim=(200,1000), ylim=(0, 1000),    zlim=( -80.0, 0.0), phase = lith_cont, T=HalfspaceCoolingTemp(Age=200));
+addBox!(Phases, Temp, Grid; xlim=(400,1000), ylim=(0, 1000),    zlim=(-240.0, 0.0), phase = lith_cont, T=HalfspaceCoolingTemp(Age=200));
+addBox!(Phases, Temp, Grid; xlim=(200,1000), ylim=(0, 1000),    zlim=( -80.0, 0.0), phase = lith_cont, T=HalfspaceCoolingTemp(Age=200));
 ```
 
 Define an oceanic plate with ridge
@@ -117,14 +117,14 @@ Define an oceanic plate with ridge
 ```julia
 v_spread_cm_yr = 3      #spreading velocity
 lith = LithosphericPhases(Layers=[15 45 10], Phases=[0 1 2], Tlab=1250)
-AddBox!(Phases, Temp, Grid; xlim=(-800 , 200), ylim=(-1000, -400.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
-AddBox!(Phases, Temp, Grid; xlim=(-1000,-800), ylim=(-1000, -400.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3,MORside="right"));
+addBox!(Phases, Temp, Grid; xlim=(-800 , 200), ylim=(-1000, -400.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
+addBox!(Phases, Temp, Grid; xlim=(-1000,-800), ylim=(-1000, -400.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3,MORside="right"));
 
-AddBox!(Phases, Temp, Grid; xlim=(-700,  200), ylim=(-400, 200.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
-AddBox!(Phases, Temp, Grid; xlim=(-1000,-700), ylim=(-400, 200.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3,MORside="right"));
+addBox!(Phases, Temp, Grid; xlim=(-700,  200), ylim=(-400, 200.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
+addBox!(Phases, Temp, Grid; xlim=(-1000,-700), ylim=(-400, 200.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3,MORside="right"));
 
-AddBox!(Phases, Temp, Grid; xlim=(-650,  200), ylim=(200, 1000.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
-AddBox!(Phases, Temp, Grid; xlim=(-1000,-650), ylim=(200, 1000.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3,MORside="right"));
+addBox!(Phases, Temp, Grid; xlim=(-650,  200), ylim=(200, 1000.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
+addBox!(Phases, Temp, Grid; xlim=(-1000,-650), ylim=(200, 1000.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3,MORside="right"));
 ```
 
 Subducting parts of the oceanic plate
@@ -163,7 +163,7 @@ Finally, we can add all this to the `CartData` dataset:
 
 ```julia
 Grid = addField(Grid,(;Phases, Temp))
-Write_Paraview(Grid,"Grid3D_Ridges");
+write_Paraview(Grid,"Grid3D_Ridges");
 ```
 
 ````

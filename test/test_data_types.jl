@@ -100,13 +100,13 @@ Data_cart2      = convert(ParaviewData,Data_set2)
 @test Data_cart2.z[2,2] ≈ 3240.141612908441
 
 # Test projection points (used for map projections)
-p1 = ProjectionPoint();
+p1 = projectionPoint();
 @test  p1.Lat==49.9929
 @test  p1.Lon==8.2473
 @test  p1.EW ≈ 446048.5158750616
 @test  p1.NS ≈ 5.53811274482716e6
 
-p2 = ProjectionPoint(p1.EW,p1.NS,p1.zone,p1.isnorth)
+p2 = projectionPoint(p1.EW,p1.NS,p1.zone,p1.isnorth)
 @test p1.EW-p2.EW + p1.NS-p2.NS + p1.zone-p2.zone == 0.0
 
 # Create UTM Data structure
@@ -135,12 +135,12 @@ Data_set2 = convert(UTMData, Data_set1)
 @test sum(abs.(Data_set2.EW.val-Data_set.EW.val)) < 1e-5 
 
 # Test Projection point for negative values
-proj = ProjectionPoint(Lat= -2.8, Lon=36)
+proj = projectionPoint(Lat= -2.8, Lon=36)
 @test proj.zone == 37
 @test proj.isnorth == false
 
 # Convert from GeoData -> UTMData, but for a fixed zone (used for map projection)
-proj = ProjectionPoint(Lat= 40.77470011887963, Lon=14.099668158564413)
+proj = projectionPoint(Lat= 40.77470011887963, Lon=14.099668158564413)
 Data_set3 = convert2UTMzone(Data_set1, proj)
 @test Data_set3.EW.val[100] ≈  432022.99999999994   
 

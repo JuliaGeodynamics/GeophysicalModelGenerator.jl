@@ -17,7 +17,7 @@ using GeophysicalModelGenerator
 nx,nz = 512,128
 x = range(-1000,1000, nx);
 z = range(-660,0,    nz);
-Grid2D = CartData(XYZGrid(x,0,z))
+Grid2D = CartData(xyzGrid(x,0,z))
 
 # Now we create an integer array that will hold the `Phases` information (which usually refers to the material or rock type in the simulation)
 Phases = zeros(Int64, nx, 1, nz);
@@ -28,16 +28,16 @@ Temp = fill(1350.0, nx, 1, nz);
 # #### Mechanical setup
 
 # We will start with a simple subduction setup, which consists of a horizontal part:
-AddBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = ConstantPhase(1));
+addBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = ConstantPhase(1));
 
 # And with the inclined part:
-AddBox!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = ConstantPhase(1), DipAngle=30);
+addBox!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = ConstantPhase(1), DipAngle=30);
 
 # Add them to the `CartData` dataset:
 Grid2D = addField(Grid2D,(;Phases, Temp))
 
 # Which looks like
-Write_Paraview(Grid2D,"Grid2D_SubductionMechanical");
+write_Paraview(Grid2D,"Grid2D_SubductionMechanical");
 # ![Mechanical2D_Tutorial_1](../assets/img/Mechanical2D_Tutorial_1.png) 
 
 # #### Add lithospheric layers
@@ -46,24 +46,24 @@ Write_Paraview(Grid2D,"Grid2D_SubductionMechanical");
 lith = LithosphericPhases(Layers=[15 55], Phases=[1 2])
 
 # and set the slab again:
-AddBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = lith);
-AddBox!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = lith, DipAngle=30);
+addBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = lith);
+addBox!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = lith, DipAngle=30);
 
 # Which looks like:
 Grid2D = addField(Grid2D,(;Phases, Temp))
-Write_Paraview(Grid2D,"Grid2D_SubductionMechanicalLayered");
+write_Paraview(Grid2D,"Grid2D_SubductionMechanicalLayered");
 # ![Mechanical2D_Tutorial_2](../assets/img/Mechanical2D_Tutorial_2.png) 
 
 # #### Add halfspace cooling thermal structure
 # So far, we only created the mechanical structure but not the thermal one.
 # We can do that by specifying a thermal structure. For example, we can use the half-space cooling model:
 therm = HalfspaceCoolingTemp(Age=40)
-AddBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = lith, T=therm);
-AddBox!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = lith, T = therm, DipAngle=30);
+addBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = lith, T=therm);
+addBox!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = lith, T = therm, DipAngle=30);
 
 # Which looks like:
 Grid2D = addField(Grid2D,(;Phases, Temp))
-Write_Paraview(Grid2D,"Grid2D_SubductionHalfspaceCooling");
+write_Paraview(Grid2D,"Grid2D_SubductionHalfspaceCooling");
 # ![Mechanical2D_Tutorial_3](../assets/img/Mechanical2D_Tutorial_3.png) 
 
 # Note that you can specify other 1D thermal profiles, such as 
@@ -81,52 +81,52 @@ Write_Paraview(Grid2D,"Grid2D_SubductionHalfspaceCooling");
 # Let's specify an oceanic thermal profile with a mid oceanic ridge at the left. For this, we use the `SpreadingRateTemp` function, and specify 
 # a spreading velocity (note that this simply relates to the thermal structure and does not have to be the same as the subduction velocity you obtain in your geodynamic simulation).
 lith = LithosphericPhases(Layers=[15 55], Phases=[1 2], Tlab=1250)
-AddBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
+addBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
 
 # For the subduction we use a thermal structure of a slab heated by hot asthenosphere 
-AddBox!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = lith, T = McKenzie_subducting_slab(Tsurface=0,v_cm_yr=3), DipAngle=30);
+addBox!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = lith, T = McKenzie_subducting_slab(Tsurface=0,v_cm_yr=3), DipAngle=30);
 
 # We can set the mantle lithosphere that is hotter > 1250 C to mantle:
 ind = findall(Temp .> 1250 .&& Phases .==2);
 Phases[ind] .= 0;
 
 Grid2D = addField(Grid2D,(;Phases, Temp))
-Write_Paraview(Grid2D,"Grid2D_SubductionRidge");
+write_Paraview(Grid2D,"Grid2D_SubductionRidge");
 # ![Mechanical2D_Tutorial_4](../assets/img/Mechanical2D_Tutorial_4.png) 
 
 # #### Overriding slab and weak layer 
 # Ok, lets add an overriding slab as well. For this, we use the `AddLayer!` function
 lith = LithosphericPhases(Layers=[15 20 55], Phases=[3 4 5], Tlab=1250)
-AddBox!(Phases, Temp, Grid2D; xlim=(0,1000), zlim=(-80.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
+addBox!(Phases, Temp, Grid2D; xlim=(0,1000), zlim=(-80.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
 
 # The oceanic plate is as before
 lith = LithosphericPhases(Layers=[15 55], Phases=[1 2], Tlab=1250)
-AddBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
+addBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
 
 # For the inclined part, we set a layer above the slab (the "weak" layer to facilitate subduction initiation )
 lith = LithosphericPhases(Layers=[10 15 55], Phases=[6 1 2], Tlab=1250)
-AddBox!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 10.0), phase = lith, T = McKenzie_subducting_slab(Tsurface=0,v_cm_yr=3), DipAngle=30);
+addBox!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 10.0), phase = lith, T = McKenzie_subducting_slab(Tsurface=0,v_cm_yr=3), DipAngle=30);
 
 # Lithosphere-asthenosphere boundary:
 ind = findall(Temp .> 1250 .&& Phases .==2);
 Phases[ind] .= 0;
 
 Grid2D = addField(Grid2D,(;Phases, Temp))
-Write_Paraview(Grid2D,"Grid2D_SubductionOverriding");
+write_Paraview(Grid2D,"Grid2D_SubductionOverriding");
 # ![Mechanical2D_Tutorial_5](../assets/img/Mechanical2D_Tutorial_5.png) 
 
 
 # #### Curved slab - mechanics
-# So far, the subducting part of the slab was always straight. We can also create a curved slab by using the `AddSlab!` function. This uses a parametric representation of the slab and is a bit more involved than the `AddBox!` function.
+# So far, the subducting part of the slab was always straight. We can also create a curved slab by using the `addSlab!` function. This uses a parametric representation of the slab and is a bit more involved than the `addBox!` function.
 
 # We start with the horizontal part:
 nx,nz = 512,128
 x = range(-1000,1000, nx);
 z = range(-660,0,    nz);
-Grid2D = CartData(XYZGrid(x,0,z))
+Grid2D = CartData(xyzGrid(x,0,z))
 Phases = zeros(Int64, nx, 1, nz);
 Temp = fill(1350.0, nx, 1, nz);
-AddBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = ConstantPhase(1));    
+addBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = ConstantPhase(1));    
 
 # Next, we should define a `Trench` structure, which contains info about the trench which goes in 3D from `Start` - `End` coordinates (`x`,`y`)-coordinates respectively. As we are dealing with a 2D model, we set the `y`-coordinates to -100.0 and 100.0 respectively.
 # Other parameters to be specified are `Thickness` (Slab thickness), `θ_max` (maximum slab dip angle), `Length` (length of slab), and `Lb` length of bending zoneof slab
@@ -136,7 +136,7 @@ addSlab!(Phases, Temp, Grid2D, trench, phase = ConstantPhase(1));
 
 # Add them to the `CartData` dataset:
 Grid2D = addField(Grid2D,(;Phases, Temp))
-Write_Paraview(Grid2D,"Grid2D_SubductionCurvedMechanical");
+write_Paraview(Grid2D,"Grid2D_SubductionCurvedMechanical");
 # ![Mechanical2D_Tutorial_6](../assets/img/Mechanical2D_Tutorial_6.png) 
 
 
@@ -148,19 +148,19 @@ Write_Paraview(Grid2D,"Grid2D_SubductionCurvedMechanical");
 nx,nz = 512,128
 x = range(-1000,1000, nx);
 z = range(-660,0,    nz);
-Grid2D = CartData(XYZGrid(x,0,z))
+Grid2D = CartData(xyzGrid(x,0,z))
 Phases = zeros(Int64, nx, 1, nz);
 Temp = fill(1350.0, nx, 1, nz);
 lith = LithosphericPhases(Layers=[15 20 55], Phases=[3 4 5], Tlab=1250)
 
 # Lets start with defining the horizontal part of the overriding plate. Note that we define this twice with different thickness to deal with the bending subduction area:
-AddBox!(Phases, Temp, Grid2D; xlim=(200,1000), zlim=(-150.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
-AddBox!(Phases, Temp, Grid2D; xlim=(0,200), zlim=(-50.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
+addBox!(Phases, Temp, Grid2D; xlim=(200,1000), zlim=(-150.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
+addBox!(Phases, Temp, Grid2D; xlim=(0,200), zlim=(-50.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
 
 # The horizontal part of the oceanic plate is as before:
 v_spread_cm_yr = 3      #spreading velocity
 lith = LithosphericPhases(Layers=[15 55], Phases=[1 2], Tlab=1250)
-AddBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-150.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=v_spread_cm_yr));
+addBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-150.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=v_spread_cm_yr));
 
 # Yet, now we add a trench as well. The starting thermal age at the trench is that of the horizontal part of the oceanic plate:
 AgeTrench_Myrs = 800e3/(v_spread_cm_yr/1e2)/1e6    #plate age @ trench
@@ -178,7 +178,7 @@ ind = findall(Temp .> 1250 .&& (Phases.==2 .|| Phases.==5));
 Phases[ind] .= 0;
 
 Grid2D = addField(Grid2D,(;Phases, Temp))
-Write_Paraview(Grid2D,"Grid2D_SubductionCurvedOverriding");
+write_Paraview(Grid2D,"Grid2D_SubductionCurvedOverriding");
 # The result is a smooth transition in thermal structure around the subduction zone:
 # ![Mechanical2D_Tutorial_7](../assets/img/Mechanical2D_Tutorial_7.png) 
 

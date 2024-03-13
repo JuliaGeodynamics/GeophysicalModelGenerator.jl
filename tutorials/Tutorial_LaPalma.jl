@@ -41,7 +41,7 @@ write_Paraview(Topo,"Topo")
 # ## 2. Convert data to cartesian coordinates 
 # In order to create model setups, it is helpful to first transfer the data to Cartesian.
 # This requires us to first determine a *projection point*, that is fixed. Often, it is helpful to use the center of the topography for this. In the present example, we will center the model around La Palma itself:
-proj = ProjectionPoint(Lon=-17.84, Lat=28.56)
+proj = projectionPoint(Lon=-17.84, Lat=28.56)
 
 # Once this is done you can convert the topographic data to the cartesian reference frame
 EQ_cart   = convert2CartData(data_all_EQ, proj);

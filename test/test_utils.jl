@@ -14,7 +14,7 @@ Data_set2D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data1,LonData1=Lon, Velocit
 x = 11:19
 y = 31:39
 plane1 = interpolateDataFields2D(Data_set2D, x, y)
-proj   = ProjectionPoint()
+proj   = projectionPoint()
 plane2 = interpolateDataFields2D(Data_set2D, proj, x, y)
 
 @test plane1 == plane2

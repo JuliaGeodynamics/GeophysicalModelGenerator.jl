@@ -357,7 +357,7 @@ function crossSectionPoints(P::GeoData; Depth_level=nothing, Lat_level=nothing, 
 
     if !isnothing(Lat_level)   # vertical slice @ given latitude
 
-        p_Point = ProjectionPoint(Lat=Lat_level,Lon=sum(P.lon.val)/length(P.lon.val)) # define the projection point (lat/lon) as the latitude and the mean of the longitudes of the data
+        p_Point = projectionPoint(Lat=Lat_level,Lon=sum(P.lon.val)/length(P.lon.val)) # define the projection point (lat/lon) as the latitude and the mean of the longitudes of the data
         P_UTM   = convert2UTMzone(P, p_Point) # convert to UTM
         ind     = findall(-0.5*ustrip(uconvert(u"m",section_width)) .< (P_UTM.NS.val .- p_Point.NS) .< 0.5*ustrip(uconvert(u"m",section_width))) # find all points around the desired latitude level, UTM is in m, so we have to convert the section width
 
@@ -373,7 +373,7 @@ function crossSectionPoints(P::GeoData; Depth_level=nothing, Lat_level=nothing, 
     end
 
     if !isnothing(Lon_level)   # vertical slice @ given longitude
-        p_Point = ProjectionPoint(Lat=sum(P.lat.val)/length(P.lat.val),Lon=Lon_level) # define the projection point (lat/lon) as the latitude and the mean of the longitudes of the data
+        p_Point = projectionPoint(Lat=sum(P.lat.val)/length(P.lat.val),Lon=Lon_level) # define the projection point (lat/lon) as the latitude and the mean of the longitudes of the data
         P_UTM   = convert2UTMzone(P,p_Point) # convert to UTM
         ind     = findall(-0.5*ustrip(uconvert(u"m",section_width)) .< (P_UTM.EW.val .- p_Point.EW) .< 0.5*ustrip(uconvert(u"m",section_width))) # find all points around the desired longitude level, UTM is in m, so we have to convert the section width
 
@@ -397,7 +397,7 @@ function crossSectionPoints(P::GeoData; Depth_level=nothing, Lat_level=nothing, 
         end
 
         # choose projection point based on Start and End coordinates of the profile
-        p_Point = ProjectionPoint(Lat=0.5*(Start[2]+End[2]),Lon=0.5*(Start[1]+End[1]))
+        p_Point = projectionPoint(Lat=0.5*(Start[2]+End[2]),Lon=0.5*(Start[1]+End[1]))
 
         # convert P to UTM Data
         P_UTM = convert2UTMzone(P, p_Point) # convert to UTM
@@ -1195,11 +1195,11 @@ Returns the 2D array `Surf_interp`.
 """
 function interpolateDataFields2D(V::GeoData, x::AbstractRange, y::AbstractRange;  Lat=49.9929, Lon=8.2473)
     # Default: Lat=49.9929, Lon=8.2473 => Mainz (center of universe)
-    proj = ProjectionPoint(; Lat = Lat, Lon = Lon)
+    proj = projectionPoint(; Lat = Lat, Lon = Lon)
     return interpolateDataFields2D(V::GeoData, proj, x, y)
 end
 
-function interpolateDataFields2D(LonLat::GeoData, proj::ProjectionPoint, x::AbstractRange, y::AbstractRange)
+function interpolateDataFields2D(LonLat::GeoData, proj::projectionPoint, x::AbstractRange, y::AbstractRange)
     cart_grid = CartData(xyzGrid(x, y, 0))
     tproj = projectCartData(cart_grid, LonLat, proj)
     return tproj.z.val[:, :, 1]
