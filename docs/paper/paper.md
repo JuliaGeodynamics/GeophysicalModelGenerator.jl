@@ -44,9 +44,9 @@ authors:
   - name: Arne Spang
     orcid: 0000-0002-6107-0403
     affiliation: 2
-#  - name: Tatjana Weiler
-#    #orcid: 0000-0002-6107-0403
-#    affiliation: 2
+  - name: Tatjana Weiler
+    #orcid: 0000-0002-6107-0403
+    affiliation: 2
 
 affiliations:
  - name: Johannes Gutenberg University Mainz, Germany
@@ -60,7 +60,7 @@ affiliations:
  - name: Goethe University Frankfurt, Germany
    index: 5
 
-date: 11 March 2024
+date: 13 March 2024
 bibliography: paper.bib
 ---
 
@@ -199,11 +199,11 @@ In `Tutorial_Jura.jl` users learn how to drape the geological map over the topog
 
 
 ### Slab model setup 
-In `Tutorial_NumericalModel_3D.jl`, users learn how to generate a 3D geodynamic model setup with subducting slabs, a mid oceanic ridge and an overriding plate. The thermal structure of the subducting part of the slab is based on an analytical solution that takes heating from the surrounding, hot, mantle into account, whereas the thermal structure of the oceanic slab increases away from the ridge. 
+In `Tutorial_NumericalModel_3D.jl`, users learn how to generate a 3D geodynamic model setup with subducting slabs, a mid oceanic ridge and an overriding cratonic lithosphere. The thermal structure of the oceanic slab increases away from the ridge until the trench following a halfspace cooling analytical solution, whereas the thermal structure of the subducted part of the slab is based on an analytical solution that takes heating from the surrounding, hot, mantle into account. Between the mantle and the trench the slab uses a mixture between these two thernmal models, and a weak-zone is added above the slab (to facilitate subduction in numerical models). A grid-like pattern is put on top of the oceanic slab to simplify tracking deformation throughout the simulation (\autoref{fig:slab3d}).
 
+![Example of creating geodynamic model setup of a subducting oceanic plate beneath a continental lithosphere with a smoothly bending slab \label{fig:slab3d}](../src/assets/img/Mechanical3D_Tutorial_2.png){ width=100% }
 
 # Acknowledgements
-
 We acknowledge funding from ERC Consolidator Grant 771143 (MAGMA), by the German Ministry of Science and Education (BMBF) as part of project DEGREE, by the CHEESE-2p Center of Excellence (co-funded by both EuroHPC-JU and the BMBF), by the German Research Foundation (DFG grants TH2076/7-1 and KA3367/10-1) as  part of the SPP 2017 4DMB project project, and by DFG Emmy Noether grant TH2076/8-1.
 
 # References
