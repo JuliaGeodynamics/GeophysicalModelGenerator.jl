@@ -26,7 +26,7 @@ struct ProjectionPoint
     Lon     :: Float64
     EW      :: Float64
     NS      :: Float64
-    zone    :: Integer
+    zone    :: Int64
     isnorth :: Bool
 end
 
