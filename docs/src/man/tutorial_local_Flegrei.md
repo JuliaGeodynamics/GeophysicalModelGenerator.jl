@@ -123,7 +123,7 @@ Also, nodes are irregular, hence we create a 3D regular UTM:
         l                = length(WE);
         n_WE             = minimum(WE):100:maximum(WE);
         n_SN             = minimum(SN):100:maximum(SN);
-        we, sn, Depth    = XYZGrid(n_WE, n_SN, depth[1]);
+        we, sn, Depth    = xyzGrid(n_WE, n_SN, depth[1]);
         Vs_3D            = zeros(size(Depth));
         Cgrid            = GeoStats.CartesianGrid((size(we, 1), size(we, 2)), (minimum(we), minimum(sn)), (we[2,2,1] - we[1,1,1], sn[2,2,1] - sn[1,1,1]))
         coord            = PointSet([WE[:]'; SN[:]']);

@@ -4,7 +4,7 @@ using Test
 using GeophysicalModelGenerator
 
 # should throw an error with a 2D dataset
-Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,-50km);
+Lon,Lat,Depth   =   lonlatdepthGrid(10:20,30:40,-50km);
 Data1           =   Depth*2;                # some data
 Vx1,Vy1,Vz1     =   Data1*3,Data1*4,Data1*5
 Data_set2D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data1,LonData1=Lon, Velocity=(Vx1,Vy1,Vz1)))  
@@ -21,7 +21,7 @@ plane2 = InterpolateDataFields2D(Data_set2D, proj, x, y)
 @test all(==(-50e0), plane1)
 
 # Create 3D volume with some fake data
-Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
+Lon,Lat,Depth   =   lonlatdepthGrid(10:20,30:40,(-300:25:0)km);
 Data            =   Depth*2;                # some data
 Vx,Vy,Vz        =   ustrip(Data*3)*km/s,ustrip(Data*4)*km/s,ustrip(Data*5)*km/s;
 Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)))  
@@ -30,7 +30,7 @@ Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=
 Data_setCart3D  =   CartData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)))  
 
 # Create 3D volume with some fake data
-Lon,Lat,Depth           =   LonLatDepthGrid(10:20,30:40,(0:-25:-300)km);
+Lon,Lat,Depth           =   lonlatdepthGrid(10:20,30:40,(0:-25:-300)km);
 Data                    =   Depth*2;                # some data
 Vx,Vy,Vz                =   ustrip(Data*3)*km/s,ustrip(Data*4)*km/s,ustrip(Data*5)*km/s;
 Data_set3D_reverse      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)))  
@@ -89,8 +89,8 @@ test_cross      =   CrossSection(Data_setCart3D, Lon_level=15, dims=(50,100), In
 # Flatten diagonal 3D CrossSection with CartData
 
 # Create 3D volume with some fake data
-Grid            = CreateCartGrid(size=(100,100,100), x=(0.0km, 99.9km), y=(-10.0km, 20.0km), z=(-40km,4km));
-X,Y,Z           = XYZGrid(Grid.coord1D...);
+Grid            = createCartGrid(size=(100,100,100), x=(0.0km, 99.9km), y=(-10.0km, 20.0km), z=(-40km,4km));
+X,Y,Z           = xyzGrid(Grid.coord1D...);
 DataSet_Cart    = CartData(X,Y,Z,(Depthdata=Z,))
 
 test_cross_cart  = CrossSection(DataSet_Cart, dims=(100,100), Interpolate=true, Start=(ustrip(Grid.min[1]),ustrip(Grid.max[2])), End=(ustrip(Grid.max[1]), ustrip(Grid.min[2])))
@@ -101,7 +101,7 @@ flatten_cross   = FlattenCrossSection(test_cross_cart)
 @test test_cross_cart.fields.FlatCrossSection[2][30] == flatten_cross[2][30] # should be added by default
 
 # Flatten 3D CrossSection with GeoData
-Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
+Lon,Lat,Depth   =   lonlatdepthGrid(10:20,30:40,(-300:25:0)km);
 Data            =   Depth*2;                # some data
 Data_set        =   GeoData(Lon,Lat,Depth,(Depthdata=Data,));
 Data_cross      =   CrossSection(Data_set, Start=(10,39),End=(10,40))
@@ -162,7 +162,7 @@ Data_set2D  =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon,Pertdata=Data_
 
 
 # Create surface ("Moho")
-Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,-40km);
+Lon,Lat,Depth   =   lonlatdepthGrid(10:20,30:40,-40km);
 Depth           =   Depth + Lon*km;     # some fake topography on Moho
 Data_Moho       =   GeoData(Lon,Lat,Depth,(MohoDepth=Depth,LonData=Lon,TestData=(Depth,Depth,Depth)))  
 
@@ -207,7 +207,7 @@ Data_VoteMap = VoteMap([Data_set3D_reverse, Data_set3D], ["Depthdata<-560","LonD
 @test Data_VoteMap.fields[:VoteMap][9 ,9,2]==0
 
 # Test rotation routines
-X,Y,Z   =   LonLatDepthGrid(10:20,30:40,-50:-10);
+X,Y,Z   =   lonlatdepthGrid(10:20,30:40,-50:-10);
 Data_C  =   ParaviewData(X,Y,Z,(Depth=Z,))
 Data_C1 =   RotateTranslateScale(Data_C, Rotate=30);
 @test Data_C1.x.val[10] ≈ 1.4544826719043336
@@ -220,7 +220,7 @@ Data_C1 = RotateTranslateScale(Data_C, Scale=10, Rotate=10, Translate=(1,2,3));
 @test Data_C1.z.val[20] == -497.0
 
 # create point data set (e.g. Earthquakes)
-Lon,Lat,Depth   =   LonLatDepthGrid(15:0.05:17,35:0.05:37,280km);
+Lon,Lat,Depth   =   lonlatdepthGrid(15:0.05:17,35:0.05:37,280km);
 Depth           =   Depth - 20*Lon*km;     # some variation in depth
 Magnitude       = rand(size(Depth,1),size(Depth,2),size(Depth,3))*6; # some magnitude
 TestVecField    = (Magnitude[:],Magnitude[:],Magnitude[:])

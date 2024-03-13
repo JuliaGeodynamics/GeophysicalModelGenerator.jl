@@ -15,8 +15,8 @@ InterpolateTopographyOnPlane
 ParseColumns_CSV_File
 RotateTranslateScale!
 pointData2NearestGrid
-Convert2UTMzone
-Convert2CartData
+convert2UTMzone
+convert2CartData
 projectCartData
 drape_on_topo
 LithostaticPressure!

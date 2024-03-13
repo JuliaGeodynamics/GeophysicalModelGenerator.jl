@@ -126,10 +126,10 @@ units = unique(tag) #get different units
 We will use these units later to save the Moho data separately for each tectonic unit.
 
 ### 2.2 Converting the data to a `GMG` dataset
-To convert this data to a `GMG` dataset, we now have to interpolate it to a regular grid. You can generate the respective grid with the `GMG` function `LonLatDepthGrid`
+To convert this data to a `GMG` dataset, we now have to interpolate it to a regular grid. You can generate the respective grid with the `GMG` function `lonlatdepthGrid`
 
 ```julia
-Lon,Lat,Depth = LonLatDepthGrid(9.9:0.02:15.1,45.0:.02:49.0,0km);
+Lon,Lat,Depth = lonlatdepthGrid(9.9:0.02:15.1,45.0:.02:49.0,0km);
 nothing #hide
 ```
 

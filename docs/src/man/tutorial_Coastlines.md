@@ -20,7 +20,7 @@ The parameter resolution should be either `c`,`l`,`i`,`h` or `f` (standing for c
 
 ##### 1.2 Save in Paraview
 ```julia
-julia> Lon,Lat,Depth    =   LonLatDepthGrid(lon[ind_lon],lat[ind_lat],0km);
+julia> Lon,Lat,Depth    =   lonlatdepthGrid(lon[ind_lon],lat[ind_lat],0km);
 julia> data_surf        =   zeros(size(Lon));
 julia> data_surf[:,:,1] =   data[ind_lon,ind_lat]
 julia> data_surface     =   GeoData(Lon, Lat, Depth, (SurfaceType=data_surf,))

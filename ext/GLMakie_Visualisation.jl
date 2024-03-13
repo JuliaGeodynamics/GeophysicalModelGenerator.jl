@@ -2,7 +2,7 @@ module GLMakie_Visualisation
 # This contains visualisation widgets which are optionally made available when GLMakie is loaded along with GMG
 
 using Statistics
-using GeophysicalModelGenerator: LonLatDepthGrid, GeoData, CartData, km, AbstractGeneralGrid
+using GeophysicalModelGenerator: lonlatdepthGrid, GeoData, CartData, km, AbstractGeneralGrid
 import GeophysicalModelGenerator: visualise
 
 # We do not check `isdefined(Base, :get_extension)` as recommended since

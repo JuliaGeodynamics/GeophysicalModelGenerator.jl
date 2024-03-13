@@ -47,7 +47,7 @@ ProjectionPoint(37.5, 17.3, 703311.4380385976, 4.152826288024972e6, 33, true)
 
 Projecting the `GeoData` set using this projection point is done with:
 ```julia
-julia> Convert2UTMzone(Topo,p)
+julia> convert2UTMzone(Topo,p)
 UTMData 
   UTM zone : 33-33 North
     size   : (165, 75, 1)
@@ -61,7 +61,7 @@ Whereas this is now in UTM Data (in meters), it is distorted.
 
 Often it is more convenient to have this in `CartData`, which is done in a similar manner:
 ```julia
-julia> Topo_Cart = Convert2CartData(Topo,p)
+julia> Topo_Cart = convert2CartData(Topo,p)
 CartData 
     size   : (165, 75, 1)
     x      ϵ [ -2778.3805979523936 km : 2878.039855346856 km]
@@ -77,7 +77,7 @@ Whereas this is ok to look at and compare with a LaMEM model setup, we cannot us
 #### 2. Projecting data
 For use with LaMEM, you would need an orthogonal cartesian grid. From the last command above we get some idea on the area, so we can create this:
 ```julia
-julia> Topo_Cart_orth  = CartData(XYZGrid(-2000:20:2000,-1000:20:1000,0))
+julia> Topo_Cart_orth  = CartData(xyzGrid(-2000:20:2000,-1000:20:1000,0))
 CartData 
     size   : (201, 101, 1)
     x      ϵ [ -2000.0 km : 2000.0 km]
@@ -104,7 +104,7 @@ You can do similar projections with full 3D data sets or pointwise data.
 #### 3. List of relevant functions
 
 ```@docs
-GeophysicalModelGenerator.Convert2CartData
+GeophysicalModelGenerator.convert2CartData
 GeophysicalModelGenerator.projectCartData
-GeophysicalModelGenerator.Convert2UTMzone
+GeophysicalModelGenerator.convert2UTMzone
 ```

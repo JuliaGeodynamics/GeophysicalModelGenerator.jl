@@ -107,7 +107,7 @@ Note that we multiplied depth with -1. This is necessary to make depth to be neg
 In the netCDF file, coordinates are given as 1D vectors denoting the location of nodes in a regular grid. However, `GeophysicalModelGenerator.jl` expects true 3D data, where each data point is assigned a latitude,longitude, depth and the respective property (here: `Vs`). To generate this full regular 3D grid, do the following:
 ```julia
 julia> using GeophysicalModelGenerator
-Lon3D,Lat3D,Depth3D = LonLatDepthGrid(lon, lat, depth);
+Lon3D,Lat3D,Depth3D = lonlatdepthGrid(lon, lat, depth);
 ```
 #### 4. Generate Paraview file
 Once the 3D coordinate matrix has been generated, producing a Paraview file is done with the following command

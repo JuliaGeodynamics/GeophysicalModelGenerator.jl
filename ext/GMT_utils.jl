@@ -12,7 +12,7 @@ else
   using ..GMT
 end
 
-using GeophysicalModelGenerator: LonLatDepthGrid, GeoData, UTMData, km, remove_NaN_Surface!
+using GeophysicalModelGenerator: lonlatdepthGrid, GeoData, UTMData, km, remove_NaN_Surface!
 
 println("Loading GMT routines within GMG")
 
@@ -94,7 +94,7 @@ function importTopo(limits; file::String="@earth_relief_01m.grd", maxattempts=5)
 
     # Transfer to GeoData
     nx,ny           =   size(G.z,2), size(G.z,1)
-    Lon,Lat,Depth   =   LonLatDepthGrid(G.x[1:nx],G.y[1:ny],0);
+    Lon,Lat,Depth   =   lonlatdepthGrid(G.x[1:nx],G.y[1:ny],0);
     Depth[:,:,1]    =   1e-3*G.z';
     Topo            =   GeoData(Lon, Lat, Depth, (Topography=Depth*km,))
     
@@ -141,7 +141,7 @@ function importGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=tr
 
   # Transfer to GeoData
   nx,ny = length(G.x)-1, length(G.y)-1
-  Lon,Lat,Depth   =   LonLatDepthGrid(G.x[1:nx],G.y[1:ny],0);
+  Lon,Lat,Depth   =   lonlatdepthGrid(G.x[1:nx],G.y[1:ny],0);
   if  hasfield(typeof(G),:z) 
     Depth[:,:,1]    =   G.z';
     if negative

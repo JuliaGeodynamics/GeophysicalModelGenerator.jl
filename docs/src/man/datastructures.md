@@ -9,7 +9,7 @@ GeoData
 CartData
 UTMData
 ParaviewData
-LonLatDepthGrid
-XYZGrid
+lonlatdepthGrid
+xyzGrid
 ProjectionPoint
 ```

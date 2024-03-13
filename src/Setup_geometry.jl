@@ -1679,7 +1679,7 @@ Example 1) Slab
 julia> x     = LinRange(0.0,1200.0,128);
 julia> y     = LinRange(0.0,1200.0,128);
 julia> z     = LinRange(-660,50,128);
-julia> Cart  = CartData(XYZGrid(x, y, z));
+julia> Cart  = CartData(xyzGrid(x, y, z));
 julia> Phase = ones(Int64,size(Cart));
 julia> Temp  = fill(1350.0,size(Cart));
 # Define the trench:

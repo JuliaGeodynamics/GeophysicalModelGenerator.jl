@@ -260,7 +260,7 @@ function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperR
     interp_linear_depth     =   linear_interpolation((xs, zs), Corners_depth)     # create interpolation object
 
     # Interpolate
-    X_int,Y_int,Depth       =   XYZGrid(1:grid_size[1],1:grid_size[2],0)
+    X_int,Y_int,Depth       =   xyzGrid(1:grid_size[1],1:grid_size[2],0)
     X                       =   interp_linear_lon.(X_int,   Y_int);
     Y                       =   interp_linear_lat.(X_int,   Y_int);
     Depth                   =   interp_linear_depth.(X_int, Y_int);

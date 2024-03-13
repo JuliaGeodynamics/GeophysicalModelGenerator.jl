@@ -23,7 +23,7 @@ Vs          =   data[:,4];
 
 # Create 3D regular grid:
 Depth_vec       =   unique(depth)
-Lon,Lat,Depth   =   LonLatDepthGrid(-10:0.5:40,32:0.25:50,Depth_vec);
+Lon,Lat,Depth   =   lonlatdepthGrid(-10:0.5:40,32:0.25:50,Depth_vec);
 
 # Employ GeoStats to interpolate irregular data points to a regular grid
 dLon = Lon[2,1,1]-Lon[1,1,1]

@@ -38,8 +38,8 @@ This is an example where we used `GeoData` to visualize results. Alternatively, 
 ```julia
 julia> p=ProjectionPoint(Lon=10, Lat=45)
 ProjectionPoint(45.0, 10.0, 578815.302916711, 4.983436768349297e6, 32, true)
-julia> Data_Cart  = CartData(XYZGrid(-600:10:600,-600:10:600,-1000:10:-1));
-julia> Topo_Cart  = CartData(XYZGrid(-600:10:600,-600:10:600,0));
+julia> Data_Cart  = CartData(xyzGrid(-600:10:600,-600:10:600,-1000:10:-1));
+julia> Topo_Cart  = CartData(xyzGrid(-600:10:600,-600:10:600,0));
 julia> Topo_Cart  = projectCartData(Topo_Cart, Topo, p)
 CartData 
     size    : (121, 121, 1)

@@ -71,8 +71,8 @@ proj = ProjectionPoint(Lon=-17.84, Lat=28.56)
 Once this is done you can convert the topographic data to the cartesian reference frame
 
 ```julia
-EQ_cart   = Convert2CartData(data_all_EQ, proj);
-Topo_cart = Convert2CartData(Topo, proj)
+EQ_cart   = convert2CartData(data_all_EQ, proj);
+Topo_cart = convert2CartData(Topo, proj)
 ```
 
 It is important to realize that the cartesian coordinates of the topographic grid is no longer strictly orthogonal after this conversion. You don't notice that in the current example, as the model domain is rather small.
@@ -80,7 +80,7 @@ In other cases, however, this is quite substantial (e.g., India-Asia collision z
 LaMEM needs an orthogonal grid of topography, which we can create with:
 
 ```julia
-Topo_model = CartData(XYZGrid(-35:.1:30,-15:.2:45,0));
+Topo_model = CartData(xyzGrid(-35:.1:30,-15:.2:45,0));
 nothing #hide
 ```
 
@@ -102,7 +102,7 @@ It is useful to plot the earthquake density in 3D, which indicates where most ac
 For this, we first create a 3D grid of the region:
 
 ```julia
-Grid_3D = CartData(XYZGrid(-35:.3:30,-15:.25:45,-50:.5:5))
+Grid_3D = CartData(xyzGrid(-35:.3:30,-15:.25:45,-50:.5:5))
 ```
 
 Next we check how many earthquakes are around the grid points:

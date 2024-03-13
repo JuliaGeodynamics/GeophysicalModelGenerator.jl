@@ -2,18 +2,18 @@ using Test
 # test various surface routines
 
 # Create surfaces
-cartdata1 = CartData(XYZGrid(1:4,1:5,0))
-cartdata2 = CartData(XYZGrid(1:4,1:5,2))
-cartdata3 = CartData(XYZGrid(1:4,1:5,2:5))
+cartdata1 = CartData(xyzGrid(1:4,1:5,0))
+cartdata2 = CartData(xyzGrid(1:4,1:5,2))
+cartdata3 = CartData(xyzGrid(1:4,1:5,2:5))
 cartdata2 = AddField(cartdata2,"Z2",cartdata2.x.val)
 
 @test is_surface(cartdata1)
 @test is_surface(cartdata2)
 @test is_surface(cartdata3) == false
 
-geodata1 = GeoData(LonLatDepthGrid(1:4,1:5,0))
-geodata2 = GeoData(LonLatDepthGrid(1:4,1:5,2))
-geodata3 = GeoData(LonLatDepthGrid(1:4,1:5,2:5))
+geodata1 = GeoData(lonlatdepthGrid(1:4,1:5,0))
+geodata2 = GeoData(lonlatdepthGrid(1:4,1:5,2))
+geodata3 = GeoData(lonlatdepthGrid(1:4,1:5,2:5))
 
 @test is_surface(geodata1)
 @test is_surface(geodata2)
@@ -43,7 +43,7 @@ remove_NaN_Surface!(Z,NumValue(cartdata5.x), NumValue(cartdata5.y))
 @test any(isnan.(Z))==false
 
 # Test draping values on topography
-X,Y,Z   = XYZGrid(1:.14:4,1:.02:5,0);
+X,Y,Z   = xyzGrid(1:.14:4,1:.02:5,0);
 v       = X.^2 .+ Y.^2;
 values1 = CartData(X,Y,Z, (; v))
 values2 = CartData(X,Y,Z, (; colors=(v,v,v) ))
@@ -70,13 +70,13 @@ cartdata2b = fit_surface_to_points(cartdata2, X[:], Y[:], v[:])
 
 #-------------
 # test aboveSurface with the Grid object
-Grid        =   CreateCartGrid(size=(10,20,30),x=(0.,10), y=(0.,10), z=(-10.,2.))
+Grid        =   createCartGrid(size=(10,20,30),x=(0.,10), y=(0.,10), z=(-10.,2.))
 @test Grid.Δ[2] ≈ 0.5263157894736842
 
 Temp        =   ones(Float64, Grid.N...)*1350;
 Phases      =   zeros(Int32,  Grid.N...);
 
-Topo_cart   =   CartData(XYZGrid(-1:.2:20,-12:.2:13,0));
+Topo_cart   =   CartData(xyzGrid(-1:.2:20,-12:.2:13,0));
 ind         =   aboveSurface(Grid, Topo_cart);
 @test sum(ind[1,1,:]) == 5
 

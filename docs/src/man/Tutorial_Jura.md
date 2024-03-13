@@ -109,7 +109,7 @@ proj = ProjectionPoint(Lon=6, Lat=46.5)
 We can simply transfer the TopoGeology map to Cartesian values with:
 
 ```julia
-Convert2CartData(Topo,proj)
+convert2CartData(Topo,proj)
 ```
 
 ```julia
@@ -127,7 +127,7 @@ It is therefore better to use the `projectCartData` to project the `GeoData` str
 Let's first create this structure by using `x`,`y` coordinates that are slightly within the ranges given above:
 
 ```julia
-TopoGeology_cart = CartData(XYZGrid(range(-70,150,length=3500), range(-105,130,length=2500), 0.0))
+TopoGeology_cart = CartData(xyzGrid(range(-70,150,length=3500), range(-105,130,length=2500), 0.0))
 ```
 
 ```julia
@@ -170,10 +170,10 @@ CartData
 ```
 
 Finally, we can also transfer the cross-section to cartesian coordinates. As this is just for visualization, we will
-use `Convert2CartData` in this case
+use `convert2CartData` in this case
 
 ```julia
-CrossSection_1_cart = Convert2CartData(CrossSection_1,proj)
+CrossSection_1_cart = convert2CartData(CrossSection_1,proj)
 ```
 
 for visualization, it is nice if we can remove the part of the cross-section that is above the topography.
@@ -219,8 +219,8 @@ We create both a surface and a 3D block
 ```julia
 nx, ny, nz = 1024, 1024, 128
 x,y,z = range(-100,180,nx), range(-50,70,ny), range(-8,4,nz)
-ComputationalSurf  =  CartData(XYZGrid(x,y,0))
-ComputationalGrid  =  CartData(XYZGrid(x,y,z))
+ComputationalSurf  =  CartData(xyzGrid(x,y,0))
+ComputationalGrid  =  CartData(xyzGrid(x,y,z))
 ```
 
 Re-interpolate the rotated to the new grid:

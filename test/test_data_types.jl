@@ -47,32 +47,32 @@ Data_cart = convert(ParaviewData,Data_set)
 @test Data_cart.z[3] ≈ 1421.35608984477 
 
 # Create Lon/Lat/Depth and X/Y/Z grids from given numbers or 1D vectors
-Lon,Lat,Depth =  LonLatDepthGrid(10:20,30:40,(-10:-1)km);
-X,Y,Z         =  XYZGrid(10:20,30:40,(-10:-1)km);
+Lon,Lat,Depth =  lonlatdepthGrid(10:20,30:40,(-10:-1)km);
+X,Y,Z         =  xyzGrid(10:20,30:40,(-10:-1)km);
 @test size(Lon)==(11, 11, 10)
 @test Lat[2,2,2]==31.0
 @test size(X)==(11, 11, 10)
 @test Y[2,2,2]==31.0
 
-Lon,Lat,Depth   =  LonLatDepthGrid(10:20,30:40,-50km);
-X,Y,Z           =  XYZGrid(10:20,30:40,-50km);
+Lon,Lat,Depth   =  lonlatdepthGrid(10:20,30:40,-50km);
+X,Y,Z           =  xyzGrid(10:20,30:40,-50km);
 @test Lon[2,2] == 11.0
 @test X[2,2]   == 11.0
 
-Lon,Lat,Depth   =  LonLatDepthGrid(10,30,(-10:-1)km); # 1D line @ given lon/lat
-X,Y,Z           =  XYZGrid(10,30,(-10:-1)km);
+Lon,Lat,Depth   =  lonlatdepthGrid(10,30,(-10:-1)km); # 1D line @ given lon/lat
+X,Y,Z           =  xyzGrid(10,30,(-10:-1)km);
 @test size(Lon)==(1,1,10)
 @test Lat[2]==30.0
 @test size(X)==(1,1,10)
 @test Y[2]==30.0
 
 # throw an error if a 2D array is passed as input
-@test_throws ErrorException LonLatDepthGrid(10:20,30:40,[20 30; 40 50]);
-@test_throws ErrorException XYZGrid(10:20,30:40,[20 30; 40 50]);
+@test_throws ErrorException lonlatdepthGrid(10:20,30:40,[20 30; 40 50]);
+@test_throws ErrorException xyzGrid(10:20,30:40,[20 30; 40 50]);
 
 
 # Create 3D arrays & convert them 
-Lon,Lat,Depth   =  LonLatDepthGrid(10:20,30:40,(-10:-1)km); # 3D grid
+Lon,Lat,Depth   =  lonlatdepthGrid(10:20,30:40,(-10:-1)km); # 3D grid
 Data            =   ustrip(Depth);
 
 Data_set1       =   GeoData(Lon,Lat,Depth,(FakeData=Data,Data2=Data.+1.))  
@@ -85,7 +85,7 @@ Data_set2  =  GeoData(Lat,Lon,Depth,(FakeData=Data,Data2=Data.+1.))
 #@test (test_logger.logs[1].level==Warn && test_logger.logs[1].message=="It appears that the lon array has a wrong ordering")
 
 # Create 2D arrays & convert them 
-Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,-50km);
+Lon,Lat,Depth   =   lonlatdepthGrid(10:20,30:40,-50km);
 Data            =   ustrip(Depth);
 Data_set2       =   GeoData(Lon,Lat,Depth,(FakeData=Data,Data2=Data.+1.))  
 @test Value(Data_set2.depth[2,2])== -50.0km
@@ -113,7 +113,7 @@ p2 = ProjectionPoint(p1.EW,p1.NS,p1.zone,p1.isnorth)
 ew          =   422123.0:100:433623.0
 ns          =   4.514137e6:100:4.523637e6
 depth       =   -5400:250:600
-EW,NS,Depth =   XYZGrid(ew, ns, depth);
+EW,NS,Depth =   xyzGrid(ew, ns, depth);
 Data        =   ustrip.(Depth);
 Data_set    =   UTMData(EW,NS,Depth,33, true, (FakeData=Data,Data2=Data.+1.))  
 
@@ -141,14 +141,14 @@ proj = ProjectionPoint(Lat= -2.8, Lon=36)
 
 # Convert from GeoData -> UTMData, but for a fixed zone (used for map projection)
 proj = ProjectionPoint(Lat= 40.77470011887963, Lon=14.099668158564413)
-Data_set3 = Convert2UTMzone(Data_set1, proj)
+Data_set3 = convert2UTMzone(Data_set1, proj)
 @test Data_set3.EW.val[100] ≈  432022.99999999994   
 
 # Create CartData structure
 x        =   0:2:10
 y        =   -5:5
 z        =   -10:2:2
-X,Y,Z    =   XYZGrid(x, y, z);
+X,Y,Z    =   xyzGrid(x, y, z);
 Data     =   Z
 Data_setC =   CartData(X,Y,Z, (FakeData=Data,Data2=Data.+1.))
 @test sum(abs.(Value(Data_setC.x))) ≈ 2310.0km
@@ -157,16 +157,16 @@ CharDim=GEO_units()
 
 
 # Convert from CartData -> UTMData
-Data_set4 = Convert2UTMzone(Data_setC, proj)
+Data_set4 = convert2UTMzone(Data_setC, proj)
 
 # Convert from  UTMData -> CartData with shifting (useful to create a LaMEM model, for example)
 using Statistics
-Data_set5 = Convert2CartData(Data_set, proj)
+Data_set5 = convert2CartData(Data_set, proj)
 @test  Value(Data_set5.x[22]) == 0.2km
 @test  Value(Data_set5.y[22]) ≈ -9.313225746154785e-13km
 @test  Value(Data_set5.z[22]) == -5.4km
 
 # Convert result back to UTM (convert LaMEM results back to UTM & afterwards to GeoData)
-Data_set6 = Convert2UTMzone(Data_set5, proj)
+Data_set6 = convert2UTMzone(Data_set5, proj)
 @test sum(Data_set.EW.val-Data_set6.EW.val) ≈ 0.0
 @test sum(Data_set.NS.val-Data_set6.NS.val) ≈ 0.0

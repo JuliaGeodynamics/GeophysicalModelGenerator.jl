@@ -76,7 +76,7 @@ data   = faults.data[indlon,indlat]
 Create GeoData from restricted data
 
 ```julia
-Lon3D,Lat3D, Faults = LonLatDepthGrid(Lon,Lat,0);
+Lon3D,Lat3D, Faults = lonlatdepthGrid(Lon,Lat,0);
 Faults[:,:,1]       = data
 Data_Faults         = GeoData(Lon3D,Lat3D,Faults,(Faults=Faults,))
 ```

@@ -41,7 +41,7 @@ julia> lon_max = 20.0
 and import the data
 ```julia
 julia> G = gmtread(filename_topo, limits=[lon_min,lon_max,lat_min,lat_max], grid=true);
-julia> Lon,Lat,Depth = LonLatDepthGrid(G.x[1:end],G.y[1:end],0);
+julia> Lon,Lat,Depth = lonlatdepthGrid(G.x[1:end],G.y[1:end],0);
 julia> numel_topo    = prod(size(Lon));
 julia> Depth[:,:,1]  = 1e-3*G.z';
 julia> Topo          = GeophysicalModelGenerator.GeoData(Lon, Lat, Depth, (Topography=Depth*km,))
