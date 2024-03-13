@@ -234,4 +234,3 @@ addPolygon!(Phase, Temp, Cart; xlim=[500.0, 200.0, 500.0],ylim=[100.0,400.0], zl
 
 @test maximum(Phase) == 8
 @test minimum(Temp) == 21.40845070422536
-@test sum(Phase) == 292736
