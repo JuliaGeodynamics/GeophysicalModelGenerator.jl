@@ -173,12 +173,12 @@ julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
 
 Example 2) Box with halfspace cooling profile
 ```julia
-julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
-julia> Phases = zeros(Int32,   size(Grid.X));
-julia> Temp   = zeros(Float64, size(Grid.X));
-julia> AddBox!(Phases,Temp,Grid, xlim=(0,500), zlim=(-50,0), phase=ConstantPhase(3), DipAngle=10, T=ConstantTemp(1000))
-julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
-julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
+julia> Grid = CartData(XYZGrid(-1000:10:1000,0,-660:10:0))
+julia> Phases = zeros(Int32,   size(Grid));
+julia> Temp   = zeros(Float64, size(Grid));
+julia> AddBox!(Phases,Temp,Grid, xlim=(0,500), zlim=(-50,0), phase=ConstantPhase(3), DipAngle=10, T=HalfspaceCoolingTemp(Age=30))
+julia> Grid = addField(Grid, (;Phases,Temp));       # Add to Cartesian model
+julia> Write_Paraview(Grid,"LaMEM_ModelSetup")  # Save model to paraview
 1-element Vector{String}:
  "LaMEM_ModelSetup.vts"
 ```
@@ -199,6 +199,13 @@ function AddBox!(Phase, Temp, Grid::AbstractGeneralGrid;                 # requi
 
     if Origin==nothing
         Origin = (xlim[1], ylim[1], zlim[2])  # upper-left corner
+    end
+
+    if Origin !== nothing && isa(T, McKenzie_subducting_slab)
+        @warn  "McKenzie temperature does not require the definition of 'Origin' field; if Origin is defined it must be equal to [xmin,ymin,zmax] of the box that has been defined."
+        if Origin[1] != xlim[1] || Origin[2] != ylim[1] || Origin[3] != zlim[2]
+            @error  "Origin is not set up correctly. For fixing the problem Origin can be left blank or Origin = [xmin,ymin,zmax] of the box"
+        end
     end
 
     # Perform rotation of 3D coordinates:

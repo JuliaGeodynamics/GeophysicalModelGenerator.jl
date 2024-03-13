@@ -129,7 +129,7 @@ CrossSection_1_cart = Convert2CartData(CrossSection_1,proj)
 below = belowSurface(CrossSection_1_cart, TopoGeology_cart)
 
 # We can add that to the cross-section with:
-CrossSection_1_cart = AddField(CrossSection_1_cart,"rocks",Int64.(below))
+CrossSection_1_cart = addField(CrossSection_1_cart,"rocks",Int64.(below))
 # Note that we transfer the boolean to an integer
 
 # Let's have a look at this in Paraview:
@@ -172,7 +172,7 @@ id = belowSurface(ComputationalGrid, Basement_comp_surf)
 Phases[id] .= 2
 
 # Add to the computational grid:
-ComputationalGrid = AddField(ComputationalGrid,"Phases", Phases)
+ComputationalGrid = addField(ComputationalGrid,"Phases", Phases)
 ComputationalGrid = RemoveField(ComputationalGrid,"Z")
 
 # Save the surfaces, cross-section and the grid:
