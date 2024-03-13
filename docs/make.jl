@@ -78,6 +78,7 @@ makedocs(;
     sitename="GeophysicalModelGenerator.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
+        size_threshold_ignore = ["man/listfunctions.md"]
     ),
     pages=[
         "Home" => "index.md",
@@ -129,7 +130,7 @@ makedocs(;
         "License" => "man/license.md"
     ],
     pagesonly=true,
-    warnonly=true
+    warnonly=true,
 )
 
 deploydocs(;
@@ -139,5 +140,5 @@ deploydocs(;
     devbranch = "main",
     devurl = "dev",
     forcepush=true,
-    push_preview = true
+    push_preview = false,
 )
