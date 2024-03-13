@@ -22,7 +22,7 @@ The following people contributed major additions or modifications to `Geophysica
 * Jacob Frasunkiewicz
 * Lukas Fuchs
 * Andrea Piccolo
-* Hendrik Rachona
+* Hendrik Ranocha
 * Christian Schuler
 * Arne Spang
 * Tatjana Weiler

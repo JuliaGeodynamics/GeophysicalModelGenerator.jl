@@ -3,18 +3,126 @@ using Printf
 using Parameters        # helps setting default parameters in structures
 using SpecialFunctions: erfc
 using GeoParams
+using StaticArrays
 
+import Base: show
 # Setup_geometry
 #
 # These are routines that help to create input geometries, such as slabs with a given angle
 #
 
-export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!, AddLayer!,
+export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!, AddLayer!, addSlab!, addStripes!,
         makeVolcTopo,
         ConstantTemp, LinearTemp, HalfspaceCoolingTemp, SpreadingRateTemp, LithosphericTemp,
         ConstantPhase, LithosphericPhases,
         Compute_ThermalStructure, Compute_Phase,
-        McKenzie_subducting_slab, LinearWeightedTemperature
+        McKenzie_subducting_slab, LinearWeightedTemperature, Trench
+
+
+"""
+    addStripes!(Phase, Grid::AbstractGeneralGrid;
+        stripAxes       = (1,1,0),
+        stripeWidth     =  0.2,
+        stripeSpacing   =  1,
+        Origin          =  nothing,
+        StrikeAngle     =  0,
+        DipAngle        =  10,
+        phase           =  ConstantPhase(3),
+        stripePhase     =  ConstantPhase(4))
+
+    Adds stripes to a pre-defined phase (e.g. added using AddBox!)
+
+
+    Parameters
+    ====
+    - Phase - Phase array (consistent with Grid)
+    - Grid -  grid structure (usually obtained with ReadLaMEM_InputFile, but can also be other grid types)
+    - stripAxes - sets the axis for which we want the stripes. Default is (1,1,0) i.e. X, Y and not Z
+    - stripeWidth - width of the stripe
+    - stripeSpacing - space between two stripes
+    - Origin - the origin, used to rotate the box around. Default is the left-front-top corner
+    - StrikeAngle - strike angle
+    - DipAngle - dip angle
+    - phase - specifies the phase we want to apply stripes to
+    - stripePhase - specifies the stripe phase
+    
+
+    Example
+    ========
+    
+    Example: Box with striped phase and constant temperature & a dip angle of 10 degrees:
+    ```julia
+    julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
+    LaMEM Grid:
+      nel         : (32, 32, 32)
+      marker/cell : (3, 3, 3)
+      markers     : (96, 96, 96)
+      x           ϵ [-3.0 : 3.0]
+      y           ϵ [-2.0 : 2.0]
+      z           ϵ [-2.0 : 0.0]
+    julia> Phases = zeros(Int32,   size(Grid.X));
+    julia> Temp   = zeros(Float64, size(Grid.X));
+    julia> AddBox!(Phases,Temp,Grid, xlim=(0,500), zlim=(-50,0), phase=ConstantPhase(3), DipAngle=10, T=ConstantTemp(1000))
+    julia> addStripes!(Phases, Grid, stripAxes=(1,1,1), stripeWidth=0.2, stripeSpacing=1, Origin=nothing, StrikeAngle=0, DipAngle=10, phase=ConstantPhase(3), stripePhase=ConstantPhase(4))
+    julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
+    julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
+    1-element Vector{String}:
+     "LaMEM_ModelSetup.vts"
+    ```
+"""
+function addStripes!(Phase, Grid::AbstractGeneralGrid;                # required input
+    stripAxes       = (1,1,0),                          # activate stripes along dimensions x, y and z when set to 1
+    stripeWidth     =  0.2,                             # full width of a stripe
+    stripeSpacing   =  1,                               # spacing between two stripes centers
+    Origin          =  nothing,                         # origin
+    StrikeAngle     =  0,                               # strike
+    DipAngle        =  0,                               # dip angle
+    phase           =  ConstantPhase(3),                # phase to be striped
+    stripePhase     =  ConstantPhase(4))                # stripe phase
+
+    # warnings
+    if stripeWidth >= stripeSpacing/2.0
+        print("WARNING: stripeWidth should be strictly < stripeSpacing/2.0, otherwise phase is overwritten by the stripePhase\n")
+    elseif sum(stripAxes .== 0) == 3
+        print("WARNING: at least one axis should be set to 1 e.g. stripAxes = (1,0,0), otherwise no stripes will be added\n")
+    end
+
+    # Retrieve 3D data arrays for the grid
+    X,Y,Z = coordinate_grids(Grid)
+
+    # sets origin
+    if isnothing(Origin)
+        Origin = (maximum(X), maximum(Y), maximum(Z))  # upper-left corner
+    end
+
+    # Perform rotation of 3D coordinates:
+    Xrot = X .- Origin[1];
+    Yrot = Y .- Origin[2];
+    Zrot = Z .- Origin[3];
+
+    Rot3D!(Xrot,Yrot,Zrot, StrikeAngle, DipAngle)
+
+    ph_ind  = findall(Phase .== phase.phase);
+
+    ind = Int64[]
+    if stripAxes[1] == 1
+        indX     = findall( abs.(Xrot[ph_ind] .% stripeSpacing) .<= stripeWidth/2.0);
+        ind = vcat(ind,indX);
+    end
+    if stripAxes[2] == 1
+        indY     = findall( abs.(Yrot[ph_ind] .% stripeSpacing) .<= stripeWidth/2.0);
+        ind = vcat(ind,indY);
+    end
+    if stripAxes[3] == 1
+        indZ     = findall( abs.(Zrot[ph_ind] .% stripeSpacing) .<= stripeWidth/2.0);
+        ind = vcat(ind,indZ);
+    end
+
+    Phase[ph_ind[ind]] .= stripePhase.phase;
+    
+    return nothing
+end
+
 
 
 """
@@ -28,17 +136,17 @@ Adds a box with phase & temperature structure to a 3D model setup.  This simplif
 
 Parameters
 ====
-- Phase - Phase array (consistent with Grid)
-- Temp  - Temperature array (consistent with Grid)
-- Grid -  grid structure (usually obtained with ReadLaMEM_InputFile, but can also be other grid types)
-- xlim -  left/right coordinates of box
-- ylim -  front/back coordinates of box [optional; if not specified we use the whole box]
-- zlim -  bottom/top coordinates of box
-- Origin - the origin, used to rotate the box around. Default is the left-front-top corner
-- StrikeAngle - strike angle of slab
-- DipAngle - dip angle of slab
-- phase - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
-- T - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`,`LithosphericTemp()`
+- `Phase` - Phase array (consistent with Grid)
+- `Temp`  - Temperature array (consistent with Grid)
+- `Grid` -  grid structure (can be any of the grid types in `GMG`)
+- `xlim` -  left/right coordinates of box
+- `ylim` -  front/back coordinates of box [optional; if not specified we use the whole box]
+- `zlim` -  bottom/top coordinates of box
+- `Origin` - the origin, used to rotate the box around. Default is the left-front-top corner
+- `StrikeAngle` - strike angle of slab
+- `DipAngle` - dip angle of slab
+- `phase` - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
+- `T` - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`,`LithosphericTemp()`
 
 
 Examples
@@ -100,7 +208,6 @@ function AddBox!(Phase, Temp, Grid::AbstractGeneralGrid;                 # requi
 
     Rot3D!(Xrot,Yrot,Zrot, StrikeAngle, DipAngle)
 
-
     # Set phase number & thermal structure in the full domain
     ztop = maximum(zlim) - Origin[3]
     zbot = minimum(zlim) - Origin[3]
@@ -134,14 +241,14 @@ This simplifies creating model geometries in geodynamic models
 
 Parameters
 ====
-- Phase - Phase array (consistent with Grid)
-- Temp  - Temperature array (consistent with Grid)
-- Grid -  grid structure (usually obtained with ReadLaMEM_InputFile, but can also be other grid types)
-- xlim -  left/right coordinates of box
-- ylim -  front/back coordinates of box
-- zlim -  bottom/top coordinates of box
-- phase - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
-- T - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
+- `Phase` - Phase array (consistent with Grid)
+- `Temp`  - Temperature array (consistent with Grid)
+- `Grid` -  grid structure (usually obtained with ReadLaMEM_InputFile, but can also be other grid types)
+- `xlim` -  left/right coordinates of box
+- `ylim` -  front/back coordinates of box
+- `zlim` -  bottom/top coordinates of box
+- `phase` - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
+- `T` - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
 
 
 Examples
@@ -454,21 +561,36 @@ end
 # Internal function that rotates the coordinates
 function Rot3D!(X,Y,Z, StrikeAngle, DipAngle)
 
-    # rotation matrixes
-    roty = [cosd(-DipAngle) 0 sind(-DipAngle) ; 0 1 0 ; -sind(-DipAngle) 0  cosd(-DipAngle)];
-    rotz = [cosd(StrikeAngle) -sind(StrikeAngle) 0 ; sind(StrikeAngle) cosd(StrikeAngle) 0 ; 0 0 1]
-
+    # precompute trigonometric functions (expensive!)
+    sindStrikeAngle, cosStrikeAngle  = sincosd(StrikeAngle)
+    sinDipAngle, cosDipAngle         = sincosd(-DipAngle)   # note the minus here to be consistent with the earlier version of the code
     for i in eachindex(X)
-        CoordVec = [X[i], Y[i], Z[i]]
-        CoordRot =  rotz*CoordVec;
-        CoordRot =  roty*CoordRot;
-        X[i] = CoordRot[1];
-        Y[i] = CoordRot[2];
-        Z[i] = CoordRot[3];
+        X[i], Y[i], Z[i] = Rot3D(X[i], Y[i], Z[i], cosStrikeAngle, sindStrikeAngle, cosDipAngle, sinDipAngle)
     end
 
     return nothing
 end
+
+"""
+    xrot, yrot, zrot = Rot3D(X::Number,Y::Number,Z::Number, cosStrikeAngle, sindStrikeAngle, cosDipAngle, sinDipAngle)
+
+Perform rotation for a point in 3D space
+"""
+function Rot3D(X::_T,Y::_T,Z::_T, cosStrikeAngle::_T, sindStrikeAngle::_T, cosDipAngle::_T, sinDipAngle::_T) where _T<:Number
+
+    # rotation matrixes
+    #roty = [cosd(-DipAngle) 0 sind(-DipAngle) ; 0 1 0 ; -sind(-DipAngle) 0  cosd(-DipAngle)];
+    roty =  @SMatrix [cosDipAngle 0 sinDipAngle ; 0 1 0 ; -sinDipAngle 0  cosDipAngle];       # note that dip-angle is changed from before!
+    rotz =  @SMatrix [cosStrikeAngle -sindStrikeAngle 0 ; sindStrikeAngle cosStrikeAngle 0 ; 0 0 1]
+
+    CoordVec =  @SVector [X, Y, Z]
+    CoordRot =  rotz*CoordVec;
+    CoordRot =  roty*CoordRot;
+    
+    return CoordRot[1], CoordRot[2], CoordRot[3]
+end
+
+
 
 """
 makeVolcTopo(Grid::LaMEM_grid; center::Array{Float64, 1}, height::Float64, radius::Float64, crater::Float64,
@@ -681,6 +803,8 @@ Parameters
 - AgeRidge : thermal age of the ridge [Myrs]
 - maxAge : maximum thermal Age of plate [Myrs]
 
+Note: the thermal age at the mid oceanic ridge is set to 1 year to avoid division by zero
+
 """
 @with_kw_noshow mutable struct SpreadingRateTemp <: AbstractThermalStructure
     Tsurface = 0       # top T
@@ -721,6 +845,9 @@ function Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp)
         end
 
         ThermalAge    =   ThermalAge*SecYear;
+        if ThermalAge==0
+            ThermalAge = 1e-6   # doesn't like zero
+        end
 
         Temp[i] = (Tsurface .- Tmantle)*erfc((abs.(Z[i])*1e3)./(2*sqrt(kappa*ThermalAge))) + MantleAdiabaticT[i];
     end
@@ -1061,7 +1188,7 @@ Parameters
 end
 
 """ 
-    Compute_ThermalStructure(Temp, X, Y, Z, s::McKenzie_subducting_slab)
+    Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::McKenzie_subducting_slab)
 
 Compute the temperature field of a `McKenzie_subducting_slab`. Uses the analytical solution
 of McKenzie (1969) ["Speculations on the consequences and causes of plate motions"]. The functions assumes
@@ -1069,18 +1196,18 @@ that the bottom of the slab is the coordinate Z=0. Internally the function shift
 Parameters
 =============================
 Temp Temperature array
-X    X Array 
-Y    Y Array 
-Z    Z Array 
-Phase Phase array 
-s    McKenzie_subducting_slab
+- `X`    X Array 
+- `Y`    Y Array 
+- `Z`    Z Array 
+- `Phase` Phase array 
+- `s`    McKenzie_subducting_slab
 
 """
 function Compute_ThermalStructure(Temp, X, Y, Z,Phase, s::McKenzie_subducting_slab)
     @unpack Tsurface, Tmantle, Adiabat, v_cm_yr, κ, it = s
 
     # Thickness of the layer: 
-    D0          =   (maximum(Z)-minimum(Z));
+    Thickness          =   (maximum(Z)-minimum(Z));
     Zshift      =   Z .- Z[end]       # McKenzie model is defined with Z = 0 at the bottom of the slab
 
     # Convert subduction velocity from cm/yr -> m/s; 
@@ -1088,10 +1215,10 @@ function Compute_ThermalStructure(Temp, X, Y, Z,Phase, s::McKenzie_subducting_sl
     v_s = v_cm_yr*convert_velocity;
     
     # calculate the thermal Reynolds number
-    Re = (v_s*D0*1000)/2/κ;     # factor 1000 to transfer D0 from km to m
+    Re = (v_s*Thickness*1000)/2/κ;     # factor 1000 to transfer Thickness from km to m
     
     # McKenzie model
-    sc = 1/D0
+    sc = 1/Thickness
     σ  = ones(size(Temp));
     # Dividi et impera
     for i=1:it
@@ -1133,16 +1260,18 @@ Parameters
 end
 
 """
-    Weight average along distance
-    Do a weight average between two field along a specified direction 
-    Given a distance {could be any array, from X,Y} -> it increase from the origin the weight of 
-    F1, while F2 decreases. 
-    This function has been conceived for averaging the solution of Mckenzie and half space cooling model, but in 
-    can be used to smooth the temperature field from continent ocean: 
-    -> Select the boundary to apply; 
-    -> transform the coordinate such that dist represent the perpendicular direction along which you want to apply
-    this smoothening and in a such way that 0.0 is the point in which the weight of F1 is equal to 0.0; 
-    -> Select the points that belongs to this area -> compute the thermal fields {F1} {F2} -> then modify F. 
+    Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::LinearWeightedTemperature)
+    
+Weight average along distance
+Do a weight average between two field along a specified direction 
+Given a distance {could be any array, from X,Y} -> it increase from the origin the weight of 
+F1, while F2 decreases. 
+This function has been conceived for averaging the solution of Mckenzie and half space cooling model, but in 
+can be used to smooth the temperature field from continent ocean: 
+-> Select the boundary to apply; 
+-> transform the coordinate such that dist represent the perpendicular direction along which you want to apply
+this smoothening and in a such way that 0.0 is the point in which the weight of F1 is equal to 0.0; 
+-> Select the points that belongs to this area -> compute the thermal fields {F1} {F2} -> then modify F. 
 """
 function Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::LinearWeightedTemperature)
     @unpack w_min, w_max, crit_dist,dir = s; 
@@ -1177,3 +1306,360 @@ function Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::LinearWeightedTempera
 
     return Temp
 end
+
+
+abstract type AbstractTrenchSlab end
+
+"""
+    Trench structure
+
+Structure that defines the geometry of the trench and the slab.
+
+Parameters
+===
+
+- `Start`     - Start of the trench (`x`,`y`) coordinates
+- `End`       - End of the trench (`x`,`y`) coordinates
+- `n_seg`     - The number of segment through which the slab is discretize along the dip
+- `Length`    - The length of the slab
+- `Thickness` - The thickness of the slab
+- `Lb`        - Critical distance through which apply the bending angle functions Lb ∈ [0,Length];
+- `θ_max`     - maximum angle of bending ∈ [0°,90°].
+- `direction` - the direction of the dip
+               The rotation of the coordinate system is done as such that the new X is parallel to the segment. Since the
+               rotation is anticlockwise the coordinate y has specific values: direction tells if the subduction is directed along
+               the positive or negative direction of the new y coordinate system. In practice, it apply an additional transformation
+               to y by multiplying it with -1 or +1;
+- `d_decoupling` - depth at which the slab is fully submerged into the mantle.
+- `type_bending` - is the type of bending angle of the slab [`:Linear`, `:Ribe`].
+    The angle of slab changes as a function of `l` (∈ [0,Length]). `l` is the actual distance along the slab length from
+    the trench.
+    In case:
+        - `:Linear` 
+            ```math θ(l) = ((θ_max - 0.0)/(Lb-0))*l ```;
+        - `:Ribe` 
+            ```math θ(l) =  θ_max*l^2*((3*Lb-2*l))/(Lb^3) ```;
+            which is taken from Ribe 2010 [Bending mechanics and mode selection in free subduction: a thin-sheet analysis]
+
+    For l>Lb, θ(l) = θ_max;
+- `WeakzoneThickness` - Thickness of the weakzone [km]
+- `WeakzonePhase` - Phase of the weakzone
+
+"""
+@with_kw_noshow mutable struct Trench{Nseg} <: AbstractTrenchSlab
+    Start::NTuple{Nseg,Float64} =  (0.0,0.0)   # Start (x,y) coordinates of trench (in mapview)
+    End::NTuple{Nseg,Float64} =  (0.0,1.0)     # End (x,y) coordinates of trench (in mapview)
+    n_seg::Int64 = 50                          # number of segments in downdip direction
+    Length:: Float64 = 400.0                   # length of the slab
+    Thickness:: Float64 = 100.0                # thickness of the slab
+    Lb:: Float64 = 200.0                       # Length at which all the bending is happening (Lb<=Length)
+    θ_max::Float64 = 45.0                      # max bending angle, (must be converted into radians)
+    direction::Float64 = -1.0                  # Direction of the bending angle (-1= left to right or 1.0=right to left)
+    d_decoupling:: Float64 = 100               # decoupling depth of the slab
+    type_bending::Symbol = :Ribe               # Mode Ribe | Linear | Customize
+    WeakzoneThickness::Float64 = 0.0           # Thickness of the weakzone 
+    WeakzonePhase::Int64 = 5                   # Phase of the weak zone
+end
+
+function show(io::IO, g::Trench{Nseg}) where Nseg
+    println(io,"Trench{$Nseg}, $(g.n_seg) segments")
+    println(io,"     Trench [Start/End] : $(g.Start) - $(g.End) [km]")
+    println(io,"       Slab [Thickness] : $(g.Thickness) km")
+    println(io,"          Slab [Length] : $(g.Length) km")
+    println(io,"    Bending length [Lb] : $(g.Lb) km")
+    println(io,"     Max. angle [θ_max] : $(g.θ_max)ᵒ")
+    if g.direction==-1.0
+        println(io,"        Dip [direction] : left to right [$(g.direction)]")
+    else
+        println(io,"     Dip [direction] : right to left [$(g.direction)]")
+    end
+    println(io,"    Depth [d_decoupling]: $(g.d_decoupling) km")
+    println(io,"  Bending [type_bending]: $(g.type_bending)")
+    println(io,"    [WeakzoneThickness] : $(g.WeakzoneThickness) km")
+    if g.WeakzoneThickness>0
+        println(io,"   Weakzone phase : $(g.WeakzonePhase)")
+    end
+    
+    return nothing
+end
+
+"""
+    Top, Bot = compute_slab_surface(trench::Trench)
+
+Computes the (`x`,`z`) coordinates of the slab top, bottom surface using the mid surface of the slab as reference. 
+
+Parameters
+=== 
+- `trench`          - `Trench` structure that contains the relevant parameters
+
+Method
+===
+
+It computes it by discretizing the slab surface in `n_seg` segments, and computing the average bending angle (which is a function of the current length of the slab). 
+Next, it compute the coordinates assuming that the trench is at 0.0, and assuming a positive `θ_max` angle.
+"""
+function compute_slab_surface(trench::Trench)
+
+    @unpack Thickness, Length, n_seg, Lb, θ_max, type_bending, direction, WeakzoneThickness = trench;
+
+    # Convert θ_max into radians
+    θ_max *=  π / 180;
+
+    # Allocate the top, mid and bottom surface
+    Top           = zeros(n_seg+1,2);
+    Bottom        = zeros(n_seg+1,2);
+    WeakZone      = zeros(n_seg+1,2);
+    Bottom[1,2]   = -Thickness;
+    WeakZone[1,2] = WeakzoneThickness;
+    MidS          = zeros(n_seg+1,2);
+    MidS[1,2]     = -Thickness/2;
+
+    # Initialize the length.
+    l   = 0.0;      # initial length
+    it  = 1;        # iteration
+
+    dl  = Length/n_seg; # dl
+    while l<Length
+
+        # Compute the mean angle within the segment
+        θ   = compute_bending_angle(θ_max, Lb, l   , type_bending)
+        θ_n = compute_bending_angle(θ_max, Lb, l+dl, type_bending)
+        θ_mean = (θ + θ_n)/2;
+        
+        # Mid surface coordinates (x,z)
+        sinθ, cosθ = sincos(θ_mean)
+
+        MidS[it+1,1] = MidS[it,1] + dl * cosθ;
+        MidS[it+1,2] = MidS[it,2] - dl * sinθ;
+
+        # Top surface coordinates (x,z)
+        Top[it+1,1] = MidS[it+1,1] + 0.5 * Thickness * abs(sinθ);
+        Top[it+1,2] = MidS[it+1,2] + 0.5 * Thickness * abs(cosθ);
+
+        # Bottom surface coordinate
+        Bottom[it+1,1] = MidS[it+1,1] - 0.5 * Thickness * abs(sinθ);
+        Bottom[it+1,2] = MidS[it+1,2] - 0.5 * Thickness * abs(cosθ);
+
+        # Compute the top surface for the weak zone
+        WeakZone[it+1,1] = MidS[it+1,1] + (0.5 * Thickness + WeakzoneThickness) * abs(sinθ);
+        WeakZone[it+1,2] = MidS[it+1,2] + (0.5 * Thickness + WeakzoneThickness) * abs(cosθ);
+
+        # update l
+        l  = l + dl;
+        it = it + 1;
+    end
+    Top[:,1] *= direction
+    Bottom[:,1] *= direction
+    WeakZone[:,1] *= direction
+     
+    return Top, Bottom, WeakZone 
+end
+
+"""
+    θ = compute_bending_angle(θ_max,Lb,l,type)
+
+function that computes the bending angle `θ` as a function of length along the slab `l`.
+
+Parameters
+===
+`θ_max` = maximum bending angle
+`Lb`    = length at which the function of bending is applied (Lb<=Length)
+`l`     = current position within the slab
+`type`  = type of bending [`:Ribe`,`:Linear`]
+
+"""
+function compute_bending_angle(θ_max::Float64,Lb::Float64,l::Float64,type::Symbol)
+    
+    if l>Lb
+        θ = θ_max
+    elseif type === :Ribe
+        # Compute theta
+        θ =  θ_max*l^2*((3*Lb-2*l))/(Lb^3);
+    elseif type === :Linear
+        # Compute the actual angle
+        θ =  l*(θ_max-0)/(Lb);
+    end
+    return θ
+end
+
+"""
+    find_slab_distance!(ls, d, X,Y,Z, trench::Trench)
+
+Function that finds the perpendicular distance to the top and bottom of the slab `d`, and the current length of the slab `l`.
+
+"""
+function find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench::Trench)
+    @unpack Thickness, Length, n_seg, Start, End, direction = trench;
+
+    # Perform rotation of 3D coordinates along the angle from Start -> End:
+    Xrot = X .- Start[1];
+    Yrot = Y .- Start[2];
+   
+    StrikeAngle = -atand((End[2]-Start[2])/(End[1]-Start[1]))
+    Rot3D!(Xrot,Yrot,Z, StrikeAngle, 0.0)
+
+    xb = Rot3D(End[1]-Start[1],End[2]-Start[2], 0.0, cosd(StrikeAngle), sind(StrikeAngle), 1.0, 0.0)
+    
+    # dl
+    dl = trench.Length/n_seg;
+    l = 0  # length at the trench position
+    D = @SVector [Top[1,2], Bottom[1,2], Bottom[1,2],Top[1,2] ]
+
+    # Construct the slab
+    for i = 1:(n_seg-1)
+        ln = l+dl;
+
+        pa = (Top[i,1], Top[i,2]);       # D = 0 | L = l
+        pb = (Bottom[i,1], Bottom[i,2]); # D = -Thickness | L=l
+
+        pc = (Bottom[i+1,1],Bottom[i+1,2]); # D = -Thickness |L=L+dl
+        pd = (Top[i+1,1],Top[i+1,2]) # D = 0| L = L+dl
+
+        # Create the polygon
+        poly_y = @SVector [pa[1],pb[1],pc[1],pd[1]];
+        poly_z = @SVector [pa[2],pb[2],pc[2],pd[2]];
+
+        # find a sub set of particles
+        ymin,ymax = extrema(poly_y);
+        zmin,zmax = extrema(poly_z);
+
+        ind_s = findall(0.0.<= Xrot.<= xb[1] .&& ymin .<= Yrot .<= ymax .&& zmin .<= Z .<= zmax);
+
+        # Find the particles
+        yp = Yrot[ind_s];
+        zp = Z[ind_s];
+
+        # Initialize the ind that are going to be used by inpoly
+        ind = zeros(Bool,size(zp));
+        inPolygon!(ind,poly_y,poly_z,yp,zp);        # determine whether points are inside the polygon or not
+
+        # indexes of the segment
+        ind_seg = ind_s[ind]
+
+        # Loop over the chosen particles and interpolate the current value of L and D.
+        for ip in ind_seg
+            point_ = (Yrot[ip], Z[ip]);
+            d[ip]  = -distance_to_linesegment(point_, pa, pd)
+            ls[ip]  = distance_to_linesegment(point_, pb, pa) + l
+        end
+        
+        #Update l
+        l = ln;
+    end
+end
+
+
+"""
+    distance_to_linesegment(p::NTuple{2,_T}, v::NTuple{2,_T}, w::NTuple{2,_T})
+
+Computes the distance normal distance from a point `p` to a line segment defined by the points `v` and `w`.
+"""
+function distance_to_linesegment(p::NTuple{2,_T}, v::NTuple{2,_T}, w::NTuple{2,_T})  where _T<:Number
+    dx = w[1] - v[1]
+    dy = w[2] - v[2]
+    l2 = dx*dx + dy*dy  # i.e. |w-v|^2 -  avoid a sqrt
+    if l2 == 0.0
+        dx = p[1] - v[1]
+        dy = p[2] - v[2]
+        return sqrt(dx*dx + dy*dy)   # v == w case
+    end
+    # Consider the line extending the segment, parameterized as v + t (w - v).
+    # We find projection of point p onto the line. 
+    # It falls where t = [(p-v) . (w-v)] / |w-v|^2
+    t = ((p[1] - v[1])*dx + (p[2] - v[2])*dy) / l2
+    if t < 0.0
+        dx = p[1] - v[1]
+        dy = p[2] - v[2]
+        return sqrt(dx*dx + dy*dy)       # Beyond the 'v' end of the segment
+    elseif t > 1.0
+        dx = p[1] - w[1]
+        dy = p[2] - w[2]
+        return sqrt(dx*dx + dy*dy)  # Beyond the 'w' end of the segment
+    end
+    projection_x = v[1] + t * dx
+    projection_y = v[2] + t * dy
+    dx = p[1] - projection_x
+    dy = p[2] - projection_y
+    return sqrt(dx*dx + dy*dy)
+end
+
+"""
+    addSlab!(Phase, Temp, Grid::AbstractGeneralGrid,  trench::Trench; phase = ConstantPhase(1), T = nothing)
+
+Adds a curved slab with phase & temperature structure to a 3D model setup.  
+
+Parameters
+====
+- `Phase`   - Phase array (consistent with Grid)
+- `Temp`    - Temperature array (consistent with Grid)
+- `Grid`    - grid structure (can be any of the grid types in `GMG`)
+- `trench`  - Trench structure
+- `phase`   - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
+- `T`       - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`,`LithosphericTemp()`
+
+Examples
+========
+
+Example 1) Slab
+```julia
+julia> x     = LinRange(0.0,1200.0,128);
+julia> y     = LinRange(0.0,1200.0,128);
+julia> z     = LinRange(-660,50,128);
+julia> Cart  = CartData(XYZGrid(x, y, z));
+julia> Phase = ones(Int64,size(Cart));
+julia> Temp  = fill(1350.0,size(Cart));
+# Define the trench:
+julia> trench= Trench(Start = (400.0,400.0), End = (800.0,800.0), θ_max = 45.0, direction = 1.0, n_seg = 50, Length = 600.0, Thickness = 80.0, Lb = 500.0, d_decoupling = 100.0, type_bending =:Ribe)
+julia> phase = LithosphericPhases(Layers=[5 7 88], Phases = [2 3 4], Tlab=nothing)
+julia> TsHC  = HalfspaceCoolingTemp(Tsurface=20.0, Tmantle=1350, Age=30, Adiabat=0.4)
+julia> addSlab!(Phase, Temp, Cart, trench, phase = phase, T = TsHC)
+```
+
+"""
+function addSlab!(Phase, Temp, Grid::AbstractGeneralGrid,  trench::Trench;        # required input
+        phase::AbstractPhaseNumber = ConstantPhase(1),                       # Sets the phase number(s) in the slab
+        T::Union{AbstractThermalStructure,Nothing}  = nothing )                             # Sets the thermal structure (various functions are available),
+        
+    # Retrieve 3D data arrays for the grid
+    X,Y,Z = coordinate_grids(Grid)
+
+    # Compute top and bottom of the slab
+    Top,Bottom, WeakZone = compute_slab_surface(trench); 
+    
+    # Find the distance to the slab (along & perpendicular)
+    d = fill(NaN,size(Grid));       # -> d = distance perpendicular to the slab 
+    ls = fill(NaN,size(Grid));      # -> l = length from the trench along the slab
+    find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench);  
+
+    # Function to fill up the temperature and the phase. 
+    ind = findall((-trench.Thickness .<= d .<= 0.0));
+    
+    if isa(T, LinearWeightedTemperature)
+        l_decouplingind = findall(Top[:,2].<=-trench.d_decoupling);
+        if !isempty(l_decouplingind)
+            l_decoupling = Top[l_decouplingind[1],1];
+            T.crit_dist = abs(l_decoupling); 
+        end
+    end
+
+    # Compute thermal structure accordingly. See routines below for different options {Future: introducing the length along the trench for having lateral varying properties along the trench}
+    if !isnothing(T)
+        Temp[ind] = Compute_ThermalStructure(Temp[ind], ls[ind], Y[ind], d[ind], Phase[ind], T);
+    end
+
+    # Set the phase
+    Phase[ind] = Compute_Phase(Phase[ind], Temp[ind], ls[ind], Y[ind], d[ind], phase)
+
+    # Add a weak zone on top of the slab (indicated by a phase number but not by temperature)
+    if trench.WeakzoneThickness>0.0
+        d_weakzone = fill(NaN,size(Grid));       # -> d = distance perpendicular to the slab 
+        ls_weakzone = fill(NaN,size(Grid));      # -> l = length from the trench along the slab
+        find_slab_distance!(ls_weakzone, d_weakzone, X,Y,Z, WeakZone, Top, trench);  
+
+        ind = findall( (-trench.WeakzoneThickness .<= d_weakzone .<= 0.0) .& (Z .>-trench.d_decoupling) );
+        Phase[ind] .= trench.WeakzonePhase
+    end
+
+    return nothing
+end
+
