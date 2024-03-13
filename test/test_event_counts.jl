@@ -28,27 +28,27 @@ R = (sum(pt.^2,dims=2)).^(1/3)
 ind = findall(R.< 5);
 
 # test the basic routine
-counts = PointData2NearestGrid(pt[:,1],pt[:,2],pt[:,3], NumValue(Grid_cart.x),NumValue(Grid_cart.y), NumValue(Grid_cart.z); radius_factor=2)
+counts = pointData2NearestGrid(pt[:,1],pt[:,2],pt[:,3], NumValue(Grid_cart.x),NumValue(Grid_cart.y), NumValue(Grid_cart.z); radius_factor=2)
 @test extrema(counts) == (0, 85)
 
 # Test if the grid is on a CartData grid
-Grid_Count = PointData2NearestGrid(pt[:,1],pt[:,2],pt[:,3], Grid_cart; radius_factor=2)
+Grid_Count = pointData2NearestGrid(pt[:,1],pt[:,2],pt[:,3], Grid_cart; radius_factor=2)
 @test extrema(Grid_Count.fields.Count) == (0, 85)
 
 # Test in case the EQ data is also specified as CartData
-Grid_Count = PointData2NearestGrid(EQ_cart, Grid_cart; radius_factor=2)
+Grid_Count = pointData2NearestGrid(EQ_cart, Grid_cart; radius_factor=2)
 @test extrema(Grid_Count.fields.Count) == (0, 85)
 
 # Test if the grid is on a GeoData grid
-Grid_Count = PointData2NearestGrid(pt[:,1],pt[:,2],pt[:,3], Grid_geo; radius_factor=2)
+Grid_Count = pointData2NearestGrid(pt[:,1],pt[:,2],pt[:,3], Grid_geo; radius_factor=2)
 @test extrema(Grid_Count.fields.Count) == (0, 85)
 
 # Test in case the EQ data is also specified as GeoData
-Grid_Count = PointData2NearestGrid(EQ_geo, Grid_geo; radius_factor=2)
+Grid_Count = pointData2NearestGrid(EQ_geo, Grid_geo; radius_factor=2)
 @test extrema(Grid_Count.fields.Count) == (0, 85)
 
-# Test CountMap
-Data_CountMap = CountMap(Data_set2D,"Count",5,5)
-@test Data_CountMap.fields.CountMap[1,1] == 1.0
-@test Data_CountMap.fields.CountMap[2,2] == 0.4444444444444444
-@test Data_CountMap.fields.CountMap[4,4] == 0.0
+# Test countMap
+Data_countMap = countMap(Data_set2D,"Count",5,5)
+@test Data_countMap.fields.countMap[1,1] == 1.0
+@test Data_countMap.fields.countMap[2,2] == 0.4444444444444444
+@test Data_countMap.fields.countMap[4,4] == 0.0

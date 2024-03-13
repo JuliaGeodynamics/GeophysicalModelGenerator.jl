@@ -14,11 +14,11 @@ interpolateDataOnSurface
 InterpolateTopographyOnPlane
 ParseColumns_CSV_File
 RotateTranslateScale!
-PointData2NearestGrid
+pointData2NearestGrid
 Convert2UTMzone
 Convert2CartData
 projectCartData
 drape_on_topo
 LithostaticPressure!
-CountMap
+countMap
 ```

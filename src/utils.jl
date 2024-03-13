@@ -1,7 +1,7 @@
 # few utils that are useful
 
 export meshgrid, CrossSection, CrossSectionVolume, CrossSectionSurface, CrossSectionPoints, ExtractSubvolume, SubtractHorizontalMean
-export ParseColumns_CSV_File, VoteMap, CountMap
+export ParseColumns_CSV_File, VoteMap, countMap
 export InterpolateDataFields2D, InterpolateDataFields, InterpolateTopographyOnPlane
 export RotateTranslateScale
 export LithostaticPressure!

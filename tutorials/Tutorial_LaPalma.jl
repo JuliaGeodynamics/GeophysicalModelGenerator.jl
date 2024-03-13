@@ -65,7 +65,7 @@ Write_Paraview(Topo_model,"Topo_model")
 Grid_3D = CartData(XYZGrid(-35:.3:30,-15:.25:45,-50:.5:5))
 
 # Next we check how many earthquakes are around the grid points:
-Grid_3D =PointData2NearestGrid(EQ_cart, Grid_3D, radius_factor=3)
+Grid_3D =pointData2NearestGrid(EQ_cart, Grid_3D, radius_factor=3)
 
 # And we can define an array with rock types:
 Phases = zeros(Int64,size(Grid_3D.x))
