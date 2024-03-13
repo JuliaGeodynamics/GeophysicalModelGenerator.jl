@@ -66,27 +66,27 @@ bibliography: paper.bib
 
 # Summary
 
-Geoscientific data exists in wide different variety of formats. Yet, to make a consistent interpretation of a certain region, it is often helpful to jointly visualize all available data using the same coordinates, and compare, for example seismic tomography, surface geology, Moho depth, earthquakes with GPS velocities. If one wishes to create mechanical or thermo-mechanical numerical models of the region, creating an input model that honors the given constraints is helpful. And since most numerical codes work in cartesian boxes, we need tools to project the data from geographic to cartesian coordinates.
+Geoscientific data exists in wide different variety of formats. Yet, to make a consistent interpretation of a certain region, it is often helpful to jointly visualize all this data using the same coordinates, and compare, for example seismic tomography, surface geology, Moho depth, Earthquake locations and GPS surface velocities. If one wishes to create mechanical or thermo-mechanical numerical models of the region, creating an input model that honors these  constraints is helpful. And since most numerical codes work in cartesian boxes, it is helpful to have tools to project the data from geographic to cartesian coordinates.
 
-A significant challenge in doing this is that there is no standard data format for geoscientific data sets. Seismic tomography, for example, may come as ASCII data with lon/lat/depth axes, or as NetCDF files, with the ordering of the data typically differing from one dataset to the other. In ideal cases, geological surfaces may be provided as GeoTIFFs which can be readily imported. Yet, in many cases, the underlying data are not even available in digital format and we only have access to figures in the publications. Yet, it is still helpful to image these in 3D, along with more recent, digitally available, datasets.
+A significant challenge in doing this is that there is no standard format for geoscientific data. Seismic tomography, for example, may come in the form of ASCII data with `lon/lat/depth` axes, or as NetCDF files, with the ordering of the data typically differing from one dataset to the other. In ideal cases, geological surfaces may be provided as GeoTIFF images. Yet, in many cases, the underlying data discussed in scientific publications are not even available in digital format and only show in the figures of the paper. Yet, it is still helpful to image these in 3D in the correct coordinates, along with more recent, digitally available, datasets.
 
 The aim of the `GeophysicalModelGenerator.jl` package is therefore two-fold:
 
-1) Simplify collecting and visualising a wide variety of geoscientific data that is provided as point (e.g. earthquake locations), surface (e.g., topography) or volumetric data (seismic tomography).  
-2) Generate input setups for 2D or 3D numerical models.
+1) Simplify collecting and visualising a wide variety of geoscientific data that is provided as point (e.g. earthquake locations), surface (e.g., topography) or volumetric data (e.g., seismic tomography).  
+2) Create input setups for 2D or 3D numerical models.
 
 # Statement of need
 
-`GeophysicalModelGenerator.jl` is a Julia package that helps collecting and visualizing a wide variety of geophysical and geoscientific data in a coherent manner. It also simplifies the process of generating a 2D or 3D models that can, for example, be used as input models in geodynamic simulations. It provides functions that transfer data from one format to the other, or project them from geographic (Longitude/Latitude/Depth) or (UTM) coordinates to cartesian coordinates (in kilometers). It allows performing tasks such as creating cross-sections though volumetric data, import screenshots from published papers, download digital elevation data and save the resulting data in VTK format, that can be visualized with [Paraview](www.paraview.org).
+`GeophysicalModelGenerator.jl` is a Julia package that helps collecting and visualizing a wide variety of geophysical and geoscientific data in a coherent manner. It also simplifies the process of generating a 2D or 3D models that can, for example, be used as input models in geodynamic simulations. It provides functions that transfer data from one format to the other, or project them from geographic (`Longitude/Latitude/Depth`) or (`UTM`) coordinates to cartesian coordinates (`kilometers`). It allows performing tasks such as creating cross-sections though volumetric data, import screenshots from published papers, download digital elevation data and save the resulting data in `VTK` format, that can be visualized with open source tools such as [Paraview](www.paraview.org).
 
-Many geoscientists likely have their own python/matlab/bash scripts to visualize their own data and thus perform part of this job already. Yet, having all functionality in one place in an easy to use package will likely facilitate sharing data and their interpretations. 
+Most geoscientists tend to have their own python/matlab/bash visualisation and therefore perform part of this job already. Yet, having all functionality in one place in an easy-to-use package, makes this more extendable and will likely facilitate sharing data along with their interpretations. 
 
 # Related software packages
-Perhaps the most widely used package in geophysics to create figures or maps is the Generic Mapping Tools ([`GMT`](https://www.generic-mapping-tools.org)), which also provides a Julia interface [GMT.jl](https://github.com/GenericMappingTools/GMT.jl) [@Wessel_Luis_Uieda_Scharroo_Wobbe_Smith_Tian_2019]. It mostly focuses on generating (beautiful) maps and postscript/pdf images and is therefore not ideally suited for interactive 3D data visualisation or to generate input models for numerical codes.
+Perhaps the most widely used package in geophysics to create figures or maps is the Generic Mapping Tools package ([`GMT`](https://www.generic-mapping-tools.org)), which also provides a Julia interface [GMT.jl](https://github.com/GenericMappingTools/GMT.jl) [@Wessel_Luis_Uieda_Scharroo_Wobbe_Smith_Tian_2019]. It mostly focuses on generating maps and postscript/pdf images and is therefore not ideally suited for interactive 3D data visualisation or to generate input models for numerical codes.
  
-The [`Geodynamic World Builder`](https://github.com/GeodynamicWorldBuilder/WorldBuilder) is a C++ library to create model setups [@se-10-1785-2019]. The focus is on generating input models for geodynamic simulations, such as an initial subduction zone and related thermal structure. It has C and Fortran wrappers and can thus be embedded in geodynamic codes. Users of the `Geodynamic World Builder` have to generate JSON files to define the model geometry, which is less interactive than by using the Julia `REPL`. In the currently available version, there is no straightforward way to integrate existing geophysical/geological data in the workflow and compare model results with them.   
+The [`Geodynamic World Builder`](https://github.com/GeodynamicWorldBuilder/WorldBuilder) is a C++ library to create model setups [@se-10-1785-2019]. The focus is on generating input models for geodynamic simulations, such as subduction zones and related thermal structures. It has C and Fortran wrappers and can thus be embedded in geodynamic codes. Users of the `Geodynamic World Builder` have to generate JSON files to define the model geometry, which is less interactive than by using the Julia `REPL`. There is no straightforward way to integrate existing geophysical/geological data in the workflow and compare model results with them.   
 
-[GemPy](https://www.gempy.org) is a Python-based, open-source geomodeling library that can construct 3D geological models of folded structures, fault networks and unconformities, while taking uncertainties into account [@DeLaVarga_Schaaf_Wellmann_2019]. It's focus is on creating geometric models rather than on integrating a wide variety of geoscientific datasets.
+[GemPy](https://www.gempy.org) is a Python-based, open-source geomodeling library that can construct 3D geological models of folded structures, fault networks and unconformities, while taking uncertainties into account [@DeLaVarga_Schaaf_Wellmann_2019]. It focusses is on creating geometric models with uncertainties rather than on integrating a wide variety of geoscientific datasets.
 
 There are also a number of commercial software solutions: 
 
@@ -96,19 +96,22 @@ There are also a number of commercial software solutions:
 
 - [GeoModeller](https://www.intrepid-geophysics.com/products/geomodeller/) (by Intrepid Geophysics) creates surface-near geometric geological models by implicit modelling of surface measurements while taking geophysical constraints into account.    
 
-In all cases, the commercial license fees are far beyond what most researchers can afford, even if reduced license fees are often available for academia. The closed-source nature of the software packages makes them also non-extendable by the community.
+In all cases, the commercial license fees are far beyond what most researchers can afford, even if reduced license fees are often available for academia. The closed-source nature of the software packages makes them non-extendable by the community.
 
-The `GeophysicalModelGenerator.jl` package is already used to generate input models for the geodynamic codes [LaMEM](https://github.com/UniMainzGeo/LaMEM), [JustRelax.jl](https://github.com/PTsolvers/JustRelax.jl), and [MagmaThermokinematics.jl](https://github.com/boriskaus/MagmaThermoKinematics.jl). It is also already used in a number of shortcourses and lectures at the University of Mainz, Heidelberg and Bologna.
+The `GeophysicalModelGenerator.jl` julia package is already used to generate input models for the geodynamic codes [LaMEM](https://github.com/UniMainzGeo/LaMEM), [JustRelax.jl](https://github.com/PTsolvers/JustRelax.jl), and [MagmaThermokinematics.jl](https://github.com/boriskaus/MagmaThermoKinematics.jl). It is also already used in a number of shortcourses and lectures at the University of Mainz, Heidelberg and Bologna.
 
 # Basic usage
 
 The core of the package consists of the  `GeoData`, `UTMData`, `ParaviewData` and `CartData` structures which holds the 3D data along with coordinates (and potentially metadata) information. After installing it using the build-in Julia package manager:
-
 ```julia
 julia> ]
 (@v1.10) pkg> add GeophysicalModelGenerator
 ```
-one can use it with:
+which comes with a test-suite:
+```julia
+(@v1.10) pkg> test GeophysicalModelGenerator
+```
+and can be used with:
 ```julia
 julia> using GeophysicalModelGenerator
 ```
