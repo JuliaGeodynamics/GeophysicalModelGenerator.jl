@@ -291,7 +291,7 @@ function CreateProfileSurface!(Profile::ProfileData, DataSet::NamedTuple; DimsSu
             data = crossSectionSurface(data_tmp, dims=DimsSurfCross, Start=Profile.start_lonlat, End=Profile.end_lonlat)        # create the cross section
 
             # flatten cross section and add this data to the structure
-            x_profile   = flattenCrossSection(data,Start=Profile.start_lonlat)
+            x_profile    = flattenCrossSection(data,Start=Profile.start_lonlat)
             data        = addField(data,"x_profile",x_profile)
 
             # add the data set as a NamedTuple
@@ -326,7 +326,7 @@ function CreateProfilePoint!(Profile::ProfileData, DataSet::NamedTuple; section_
             data    = crossSectionPoints(data_tmp, Start=Profile.start_lonlat, End=Profile.end_lonlat, section_width = section_width)        # create the cross section
 
             # flatten cross section and add this data to the structure
-            x_profile   = flattenCrossSection(data,Start=Profile.start_lonlat)
+            x_profile    = flattenCrossSection(data,Start=Profile.start_lonlat)
             data        = addField(data,"x_profile",x_profile)
 
             # add the data set as a NamedTuple

@@ -26,6 +26,13 @@ Data            =   Depth*2;                # some data
 Vx,Vy,Vz        =   ustrip(Data*3)*km/s,ustrip(Data*4)*km/s,ustrip(Data*5)*km/s;
 Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)))  
 
+# Test addField
+Data_set3D      =   addField(Data_set3D,"Lat", Lat)  
+@test keys(Data_set3D.fields) == (:Depthdata, :LonData, :Velocity, :Lat)
+
+Data_set3D      =   addField(Data_set3D,(;Lat, Lon))  
+@test keys(Data_set3D.fields) == (:Depthdata, :LonData, :Velocity, :Lat, :Lon)
+
 # Create 3D cartesian dataset
 Data_setCart3D  =   CartData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)))  
 
@@ -256,3 +263,5 @@ inPolygon!(yN, PolyX, PolyY, X, Y, fast=true)
 @test sum(yN) == 194
 inPolygon!(yN, PolyX, PolyY, X, Y)
 @test sum(yN) == 217
+
+

@@ -50,6 +50,20 @@ function addField(V::AbstractGeneralGrid,field_name::String,data::Any)
     return V
 end
 
+"""
+    V = addField(V::CartData,new_fields::NamedTuple)
+
+Add `new_fields` fields to a `CartData` dataset
+"""
+addField(V::CartData,new_fields::NamedTuple) = CartData(V.x.val, V.y.val, V.z.val, merge(V.fields, new_fields))
+
+"""
+    V = addField(V::GeoData,new_fields::NamedTuple)
+
+Add `new_fields` fields to a `GeoData` dataset
+"""
+addField(V::GeoData,new_fields::NamedTuple) = GeoData(V.lon.val, V.lat.val, V.depth.val, merge(V.fields, new_fields))
+
 # this function is taken from @JeffreySarnoff
 function dropnames(namedtuple::NamedTuple, names::Tuple{Vararg{Symbol}})
     keepnames = Base.diff_names(Base._nt_names(namedtuple), names)
@@ -544,7 +558,7 @@ Data_Cross              = crossSection(DataSet, dims=(100,100), Interpolate=true
 
 x_new = flattenCrossSection(Data_Cross)
 
-This flattened crossSection can be added to original Data_Cross by addField()
+# This flattened crossSection can be added to original Data_Cross by addField()
 
 Data_Cross = addField(Data_Cross,"FlatCrossSection", x_new)
 CartData
@@ -577,7 +591,7 @@ end
     julia> Vx,Vy,Vz        =   ustrip(Data*3),ustrip(Data*4),ustrip(Data*5);
     julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)));
     julia> Data_cross      =   crossSection(Data_set3D, Start=(10,30),End=(20,40))
-    julia> x_profile       =   flattenCrossSection(Data_cross)
+    julia> x_profile        =   flattenCrossSection(Data_cross)
     julia> Data_cross      =   addField(Data_cross,"x_profile",x_profile)
 
     ```
