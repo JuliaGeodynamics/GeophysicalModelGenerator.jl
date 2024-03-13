@@ -5,6 +5,7 @@ using SpecialFunctions: erfc
 using GeoParams
 using StaticArrays
 
+import Base: show
 # Setup_geometry
 #
 # These are routines that help to create input geometries, such as slabs with a given angle
@@ -1348,11 +1349,33 @@ Parameters
     Thickness:: Float64 = 100.0                # thickness of the slab
     Lb:: Float64 = 200.0                       # Length at which all the bending is happening (Lb<=Length)
     θ_max::Float64 = 45.0                      # max bending angle, (must be converted into radians)
-    direction::Float64 = -1.0                   # Direction of the bending angle (-1= left to right or 1.0=right to left)
+    direction::Float64 = -1.0                  # Direction of the bending angle (-1= left to right or 1.0=right to left)
     d_decoupling:: Float64 = 100               # decoupling depth of the slab
     type_bending::Symbol = :Ribe               # Mode Ribe | Linear | Customize
     WeakzoneThickness::Float64 = 0.0           # Thickness of the weakzone 
     WeakzonePhase::Int64 = 5                   # Phase of the weak zone
+end
+
+function show(io::IO, g::Trench{Nseg}) where Nseg
+    println(io,"Trench{$Nseg}, $(g.n_seg) segments")
+    println(io,"     Trench [Start/End] : $(g.Start) - $(g.End) [km]")
+    println(io,"       Slab [Thickness] : $(g.Thickness) km")
+    println(io,"          Slab [Length] : $(g.Length) km")
+    println(io,"    Bending length [Lb] : $(g.Lb) km")
+    println(io,"     Max. angle [θ_max] : $(g.θ_max)ᵒ")
+    if g.direction==-1.0
+        println(io,"        Dip [direction] : left to right [$(g.direction)]")
+    else
+        println(io,"     Dip [direction] : right to left [$(g.direction)]")
+    end
+    println(io,"    Depth [d_decoupling]: $(g.d_decoupling) km")
+    println(io,"  Bending [type_bending]: $(g.type_bending)")
+    println(io,"    [WeakzoneThickness] : $(g.WeakzoneThickness) km")
+    if g.WeakzoneThickness>0
+        println(io,"   Weakzone phase : $(g.WeakzonePhase)")
+    end
+    
+    return nothing
 end
 
 """
@@ -1602,19 +1625,21 @@ function addSlab!(Phase, Temp, Grid::AbstractGeneralGrid,  trench::Trench;      
     d = fill(NaN,size(Grid));       # -> d = distance perpendicular to the slab 
     ls = fill(NaN,size(Grid));      # -> l = length from the trench along the slab
     find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench);  
-    
+
     # Function to fill up the temperature and the phase. 
     ind = findall((-trench.Thickness .<= d .<= 0.0));
     
     if isa(T, LinearWeightedTemperature)
         l_decouplingind = findall(Top[:,2].<=-trench.d_decoupling);
-        l_decoupling = Top[l_decouplingind[1],1];
-        T.crit_dist = l_decoupling; 
+        if !isempty(l_decouplingind)
+            l_decoupling = Top[l_decouplingind[1],1];
+            T.crit_dist = abs(l_decoupling); 
+        end
     end
 
     # Compute thermal structure accordingly. See routines below for different options {Future: introducing the length along the trench for having lateral varying properties along the trench}
     if !isnothing(T)
-        Temp[ind] = Compute_ThermalStructure(Temp[ind], ls[ind], Y[ind], d[ind], Phase[ind],T);
+        Temp[ind] = Compute_ThermalStructure(Temp[ind], ls[ind], Y[ind], d[ind], Phase[ind], T);
     end
 
     # Set the phase
