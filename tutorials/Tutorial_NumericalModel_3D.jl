@@ -14,7 +14,7 @@ Lets start with creating a 3D model setup in cartesian coordinates, which uses t
 =#
 using GeophysicalModelGenerator
 
-nx,ny,nz = 512,512,128
+nx,ny,nz = 256,256,128
 x = range(-1000,1000, nx);
 y = range(-1000,1000, ny);
 z = range(-660,0,    nz);
@@ -29,24 +29,25 @@ Temp = fill(1350.0, nx,ny,nz);
 # #### Simple free subduction setup
 
 # Much of the options are explained in the 2D tutorial, which can directly be transferred to 3D.
-# Therefore, we will start with a simple subduction setup, which consists of a horizontal part that has a mid-oceanic ridge on one explained
+# Therefore, we will start with a simple subduction setup, which consists of a horizontal part that has a mid-oceanic ridge and a half-space cooling subducting slab.
 
 # We use a lithospheric structure, which can be specified with the `LithosphericPhases` structure, where you can indicate `Layers` (the thickness of each lithospheric layer, starting from the top), and `Phases` the phases of the corresponding layers.
 # Note that if the lowermost layer has the same phase as the mantle, you can define `Tlab` as the lithosphere-asthenosphere boundary which will automatically adjust the phase depending on temperature
-# Note 2 : Origin must be set at [xmin,ymin,zmax] of the box. Or it can be also not set directly for such examples. The function AddBox! internally 
-# check for these coordinate. If Origin is not coincident with [xmin,ymin,zmax] it may not found particles and crashes or produce NaN. [This comment is valid only for the context of generating the slab 
-# with McKenzie temperature, in which you need to know where is the direction of dipping] 
+
+# Also note that `Origin` must be set at [`xmin`,`ymin`,`zmax`] of the box, or should be left out if you use this along with the `McKenzie_subducting_slab` thermal structure.
 
 
-lith = LithosphericPhases(Layers=[15 45 10], Phases=[0 1 2], Tlab=1250)
+lith = LithosphericPhases(Layers=[15 45 10], Phases=[0 1 2])
+v_spreading_cm_yr = 3
 AddBox!(Phases, Temp, Grid; xlim=(-800,0.0), ylim=(-400, 400.0), zlim=(-80.0, 0.0), phase = lith, 
         Origin=(-0,0,0),
-        T=SpreadingRateTemp(SpreadingVel=3, MORside="right"), StrikeAngle=30);
+        T=SpreadingRateTemp(SpreadingVel=v_spreading_cm_yr, MORside="right"), StrikeAngle=30);
+
 
 # And an an inclined part:
-AddBox!(Phases, Temp, Grid; xlim=(0,300), ylim=(-400, 400.0), zlim=(-80.0, 0.0), phase = lith, 
-        Origin=(-0,0,0),
-        T=McKenzie_subducting_slab(Tsurface=0,v_cm_yr=3), DipAngle=30, StrikeAngle=30);
+AgeTrench = 800e3/(v_spreading_cm_yr/100)/1e6;
+#AddBox!(Phases, Temp, Grid; xlim=(0,300), ylim=(-400, 400.0), zlim=(-80.0, 0.0), phase = lith, Origin = (0,0,0), T=HalfspaceCoolingTemp(Age=0), DipAngle=0, StrikeAngle=30);
+AddBox!(Phases, Temp, Grid; xlim=(0,300), ylim=(-400, 400.0), zlim=(-80.0, 0.0), phase = lith, Origin = (0,0,0), T=HalfspaceCoolingTemp(Age=AgeTrench), DipAngle=30, StrikeAngle=30);
 
 # Add them to the `CartData` dataset:
 Grid = addField(Grid,(;Phases, Temp))
@@ -58,18 +59,30 @@ Write_Paraview(Grid,"Grid3D_FreeSubduction");
 
 # #### More sophisticated setup
 
-# Next, lets consider a somewhat more complicated setup 
+# Next, lets consider a somewhat more complicated setup with curved slabs, an overriding plate and a thermal structure that transitions from half-space cooling to a slab that is heated from both sides
+nx,ny,nz = 512,512,128
+x = range(-1000,1000, nx);
+y = range(-1000,1000, ny);
+z = range(-660,0,    nz);
+Grid = CartData(XYZGrid(x,y,z));
+
 Phases = fill(2,nx,ny,nz);
 Temp = fill(1350.0, nx,ny,nz);
 
-# Overriding plate
-lith_cont = LithosphericPhases(Layers=[30 200 10], Phases=[3 4 2], Tlab=1250)
-AddBox!(Phases, Temp, Grid; xlim=(200,1000), ylim=(-1000, 0.0), zlim=(-240.0, 0.0), phase = lith_cont, T=HalfspaceCoolingTemp(Age=150));
+# Overriding plate with a 30 km crust and mantle lithosphere that where T<1250 celsius
+lith_cont = LithosphericPhases(Layers=[30 200 50], Phases=[3 4 2], Tlab=1250)
+AddBox!(Phases, Temp, Grid; xlim=(400,1000), ylim=(-1000, 0.0), zlim=(-240.0, 0.0), phase = lith_cont, T=HalfspaceCoolingTemp(Age=150));
+AddBox!(Phases, Temp, Grid; xlim=(200,1000), ylim=(-1000, 0.0), zlim=(-80.0, 0.0), phase = lith_cont,  T=HalfspaceCoolingTemp(Age=150));
 
-lith_cont = LithosphericPhases(Layers=[30 200 10], Phases=[5 6 2], Tlab=1250)
-AddBox!(Phases, Temp, Grid; xlim=(200,1000), ylim=(0, 1000),    zlim=(-240.0, 0.0), phase = lith_cont, T=HalfspaceCoolingTemp(Age=200));
+lith_cont = LithosphericPhases(Layers=[30 200 10], Phases=[6 7 2], Tlab=1250)
+AddBox!(Phases, Temp, Grid; xlim=(400,1000), ylim=(0, 1000),    zlim=(-240.0, 0.0), phase = lith_cont, T=HalfspaceCoolingTemp(Age=200));
+AddBox!(Phases, Temp, Grid; xlim=(200,1000), ylim=(0, 1000),    zlim=( -80.0, 0.0), phase = lith_cont, T=HalfspaceCoolingTemp(Age=200));
 
-# Define a ridge with transform faults
+# Accretionary wedge
+addPolygon!(Phases, Temp, Grid; xlim=[250., 500., 350.], ylim=[-1000., 0.], zlim=[0., 0., -80.], phase = ConstantPhase(5), T=HalfspaceCoolingTemp(Age=200))
+
+# Define an oceanic plate with ridge  
+v_spread_cm_yr = 3      #spreading velocity
 lith = LithosphericPhases(Layers=[15 45 10], Phases=[0 1 2], Tlab=1250)
 AddBox!(Phases, Temp, Grid; xlim=(-800 , 200), ylim=(-1000, -400.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
 AddBox!(Phases, Temp, Grid; xlim=(-1000,-800), ylim=(-1000, -400.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3,MORside="right"));
@@ -80,20 +93,33 @@ AddBox!(Phases, Temp, Grid; xlim=(-1000,-700), ylim=(-400, 200.0), zlim=(-80.0, 
 AddBox!(Phases, Temp, Grid; xlim=(-650,  200), ylim=(200, 1000.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
 AddBox!(Phases, Temp, Grid; xlim=(-1000,-650), ylim=(200, 1000.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3,MORside="right"));
 
-# Inclined part of slab
-lith = LithosphericPhases(Layers=[15 15 45 40], Phases=[7 0 1 2], Tlab=1250)
+# Subducting parts of the oceanic plate
+#
+# The starting thermal age at the trench is that of the horizontal part of the oceanic plate (which is different along-trench, given that we have 3 mid oceanic ridge segments!):
+# We want to add a smooth transition from a halfspace cooling 1D thermal profile to a slab that is heated by the surrounding mantle below a decoupling depth `d_decoupling`.
+AgeTrench_Myrs = 1000*1e3/(v_spread_cm_yr/1e2)/1e6    #plate age @ trench
+trench1 = Trench(Start=(200.0,-1000.0), End=(200.0,-400.0), Thickness=90.0, θ_max=45.0, Length=600, Lb=200, WeakzoneThickness=15, WeakzonePhase=8, d_decoupling=175);
+T_slab  = LinearWeightedTemperature( F1=HalfspaceCoolingTemp(Age=AgeTrench_Myrs), F2=McKenzie_subducting_slab(Tsurface=0,v_cm_yr=v_spread_cm_yr, Adiabat = 0.0))
+addSlab!(Phases, Temp, Grid, trench1, phase = lith, T=T_slab);
+#
+AgeTrench_Myrs = (900)*1e3/(v_spread_cm_yr/1e2)/1e6    #plate age @ trench
+trench1 = Trench(Start=(200.0,-400.0), End=(200.0,200.0), Thickness=90.0, θ_max=45.0, Length=600, Lb=200, WeakzoneThickness=15, WeakzonePhase=8, d_decoupling=175);
+T_slab  = LinearWeightedTemperature( F1=HalfspaceCoolingTemp(Age=AgeTrench_Myrs), F2=McKenzie_subducting_slab(Tsurface=0,v_cm_yr=v_spread_cm_yr, Adiabat = 0.0))
+addSlab!(Phases, Temp, Grid, trench1, phase = lith, T=T_slab);
+#
+AgeTrench_Myrs = 850e3/(v_spread_cm_yr/1e2)/1e6    #plate age @ trench
+trench1 = Trench(Start=(200.0,200.0), End=(200.0,1000.0), Thickness=90.0, θ_max=45.0, Length=600, Lb=200, WeakzoneThickness=15, WeakzonePhase=8, d_decoupling=175);
+T_slab  = LinearWeightedTemperature( F1=HalfspaceCoolingTemp(Age=AgeTrench_Myrs), F2=McKenzie_subducting_slab(Tsurface=0,v_cm_yr=v_spread_cm_yr, Adiabat = 0.0))
+addSlab!(Phases, Temp, Grid, trench1, phase = lith, T=T_slab);
+#
+# Finally, it is often nice to see the deformation of the plate when it subducts. A simple way to do that is to put a `stripes` on top using `addStripes`, which has the same phase as the subducting crust.
+addStripes!(Phases, Grid; stripAxes = (1,1,0), phase = ConstantPhase(0), stripePhase = ConstantPhase(9), stripeWidth=50, stripeSpacing=200)
 
-AddBox!(Phases, Temp, Grid; xlim=(200,700), ylim=(-1000, 0.0), zlim=(-200.0, 15), phase = lith,  T=ConstantTemp(T=1350), DipAngle=30);
-AddBox!(Phases, Temp, Grid; xlim=(200,700), ylim=(0, 100.0), zlim=(-200.0, 15), phase = lith,  T=ConstantTemp(T=1350), DipAngle=35);
-
-AddBox!(Phases, Temp, Grid; xlim=(200,700), ylim=(-1000, 0.0), zlim=(-110.0, 15), phase = lith,  T=McKenzie_subducting_slab(Tsurface=0,v_cm_yr=3), DipAngle=30);
-AddBox!(Phases, Temp, Grid; xlim=(200,700), ylim=(0, 1000), zlim=(-110.0, 15), phase = lith,  T=McKenzie_subducting_slab(Tsurface=0,v_cm_yr=3), DipAngle=35);
-
-ind=findall(isnan.(Temp)); Temp[ind] .= 0;
-
-# Add them to the `CartData` dataset:
+# Finally, we can add all this to the `CartData` dataset:
 Grid = addField(Grid,(;Phases, Temp))
 Write_Paraview(Grid,"Grid3D_Ridges");
+
+# And the resulting image looks like
 # ![Mechanical3D_Tutorial_2](../assets/img/Mechanical3D_Tutorial_2.png) 
 
 
