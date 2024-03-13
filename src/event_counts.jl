@@ -21,7 +21,7 @@ function PointData2NearestGrid(Point::CartData, Grid::CartData; radius_factor=1)
     Count = PointData2NearestGrid(NumValue(Point.x),NumValue(Point.y), NumValue(Point.z), NumValue(Grid.x),NumValue(Grid.y),NumValue(Grid.z); radius_factor=radius_factor)
 
     # return CartGrid with added field
-    return  AddField(Grid,"Count",Count);
+    return  addField(Grid,"Count",Count);
 end
 
 
@@ -39,7 +39,7 @@ function PointData2NearestGrid(pt_x,pt_y,pt_z, Grid::CartData; radius_factor=1)
     Count = PointData2NearestGrid(pt_x,pt_y,pt_z, NumValue(Grid.x),NumValue(Grid.y),NumValue(Grid.z); radius_factor=radius_factor)
 
     # return CartGrid with added field
-    return  AddField(Grid,"Count",Count);
+    return  addField(Grid,"Count",Count);
 end
 
 
@@ -61,7 +61,7 @@ function PointData2NearestGrid(Point::GeoData, Grid::GeoData; radius_factor=1)
     Count = PointData2NearestGrid(NumValue(Point.lon),NumValue(Point.lat), NumValue(Point.depth), NumValue(Grid.lon),NumValue(Grid.lat),NumValue(Grid.depth); radius_factor=radius_factor)
 
     # return CartGrid with added field
-    return  AddField(Grid,"Count",Count);
+    return  addField(Grid,"Count",Count);
 end
 
 
@@ -79,7 +79,7 @@ function PointData2NearestGrid(pt_x,pt_y,pt_z, Grid::GeoData; radius_factor=1)
     Count = PointData2NearestGrid(pt_x,pt_y,pt_z, NumValue(Grid.lon),NumValue(Grid.lat),NumValue(Grid.depth); radius_factor=radius_factor)
 
     # return CartGrid with added field
-    return  AddField(Grid,"Count",Count);
+    return  addField(Grid,"Count",Count);
 end
 
 """

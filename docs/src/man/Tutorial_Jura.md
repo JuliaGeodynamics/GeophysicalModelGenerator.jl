@@ -186,7 +186,7 @@ below = belowSurface(CrossSection_1_cart, TopoGeology_cart)
 We can add that to the cross-section with:
 
 ```julia
-CrossSection_1_cart = AddField(CrossSection_1_cart,"rocks",Int64.(below))
+CrossSection_1_cart = addField(CrossSection_1_cart,"rocks",Int64.(below))
 ```
 
 Note that we transfer the boolean to an integer
@@ -254,7 +254,7 @@ Phases[id] .= 2
 Add to the computational grid:
 
 ```julia
-ComputationalGrid = AddField(ComputationalGrid,"Phases", Phases)
+ComputationalGrid = addField(ComputationalGrid,"Phases", Phases)
 ComputationalGrid = RemoveField(ComputationalGrid,"Z")
 ```
 

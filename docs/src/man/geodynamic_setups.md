@@ -1,4 +1,4 @@
-# Geodynamic model setups
+# Numerical model setups
 
 In order to generate numerical simulations from setups created with `GeophysicalModelGenerator.jl`, we provide a few routines that directly create setups. 
 
