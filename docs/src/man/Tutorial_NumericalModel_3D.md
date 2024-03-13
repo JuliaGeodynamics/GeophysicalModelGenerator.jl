@@ -100,7 +100,7 @@ Phases = fill(2,nx,ny,nz);
 Temp = fill(1350.0, nx,ny,nz);
 ```
 
-Overriding plate with a 30 km crust and mantle lithosphere that where T<1250 celcius
+Overriding plate with a 30 km crust and mantle lithosphere that where T<1250 celsius
 
 ```julia
 lith_cont = LithosphericPhases(Layers=[30 200 50], Phases=[3 4 2], Tlab=1250)

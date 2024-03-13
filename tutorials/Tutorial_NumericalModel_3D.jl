@@ -70,9 +70,12 @@ lith_cont = LithosphericPhases(Layers=[30 200 50], Phases=[3 4 2], Tlab=1250)
 AddBox!(Phases, Temp, Grid; xlim=(400,1000), ylim=(-1000, 0.0), zlim=(-240.0, 0.0), phase = lith_cont, T=HalfspaceCoolingTemp(Age=150));
 AddBox!(Phases, Temp, Grid; xlim=(200,1000), ylim=(-1000, 0.0), zlim=(-80.0, 0.0), phase = lith_cont,  T=HalfspaceCoolingTemp(Age=150));
 
-lith_cont = LithosphericPhases(Layers=[30 200 10], Phases=[5 6 2], Tlab=1250)
+lith_cont = LithosphericPhases(Layers=[30 200 10], Phases=[6 7 2], Tlab=1250)
 AddBox!(Phases, Temp, Grid; xlim=(400,1000), ylim=(0, 1000),    zlim=(-240.0, 0.0), phase = lith_cont, T=HalfspaceCoolingTemp(Age=200));
 AddBox!(Phases, Temp, Grid; xlim=(200,1000), ylim=(0, 1000),    zlim=( -80.0, 0.0), phase = lith_cont, T=HalfspaceCoolingTemp(Age=200));
+
+# Accretionary wedge
+addPolygon!(Phases, Temp, Grid; xlim=[250., 500., 350.], ylim=[-1000., 0.], zlim=[0., 0., -80.], phase = ConstantPhase(5), T=HalfspaceCoolingTemp(Age=200))
 
 # Define an oceanic plate with ridge  
 v_spread_cm_yr = 3      #spreading velocity
@@ -91,17 +94,17 @@ AddBox!(Phases, Temp, Grid; xlim=(-1000,-650), ylim=(200, 1000.0), zlim=(-80.0, 
 # The starting thermal age at the trench is that of the horizontal part of the oceanic plate (which is different along-trench, given that we have 3 mid oceanic ridge segments!):
 # We want to add a smooth transition from a halfspace cooling 1D thermal profile to a slab that is heated by the surrounding mantle below a decoupling depth `d_decoupling`.
 AgeTrench_Myrs = 1000*1e3/(v_spread_cm_yr/1e2)/1e6    #plate age @ trench
-trench1 = Trench(Start=(200.0,-1000.0), End=(200.0,-400.0), Thickness=90.0, θ_max=45.0, Length=600, Lb=200, WeakzoneThickness=15, WeakzonePhase=7, d_decoupling=175);
+trench1 = Trench(Start=(200.0,-1000.0), End=(200.0,-400.0), Thickness=90.0, θ_max=45.0, Length=600, Lb=200, WeakzoneThickness=15, WeakzonePhase=8, d_decoupling=175);
 T_slab  = LinearWeightedTemperature( F1=HalfspaceCoolingTemp(Age=AgeTrench_Myrs), F2=McKenzie_subducting_slab(Tsurface=0,v_cm_yr=v_spread_cm_yr, Adiabat = 0.0))
 addSlab!(Phases, Temp, Grid, trench1, phase = lith, T=T_slab);
 #
 AgeTrench_Myrs = (900)*1e3/(v_spread_cm_yr/1e2)/1e6    #plate age @ trench
-trench1 = Trench(Start=(200.0,-400.0), End=(200.0,200.0), Thickness=90.0, θ_max=45.0, Length=600, Lb=200, WeakzoneThickness=15, WeakzonePhase=7, d_decoupling=175);
+trench1 = Trench(Start=(200.0,-400.0), End=(200.0,200.0), Thickness=90.0, θ_max=45.0, Length=600, Lb=200, WeakzoneThickness=15, WeakzonePhase=8, d_decoupling=175);
 T_slab  = LinearWeightedTemperature( F1=HalfspaceCoolingTemp(Age=AgeTrench_Myrs), F2=McKenzie_subducting_slab(Tsurface=0,v_cm_yr=v_spread_cm_yr, Adiabat = 0.0))
 addSlab!(Phases, Temp, Grid, trench1, phase = lith, T=T_slab);
 #
 AgeTrench_Myrs = 850e3/(v_spread_cm_yr/1e2)/1e6    #plate age @ trench
-trench1 = Trench(Start=(200.0,200.0), End=(200.0,1000.0), Thickness=90.0, θ_max=45.0, Length=600, Lb=200, WeakzoneThickness=15, WeakzonePhase=7, d_decoupling=175);
+trench1 = Trench(Start=(200.0,200.0), End=(200.0,1000.0), Thickness=90.0, θ_max=45.0, Length=600, Lb=200, WeakzoneThickness=15, WeakzonePhase=8, d_decoupling=175);
 T_slab  = LinearWeightedTemperature( F1=HalfspaceCoolingTemp(Age=AgeTrench_Myrs), F2=McKenzie_subducting_slab(Tsurface=0,v_cm_yr=v_spread_cm_yr, Adiabat = 0.0))
 addSlab!(Phases, Temp, Grid, trench1, phase = lith, T=T_slab);
 #
