@@ -33,6 +33,10 @@ Temp = fill(1350.0, nx,ny,nz);
 
 # We use a lithospheric structure, which can be specified with the `LithosphericPhases` structure, where you can indicate `Layers` (the thickness of each lithospheric layer, starting from the top), and `Phases` the phases of the corresponding layers.
 # Note that if the lowermost layer has the same phase as the mantle, you can define `Tlab` as the lithosphere-asthenosphere boundary which will automatically adjust the phase depending on temperature
+
+# Also note that `Origin` must be set at [`xmin`,`ymin`,`zmax`] of the box, or should be left out if you use this along with the `McKenzie_subducting_slab` thermal structure.
+
+
 lith = LithosphericPhases(Layers=[15 45 10], Phases=[0 1 2])
 v_spreading_cm_yr = 3
 AddBox!(Phases, Temp, Grid; xlim=(-800,0.0), ylim=(-400, 400.0), zlim=(-80.0, 0.0), phase = lith, 
