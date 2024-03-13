@@ -101,16 +101,17 @@ makedocs(;
             "16 - Create movies" =>  "man/tutorial_time_Seismicity.md",
             "17 - Fault Density Map" =>  "man/Tutorial_FaultDensity.md",
             "18 - Alpine data integration" =>  "man/Tutorial_AlpineData.md",
-            "19 - Jura tutorial" =>  "man/Tutorial_Jura.md"
+            "19 - Jura tutorial" =>  "man/Tutorial_Jura.md", 
+            "20 - Build geometry from polygons" =>  "man/tutorial_Polygon_structures.md"
         ],
         "User Guide" => Any[
             "Installation" =>  "man/installation.md",
             "Data Structures" =>  "man/datastructures.md",
             "Data Import" =>  "man/dataimport.md",
             "Projection" =>  "man/projection.md",
-            "Surfaces" =>  "man/surfaces.md",
             "Paraview output" => "man/paraview_output.md",
             "Paraview collection" => "man/paraview_collection.md",
+            "Surfaces" =>  "man/surfaces.md",
             "Tools" => "man/tools.md",
             "Visualisation" => "man/visualise.md",
             "Gravity code" => "man/gravity_code.md",

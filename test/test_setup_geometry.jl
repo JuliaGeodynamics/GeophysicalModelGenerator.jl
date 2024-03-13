@@ -14,6 +14,8 @@ AddBox!(Phases,Temp,Grid, xlim=(2,4), zlim=(-15,-10), phase=ConstantPhase(3), Di
 AddEllipsoid!(Phases,Temp,Grid, cen=(4,15,-17), axes=(1,2,3), StrikeAngle=90, DipAngle=45, phase=ConstantPhase(2), T=ConstantTemp(600))
 @test sum(Temp[1,1,:]) ≈ 14850.0
 
+
+
 # CartData 
 X,Y,Z               =   XYZGrid(1.0:1:10.0, 11.0:1:20.0, -20:1:-10);
 Data                =   zeros(size(X));
@@ -213,6 +215,26 @@ AddBox!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0, 0.0),
 
 Data_Final =   AddField(Cart,"Temp",Temp)
 
+
+# test polygon structure
+
+x        = LinRange(0.0,1200.0,64);
+y        = LinRange(0.0,1200.0,64);
+z        = LinRange(-660,50,64);
+Cart     = CartData(XYZGrid(x, y, z));
+
+# initialize phase and temperature matrix
+Phase   = ones(Int32,(length(x),length(y),length(z)));
+Temp    = ones(Float64,(length(x),length(y),length(z)))*1350;
+
+AddBox!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0, 0.0), phase = ConstantPhase(5), T=T=ConstantTemp(120.0));
+
+# add accretionary prism 
+addPolygon!(Phase, Temp, Cart; xlim=[500.0, 200.0, 500.0],ylim=[100.0,400.0], zlim=[0.0,0.0,-60.0], phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30))
+
+@test maximum(Phase) == 8
+@test minimum(Temp) == 21.40845070422536
+
 # Test the Bending slab geometry
 
 # Create CartGrid struct
@@ -328,5 +350,4 @@ Phases[ind] .= 0;
 @test extrema(Phases) == (0, 6)
 #Grid2D = CartData(Grid2D.x.val,Grid2D.y.val,Grid2D.z.val, (;Phases, Temp))
 #Write_Paraview(Grid2D,"Grid2D_SubductionCurvedOverriding");
-
 
