@@ -277,19 +277,56 @@ Phases = zeros(Int64, nx, 1, nz);
 Temp = fill(1350.0, nx, 1, nz);
 AddBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = ConstantPhase(1),  T=HalfspaceCoolingTemp(Age=40));    
 
-trench = Trench(Start=(0.0,-100.0), End=(0.0,100.0), Thickness=80.0, θ_max=30.0, Length=300, Lb=150, direction=1.0);
-#addSlab!(Phases, Temp, Grid2D, trench, phase = ConstantPhase(2), T=HalfspaceCoolingTemp(Age=40));
-
+trench = Trench(Start=(0.0,-100.0), End=(0.0,100.0), Thickness=80.0, θ_max=30.0, Length=300, Lb=150);
+addSlab!(Phases, Temp, Grid2D, trench, phase = ConstantPhase(2), T=HalfspaceCoolingTemp(Age=40));
 
 T_slab = LinearWeightedTemperature( F1=HalfspaceCoolingTemp(Age=40), F2=McKenzie_subducting_slab(Tsurface=0,v_cm_yr=4, Adiabat = 0.0), crit_dist=600)
 addSlab!(Phases, Temp, Grid2D, trench, phase = ConstantPhase(2), T=T_slab);
 
-#@test extrema(Phases) == (0, 2)
-
+@test sum(Temp) ≈ 8.571402268095453e7
+@test extrema(Phases) == (0, 2)
 
 # Add them to the `CartData` dataset:
-Grid2D = CartData(Grid2D.x.val, Grid2D.y.val, Grid2D.z.val ,(;Phases, Temp))
+#Grid2D = CartData(Grid2D.x.val, Grid2D.y.val, Grid2D.z.val ,(;Phases, Temp))
+#Write_Paraview(Grid2D,"Grid2D_SubductionCurvedMechanical");
 
-Write_Paraview(Grid2D,"Grid2D_SubductionCurvedMechanical");
+
+# More sophisticated 2D example with overriding plate
+nx,nz = 512,128
+x = range(-1000,1000, nx);
+z = range(-660,0,    nz);
+Grid2D = CartData(XYZGrid(x,0,z))
+Phases = zeros(Int64, nx, 1, nz);
+Temp = fill(1350.0, nx, 1, nz);
+lith = LithosphericPhases(Layers=[15 20 55], Phases=[3 4 5], Tlab=1250)
+
+# Lets add the overriding plate. Note that we add this twice with a different thickness to properly represent the transition around the trench
+AddBox!(Phases, Temp, Grid2D; xlim=(200,1000), zlim=(-150.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
+AddBox!(Phases, Temp, Grid2D; xlim=(0,200), zlim=(-60.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
+
+# The horizontal part of the oceanic plate is as before
+v_spread_cm_yr = 3      #spreading velocity
+lith = LithosphericPhases(Layers=[15 55], Phases=[1 2], Tlab=1250)
+AddBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-150.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=v_spread_cm_yr));
+
+# Yet, now we add a trench as well. 
+AgeTrench_Myrs = 800e3/(v_spread_cm_yr/1e2)/1e6    #plate age @ trench
+
+# We want to add a smooth transition from a halfspace cooling thermal profile to a slab that is heated by the surrounding mantle below a decoupling depth `d_decoupling`.
+T_slab = LinearWeightedTemperature( F1=HalfspaceCoolingTemp(Age=AgeTrench_Myrs), F2=McKenzie_subducting_slab(Tsurface=0,v_cm_yr=v_spread_cm_yr, Adiabat = 0.0), crit_dist=600)
+
+# # in this case, we have a more reasonable slab thickness: 
+trench = Trench(Start=(0.0,-100.0), End=(0.0,100.0), Thickness=90.0, θ_max=30.0, Length=600, Lb=200, 
+                 WeakzoneThickness=15, WeakzonePhase=6, d_decoupling=125);
+addSlab!(Phases, Temp, Grid2D, trench, phase = lith, T=T_slab);
+
+# Lithosphere-asthenosphere boundary:
+ind = findall(Temp .> 1250 .&& (Phases.==2 .|| Phases.==5));
+Phases[ind] .= 0;
+
+@test sum(Temp) ≈ 8.292000736425713e7  
+@test extrema(Phases) == (0, 6)
+#Grid2D = CartData(Grid2D.x.val,Grid2D.y.val,Grid2D.z.val, (;Phases, Temp))
+#Write_Paraview(Grid2D,"Grid2D_SubductionCurvedOverriding");
 
 

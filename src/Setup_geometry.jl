@@ -803,6 +803,8 @@ Parameters
 - AgeRidge : thermal age of the ridge [Myrs]
 - maxAge : maximum thermal Age of plate [Myrs]
 
+Note: the thermal age at the mid oceanic ridge is set to 1 year to avoid division by zero
+
 """
 @with_kw_noshow mutable struct SpreadingRateTemp <: AbstractThermalStructure
     Tsurface = 0       # top T
@@ -843,6 +845,9 @@ function Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp)
         end
 
         ThermalAge    =   ThermalAge*SecYear;
+        if ThermalAge==0
+            ThermalAge = 1e-6   # doesn't like zero
+        end
 
         Temp[i] = (Tsurface .- Tmantle)*erfc((abs.(Z[i])*1e3)./(2*sqrt(kappa*ThermalAge))) + MantleAdiabaticT[i];
     end
