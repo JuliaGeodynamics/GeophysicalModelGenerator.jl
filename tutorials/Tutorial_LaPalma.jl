@@ -52,8 +52,8 @@ Topo_cart = Convert2CartData(Topo, proj)
 # LaMEM needs an orthogonal grid of topography, which we can create with:
 Topo_model = CartData(XYZGrid(-35:.1:30,-15:.2:45,0));
 
-# In a next step, the routine `ProjectCartData` projects a `GeoData` structure to a `CartData` struct
-Topo_model = ProjectCartData(Topo_model, Topo, proj)
+# In a next step, the routine `projectCartData` projects a `GeoData` structure to a `CartData` struct
+Topo_model = projectCartData(Topo_model, Topo, proj)
 
 # Let's have a look at the data:
 Write_Paraview(EQ_cart,"EQ_cart",PointsData=true)

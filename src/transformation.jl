@@ -1,11 +1,11 @@
 # This provides various transformations (GeoData <=> Cartesian; UTMData <=> Cartesian)
 #
 
-export ProjectCartData
+export projectCartData
 
 
 """
-    d_cart = ProjectCartData(d_cart::CartData, d::GeoData, p::ProjectionPoint)
+    d_cart = projectCartData(d_cart::CartData, d::GeoData, p::ProjectionPoint)
 
 Projects all datafields from the GeoData struct `d` to the CartData struct `d_cart`, around the projection point `p`.
 `d_cart` *must* be an orthogonal cartesian grid (deformed doesn't work; use `Convert2CartData(d, proj)`, where `proj` is a projection point in that case).
@@ -14,7 +14,7 @@ Projects all datafields from the GeoData struct `d` to the CartData struct `d_ca
 - If `d_cart` and `d` are horizontal surfaces (3rd dimension has size==1), it also interpolates the depth coordinate.    
 
 """
-function ProjectCartData(d_cart::CartData, d::GeoData, p::ProjectionPoint)
+function projectCartData(d_cart::CartData, d::GeoData, p::ProjectionPoint)
     Data_UTM    = Convert2UTMzone(d_cart, p)
     Data_lonlat = convert(GeoData,Data_UTM)   
     
@@ -45,7 +45,7 @@ function ProjectCartData(d_cart::CartData, d::GeoData, p::ProjectionPoint)
 end
 
 """
-    d_cart = ProjectCartData(d_cart::CartData, d::GeoData, p::ProjectionPoint)
+    d_cart = projectCartData(d_cart::CartData, d::GeoData, p::ProjectionPoint)
 
 Projects all datafields from the GeoData struct `d` to the CartData struct `d_cart`, around the projection point `p`.
 `d_cart` *must* be an orthogonal cartesian grid (deformed doesn't work; use `Convert2CartData(d, proj)`, where `proj` is a projection point in that case).
@@ -54,7 +54,7 @@ Projects all datafields from the GeoData struct `d` to the CartData struct `d_ca
 - If `d_cart` and `d` are horizontal surfaces (3rd dimension has size==1), it also interpolates the depth coordinate.    
 
 """
-function ProjectCartData(d_cart::CartData, d_cart_data0::CartData)
+function projectCartData(d_cart::CartData, d_cart_data0::CartData)
     
     if size(d_cart_data0.x.val,3)==1
         z_new, fields_new = InterpolateDataFields2D(d,d_cart_data0.x.val, d_cart_data0.y.val)
@@ -73,7 +73,7 @@ end
 
 
 """
-    d_cart = ProjectCartData(d_cart::CartData, d::UTMData, p::ProjectionPoint)
+    d_cart = projectCartData(d_cart::CartData, d::UTMData, p::ProjectionPoint)
 
 Projects all datafields from the UTMData struct `d` to the CartData struct `d_cart`, around the projection point `p`.
     `d_cart` *must* be an orthogonal cartesian grid (deformed doesn't work; use `Convert2CartData(d, proj)`, where `proj` is a projection point in that case).
@@ -83,7 +83,7 @@ Projects all datafields from the UTMData struct `d` to the CartData struct `d_ca
         
 
 """
-function ProjectCartData(d_cart::CartData, d::UTMData, p::ProjectionPoint)
+function projectCartData(d_cart::CartData, d::UTMData, p::ProjectionPoint)
     Data_UTM    = Convert2UTMzone(d_cart, p)
     
     if size(Data_UTM.EW.val,3)==1

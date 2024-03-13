@@ -87,7 +87,7 @@ CartData
 ```
 Next, we can project the topographic data (in `GeoData` format) on this orthogonal grid
 ```julia
-julia> Topo_Cart_orth  = ProjectCartData(Topo_Cart_orth, Topo, p)
+julia> Topo_Cart_orth  = projectCartData(Topo_Cart_orth, Topo, p)
 CartData 
     size   : (201, 101, 1)
     x      ϵ [ -2000.0 km : 2000.0 km]
@@ -105,6 +105,6 @@ You can do similar projections with full 3D data sets or pointwise data.
 
 ```@docs
 GeophysicalModelGenerator.Convert2CartData
-GeophysicalModelGenerator.ProjectCartData
+GeophysicalModelGenerator.projectCartData
 GeophysicalModelGenerator.Convert2UTMzone
 ```

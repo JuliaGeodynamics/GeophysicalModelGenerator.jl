@@ -40,7 +40,7 @@ julia> p=ProjectionPoint(Lon=10, Lat=45)
 ProjectionPoint(45.0, 10.0, 578815.302916711, 4.983436768349297e6, 32, true)
 julia> Data_Cart  = CartData(XYZGrid(-600:10:600,-600:10:600,-1000:10:-1));
 julia> Topo_Cart  = CartData(XYZGrid(-600:10:600,-600:10:600,0));
-julia> Topo_Cart  = ProjectCartData(Topo_Cart, Topo, p)
+julia> Topo_Cart  = projectCartData(Topo_Cart, Topo, p)
 CartData 
     size    : (121, 121, 1)
     x       ϵ [ -600.0 : 600.0]
@@ -48,7 +48,7 @@ CartData
     z       ϵ [ -3.6270262031545473 : 3.654942280296281]
     fields  : (:Topography,)
   attributes: ["note"]
-julia> Data_Cart  = ProjectCartData(Data_Cart, Data, p)
+julia> Data_Cart  = projectCartData(Data_Cart, Data, p)
 CartData 
     size    : (121, 121, 100)
     x       ϵ [ -600.0 : 600.0]

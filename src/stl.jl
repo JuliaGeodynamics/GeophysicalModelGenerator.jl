@@ -10,7 +10,7 @@ using LinearAlgebra
 #using TriangleIntersect
 
 export Ray, Intersection, IntersectRayTriangle, load, TriangleNormal, Point, IntersectRayMesh, coordinates
-export STLToSurface, IsInsideClosedSTL
+export STLToSurface, isInsideClosedSTL
 
 #=
 # Conversion routines from GeometryBasics triangles to TriangleIntersect triangles:
@@ -43,7 +43,7 @@ const no_intersection = Intersection(Point(0,0,0), 0.0, false)
 cross(p1::Any, p2::Any) = Point(p1[2]*p2[3]-p1[3]*p2[2], -p1[1]*p2[3]+p1[3]*p2[1], p1[1]*p2[2]-p1[2]*p2[1])
 
 
-function TriangleNormal(t::TriangleP)    # normal of a triangle
+function triangleNormal(t::TriangleP)    # normal of a triangle
     a,b,c   =   t[1], t[2], t[3];
     v1      =   b-a
     v2      =   c-a
@@ -56,7 +56,7 @@ end
 
 
 # Taken from TriangleIntersect.jl & adapted for the GeometryBasics TriangleP
-function IntersectRayTriangle(r::Ray, t::TriangleP, normal)
+function intersectRayTriangle(r::Ray, t::TriangleP, normal)
     v1      =   t[2]-t[1];
     v2      =   t[3]-t[1];
     v1v1    =   dot(v1,v1)
@@ -90,7 +90,7 @@ end
 
 Intersects a ray with a triangular `*.stl` mesh
 """
-function IntersectRayMesh(r::Ray, mesh::Mesh)
+function increasentersectRayMesh(r::Ray, mesh::Mesh)
 
     N = normals(mesh);
 
@@ -110,7 +110,7 @@ function IntersectRayMesh(r::Ray, mesh::Mesh)
 end
 
 
-function STLToSurface(name::String,  Xin, Yin, minZ)
+function stlToSurface(name::String,  Xin, Yin, minZ)
 
     mesh =  load(name)
     if length(size(Xin))==3
@@ -163,7 +163,7 @@ end
 
 
 """
-    inside = IsInsideClosedSTL(mesh::Mesh, Pt, eps=1e-3)
+    inside = isInsideClosedSTL(mesh::Mesh, Pt, eps=1e-3)
 
 Determine whether a point `Pt` is inside a 3D closed triangular `*.stl` surface or not.
 
@@ -172,7 +172,7 @@ https://github.com/marmakoide/inside-3d-mesh
 
 This again is described in the following [paper](https://igl.ethz.ch/projects/winding-number/) by Alec Jacobson, Ladislav Kavan and Olga Sorkine-Hornung.
 """
-function IsInsideClosedSTL(mesh::Mesh, Pt::Vector, eps=1e-3)
+function isInsideClosedSTL(mesh::Mesh, Pt::Vector, eps=1e-3)
 
      # Compute triangle vertices and their norms relative to X
      M_vec  = [mesh.position[i]-Pt[:]   for i in eachindex(mesh.position)];

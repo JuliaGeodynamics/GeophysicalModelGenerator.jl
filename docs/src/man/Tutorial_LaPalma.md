@@ -84,10 +84,10 @@ Topo_model = CartData(XYZGrid(-35:.1:30,-15:.2:45,0));
 nothing #hide
 ```
 
-In a next step, the routine `ProjectCartData` projects a `GeoData` structure to a `CartData` struct
+In a next step, the routine `projectCartData` projects a `GeoData` structure to a `CartData` struct
 
 ```julia
-Topo_model = ProjectCartData(Topo_model, Topo, proj)
+Topo_model = projectCartData(Topo_model, Topo, proj)
 ```
 
 Let's have a look at the data:

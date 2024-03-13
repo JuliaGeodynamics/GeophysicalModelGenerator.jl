@@ -262,10 +262,10 @@ This can be achieved in a relatively straightforward manner, by creating a new 3
 Tomo_rect = CartData(XYZGrid(-550.0:10:600, -500.0:10:700, -600.0:5:-17));
 ```
 
-the routine `ProjectCartData` will then project the data from the geographic coordinates to the new rectilinear grid:
+the routine `projectCartData` will then project the data from the geographic coordinates to the new rectilinear grid:
 
 ```julia
-Tomo_rect = ProjectCartData(Tomo_rect, Tomo_Alps, proj)
+Tomo_rect = projectCartData(Tomo_rect, Tomo_Alps, proj)
 ```
 
 ````
@@ -282,7 +282,7 @@ we can do the same with topography:
 
 ```julia
 Topo_rect = CartData(XYZGrid(-550.0:1:600, -500.0:1:700, 0))
-Topo_rect = ProjectCartData(Topo_rect, Topo_Alps, proj)
+Topo_rect = projectCartData(Topo_rect, Topo_Alps, proj)
 ```
 
 ````

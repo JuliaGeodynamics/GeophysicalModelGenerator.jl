@@ -123,7 +123,7 @@ CartData
 
 The problem is that the result is not strictly orthogonal, but instead slightly curved.
 That causes issues later on when we want to intersect the surface with a 3D box.
-It is therefore better to use the `ProjectCartData` to project the `GeoData` structure to a `CartData` struct.
+It is therefore better to use the `projectCartData` to project the `GeoData` structure to a `CartData` struct.
 Let's first create this structure by using `x`,`y` coordinates that are slightly within the ranges given above:
 
 ```julia
@@ -142,7 +142,7 @@ CartData
 Next, we project the data with:
 
 ```julia
-TopoGeology_cart = ProjectCartData(TopoGeology_cart, TopoGeology, proj)
+TopoGeology_cart = projectCartData(TopoGeology_cart, TopoGeology, proj)
 ```
 
 ```julia
@@ -157,7 +157,7 @@ CartData
 And we can do the same with the basement topography
 
 ```julia
-Basement_cart = ProjectCartData(TopoGeology_cart, Basement, proj)
+Basement_cart = projectCartData(TopoGeology_cart, Basement, proj)
 ```
 
 ```julia
