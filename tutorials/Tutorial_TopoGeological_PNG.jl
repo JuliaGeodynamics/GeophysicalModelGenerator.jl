@@ -36,7 +36,7 @@ Corner_UpperRight   =   (17.0, 48.5 , 0.0)
 Corner_LowerLeft    =   ( lon_min, lat_min , 0.0)
 Corner_UpperRight   =   (lon_max, lat_max , 0.0)
 
-DataPNG = Screenshot_To_GeoData(filename_geo, Corner_LowerLeft, Corner_UpperRight)
+DataPNG = screenshotToGeoData(filename_geo, Corner_LowerLeft, Corner_UpperRight)
 
 # 4. interpolate geological map data colors onto topo grid using nearest neighbor interpolation
 

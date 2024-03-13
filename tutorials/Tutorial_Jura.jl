@@ -24,7 +24,7 @@ lowerleft  = [4.54602510460251, 45.27456049638056, 0.0]
 upperright = [8.948117154811715, 47.781282316442606, 0.0]
 
 # We can now import the map with the `Screensho_To_GeoData` function:
-Geology  = Screenshot_To_GeoData("SchoriM_Encl_01_Jura-map_A1.png", lowerleft, upperright, fieldname=:geology_colors) # name should have "colors" in it
+Geology  = screenshotToGeoData("SchoriM_Encl_01_Jura-map_A1.png", lowerleft, upperright, fieldname=:geology_colors) # name should have "colors" in it
 
 # You can "drape" this image on the topographic map with
 TopoGeology = drape_on_topo(Topo, Geology)
@@ -58,7 +58,7 @@ Basement = importGeoTIFF("BMes_Spline_longlat.tif", fieldname=:Basement, removeN
 download_data("https://zenodo.org/records/10726801/files/Schori_2020_Ornans-Miserey-v2_whiteBG.png", "Schori_2020_Ornans-Miserey-v2_whiteBG.png")
 Corner_LowerLeft = (5.92507, 47.31300, -2.0)
 Corner_UpperRight = (6.25845, 46.99550, 2.0)
-CrossSection_1 = Screenshot_To_GeoData("Schori_2020_Ornans-Miserey-v2_whiteBG.png", Corner_LowerLeft, Corner_UpperRight) # name should have "colors" in it
+CrossSection_1 = screenshotToGeoData("Schori_2020_Ornans-Miserey-v2_whiteBG.png", Corner_LowerLeft, Corner_UpperRight) # name should have "colors" in it
 
 # Note that we slightly modified the image to save it with a white instead of a transparent background
 

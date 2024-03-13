@@ -51,10 +51,10 @@ At this step, only the topographic data is imported. Now we have to import the t
 julia> Corner_LowerLeft  = (lon_min, lat_min , 0.0)
 julia> Corner_UpperRight = (lon_max, lat_max , 0.0)
 ```
-and import the png file with the GMG function `Screenshot_To_GeoData`:  
+and import the png file with the GMG function `screenshotToGeoData`:  
 
 ```julia
-julia> DataPNG = Screenshot_To_GeoData(filename_geo, Corner_LowerLeft, Corner_UpperRight)
+julia> DataPNG = screenshotToGeoData(filename_geo, Corner_LowerLeft, Corner_UpperRight)
 ```
 
 Next, we drape the screenshot on the topographic map with `drape_on_topo`:
