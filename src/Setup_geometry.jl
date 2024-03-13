@@ -201,6 +201,13 @@ function AddBox!(Phase, Temp, Grid::AbstractGeneralGrid;                 # requi
         Origin = (xlim[1], ylim[1], zlim[2])  # upper-left corner
     end
 
+    if Origin != nothing & T==McKenzie_subducting_slab 
+        @warn  "McKenzie temperature field requires that Origin  = [xmin,ymin,zmax] of the box."
+        if Origin[1] != xlim[1] | Origin[2] != ylim[1] | Origin[3] != zlim[2]
+            @error  "Origin is not set up correctly. For fixing the problem Origin can be left blank or Origin = [xmin,ymin,zmax] of the box"
+        end
+    end
+
     # Perform rotation of 3D coordinates:
     Xrot = X .- Origin[1];
     Yrot = Y .- Origin[2];
