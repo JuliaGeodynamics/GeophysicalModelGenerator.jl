@@ -202,7 +202,7 @@ function AddBox!(Phase, Temp, Grid::AbstractGeneralGrid;                 # requi
     end
 
     if Origin !== nothing && isa(T, McKenzie_subducting_slab)
-        @warn  "McKenzie temperature field requires that Origin  = [xmin,ymin,zmax] of the box."
+        @warn  "McKenzie temperature does not require to define Origin, if Origin is defined it must be equal to [xmin,ymin,zmax] of the box that has been defined."
         if Origin[1] != xlim[1] || Origin[2] != ylim[1] || Origin[3] != zlim[2]
             @error  "Origin is not set up correctly. For fixing the problem Origin can be left blank or Origin = [xmin,ymin,zmax] of the box"
         end
