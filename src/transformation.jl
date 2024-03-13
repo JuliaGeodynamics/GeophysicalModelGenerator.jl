@@ -30,13 +30,13 @@ function projectCartData(d_cart::CartData, d::GeoData, p::ProjectionPoint)
     end
     
     if size(Data_lonlat.lon.val,3)==1
-        z_new, fields_new = InterpolateDataFields2D(d,Data_lonlat.lon.val, Data_lonlat.lat.val)
+        z_new, fields_new = interpolateDataFields2D(d,Data_lonlat.lon.val, Data_lonlat.lat.val)
       
         # Create new struct 
         d_cart = CartData(d_cart.x.val,d_cart.y.val,z_new,fields_new)
     
     else
-        d_data = InterpolateDataFields(d, Data_lonlat.lon.val, Data_lonlat.lat.val, Data_lonlat.depth.val)    
+        d_data = interpolateDataFields(d, Data_lonlat.lon.val, Data_lonlat.lat.val, Data_lonlat.depth.val)    
         d_cart = CartData(d_cart.x.val,d_cart.y.val,d_cart.z.val,d_data.fields)
     
     end
@@ -57,13 +57,13 @@ Projects all datafields from the GeoData struct `d` to the CartData struct `d_ca
 function projectCartData(d_cart::CartData, d_cart_data0::CartData)
     
     if size(d_cart_data0.x.val,3)==1
-        z_new, fields_new = InterpolateDataFields2D(d,d_cart_data0.x.val, d_cart_data0.y.val)
+        z_new, fields_new = interpolateDataFields2D(d,d_cart_data0.x.val, d_cart_data0.y.val)
         
         # Create new struct 
         d_cart = CartData(d_cart.x.val,d_cart.y.val,z_new,fields_new)
     
     else
-        d_data = InterpolateDataFields(d, d_cart_data0.x.val, d_cart_data0.y.val, d_cart_data0.z.val)    
+        d_data = interpolateDataFields(d, d_cart_data0.x.val, d_cart_data0.y.val, d_cart_data0.z.val)    
         d_cart = CartData(d_cart.x.val,d_cart.y.val,d_cart.z.val,d_data.fields)
     
     end
@@ -87,13 +87,13 @@ function projectCartData(d_cart::CartData, d::UTMData, p::ProjectionPoint)
     Data_UTM    = convert2UTMzone(d_cart, p)
     
     if size(Data_UTM.EW.val,3)==1
-        z_new, fields_new = InterpolateDataFields2D(d,Data_UTM.EW.val, Data_UTM.NS.val)
+        z_new, fields_new = interpolateDataFields2D(d,Data_UTM.EW.val, Data_UTM.NS.val)
         
         # Create new struct 
         d_cart = CartData(d_cart.x.val,d_cart.y.val,z_new,fields_new)
     
     else
-        d_data = InterpolateDataFields(d, Data_UTM.EW.val, Data_UTM.NS.val, Data_UTM.depth.val)    
+        d_data = interpolateDataFields(d, Data_UTM.EW.val, Data_UTM.NS.val, Data_UTM.depth.val)    
         d_cart = CartData(d_cart.x.val,d_cart.y.val,d_cart.z.val,d_data.fields)
     
     end

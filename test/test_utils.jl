@@ -8,14 +8,14 @@ Lon,Lat,Depth   =   lonlatdepthGrid(10:20,30:40,-50km);
 Data1           =   Depth*2;                # some data
 Vx1,Vy1,Vz1     =   Data1*3,Data1*4,Data1*5
 Data_set2D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data1,LonData1=Lon, Velocity=(Vx1,Vy1,Vz1)))  
-@test_throws ErrorException CrossSection(Data_set2D, Depth_level=-10)
+@test_throws ErrorException crossSection(Data_set2D, Depth_level=-10)
 
 # Test interpolation of depth to a given cartesian XY-plane
 x = 11:19
 y = 31:39
-plane1 = InterpolateDataFields2D(Data_set2D, x, y)
+plane1 = interpolateDataFields2D(Data_set2D, x, y)
 proj   = ProjectionPoint()
-plane2 = InterpolateDataFields2D(Data_set2D, proj, x, y)
+plane2 = interpolateDataFields2D(Data_set2D, proj, x, y)
 
 @test plane1 == plane2
 @test all(==(-50e0), plane1)
@@ -36,7 +36,7 @@ Vx,Vy,Vz                =   ustrip(Data*3)*km/s,ustrip(Data*4)*km/s,ustrip(Data*
 Data_set3D_reverse      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)))  
 
 # Create cross-sections in various directions (no interpolation which is default)
-test_cross      =   CrossSection(Data_set3D, Depth_level=-100km)
+test_cross      =   crossSection(Data_set3D, Depth_level=-100km)
 @test test_cross.fields[1][41]==-200km
 @test test_cross.fields[2][31]==18
 @test test_cross.fields[3][1][30]==-600km/s
@@ -44,16 +44,16 @@ test_cross      =   CrossSection(Data_set3D, Depth_level=-100km)
 @test test_cross.fields[3][3][30]==-1000km/s
 
 # throw error if outside bounds
-@test_throws ErrorException CrossSection(Data_set3D, Depth_level=100km)
+@test_throws ErrorException crossSection(Data_set3D, Depth_level=100km)
 
-test_cross      =   CrossSection(Data_set3D, Lon_level=15)
+test_cross      =   crossSection(Data_set3D, Lon_level=15)
 @test test_cross.fields[1][41]==-450km
 @test test_cross.fields[2][31]==15
 @test test_cross.fields[3][1][30]==-1500km/s
 @test test_cross.fields[3][2][30]==-2000km/s
 @test test_cross.fields[3][3][30]==-2500km/s
 
-test_cross      =   CrossSection(Data_set3D, Lat_level=35)
+test_cross      =   crossSection(Data_set3D, Lat_level=35)
 @test test_cross.fields[1][41]==-450km
 @test test_cross.fields[2][31]==18
 @test test_cross.fields[3][1][30]==-1500km/s
@@ -61,51 +61,51 @@ test_cross      =   CrossSection(Data_set3D, Lat_level=35)
 @test test_cross.fields[3][3][30]==-2500km/s
 
 # Create cross-sections with interpolation in various directions
-test_cross      =   CrossSection(Data_set3D, Depth_level=-100km, dims=(50,100), Interpolate=true)
+test_cross      =   crossSection(Data_set3D, Depth_level=-100km, dims=(50,100), Interpolate=true)
 @test size(test_cross.fields[1])    ==  (50,100,1)
 @test size(test_cross.fields[3][2]) ==  (50,100,1)
 
-test_cross      =   CrossSection(Data_set3D, Lon_level=15, dims=(50,100), Interpolate=true)
+test_cross      =   crossSection(Data_set3D, Lon_level=15, dims=(50,100), Interpolate=true)
 @test size(test_cross.fields[3][2])==(1,50,100)
 @test write_Paraview(test_cross, "profile_test")==nothing
 
-test_cross      =   CrossSection(Data_set3D, Lat_level=35, dims=(50,100), Interpolate=true)
+test_cross      =   crossSection(Data_set3D, Lat_level=35, dims=(50,100), Interpolate=true)
 @test size(test_cross.fields[3][2])==(50,1,100)
 
 # Diagonal cross-section
-test_cross      =   CrossSection(Data_set3D, Start=(10,30), End=(20,40), dims=(50,100), Interpolate=true)
+test_cross      =   crossSection(Data_set3D, Start=(10,30), End=(20,40), dims=(50,100), Interpolate=true)
 @test size(test_cross.fields[3][2])==(50,100,1)
 @test write_Paraview(test_cross, "profile_test")==nothing
 
-#test_cross_rev  =   CrossSection(Data_set3D_reverse, Start=(10,30), End=(20,40), dims=(50,100), Interpolate=true)
+#test_cross_rev  =   crossSection(Data_set3D_reverse, Start=(10,30), End=(20,40), dims=(50,100), Interpolate=true)
 #@test size(test_cross_rev.fields[3][2])==(50,100,1)
 #@test write_Paraview(test_cross_rev, "profile_test_rev")[1]=="profile_test_rev.vts"
 
 # Cross-section with cartesian data
-test_cross      =   CrossSection(Data_setCart3D, Lon_level=15, dims=(50,100), Interpolate=true)
+test_cross      =   crossSection(Data_setCart3D, Lon_level=15, dims=(50,100), Interpolate=true)
 @test size(test_cross.fields[3][2])==(1,50,100)
 @test test_cross.x[1,2,3]==GeoUnit(15km)
 
-# Flatten diagonal 3D CrossSection with CartData
+# Flatten diagonal 3D crossSection with CartData
 
 # Create 3D volume with some fake data
 Grid            = createCartGrid(size=(100,100,100), x=(0.0km, 99.9km), y=(-10.0km, 20.0km), z=(-40km,4km));
 X,Y,Z           = xyzGrid(Grid.coord1D...);
 DataSet_Cart    = CartData(X,Y,Z,(Depthdata=Z,))
 
-test_cross_cart  = CrossSection(DataSet_Cart, dims=(100,100), Interpolate=true, Start=(ustrip(Grid.min[1]),ustrip(Grid.max[2])), End=(ustrip(Grid.max[1]), ustrip(Grid.min[2])))
+test_cross_cart  = crossSection(DataSet_Cart, dims=(100,100), Interpolate=true, Start=(ustrip(Grid.min[1]),ustrip(Grid.max[2])), End=(ustrip(Grid.max[1]), ustrip(Grid.min[2])))
 
-flatten_cross   = FlattenCrossSection(test_cross_cart)
+flatten_cross   = flattenCrossSection(test_cross_cart)
 
 @test flatten_cross[2][30]==1.0536089537226578
 @test test_cross_cart.fields.FlatCrossSection[2][30] == flatten_cross[2][30] # should be added by default
 
-# Flatten 3D CrossSection with GeoData
+# Flatten 3D crossSection with GeoData
 Lon,Lat,Depth   =   lonlatdepthGrid(10:20,30:40,(-300:25:0)km);
 Data            =   Depth*2;                # some data
 Data_set        =   GeoData(Lon,Lat,Depth,(Depthdata=Data,));
-Data_cross      =   CrossSection(Data_set, Start=(10,39),End=(10,40))
-x_profile       =   FlattenCrossSection(Data_cross)
+Data_cross      =   crossSection(Data_set, Start=(10,39),End=(10,40))
+x_profile       =   flattenCrossSection(Data_cross)
 
 @test x_profile[100][100][1]==111.02363637836613
 
@@ -113,49 +113,49 @@ x_profile       =   FlattenCrossSection(Data_cross)
 # Extract sub-volume
 
 # with interpolation
-Data_sub_Interp = ExtractSubvolume(Data_set3D,Lon_level=(10,15), Lat_level=(30,32), Interpolate=true, dims=(51,21,32))
+Data_sub_Interp = extractSubvolume(Data_set3D,Lon_level=(10,15), Lat_level=(30,32), Interpolate=true, dims=(51,21,32))
 @test Data_sub_Interp.fields[1][11]==-600km
 @test size(Data_sub_Interp.lat)==(51,21,32)
 
-Data_sub_Interp_Cart = ExtractSubvolume(DataSet_Cart,X_level=(10,15), Y_level=(10,12), Interpolate=true, dims=(51,21,32))
+Data_sub_Interp_Cart = extractSubvolume(DataSet_Cart,X_level=(10,15), Y_level=(10,12), Interpolate=true, dims=(51,21,32))
 @test Data_sub_Interp_Cart.fields[1][11]==-40km
 @test size(Data_sub_Interp_Cart.x)==(51,21,32)
 
-Data_cross_Interp_Cart = ExtractSubvolume(test_cross_cart,X_level=(10,50), Z_level=(-20,-5), dims=(51,61))
+Data_cross_Interp_Cart = extractSubvolume(test_cross_cart,X_level=(10,50), Z_level=(-20,-5), dims=(51,61))
 @test Data_cross_Interp_Cart.fields[1][11]==18.0
 @test size(Data_cross_Interp_Cart.x)==(51,61,1)
 
 # no interpolation
-Data_sub_NoInterp = ExtractSubvolume(Data_set3D,Lon_level=(10,15), Lat_level=(30,32), Interpolate=false, dims=(51,21,32))
+Data_sub_NoInterp = extractSubvolume(Data_set3D,Lon_level=(10,15), Lat_level=(30,32), Interpolate=false, dims=(51,21,32))
 @test Data_sub_NoInterp.fields[1][11]==-600km
 @test size(Data_sub_NoInterp.lat)==(6,3,13)
 
-Data_sub_Interp_Cart = ExtractSubvolume(DataSet_Cart,X_level=(10,15), Y_level=(10,12), Interpolate=false, dims=(51,21,32))
+Data_sub_Interp_Cart = extractSubvolume(DataSet_Cart,X_level=(10,15), Y_level=(10,12), Interpolate=false, dims=(51,21,32))
 @test Data_sub_Interp_Cart.fields[1][5]==-40km
 @test size(Data_sub_Interp_Cart.x)==(6,8,100)
 
 
 # Extract subset of cross-section
-test_cross      =   CrossSection(Data_set3D, Lat_level=35, dims=(50,100), Interpolate=true)
-Data_sub_cross  =   ExtractSubvolume(test_cross, Depth_level=(-100km,0km), Interpolate=false)
+test_cross      =   crossSection(Data_set3D, Lat_level=35, dims=(50,100), Interpolate=true)
+Data_sub_cross  =   extractSubvolume(test_cross, Depth_level=(-100km,0km), Interpolate=false)
 @test Data_sub_cross.fields[1][11]==-200.00000000000003km
 @test size(Data_sub_cross.lat)==(50,1,34)
 
-test_cross_cart   =  CrossSection(DataSet_Cart, Start=(0.0,-9.0), End=(90.0, 19.0)) # Cartesian cross-section
+test_cross_cart   =  crossSection(DataSet_Cart, Start=(0.0,-9.0), End=(90.0, 19.0)) # Cartesian cross-section
 
 
 # compute the mean velocity per depth in a 3D dataset and subtract the mean from the given velocities
-Data_pert   =   SubtractHorizontalMean(ustrip(Data))    # 3D, no units
+Data_pert   =   subtractHorizontalMean(ustrip(Data))    # 3D, no units
 @test Data_pert[10] == 0.0
 
-Data_pert   =   SubtractHorizontalMean(Data)            # 3D with units
+Data_pert   =   subtractHorizontalMean(Data)            # 3D with units
 @test Data_pert[10] == 0.0km
 
-Data_pert   =   SubtractHorizontalMean(Data, Percentage=true)            # 3D with units
+Data_pert   =   subtractHorizontalMean(Data, Percentage=true)            # 3D with units
 @test Data_pert[1000] == 0.0
 
 Data2D = Data[:,1,:];
-Data_pert   =   SubtractHorizontalMean(Data2D, Percentage=true)         # 2D version with units [dp the same along a vertical profile]    
+Data_pert   =   subtractHorizontalMean(Data2D, Percentage=true)         # 2D version with units [dp the same along a vertical profile]    
 
 Data_set2D  =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon,Pertdata=Data_pert ,Velocity=(Vx,Vy,Vz)))  
 @test Data_set2D.fields[3][10,8,1] == 0
@@ -181,40 +181,40 @@ Above       =   aboveSurface(Data_sub_cross, Data_Moho);        # 2D cross-secti
 @test Above[1]==false
 
 # test profile creation of surface data
-test_cross = CrossSection(Data_Moho, dims=(101,), Lat_level=37.5)
+test_cross = crossSection(Data_Moho, dims=(101,), Lat_level=37.5)
 @test test_cross.fields.MohoDepth[8]==-29.3km
 
-test_cross = CrossSection(Data_Moho, dims=(101,), Lon_level=15.8)
+test_cross = crossSection(Data_Moho, dims=(101,), Lon_level=15.8)
 @test test_cross.fields.MohoDepth[11]==-24.2km
 
-test_cross =  CrossSection(Data_Moho, dims=(101,), Start=(10,30), End=(20,40))
+test_cross =  crossSection(Data_Moho, dims=(101,), Start=(10,30), End=(20,40))
 @test test_cross.fields.MohoDepth[30]==-27.1km
 
 
 # Test VoteMaps
-Data_VoteMap = VoteMap(Data_set3D, "Depthdata<-560",dims=(10,10,10))
-@test Data_VoteMap.fields[:VoteMap][101]==0
-@test Data_VoteMap.fields[:VoteMap][100]==1
+Data_VoteMap = voteMap(Data_set3D, "Depthdata<-560",dims=(10,10,10))
+@test Data_VoteMap.fields[:voteMap][101]==0
+@test Data_VoteMap.fields[:voteMap][100]==1
 
-Data_VoteMap = VoteMap(Data_set3D_reverse, "Depthdata<-560",dims=(10,10,10))
-@test Data_VoteMap.fields[:VoteMap][101]==0
-@test Data_VoteMap.fields[:VoteMap][100]==1
+Data_VoteMap = voteMap(Data_set3D_reverse, "Depthdata<-560",dims=(10,10,10))
+@test Data_VoteMap.fields[:voteMap][101]==0
+@test Data_VoteMap.fields[:voteMap][100]==1
 
 # Combine 2 datasets 
-Data_VoteMap = VoteMap([Data_set3D_reverse, Data_set3D], ["Depthdata<-560","LonData>19"],dims=(10,10,10))
-@test Data_VoteMap.fields[:VoteMap][10,9,1]==2
-@test Data_VoteMap.fields[:VoteMap][9 ,9,1]==1
-@test Data_VoteMap.fields[:VoteMap][9 ,9,2]==0
+Data_VoteMap = voteMap([Data_set3D_reverse, Data_set3D], ["Depthdata<-560","LonData>19"],dims=(10,10,10))
+@test Data_VoteMap.fields[:voteMap][10,9,1]==2
+@test Data_VoteMap.fields[:voteMap][9 ,9,1]==1
+@test Data_VoteMap.fields[:voteMap][9 ,9,2]==0
 
 # Test rotation routines
 X,Y,Z   =   lonlatdepthGrid(10:20,30:40,-50:-10);
 Data_C  =   ParaviewData(X,Y,Z,(Depth=Z,))
-Data_C1 =   RotateTranslateScale(Data_C, Rotate=30);
+Data_C1 =   rotateTranslateScale(Data_C, Rotate=30);
 @test Data_C1.x.val[10] ≈ 1.4544826719043336
 @test Data_C1.y.val[10] ≈ 35.48076211353316
 @test Data_C1.z.val[20] == -50
 
-Data_C1 = RotateTranslateScale(Data_C, Scale=10, Rotate=10, Translate=(1,2,3));
+Data_C1 = rotateTranslateScale(Data_C, Scale=10, Rotate=10, Translate=(1,2,3));
 @test Data_C1.x.val[10] ≈ 136.01901977224043
 @test Data_C1.y.val[10] ≈ 330.43547966037914
 @test Data_C1.z.val[20] == -497.0
@@ -228,15 +228,15 @@ TestVecField    = (Magnitude[:],Magnitude[:],Magnitude[:])
 Data_EQ         = GeoData(Lon[:],Lat[:],Depth[:],(depth=Depth[:],Magnitude=Magnitude[:],VecField=TestVecField))
 
 # Test profile creation from point data set
-cross_tmp = CrossSection(Data_EQ,Depth_level=-25km,section_width=10km)
+cross_tmp = crossSection(Data_EQ,Depth_level=-25km,section_width=10km)
 @test cross_tmp.fields.depth_proj[10] == -25km # check if the projected depth level is actually the chosen one
 
-cross_tmp = CrossSection(Data_EQ,Lat_level=36.2,section_width=10km)
+cross_tmp = crossSection(Data_EQ,Lat_level=36.2,section_width=10km)
 @test cross_tmp.fields.lat_proj[10]==36.2 # check if the projected latitude level is the chosen one
 
-cross_tmp = CrossSection(Data_EQ,Lon_level=16.4,section_width=10km)
+cross_tmp = crossSection(Data_EQ,Lon_level=16.4,section_width=10km)
 @test cross_tmp.fields.lon_proj[10]==16.4 # check if the projected longitude level is the chosen one 
-cross_tmp = CrossSection(Data_EQ,Start=(15.0,35.0),End=(17.0,37.0),section_width=10km)
+cross_tmp = crossSection(Data_EQ,Start=(15.0,35.0),End=(17.0,37.0),section_width=10km)
 @test cross_tmp.fields.lon_proj[20] ==15.314329874961091 
 @test cross_tmp.fields.lat_proj[20] == 35.323420618580585
 

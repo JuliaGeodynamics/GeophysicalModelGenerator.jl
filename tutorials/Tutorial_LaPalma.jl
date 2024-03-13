@@ -82,7 +82,7 @@ ind = findall( (Grid_3D.fields.Count .> 75) .&& Phases.>0)
 Phases[ind] .= 3 #Magma
 
 # Add rocktypes to the grid:
-Grid_3D = AddField(Grid_3D,"Phases",Phases)
+Grid_3D = addField(Grid_3D,"Phases",Phases)
 
 # We can save this to paraview format
 write_Paraview(Grid_3D,"Grid_3D")

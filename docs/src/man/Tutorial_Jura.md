@@ -186,7 +186,7 @@ below = belowSurface(CrossSection_1_cart, TopoGeology_cart)
 We can add that to the cross-section with:
 
 ```julia
-CrossSection_1_cart = AddField(CrossSection_1_cart,"rocks",Int64.(below))
+CrossSection_1_cart = addField(CrossSection_1_cart,"rocks",Int64.(below))
 ```
 
 Note that we transfer the boolean to an integer
@@ -204,13 +204,13 @@ The result looks like:
 
 ## 3. Geological block model
 Yet, if you want to perform a numerical simulation of the Jura, it is more convenient to rotate the maps such that we can perform a simulation perpendicular to the strike of the mountain belt.
-This can be done with `RotateTranslateScale`:
+This can be done with `rotateTranslateScale`:
 
 ```julia
 RotationAngle = -43
-TopoGeology_cart_rot    = RotateTranslateScale(TopoGeology_cart, Rotate=RotationAngle)
-Basement_cart_rot       = RotateTranslateScale(Basement_cart, Rotate=RotationAngle)
-CrossSection_1_cart_rot = RotateTranslateScale(CrossSection_1_cart, Rotate=RotationAngle)
+TopoGeology_cart_rot    = rotateTranslateScale(TopoGeology_cart, Rotate=RotationAngle)
+Basement_cart_rot       = rotateTranslateScale(Basement_cart, Rotate=RotationAngle)
+CrossSection_1_cart_rot = rotateTranslateScale(CrossSection_1_cart, Rotate=RotationAngle)
 ```
 
 Next, we can create a new computational grid that is more conveniently oriented:
@@ -226,8 +226,8 @@ ComputationalGrid  =  CartData(xyzGrid(x,y,z))
 Re-interpolate the rotated to the new grid:
 
 ```julia
-GeologyTopo_comp_surf = InterpolateDataFields2D(TopoGeology_cart_rot, ComputationalSurf, Rotate=RotationAngle)
-Basement_comp_surf    = InterpolateDataFields2D(Basement_cart_rot,    ComputationalSurf, Rotate=RotationAngle)
+GeologyTopo_comp_surf = interpolateDataFields2D(TopoGeology_cart_rot, ComputationalSurf, Rotate=RotationAngle)
+Basement_comp_surf    = interpolateDataFields2D(Basement_cart_rot,    ComputationalSurf, Rotate=RotationAngle)
 ```
 
 Next we can use the surfaces to create a 3D block model.
@@ -254,8 +254,8 @@ Phases[id] .= 2
 Add to the computational grid:
 
 ```julia
-ComputationalGrid = AddField(ComputationalGrid,"Phases", Phases)
-ComputationalGrid = RemoveField(ComputationalGrid,"Z")
+ComputationalGrid = addField(ComputationalGrid,"Phases", Phases)
+ComputationalGrid = removeField(ComputationalGrid,"Z")
 ```
 
 Save the surfaces, cross-section and the grid:

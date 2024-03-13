@@ -234,17 +234,17 @@ function combine_VolData(VolData::NamedTuple; lat=nothing, lon=nothing, depth=no
     # Loop through all datasets
     DataSet_Names = String.(keys(VolData))
     for (i,DataSet) in enumerate(VolData)
-        DataSet_interp  = InterpolateDataFields(DataSet, Lon,Lat,Z)
+        DataSet_interp  = interpolateDataFields(DataSet, Lon,Lat,Z)
         names_fields    = String.(keys(DataSet_interp.fields))
         for (j,name) in enumerate(names_fields)
             name_new_field = DataSet_Names[i]*"_"*name # name of new field includes name of dataset
             # Note: we use ustrip here, and thereby remove the values, as the cross-section routine made problems
-            DataSetRef = AddField(DataSetRef,name_new_field, ustrip.(DataSet_interp.fields[j]))
+            DataSetRef = addField(DataSetRef,name_new_field, ustrip.(DataSet_interp.fields[j]))
         end
     end
 
     # remove fake field
-    DataSetRef = RemoveField(DataSetRef, "Temporary")
+    DataSetRef = removeField(DataSetRef, "Temporary")
 
     return DataSetRef
 end
@@ -259,15 +259,15 @@ function CreateProfileVolume!(Profile::ProfileData, VolData::AbstractGeneralGrid
 
     if Profile.vertical
         # take a vertical cross section
-        cross_tmp = CrossSection(VolData,dims=DimsVolCross, Start=Profile.start_lonlat,End=Profile.end_lonlat,Depth_extent=Depth_extent)        # create the cross section
+        cross_tmp = crossSection(VolData,dims=DimsVolCross, Start=Profile.start_lonlat,End=Profile.end_lonlat,Depth_extent=Depth_extent)        # create the cross section
 
         # flatten cross section and add this data to the structure
-        x_profile = FlattenCrossSection(cross_tmp,Start=Profile.start_lonlat)
-        cross_tmp = AddField(cross_tmp,"x_profile",x_profile)
+        x_profile = flattenCrossSection(cross_tmp,Start=Profile.start_lonlat)
+        cross_tmp = addField(cross_tmp,"x_profile",x_profile)
 
     else
         # take a horizontal cross section
-        cross_tmp = CrossSection(VolData, Depth_level=Profile.depth, Interpolate=true, dims=DimsVolCross)
+        cross_tmp = crossSection(VolData, Depth_level=Profile.depth, Interpolate=true, dims=DimsVolCross)
     end
 
     Profile.VolData = cross_tmp # assign to Profile data structure
@@ -288,11 +288,11 @@ function CreateProfileSurface!(Profile::ProfileData, DataSet::NamedTuple; DimsSu
 
         if Profile.vertical
             # take a vertical cross section
-            data = CrossSectionSurface(data_tmp, dims=DimsSurfCross, Start=Profile.start_lonlat, End=Profile.end_lonlat)        # create the cross section
+            data = crossSectionSurface(data_tmp, dims=DimsSurfCross, Start=Profile.start_lonlat, End=Profile.end_lonlat)        # create the cross section
 
             # flatten cross section and add this data to the structure
-            x_profile   = FlattenCrossSection(data,Start=Profile.start_lonlat)
-            data        = AddField(data,"x_profile",x_profile)
+            x_profile   = flattenCrossSection(data,Start=Profile.start_lonlat)
+            data        = addField(data,"x_profile",x_profile)
 
             # add the data set as a NamedTuple
             data_NT     = NamedTuple{(DataSetName[idata],)}((data,))
@@ -323,11 +323,11 @@ function CreateProfilePoint!(Profile::ProfileData, DataSet::NamedTuple; section_
 
         if Profile.vertical
             # take a vertical cross section
-            data    = CrossSectionPoints(data_tmp, Start=Profile.start_lonlat, End=Profile.end_lonlat, section_width = section_width)        # create the cross section
+            data    = crossSectionPoints(data_tmp, Start=Profile.start_lonlat, End=Profile.end_lonlat, section_width = section_width)        # create the cross section
 
             # flatten cross section and add this data to the structure
-            x_profile   = FlattenCrossSection(data,Start=Profile.start_lonlat)
-            data        = AddField(data,"x_profile",x_profile)
+            x_profile   = flattenCrossSection(data,Start=Profile.start_lonlat)
+            data        = addField(data,"x_profile",x_profile)
 
             # add the data set as a NamedTuple
             data_NT     = NamedTuple{(DataSetName[idata],)}((data,))
@@ -335,7 +335,7 @@ function CreateProfilePoint!(Profile::ProfileData, DataSet::NamedTuple; section_
 
         else
             # take a horizontal cross section
-            data    = CrossSection(data_tmp, Depth_level=Profile.depth, section_width = section_width)        # create the cross section
+            data    = crossSection(data_tmp, Depth_level=Profile.depth, section_width = section_width)        # create the cross section
 
             # add the data set as a NamedTuple
             data_NT     = NamedTuple{(DataSetName[idata],)}((data,))

@@ -213,7 +213,7 @@ addBox!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0, 0.0),
 @test sum(Temp)  ≈ 3.499457641038468e8
 
 
-Data_Final =   AddField(Cart,"Temp",Temp)
+Data_Final =   addField(Cart,"Temp",Temp)
 
 
 # test polygon structure
