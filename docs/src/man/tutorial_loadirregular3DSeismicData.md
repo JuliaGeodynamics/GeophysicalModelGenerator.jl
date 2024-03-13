@@ -176,7 +176,7 @@ GeoData
   lat   ϵ [ 32.0 - 50.0]
   depth ϵ [ -350.0 km - -50.0 km]
   fields: (:Vs_km_s,)
-julia> Write_Paraview(Data_set, "MeRe_ElSharkawy")
+julia> write_Paraview(Data_set, "MeRe_ElSharkawy")
 1-element Vector{String}:
  "MeRe_ElSharkawy.vts"
 ```

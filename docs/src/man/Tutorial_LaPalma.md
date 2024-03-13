@@ -53,8 +53,8 @@ data_all_EQ = GeoData(lon,lat,depth, (Magnitude=Mag,))
 Next, we can write the data to paraview along with the topography. Note that we have to specify that we have `PointData`:
 
 ```julia
-Write_Paraview(data_all_EQ,"data_all_EQ",PointsData=true)
-Write_Paraview(Topo,"Topo")
+write_Paraview(data_all_EQ,"data_all_EQ",PointsData=true)
+write_Paraview(Topo,"Topo")
 ```
 
 ![LaPalma_EQTopo_GeoData](../assets/img/TopoEQs_LaPalma_GeoData.png)
@@ -93,8 +93,8 @@ Topo_model = projectCartData(Topo_model, Topo, proj)
 Let's have a look at the data:
 
 ```julia
-Write_Paraview(EQ_cart,"EQ_cart",PointsData=true)
-Write_Paraview(Topo_model,"Topo_model")
+write_Paraview(EQ_cart,"EQ_cart",PointsData=true)
+write_Paraview(Topo_model,"Topo_model")
 ```
 
 ## 3. Create a volumetric earthquake plot
@@ -146,7 +146,7 @@ Grid_3D = AddField(Grid_3D,"Phases",Phases)
 We can save this to paraview format
 
 ```julia
-Write_Paraview(Grid_3D,"Grid_3D")
+write_Paraview(Grid_3D,"Grid_3D")
 ```
 
 The paraview statefile `/tutorials/LaPalma.pvsm` can be used to reproduce the following plot:

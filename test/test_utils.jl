@@ -67,7 +67,7 @@ test_cross      =   CrossSection(Data_set3D, Depth_level=-100km, dims=(50,100), 
 
 test_cross      =   CrossSection(Data_set3D, Lon_level=15, dims=(50,100), Interpolate=true)
 @test size(test_cross.fields[3][2])==(1,50,100)
-@test Write_Paraview(test_cross, "profile_test")==nothing
+@test write_Paraview(test_cross, "profile_test")==nothing
 
 test_cross      =   CrossSection(Data_set3D, Lat_level=35, dims=(50,100), Interpolate=true)
 @test size(test_cross.fields[3][2])==(50,1,100)
@@ -75,11 +75,11 @@ test_cross      =   CrossSection(Data_set3D, Lat_level=35, dims=(50,100), Interp
 # Diagonal cross-section
 test_cross      =   CrossSection(Data_set3D, Start=(10,30), End=(20,40), dims=(50,100), Interpolate=true)
 @test size(test_cross.fields[3][2])==(50,100,1)
-@test Write_Paraview(test_cross, "profile_test")==nothing
+@test write_Paraview(test_cross, "profile_test")==nothing
 
 #test_cross_rev  =   CrossSection(Data_set3D_reverse, Start=(10,30), End=(20,40), dims=(50,100), Interpolate=true)
 #@test size(test_cross_rev.fields[3][2])==(50,100,1)
-#@test Write_Paraview(test_cross_rev, "profile_test_rev")[1]=="profile_test_rev.vts"
+#@test write_Paraview(test_cross_rev, "profile_test_rev")[1]=="profile_test_rev.vts"
 
 # Cross-section with cartesian data
 test_cross      =   CrossSection(Data_setCart3D, Lon_level=15, dims=(50,100), Interpolate=true)

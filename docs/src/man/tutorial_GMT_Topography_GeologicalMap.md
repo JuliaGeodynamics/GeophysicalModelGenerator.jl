@@ -67,7 +67,7 @@ julia> TopoGeology = drape_on_topo(Topo, DataPNG)
 Transforming the to Paraview is now a piece of cake:
 
 ```julia
-julia> Write_Paraview(TopoGeology, "test_GeoMap")
+julia> write_Paraview(TopoGeology, "test_GeoMap")
 ```
 The result is shown here:
 

@@ -71,7 +71,7 @@ tectunits = unique(table.tect_unit); # get tectonic units
 Data_set        =   GeoData(Lon, Lat, Depth, (Topography=Depth*km,tect_unit=TectUnitData))
 
 # Export the data structure to Paraview format
-Write_Paraview(Data_set, "test_GeoMap")
+write_Paraview(Data_set, "test_GeoMap")
 
 
 
@@ -93,4 +93,4 @@ Write_Paraview(Data_set, "test_GeoMap")
 data_Topo        =   GeoData(Lon, Lat, Depth, (Topography=Depth*km,))
 
 # Export the data structure to Paraview format
-Write_Paraview(Data_set, "test_netcdf_ETOPO1")
+write_Paraview(Data_set, "test_netcdf_ETOPO1")

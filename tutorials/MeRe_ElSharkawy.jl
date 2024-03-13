@@ -36,4 +36,4 @@ end
 
 # Save data to paraview:
 Data_set    =   GeoData(Lon,Lat,Depth,(Vs_km_s=Vs_3D,))   
-Write_Paraview(Data_set, "MeRe_ElSharkawy")
+write_Paraview(Data_set, "MeRe_ElSharkawy")

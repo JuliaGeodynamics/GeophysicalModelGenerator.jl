@@ -141,7 +141,7 @@ height      =   interpol.(lon,lat)/1e3
 GPS_Sanchez_grid        =   GeoData(lon,lat,height,(Velocity_mm_year=(Ve,Vn,Vz),V_north=Vn*mm/yr, V_east=Ve*mm/yr, V_vertical=Vz*mm/yr, Vmagnitude = Vmagnitude*mm/yr, Topography = height*km))
 
 # Save paraview is as always:
-Write_Paraview(GPS_Sanchez_grid, "GPSAlps_Sanchez_2017_grid")
+write_Paraview(GPS_Sanchez_grid, "GPSAlps_Sanchez_2017_grid")
 
 # Opening and plotting the vertical field gives:
 # ![Tutorial_GPS_3](../assets/img/Tutorial_GPS_3.png)

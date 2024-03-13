@@ -271,7 +271,7 @@ addSlab!(Phase,Temp,Cart, t1, phase=phase, T = TsHC)
 @test extrema(Phase) == (1, 9)
 
 #Data_Final      =   CartData(X,Y,Z,(Phase=Phase,Temp=Temp)) 
-#Write_Paraview(Data_Final, "Data_Final");
+#write_Paraview(Data_Final, "Data_Final");
 
 Phase = ones(Int32,size(Cart));
 Temp = fill(1350.0,size(Cart));
@@ -311,7 +311,7 @@ addSlab!(Phases, Temp, Grid2D, trench, phase = ConstantPhase(2), T=T_slab);
 
 # Add them to the `CartData` dataset:
 #Grid2D = CartData(Grid2D.x.val, Grid2D.y.val, Grid2D.z.val ,(;Phases, Temp))
-#Write_Paraview(Grid2D,"Grid2D_SubductionCurvedMechanical");
+#write_Paraview(Grid2D,"Grid2D_SubductionCurvedMechanical");
 
 
 # More sophisticated 2D example with overriding plate
@@ -350,5 +350,5 @@ Phases[ind] .= 0;
 @test sum(Temp) ≈ 8.292000736425713e7  
 @test extrema(Phases) == (0, 6)
 #Grid2D = CartData(Grid2D.x.val,Grid2D.y.val,Grid2D.z.val, (;Phases, Temp))
-#Write_Paraview(Grid2D,"Grid2D_SubductionCurvedOverriding");
+#write_Paraview(Grid2D,"Grid2D_SubductionCurvedOverriding");
 

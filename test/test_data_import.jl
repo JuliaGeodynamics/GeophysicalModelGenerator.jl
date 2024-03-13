@@ -36,7 +36,7 @@ data_Image          =   screenshotToGeoData(filename,Corner_LowerLeft, Corner_Up
 @test data_Image.lon[1000] ≈ 17.592964824120603
 @test data_Image.lat[1000] ≈ 50.59296482412061
 @test Value(data_Image.depth[1000])==-590km
-@test Write_Paraview(data_Image, "Profile_1")==nothing
+@test write_Paraview(data_Image, "Profile_1")==nothing
 
 # test if we use a different name for the color dataset
 data_Image_newfieldname  =   screenshotToGeoData(filename,Corner_LowerLeft, Corner_UpperRight, fieldname=:fake)
@@ -65,7 +65,7 @@ data_Image          =   screenshotToGeoData(filename,Corner_LowerLeft, Corner_Up
 @test data_Image.lon[1000]  ≈  2.814070351758794
 @test data_Image.lat[1000]  ≈ 40.00000000000001
 @test Value(data_Image.depth[1000])==-15km
-@test Write_Paraview(data_Image, "MapView_1") == nothing
+@test write_Paraview(data_Image, "MapView_1") == nothing
 
 # MapView in CartData
 data_Image          =   screenshotToCartData(filename,Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft)

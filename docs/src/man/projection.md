@@ -19,7 +19,7 @@ GeoData
   lat   ϵ [ 25.0 : 49.666666666666664]
   depth ϵ [ -4.9855 km : 3.123 km]
   fields: (:Topography,)
-julia> Write_Paraview(Topo,"Topo")
+julia> write_Paraview(Topo,"Topo")
 Saved file: Topo.vts
 ```
 The result is shown on the globe as: 
@@ -94,7 +94,7 @@ CartData
     y      ϵ [ -1000.0 km : 1000.0 km]
     z      ϵ [ -4.485650671162607 km : 2.5909655318121865 km]
     fields : (:Topography,)
-julia> Write_Paraview(Topo_Cart_orth,"Topo_Cart_orth");    
+julia> write_Paraview(Topo_Cart_orth,"Topo_Cart_orth");    
 ```
 ![Topo_Europe_CartData_Proj](../assets/img/Topo_Europe_CartData_Proj.png)
 So this interpolates the topographic data from the `GeoData` to the orthogonal cartesian grid (which can be used with LaMEM, for example).

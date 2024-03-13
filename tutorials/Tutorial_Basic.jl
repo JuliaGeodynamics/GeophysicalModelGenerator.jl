@@ -12,14 +12,14 @@ Tomo_Alps_full = load_GMG("https://zenodo.org/records/10738510/files/Paffrath_20
 
 # This is a so-called `GeoData` object, which is a 3D grid of seismic velocities as a function of longitude, latitude and depth, which can include various fields (here we only have a single field: `:dVp_Percentage`)
 # We can save this in `VTK` format, which is a widely used format that can for exampke be read by the 3D open-source visualization tool [Paraview](https://www.paraview.org/):
-Write_Paraview(Tomo_Alps_full,"Tomo_Alps_full")
+write_Paraview(Tomo_Alps_full,"Tomo_Alps_full")
 
 # We also uploaded a dataset with the topography of the Alpine region which can be downloaded with:
 Topo_Alps = load_GMG("https://zenodo.org/records/10738510/files/AlpsTopo.jld2?download=1")
 
 # Different than the 3D tomographic model, the topography has size 1 for the last index which indicates that this is a 3D surface. As you can see, the depth varies, which is because it is a warped surface.
 # We can write this to disk as well
-Write_Paraview(Topo_Alps,"Topo_Alps")
+write_Paraview(Topo_Alps,"Topo_Alps")
 
 # If we open both datasets in Paraview, we see this (after giving some color to the topography):
 # ![Basic_Tutorial_1](../assets/img/Basic_Tutorial_1.png)
@@ -30,7 +30,7 @@ Write_Paraview(Topo_Alps,"Topo_Alps")
 # It is thus advantageous to cut out a piece of the dataset that we are interested in which can be done with `ExtractSubVolume`:
 Tomo_Alps = ExtractSubvolume(Tomo_Alps_full,Lon_level=(4,20),Lat_level=(36,50), Depth_level=(-600,-10))
 
-Write_Paraview(Tomo_Alps,"Tomo_Alps");
+write_Paraview(Tomo_Alps,"Tomo_Alps");
 
 # Which looks like:
 # ![Basic_Tutorial_2](../assets/img/Basic_Tutorial_2.png)
@@ -90,8 +90,8 @@ data_200km_exact = CrossSection(Tomo_Alps, Depth_level=-200, Interpolate=true)
 Cross_vert = CrossSection(Tomo_Alps, Start=(5,47), End=(15,44))
 
 # And write them to paraview:
-Write_Paraview(Cross_vert,"Cross_vert");
-Write_Paraview(data_200km,"data_200km");
+write_Paraview(Cross_vert,"Cross_vert");
+write_Paraview(data_200km,"data_200km");
 
 # ![Basic_Tutorial_3](../assets/img/Basic_Tutorial_3.png)
 # In creating this image, I used the `Clip` tool of Paraview to only show topography above sealevel and made it 50% transparent.
@@ -108,8 +108,8 @@ Topo_cart = convert2CartData(Topo_Alps, proj)
 Tomo_cart = convert2CartData(Tomo_Alps, proj)
 
 # Save:
-Write_Paraview(Tomo_cart,"Tomo_cart");
-Write_Paraview(Topo_cart,"Topo_cart");
+write_Paraview(Tomo_cart,"Tomo_cart");
+write_Paraview(Topo_cart,"Topo_cart");
 
 # ![Basic_Tutorial_4](../assets/img/Basic_Tutorial_4.png)
 # As the coordinates are now aligned with the `x`,`y`,`z` coordinate axes in Paraview it is now straightforward to use the build-in tools to explore the data.
@@ -130,8 +130,8 @@ Topo_rect = CartData(xyzGrid(-550.0:1:600, -500.0:1:700, 0))
 Topo_rect = projectCartData(Topo_rect, Topo_Alps, proj)
 
 # Save it:
-Write_Paraview(Tomo_rect,"Tomo_rect");
-Write_Paraview(Topo_rect,"Topo_rect");
+write_Paraview(Tomo_rect,"Tomo_rect");
+write_Paraview(Topo_rect,"Topo_rect");
 # ![Basic_Tutorial_5](../assets/img/Basic_Tutorial_5.png)
 
 # At this stage, the data can directly be used to generate cartesian numerical model setups, as explained in the other tutorials. 

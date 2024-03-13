@@ -26,7 +26,7 @@ julia> magnitude = data[:,4];
 Converting this data to a GeoStruct data and to export is to Paraview is then straightforward.
 ```julia-repl
 julia> EQ_Data = GeoData(lon,lat,depth,(Magnitude=magnitude,Depth=depth));
-julia> Write_Paraview(EQ_Data, "EQ_ISC", PointsData=true)
+julia> write_Paraview(EQ_Data, "EQ_ISC", PointsData=true)
 ```
 The result looks like this (plotted here together with the topography):
 

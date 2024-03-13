@@ -26,24 +26,24 @@ dVp_perc_3D  = reshape(dVp_perc, resolution);
 
 # save paraview file
 Data_set    =   GeoData(Lon,Lat,Depth,(dVp_Percentage=dVp_perc_3D,))
-Write_Paraview(Data_set, "Zhao_etal_2016_dVp_percentage")
+write_Paraview(Data_set, "Zhao_etal_2016_dVp_percentage")
 
 # extract cross-sections 
 Data_cross  =   CrossSection(Data_set, Depth_level=-100km)  
-Write_Paraview(Data_cross, "Zhao_CrossSection_100km")
+write_Paraview(Data_cross, "Zhao_CrossSection_100km")
 
 Data_cross  =   CrossSection(Data_set, Lon_level=10)
-Write_Paraview(Data_cross, "Zhao_CrossSection_Lon10")
+write_Paraview(Data_cross, "Zhao_CrossSection_Lon10")
 
 Data_cross  =   CrossSection(Data_set, Lon_level=10, Interpolate=true)
-Write_Paraview(Data_cross, "Zhao_CrossSection_Lon10_interpolated");
+write_Paraview(Data_cross, "Zhao_CrossSection_Lon10_interpolated");
 
 Data_cross  =   CrossSection(Data_set, Start=(1.0,39), End=(18,50))
-Write_Paraview(Data_cross, "Zhao_CrossSection_diagonal")
+write_Paraview(Data_cross, "Zhao_CrossSection_diagonal")
 
 # Extract a 3D subset of the data
 Data_subset     =   ExtractSubvolume(Data_set,Lon_level=(5,12), Lat_level=(40,45))
-Write_Paraview(Data_subset, "Zhao_Subset")
+write_Paraview(Data_subset, "Zhao_Subset")
 
 Data_subset_interp     =   ExtractSubvolume(Data_set,Lon_level=(5,12), Lat_level=(40,45), Interpolate=true)
-Write_Paraview(Data_subset, "Zhao_Subset_interp")
+write_Paraview(Data_subset, "Zhao_Subset_interp")

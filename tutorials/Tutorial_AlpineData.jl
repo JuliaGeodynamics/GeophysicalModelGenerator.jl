@@ -27,8 +27,8 @@ Topo = importTopo([4,20,37,50], file="@earth_relief_01m.grd")
 
 # If you have issues with loading the topography with `GMT`, there is also the alternative to download the data yourself and import it using `Rasters.jl`. 
 
-# We can now export this data to a `VTK` format so that we can visualize it with `Paraview`. To do so, `GMG` provides the function `Write_Paraview`:
-Write_Paraview(Topo, "Topography_Alps") 
+# We can now export this data to a `VTK` format so that we can visualize it with `Paraview`. To do so, `GMG` provides the function `write_Paraview`:
+write_Paraview(Topo, "Topography_Alps") 
 
 # Also, if you want to save this data for later use in julia, you can save it as `*.jld2` file using the function `save_GMG`:
 save_GMG("Topography_Alps",Topo)
@@ -117,7 +117,7 @@ for iunit = 1:length(units)
     #for later checking, we can now save the original point data as a VTK file: 
     data_Moho = GeophysicalModelGenerator.GeoData(lon_tmp,lat_tmp,depth_tmp,(MohoDepth=depth_tmp*km,))
     filename = "Mroczek_Moho_" * units[iunit]
-    Write_Paraview(data_Moho, filename, PointsData=true)
+    write_Paraview(data_Moho, filename, PointsData=true)
     
     #Now we create a KDTree for an effective nearest neighbor determination;
     kdtree = KDTree([lon_tmp';lat_tmp']; leafsize = 10)
@@ -148,7 +148,7 @@ for iunit = 1:length(units)
     #Finally, we can now export that data to VTK and save a `jld2` file using the `save_GMG` routine
     Data_Moho = GeophysicalModelGenerator.GeoData(Lon, Lat, Depth, (MohoDepth=Depth,PointDist=Dist),Data_attribs)
     filename = "Mrozek_Moho_Grid_" * units[iunit]
-    Write_Paraview(Data_Moho, filename)
+    write_Paraview(Data_Moho, filename)
     save_GMG(filename,Topo)
     
 end
@@ -169,7 +169,7 @@ download_data("http://www.isc.ac.uk/cgi-bin/web-db-run?request=COLLECTED&req_agc
 # Once the data has been downloaded, we can extract `lon/lat/depth/magnitude` using the `GMG` function `getlonlatdepthmag_QuakeML`, which returns a `GeoData` structure:
 Data_ISC = getlonlatdepthmag_QuakeML("ISCData.xml");
 # As before, we can export this dataset to `VTK` and also save it as a `jld2` file (as we are now exporting point data, we have to use the option `PointsData=true`):
-Write_Paraview(Data_ISC, "EQ_ISC", PointsData=true);
+write_Paraview(Data_ISC, "EQ_ISC", PointsData=true);
 save_GMG("EQ_ISC",Data_ISC)
 
 # ![Alps_Tutorial_3](../assets/img/Tut_Alp_Image3.png) 
@@ -282,7 +282,7 @@ topo_v, fields_v = InterpolateDataFields2D(Topo, Lon, Lat)
 Data_GPS_Sanchez = GeoData(Lon,Lat,topo_v,(Velocity_mm_year=(Ve,Vn,Vz),V_north=Vn*mm/yr, V_east=Ve*mm/yr, V_vertical=Vz*mm/yr, Vmagnitude = Vmagnitude*mm/yr, Topo=fields_v.Topography))
 
 # And as always, we'll save everything in `VTK` format and in `jld2` format
-Write_Paraview(Data_GPS_Sanchez, "GPS_Sanchez")
+write_Paraview(Data_GPS_Sanchez, "GPS_Sanchez")
 save_GMG("GPS_Sanchez",Data_GPS_Sanchez)
 
 # ![Alps_Tutorial_4](../assets/img/Tut_Alp_Image4.png) 
@@ -322,7 +322,7 @@ Data_attribs   = Dict(
 # Now we are all set and can create a GeoData structure which along with metadata
 Data = GeoData(Lon,Lat,Depth[:,:,:],(Vp=Vp[:,:,:],dVp=dlnVp[:,:,:]),Data_attribs);
 # And then we save it again.
-Write_Paraview(Data, "Rappisi2022")
+write_Paraview(Data, "Rappisi2022")
 save_GMG("Rappisi2022",Data)
 
 # The result looks like:

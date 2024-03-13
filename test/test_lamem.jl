@@ -77,7 +77,7 @@ addBox!(Phases,Temp,Grid, xlim=(0,500), zlim=(-500,-20), phase=LithosphericPhase
 @test sum(Temp) == 1.189394358568891e9
 
 Model3D     =   CartData(Grid, (Phases=Phases,Temp=Temp));
-Write_Paraview(Model3D,"LaMEM_ModelSetup")                  # Save model to paraview    
+write_Paraview(Model3D,"LaMEM_ModelSetup")                  # Save model to paraview    
 
 
 # Test writing a LaMEM topography file

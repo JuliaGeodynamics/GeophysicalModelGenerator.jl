@@ -406,7 +406,7 @@ GeoData
 ```
 which would allow visualizing this in paraview in the usual manner:
 ```julia-repl
-julia> Write_Paraview(Data_set1, "Data_set1")
+julia> write_Paraview(Data_set1, "Data_set1")
 1-element Vector{String}:
  "Data_set1.vts"
 ```
@@ -687,7 +687,7 @@ CartData
 `CartData` is particularly useful in combination with cartesian geodynamic codes, such as LaMEM, which require cartesian grids.
 You can directly save your data to Paraview with
 ```julia-repl
-julia> Write_Paraview(Data_set, "Data_set")
+julia> write_Paraview(Data_set, "Data_set")
 1-element Vector{String}:
  "Data_set.vts"
 ```

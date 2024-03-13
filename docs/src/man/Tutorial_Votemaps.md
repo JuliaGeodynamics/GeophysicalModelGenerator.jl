@@ -78,7 +78,7 @@ GeoData
 And from this, we can generate profiles, visualize 3D features in Paraview etc. etc.
 
 ```julia
-Write_Paraview(Data_VoteMap, "VoteMap_Alps")
+write_Paraview(Data_VoteMap, "VoteMap_Alps")
 ```
 
 In paraview, this gives

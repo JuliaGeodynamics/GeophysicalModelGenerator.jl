@@ -48,7 +48,7 @@ Generally, it is advisable to not use the largest resolution if you have a large
 Transforming this to Paraview is a piece of cake:
 
 ```julia
-julia> Write_Paraview(Topo, "Topography_Alps") 
+julia> write_Paraview(Topo, "Topography_Alps") 
 ```
 The result is shown here, together with Moho data
 

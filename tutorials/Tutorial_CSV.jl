@@ -45,4 +45,4 @@ end
 
 # Save data to paraview:
 Data_set    =   GeophysicalModelGenerator.GeoData(Lon,Lat,Depth,(Vs_km_s=Vs_3D,))   # the GeoStats package defines its own GeoData structure, so you have to choose the correct one here
-Write_Paraview(Data_set, "MeRe_ElSharkawy")
+write_Paraview(Data_set, "MeRe_ElSharkawy")
