@@ -14,7 +14,7 @@ Lets start with creating a 3D model setup in cartesian coordinates, which uses t
 =#
 using GeophysicalModelGenerator
 
-nx,ny,nz = 512,512,128
+nx,ny,nz = 256,256,128
 x = range(-1000,1000, nx);
 y = range(-1000,1000, ny);
 z = range(-660,0,    nz);
@@ -29,19 +29,21 @@ Temp = fill(1350.0, nx,ny,nz);
 # #### Simple free subduction setup
 
 # Much of the options are explained in the 2D tutorial, which can directly be transferred to 3D.
-# Therefore, we will start with a simple subduction setup, which consists of a horizontal part that has a mid-oceanic ridge on one explained
+# Therefore, we will start with a simple subduction setup, which consists of a horizontal part that has a mid-oceanic ridge and a half-space cooling subducting slab.
 
 # We use a lithospheric structure, which can be specified with the `LithosphericPhases` structure, where you can indicate `Layers` (the thickness of each lithospheric layer, starting from the top), and `Phases` the phases of the corresponding layers.
 # Note that if the lowermost layer has the same phase as the mantle, you can define `Tlab` as the lithosphere-asthenosphere boundary which will automatically adjust the phase depending on temperature
-lith = LithosphericPhases(Layers=[15 45 10], Phases=[0 1 2], Tlab=1250)
+lith = LithosphericPhases(Layers=[15 45 10], Phases=[0 1 2])
+v_spreading_cm_yr = 3
 AddBox!(Phases, Temp, Grid; xlim=(-800,0.0), ylim=(-400, 400.0), zlim=(-80.0, 0.0), phase = lith, 
         Origin=(-0,0,0),
-        T=SpreadingRateTemp(SpreadingVel=3, MORside="right"), StrikeAngle=30);
+        T=SpreadingRateTemp(SpreadingVel=v_spreading_cm_yr, MORside="right"), StrikeAngle=30);
+
 
 # And an an inclined part:
-AddBox!(Phases, Temp, Grid; xlim=(0,300), ylim=(-400, 400.0), zlim=(-80.0, 0.0), phase = lith, 
-        Origin=(-0,0,0),
-        T=McKenzie_subducting_slab(Tsurface=0,v_cm_yr=3), DipAngle=30, StrikeAngle=30);
+AgeTrench = 800e3/(v_spreading_cm_yr/100)/1e6;
+#AddBox!(Phases, Temp, Grid; xlim=(0,300), ylim=(-400, 400.0), zlim=(-80.0, 0.0), phase = lith, Origin = (0,0,0), T=HalfspaceCoolingTemp(Age=0), DipAngle=0, StrikeAngle=30);
+AddBox!(Phases, Temp, Grid; xlim=(0,300), ylim=(-400, 400.0), zlim=(-80.0, 0.0), phase = lith, Origin = (0,0,0), T=HalfspaceCoolingTemp(Age=AgeTrench), DipAngle=30, StrikeAngle=30);
 
 # Add them to the `CartData` dataset:
 Grid = addField(Grid,(;Phases, Temp))
