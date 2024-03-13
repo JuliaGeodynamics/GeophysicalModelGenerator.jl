@@ -34,7 +34,7 @@ PSwave_Koulakov
   depth ϵ [ -700.0 km : -10.0 km]
   fields: (:dVp_percentage, :dVs_percentage)
 
-# #### 2. Creating a Votemap
+# #### 2. Creating a voteMap
 # The idea of `Votemaps` is rather simple:
 # - assume that a certain perturbation describes a feature (say, P wave anomalies >3% are interpreted to be slabs in the model of Paffrath)
 # - Everything that fulfills this criteria gets the number 1, everything else 0.
@@ -47,7 +47,7 @@ PSwave_Koulakov
 #
 # So how do we create Votemaps? 
 # Doing this is rather simple:
-Data_VoteMap = VoteMap( [Pwave_Paffrath,       PSwave_Koulakov,    Pwave_Zhao],
+Data_VoteMap = voteMap( [Pwave_Paffrath,       PSwave_Koulakov,    Pwave_Zhao],
                         ["dVp_Percentage>3.0","dVp_percentage>2.0","dVp_Percentage>2.0"], dims=(100,100,100))
 
 # This will look at the common `lon`,`lat`,`depth` ranges between all 3 models, interpret each of the models to a common grid of size `(100,100,100)` and apply each of the criteria specified
@@ -57,17 +57,17 @@ GeoData
   lon   ϵ [ 4.0 : 18.0]
   lat   ϵ [ 38.0 : 49.01197604790419]
   depth ϵ [ -606.0385 km : -10.0 km]
-  fields: (:VoteMap,)
+  fields: (:voteMap,)
 
 # And from this, we can generate profiles, visualize 3D features in Paraview etc. etc.
-Write_Paraview(Data_VoteMap, "VoteMap_Alps")
+write_Paraview(Data_VoteMap, "VoteMap_Alps")
 
 # In paraview, this gives
 # ![Tutorial_VoteMap](../assets/img/Tutorial_VoteMap.png)
 
 # You can ofcourse argue that newer tomographic models include more data & should therefore count more 
 # A simple way to take that into account is to list the model twice:
-Data_VoteMap = VoteMap( [Pwave_Paffrath,       Pwave_Paffrath,       PSwave_Koulakov,    Pwave_Zhao],
+Data_VoteMap = voteMap( [Pwave_Paffrath,       Pwave_Paffrath,       PSwave_Koulakov,    Pwave_Zhao],
                         ["dVp_Percentage>3.0","dVp_Percentage>3.0", "dVp_percentage>2.0","dVp_Percentage>2.0"], 
                         dims=(100,100,100))
 

@@ -37,7 +37,7 @@ download_data("https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_
 data_file               =   CSV.File("ALPS2017_DEF_VT.GRD",datarow=18,header=false,delim=' ')
 
 num_columns             =   4;
-data                    =   ParseColumns_CSV_File(data_file, num_columns);     #Read numerical data from the file
+data                    =   parseColumns_CSV_File(data_file, num_columns);     #Read numerical data from the file
 lon_Vz, lat_Vz, Vz_vec  =   data[:,1], data[:,2], data[:,3]
 
 # ## 2. Check & reshape vertical velocity
@@ -100,7 +100,7 @@ Vn                      =   ones(size(Vz))*NaN
 # Next, we load the horizontal velocities which is available in the file `ALPS2017_DEF_HZ.GRD`
 download_data("https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_DEF_HZ.GRD","ALPS2017_DEF_HZ.GRD")
 data_file                       =   CSV.File("ALPS2017_DEF_HZ.GRD",datarow=18,header=false,delim=' ')
-data                            =   ParseColumns_CSV_File(data_file, 10)
+data                            =   parseColumns_CSV_File(data_file, 10)
 lon_Hz, lat_Hz, Ve_Hz, Vn_Hz    =   data[:,1], data[:,2], data[:,3], data[:,4]
 
 # Let's plot the data as well:
@@ -127,8 +127,8 @@ Vmagnitude          =   sqrt.(Ve.^2 + Vn.^2 + Vz.^2)  # velocity magnitude in mm
 # and interpolate the elevation on the GPS grid locations 
 using GMT, Interpolations
 
-# We use the `ImportTopo` function to read the topography from a file:
-Elevation   =   ImportTopo([3,17,42,50], file="@earth_relief_01m.grd");
+# We use the `importTopo` function to read the topography from a file:
+Elevation   =   importTopo([3,17,42,50], file="@earth_relief_01m.grd");
 
 # We now want to interpolate the elevation on the GPS grid locations.
 Lon_vec     =   NumValue(Elevation.lon)[:,1,1];
@@ -141,7 +141,7 @@ height      =   interpol.(lon,lat)/1e3
 GPS_Sanchez_grid        =   GeoData(lon,lat,height,(Velocity_mm_year=(Ve,Vn,Vz),V_north=Vn*mm/yr, V_east=Ve*mm/yr, V_vertical=Vz*mm/yr, Vmagnitude = Vmagnitude*mm/yr, Topography = height*km))
 
 # Save paraview is as always:
-Write_Paraview(GPS_Sanchez_grid, "GPSAlps_Sanchez_2017_grid")
+write_Paraview(GPS_Sanchez_grid, "GPSAlps_Sanchez_2017_grid")
 
 # Opening and plotting the vertical field gives:
 # ![Tutorial_GPS_3](../assets/img/Tutorial_GPS_3.png)

@@ -139,7 +139,7 @@ GeoData
   lat   ϵ [ 38.0 - 51.95]
   depth ϵ [ -1001.0 km - -1.0 km]
   fields: (:dVp_Percentage,)
-julia> Write_Paraview(Data_set, "Zhao_etal_2016_dVp_percentage")
+julia> write_Paraview(Data_set, "Zhao_etal_2016_dVp_percentage")
 1-element Vector{String}:
  "Zhao_etal_2016_dVp_percentage.vts"
 ```
@@ -173,31 +173,31 @@ Note that using geographic coordinates is slightly cumbersome in Paraview. If yo
 #### 5. Extract and plot cross-sections of the data
 In many cases you would like to create cross-sections through the 3D data sets as well, and visualize that in Paraview. That is in principle possible in Paraview as well (using the `Slice` tool, as described above). Yet, in many cases we want to have it at a specific depth, or through pre-defined `lon/lat` coordinates.
 
-There is a simple way to achieve this using the `CrossSection` function.
+There is a simple way to achieve this using the `crossSection` function.
 To make a cross-section at a given depth:
 ```julia
-julia> Data_cross  =   CrossSection(Data_set, Depth_level=-100km)  
+julia> Data_cross  =   crossSection(Data_set, Depth_level=-100km)  
 GeoData 
   size  : (121, 94, 1)
   lon   ϵ [ 0.0 : 18.0]
   lat   ϵ [ 38.0 : 51.95]
   depth ϵ [ -101.0 km : -101.0 km]
   fields: (:dVp_Percentage,)
-julia> Write_Paraview(Data_cross, "Zhao_CrossSection_100km")
+julia> write_Paraview(Data_cross, "Zhao_CrossSection_100km")
 1-element Vector{String}:
  "Zhao_CrossSection_100km.vts"
 ```
 
 Or at a specific longitude:
 ```julia
-julia> Data_cross  =   CrossSection(Data_set, Lon_level=10)
+julia> Data_cross  =   crossSection(Data_set, Lon_level=10)
 GeoData 
   size  : (1, 94, 101)
   lon   ϵ [ 10.05 : 10.05]
   lat   ϵ [ 38.0 : 51.95]
   depth ϵ [ -1001.0 km : -1.0 km]
   fields: (:dVp_Percentage,) 
-julia> Write_Paraview(Data_cross, "Zhao_CrossSection_Lon10")
+julia> write_Paraview(Data_cross, "Zhao_CrossSection_Lon10")
 1-element Vector{String}:
  "Zhao_CrossSection_Lon10.vts"
 ```
@@ -205,44 +205,44 @@ As you see, this cross-section is not taken at exactly 10 degrees longitude. Tha
 
 If you wish to interpolate the data, specify `Interpolate=true`:
 ```julia
-julia> Data_cross = CrossSection(Data_set, Lon_level=10, Interpolate=true)
+julia> Data_cross = crossSection(Data_set, Lon_level=10, Interpolate=true)
 GeoData 
   size  : (1, 100, 100)
   lon   ϵ [ 10.0 : 10.0]
   lat   ϵ [ 38.0 : 51.95]
   depth ϵ [ -1001.0 km : -1.0 km]
   fields: (:dVp_Percentage,)
-julia> Write_Paraview(Data_cross, "Zhao_CrossSection_Lon10_interpolated");
+julia> write_Paraview(Data_cross, "Zhao_CrossSection_Lon10_interpolated");
 ```
 as you see, this causes the data to be interpolated on a `(100,100)` grid (which can be changed by adding a `dims` input parameter).
 
 We can also create a diagonal cut through the model:
 ```julia
-julia> Data_cross  =   CrossSection(Data_set, Start=(1.0,39), End=(18,50))
+julia> Data_cross  =   crossSection(Data_set, Start=(1.0,39), End=(18,50))
 GeoData 
   size  : (100, 100, 1)
   lon   ϵ [ 1.0 : 18.0]
   lat   ϵ [ 39.0 : 50.0]
   depth ϵ [ -1001.0 km : -1.0 km]
   fields: (:dVp_Percentage,)
-julia> Write_Paraview(Data_cross, "Zhao_CrossSection_diagonal")
+julia> write_Paraview(Data_cross, "Zhao_CrossSection_diagonal")
 ```
 
 Here an image that shows the resulting cross-sections: 
 ![Paraview_7](../assets/img/Tutorial_Zhao_Paraview_7.png)
 
 #### 6. Extract a (3D) subset of the data
-Sometimes, the data set covers a large region (e.g., the whole Earth), and you are only interested in a subset of this data for your project. You can obviously cut your data to the correct size in Paraview. Yet, an even easier way is the routine `ExtractSubvolume`:
+Sometimes, the data set covers a large region (e.g., the whole Earth), and you are only interested in a subset of this data for your project. You can obviously cut your data to the correct size in Paraview. Yet, an even easier way is the routine `extractSubvolume`:
 
 ```julia
-julia> Data_subset     =   ExtractSubvolume(Data_set,Lon_level=(5,12), Lat_level=(40,45))
+julia> Data_subset     =   extractSubvolume(Data_set,Lon_level=(5,12), Lat_level=(40,45))
 GeoData 
   size  : (48, 35, 101)
   lon   ϵ [ 4.95 : 12.0]
   lat   ϵ [ 39.95 : 45.05]
   depth ϵ [ -1001.0 km : -1.0 km]
   fields: (:dVp_Percentage,)
-julia> Write_Paraview(Data_subset, "Zhao_Subset")
+julia> write_Paraview(Data_subset, "Zhao_Subset")
 ```
 This gives the resulting image. You can obviously use that new, smaller, data set to create cross-sections etc.
 ![Paraview_8](../assets/img/Tutorial_Zhao_Paraview_8.png)
@@ -250,14 +250,14 @@ This gives the resulting image. You can obviously use that new, smaller, data se
 By default, we extract the original data and do not interpolate it on a new grid.
 In some cases, you will want to interpolate the data on a different grid. Use the `Interpolate=true` option for that:
 ```julia
-julia> Data_subset_interp     =   ExtractSubvolume(Data_set,Lon_level=(5,12), Lat_level=(40,45), Interpolate=true)
+julia> Data_subset_interp     =   extractSubvolume(Data_set,Lon_level=(5,12), Lat_level=(40,45), Interpolate=true)
 GeoData 
   size  : (50, 50, 50)
   lon   ϵ [ 5.0 : 12.0]
   lat   ϵ [ 40.0 : 45.0]
   depth ϵ [ -1001.0 km : -1.0 km]
   fields: (:dVp_Percentage,)
-julia> Write_Paraview(Data_subset, "Zhao_Subset_interp")
+julia> write_Paraview(Data_subset, "Zhao_Subset_interp")
 ```
 #### 7. Load and save data to disk
 It would be useful to save the 3D data set we just created to disk, such that we can easily load it again at a later stage and create cross-sections etc, or compare it with other models. This can be done with the `save_GMG` function:

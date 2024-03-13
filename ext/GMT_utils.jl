@@ -1,7 +1,7 @@
 # NOTE: these are useful routines that are only made available when the GMT package is already loaded in the REPL
 module GMT_utils
 
-import GeophysicalModelGenerator: ImportTopo, ImportGeoTIFF
+import GeophysicalModelGenerator: importTopo, importGeoTIFF
 
 # We do not check `isdefined(Base, :get_extension)` as recommended since
 # Julia v1.9.0 does not load package extensions when their dependency is
@@ -12,13 +12,13 @@ else
   using ..GMT
 end
 
-using GeophysicalModelGenerator: LonLatDepthGrid, GeoData, UTMData, km, remove_NaN_Surface!
+using GeophysicalModelGenerator: lonlatdepthGrid, GeoData, UTMData, km, remove_NaN_Surface!
 
 println("Loading GMT routines within GMG")
 
 
 """
-    Topo = ImportTopo(limits; file::String="@earth_relief_01m.grd", maxattempts=5) 
+    Topo = importTopo(limits; file::String="@earth_relief_01m.grd", maxattempts=5) 
     
 Uses `GMT` to download the topography of a certain region, specified with limits=[lon_min, lon_max, lat_min, lat_max].
 Sometimes download fails because of the internet connection. We do `maxattempts` to download it.
@@ -50,7 +50,7 @@ Note:
 
 # Example 
 ```julia-repl
-julia> Topo = ImportTopo([4,20,37,49]);
+julia> Topo = importTopo([4,20,37,49]);
 GeoData 
   size  : (960, 720, 1)
   lon   ϵ [ 4.0 : 19.983333333333334]
@@ -60,12 +60,12 @@ GeoData
 ```
 And you can save this to Paraview with
 ```julia
-julia> Write_Paraview(Topo,"Topo_Alps")
+julia> write_Paraview(Topo,"Topo_Alps")
 1-element Vector{String}:
  "Topo_Alps.vts"
 ```
 """
-function ImportTopo(limits; file::String="@earth_relief_01m.grd", maxattempts=5)
+function importTopo(limits; file::String="@earth_relief_01m.grd", maxattempts=5)
 
     # Correct if negative values are given (longitude coordinates that are west)
     ind = findall(limits[1:2] .< 0); 
@@ -94,7 +94,7 @@ function ImportTopo(limits; file::String="@earth_relief_01m.grd", maxattempts=5)
 
     # Transfer to GeoData
     nx,ny           =   size(G.z,2), size(G.z,1)
-    Lon,Lat,Depth   =   LonLatDepthGrid(G.x[1:nx],G.y[1:ny],0);
+    Lon,Lat,Depth   =   lonlatdepthGrid(G.x[1:nx],G.y[1:ny],0);
     Depth[:,:,1]    =   1e-3*G.z';
     Topo            =   GeoData(Lon, Lat, Depth, (Topography=Depth*km,))
     
@@ -103,26 +103,26 @@ function ImportTopo(limits; file::String="@earth_relief_01m.grd", maxattempts=5)
 end
 
 """
-  ImportTopo(; lat::Vector{2}, lon::Vector{2}, file::String="@earth_relief_01m.grd", maxattempts=5)
+  importTopo(; lat::Vector{2}, lon::Vector{2}, file::String="@earth_relief_01m.grd", maxattempts=5)
 
 Imports topography (using GMT), by specifying keywords for latitude and longitude ranges
 
 # Example
 =========
 ```julia
-julia> Topo = ImportTopo(lat=[30,40], lon=[30, 50] )
+julia> Topo = importTopo(lat=[30,40], lon=[30, 50] )
 ```
 The values can also be defined as tuples:
 ```julia
-julia> Topo = ImportTopo(lon=(-50, -40), lat=(-10,-5), file="@earth_relief_30s.grd")
+julia> Topo = importTopo(lon=(-50, -40), lat=(-10,-5), file="@earth_relief_30s.grd")
 ```
 
 """
-ImportTopo(; lat=[37,49], lon=[4,20], file::String="@earth_relief_01m.grd", maxattempts=5) = ImportTopo([lon[1],lon[2], lat[1], lat[2]], file=file, maxattempts=maxattempts)
+importTopo(; lat=[37,49], lon=[4,20], file::String="@earth_relief_01m.grd", maxattempts=5) = importTopo([lon[1],lon[2], lat[1], lat[2]], file=file, maxattempts=maxattempts)
 
 
 """
-  data_GMT = ImportGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=true, NorthernHemisphere=true, constantDepth=false, removeNaN_z=false, removeNaN_field=false)
+  data_GMT = importGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=true, NorthernHemisphere=true, constantDepth=false, removeNaN_z=false, removeNaN_field=false)
 
 This imports a GeoTIFF dataset (usually containing a surface of some sort) using GMT.
 The file should either have `UTM` coordinates of `longlat` coordinates. If it doesn't, you can 
@@ -136,12 +136,12 @@ Optional keywords:
 - `constantDepth`: if true we will not warp the surface by z-values, but use a constant value instead
 - `removeNaN_z`  : if true, we will remove NaN values from the z-dataset
 """
-function ImportGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=true, NorthernHemisphere=true, constantDepth=false, removeNaN_z=false, removeNaN_field=false)
+function importGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=true, NorthernHemisphere=true, constantDepth=false, removeNaN_z=false, removeNaN_field=false)
   G = gmtread(fname);
 
   # Transfer to GeoData
   nx,ny = length(G.x)-1, length(G.y)-1
-  Lon,Lat,Depth   =   LonLatDepthGrid(G.x[1:nx],G.y[1:ny],0);
+  Lon,Lat,Depth   =   lonlatdepthGrid(G.x[1:nx],G.y[1:ny],0);
   if  hasfield(typeof(G),:z) 
     Depth[:,:,1]    =   G.z';
     if negative

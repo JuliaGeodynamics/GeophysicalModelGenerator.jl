@@ -41,7 +41,7 @@ julia> lon_max = 20.0
 and import the data
 ```julia
 julia> G = gmtread(filename_topo, limits=[lon_min,lon_max,lat_min,lat_max], grid=true);
-julia> Lon,Lat,Depth = LonLatDepthGrid(G.x[1:end],G.y[1:end],0);
+julia> Lon,Lat,Depth = lonlatdepthGrid(G.x[1:end],G.y[1:end],0);
 julia> numel_topo    = prod(size(Lon));
 julia> Depth[:,:,1]  = 1e-3*G.z';
 julia> Topo          = GeophysicalModelGenerator.GeoData(Lon, Lat, Depth, (Topography=Depth*km,))
@@ -51,10 +51,10 @@ At this step, only the topographic data is imported. Now we have to import the t
 julia> Corner_LowerLeft  = (lon_min, lat_min , 0.0)
 julia> Corner_UpperRight = (lon_max, lat_max , 0.0)
 ```
-and import the png file with the GMG function `Screenshot_To_GeoData`:  
+and import the png file with the GMG function `screenshotToGeoData`:  
 
 ```julia
-julia> DataPNG = Screenshot_To_GeoData(filename_geo, Corner_LowerLeft, Corner_UpperRight)
+julia> DataPNG = screenshotToGeoData(filename_geo, Corner_LowerLeft, Corner_UpperRight)
 ```
 
 Next, we drape the screenshot on the topographic map with `drape_on_topo`:
@@ -67,7 +67,7 @@ julia> TopoGeology = drape_on_topo(Topo, DataPNG)
 Transforming the to Paraview is now a piece of cake:
 
 ```julia
-julia> Write_Paraview(TopoGeology, "test_GeoMap")
+julia> write_Paraview(TopoGeology, "test_GeoMap")
 ```
 The result is shown here:
 
