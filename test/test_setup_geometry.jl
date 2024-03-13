@@ -71,7 +71,7 @@ Phases              =   compute_Phase(Phases, Temp, X, Y, Z, LP, Ztop=5);
 @test Phases[1,1,5]     == 2
 
 LP                  =   LithosphericPhases(Layers=[0.5 1.0 1.0], Phases=[0 1 2], Tlab=nothing);
-Grid                =   ReadLaMEM_InputFile("test_files/SaltModels.dat");
+Grid                =   readLaMEM_InputFile("test_files/SaltModels.dat");
 Phases              =   zeros(Int32,   size(Grid.X));
 Temp                =   zeros(Int32,   size(Grid.X));
 Phases              =   compute_Phase(Phases, Temp, Grid, LP);

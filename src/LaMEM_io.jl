@@ -8,9 +8,9 @@ using Interpolations
 # These are routines that help to create a LaMEM marker files from a ParaviewData structure, which can be used to perform geodynamic simulations
 # We also include routines with which we can read LaMEM *.pvtr files into julia
 
-export LaMEM_grid, ReadLaMEM_InputFile
-export Save_LaMEMMarkersParallel, Save_LaMEMTopography
-export GetProcessorPartitioning, ReadData_VTR, ReadData_PVTR, CreatePartitioningFile
+export LaMEM_grid, readLaMEM_InputFile
+export save_LaMEMMarkersParallel, save_LaMEMTopography
+export getProcessorPartitioning, readData_VTR, readData_PVTR, createPartitioningFile
 
 """
 Structure that holds information about the LaMEM grid (usually read from an input file).
@@ -164,14 +164,14 @@ end
 
 
 """
-    Grid::LaMEM_grid = ReadLaMEM_InputFile(file, args::Union{String,Nothing}=nothing)
+    Grid::LaMEM_grid = readLaMEM_InputFile(file, args::Union{String,Nothing}=nothing)
 
 Parses a LaMEM input file and stores grid information in the `Grid` structure.
 Optionally, you can pass LaMEM command-line arguments as well.
 
 # Example 1
 ```julia
-julia> Grid = ReadLaMEM_InputFile("SaltModels.dat")
+julia> Grid = readLaMEM_InputFile("SaltModels.dat")
 LaMEM Grid:
 nel         : (32, 32, 32)
 marker/cell : (3, 3, 3)
@@ -183,7 +183,7 @@ z           ϵ [-2.0 : 0.0]
 
 # Example 2 (with command-line arguments)
 ```julia
-julia> Grid = ReadLaMEM_InputFile("SaltModels.dat", args="-nel_x 64 -coord_x -4,4")
+julia> Grid = readLaMEM_InputFile("SaltModels.dat", args="-nel_x 64 -coord_x -4,4")
 LaMEM Grid:
   nel         : (64, 32, 32)
   marker/cell : (3, 3, 3)
@@ -194,7 +194,7 @@ LaMEM Grid:
 ```
 
 """
-function ReadLaMEM_InputFile(file; args::Union{String,Nothing}=nothing )
+function readLaMEM_InputFile(file; args::Union{String,Nothing}=nothing )
 
     # read information from file
     nmark_x   = ParseValue_LaMEM_InputFile(file,"nmark_x",Int64, args=args);
@@ -368,26 +368,26 @@ function Base.show(io::IO, d::LaMEM_grid)
 end
 
 """
-    Save_LaMEMMarkersParallel(Grid::CartData; PartitioningFile=empty, directory="./markers", verbose=true, is64bit=false)
+    save_LaMEMMarkersParallel(Grid::CartData; PartitioningFile=empty, directory="./markers", verbose=true, is64bit=false)
 
 Saves a LaMEM marker file from the `CartData` structure `Grid`. It must have a field called `Phases`, holding phase information (as integers) and optionally a field `Temp` with temperature info.
 It is possible to provide a LaMEM partitioning file `PartitioningFile`. If not, output is assumed to be for one processor. By default it is assumed that the partitioning file was generated on a 32bit PETSc installation. If `Int64` was used instead, set the flag.
 
-The size of `Grid` should be consistent with what is provided in the LaMEM input file. In practice, the size of the mesh can be retrieved from a LaMEM input file using `ReadLaMEM_InputFile`.
+The size of `Grid` should be consistent with what is provided in the LaMEM input file. In practice, the size of the mesh can be retrieved from a LaMEM input file using `readLaMEM_InputFile`.
 
 # Example
 
 ```
-julia> Grid    = ReadLaMEM_InputFile("LaMEM_input_file.dat")
+julia> Grid    = readLaMEM_InputFile("LaMEM_input_file.dat")
 julia> Phases  = zeros(Int32,size(Grid.X));
 julia> Temp    = ones(Float64,size(Grid.X));
 julia> Model3D = CartData(Grid, (Phases=Phases,Temp=Temp))
-julia> Save_LaMEMMarkersParallel(Model3D)
+julia> save_LaMEMMarkersParallel(Model3D)
 Writing LaMEM marker file -> ./markers/mdb.00000000.dat
 ```
 If you want to create a LaMEM input file for multiple processors:
 ```
-julia> Save_LaMEMMarkersParallel(Model3D, PartitioningFile="ProcessorPartitioning_4cpu_1.2.2.bin")
+julia> save_LaMEMMarkersParallel(Model3D, PartitioningFile="ProcessorPartitioning_4cpu_1.2.2.bin")
 Writing LaMEM marker file -> ./markers/mdb.00000000.dat
 Writing LaMEM marker file -> ./markers/mdb.00000001.dat
 Writing LaMEM marker file -> ./markers/mdb.00000002.dat
@@ -395,7 +395,7 @@ Writing LaMEM marker file -> ./markers/mdb.00000003.dat
 ```
 
 """
-function Save_LaMEMMarkersParallel(Grid::CartData; PartitioningFile=empty, directory="./markers", verbose=true, is64bit=false)
+function save_LaMEMMarkersParallel(Grid::CartData; PartitioningFile=empty, directory="./markers", verbose=true, is64bit=false)
 
     x = ustrip.(Grid.x.val[:,1,1]);
     y = ustrip.(Grid.y.val[1,:,1]);
@@ -425,7 +425,7 @@ function Save_LaMEMMarkersParallel(Grid::CartData; PartitioningFile=empty, direc
     else
         Nprocx,Nprocy,Nprocz,
         xc,yc,zc,
-        nNodeX,nNodeY,nNodeZ = GetProcessorPartitioning(PartitioningFile, is64bit=is64bit)
+        nNodeX,nNodeY,nNodeZ = getProcessorPartitioning(PartitioningFile, is64bit=is64bit)
         if verbose
             @show  Nprocx,Nprocy,Nprocz, xc,yc,zc, nNodeX,nNodeY,nNodeZ
         end
@@ -557,13 +557,13 @@ function PetscBinaryWrite_Vec(filename, A)
 end
 
 """
-    nProcX,nProcY,nProcZ, xc,yc,zc, nNodeX,nNodeY,nNodeZ = GetProcessorPartitioning(filename; is64bit=false)
+    nProcX,nProcY,nProcZ, xc,yc,zc, nNodeX,nNodeY,nNodeZ = getProcessorPartitioning(filename; is64bit=false)
 
 Reads a LaMEM processor partitioning file, used to create marker files, and returns the parallel layout.
 By default this is done for a 32bit PETSc installation, which will fail if you actually use a 64bit version.
 
 """
-function GetProcessorPartitioning(filename; is64bit=false)
+function getProcessorPartitioning(filename; is64bit=false)
 
     if is64bit
         typ=Int64
@@ -606,12 +606,12 @@ end
 
 
 """
-    coord, Data_3D_Arrays, Name_Vec = ReadData_VTR(fname)
+    coord, Data_3D_Arrays, Name_Vec = readData_VTR(fname)
 
 Reads a VTR (structured grid) VTK file `fname` and extracts the coordinates, data arrays and names of the data.
 In general, this only contains a piece of the data, and one should open a `*.pvtr` file to retrieve the full data
 """
-function ReadData_VTR(fname, FullSize)
+function readData_VTR(fname, FullSize)
     file = open(fname, "r")
 
     header = true
@@ -815,13 +815,13 @@ function ReadBinaryData(file::IOStream, start_bin::Int64, Offset::Int64, BytesTo
 end
 
 """
-    Data::ParaviewData = ReadData_PVTR(fname, dir)
+    Data::ParaviewData = readData_PVTR(fname, dir)
 
 Reads a parallel, rectilinear, `*.vts` file with the name `fname` and located in `dir` and create a 3D `Data` struct from it.
 
 # Example
 ```julia
-julia> Data = ReadData_PVTR("Haaksbergen.pvtr", "./Timestep_00000005_3.35780500e-01/")
+julia> Data = readData_PVTR("Haaksbergen.pvtr", "./Timestep_00000005_3.35780500e-01/")
 ParaviewData
   size  : (33, 33, 33)
   x     ϵ [ -3.0 : 3.0]
@@ -830,7 +830,7 @@ ParaviewData
   fields: (:phase, :density, :visc_total, :visc_creep, :velocity, :pressure, :temperature, :dev_stress, :strain_rate, :j2_dev_stress, :j2_strain_rate, :plast_strain, :plast_dissip, :tot_displ, :yield, :moment_res, :cont_res)
 ```
 """
-function  ReadData_PVTR(fname, dir)
+function  readData_PVTR(fname, dir)
     file = open(joinpath(dir,fname), "r")
 
     header = true
@@ -860,9 +860,9 @@ function  ReadData_PVTR(fname, dir)
             fname_piece = line_strip[1:id_end]
 
             if num_data_sets==1
-                coord_x, coord_y, coord_z, Data_3D, Names, NumComp, ix,iy,iz = ReadData_VTR(joinpath(dir,fname_piece), FullSize);
+                coord_x, coord_y, coord_z, Data_3D, Names, NumComp, ix,iy,iz = readData_VTR(joinpath(dir,fname_piece), FullSize);
             else
-                coord_x1, coord_y1, coord_z1, Data_3D1, Names, NumComp, ix,iy,iz  = ReadData_VTR(joinpath(dir,fname_piece), FullSize);
+                coord_x1, coord_y1, coord_z1, Data_3D1, Names, NumComp, ix,iy,iz  = readData_VTR(joinpath(dir,fname_piece), FullSize);
                 coord_x[ix]   = coord_x1[ix];
                 coord_y[iy]   = coord_y1[iy];
                 coord_z[iz]   = coord_z1[iz];
@@ -925,11 +925,11 @@ function  ReadData_PVTR(fname, dir)
 end
 
 """
-    Save_LaMEMTopography(Topo::CartData, filename::String)
+    save_LaMEMTopography(Topo::CartData, filename::String)
 
 This writes a topography file `Topo` for use in LaMEM, which should have size `(nx,ny,1)` and contain the field `:Topography`
 """
-function Save_LaMEMTopography(Topo::CartData, filename::String)
+function save_LaMEMTopography(Topo::CartData, filename::String)
 
     if (size(Topo.z.val,3) != 1)
         error("Not a valid `CartData' Topography file (size in 3rd dimension should be 1)")
@@ -972,14 +972,14 @@ function Save_LaMEMTopography(Topo::CartData, filename::String)
 end
 
 """
-    CreatePartitioningFile(LaMEM_input::String, NumProc::Int64; LaMEM_dir::String=pwd(), LaMEM_options::String="", MPI_dir="", verbose=true)
+    createPartitioningFile(LaMEM_input::String, NumProc::Int64; LaMEM_dir::String=pwd(), LaMEM_options::String="", MPI_dir="", verbose=true)
 
 This executes LaMEM for the input file `LaMEM_input` & creates a parallel partitioning file for `NumProc` processors.
 The directory where the LaMEM binary is can be specified; if not it is assumed to be in the current directory.
 Likewise for the `mpiexec` directory (if not specified it is assumed to be available on the command line).
 
 """
-function CreatePartitioningFile(LaMEM_input::String,NumProc::Int64; LaMEM_dir::String=pwd(), LaMEM_options="", MPI_dir="", verbose=true)
+function createPartitioningFile(LaMEM_input::String,NumProc::Int64; LaMEM_dir::String=pwd(), LaMEM_options="", MPI_dir="", verbose=true)
 
     # Create string to execute LaMEM
     mpi_str     =  MPI_dir*"mpiexec -n $(NumProc) "

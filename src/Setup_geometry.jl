@@ -37,7 +37,7 @@ export  addBox!, addSphere!, addEllipsoid!, addCylinder!, addLayer!, addPolygon!
     Parameters
     ====
     - Phase - Phase array (consistent with Grid)
-    - Grid -  grid structure (usually obtained with ReadLaMEM_InputFile, but can also be other grid types)
+    - Grid -  grid structure (usually obtained with readLaMEM_InputFile, but can also be other grid types)
     - stripAxes - sets the axis for which we want the stripes. Default is (1,1,0) i.e. X, Y and not Z
     - stripeWidth - width of the stripe
     - stripeSpacing - space between two stripes
@@ -53,7 +53,7 @@ export  addBox!, addSphere!, addEllipsoid!, addCylinder!, addLayer!, addPolygon!
     
     Example: Box with striped phase and constant temperature & a dip angle of 10 degrees:
     ```julia
-    julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
+    julia> Grid = readLaMEM_InputFile("test_files/SaltModels.dat")
     LaMEM Grid:
       nel         : (32, 32, 32)
       marker/cell : (3, 3, 3)
@@ -155,7 +155,7 @@ Examples
 
 Example 1) Box with constant phase and temperature & a dip angle of 10 degrees:
 ```julia
-julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
+julia> Grid = readLaMEM_InputFile("test_files/SaltModels.dat")
 LaMEM Grid:
   nel         : (32, 32, 32)
   marker/cell : (3, 3, 3)
@@ -174,7 +174,7 @@ julia> write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
 
 Example 2) Box with halfspace cooling profile
 ```julia
-julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
+julia> Grid = readLaMEM_InputFile("test_files/SaltModels.dat")
 julia> Phases = zeros(Int32,   size(Grid.X));
 julia> Temp   = zeros(Float64, size(Grid.X));
 julia> addBox!(Phases,Temp,Grid, xlim=(0,500), zlim=(-50,0), phase=ConstantPhase(3), DipAngle=10, T=ConstantTemp(1000))
@@ -244,7 +244,7 @@ Parameters
 ====
 - `Phase` - Phase array (consistent with Grid)
 - `Temp`  - Temperature array (consistent with Grid)
-- `Grid` -  grid structure (usually obtained with ReadLaMEM_InputFile, but can also be other grid types)
+- `Grid` -  grid structure (usually obtained with readLaMEM_InputFile, but can also be other grid types)
 - `xlim` -  left/right coordinates of box
 - `ylim` -  front/back coordinates of box
 - `zlim` -  bottom/top coordinates of box
@@ -257,7 +257,7 @@ Examples
 
 Example 1) Layer with constant phase and temperature
 ```julia
-julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
+julia> Grid = readLaMEM_InputFile("test_files/SaltModels.dat")
 LaMEM Grid:
   nel         : (32, 32, 32)
   marker/cell : (3, 3, 3)
@@ -276,7 +276,7 @@ julia> write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
 
 Example 2) Box with halfspace cooling profile
 ```julia
-julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
+julia> Grid = readLaMEM_InputFile("test_files/SaltModels.dat")
 julia> Phases = zeros(Int32,   size(Grid.X));
 julia> Temp   = zeros(Float64, size(Grid.X));
 julia> addLayer!(Phases,Temp,Grid, zlim=(-50,0), phase=ConstantPhase(3), T=HalfspaceCoolingTemp())
@@ -343,7 +343,7 @@ Parameters
 ====
 - Phase - Phase array (consistent with Grid)
 - Temp  - Temperature array (consistent with Grid)
-- Grid - LaMEM grid structure (usually obtained with ReadLaMEM_InputFile)
+- Grid - LaMEM grid structure (usually obtained with readLaMEM_InputFile)
 - cen - center coordinates of sphere
 - radius - radius of sphere
 - phase - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
@@ -355,7 +355,7 @@ Example
 
 Sphere with constant phase and temperature:
 ```julia
-julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
+julia> Grid = readLaMEM_InputFile("test_files/SaltModels.dat")
 LaMEM Grid:
   nel         : (32, 32, 32)
   marker/cell : (3, 3, 3)
@@ -407,7 +407,7 @@ Parameters
 ====
 - Phase - Phase array (consistent with Grid)
 - Temp  - Temperature array (consistent with Grid)
-- Grid - LaMEM grid structure (usually obtained with ReadLaMEM_InputFile)
+- Grid - LaMEM grid structure (usually obtained with readLaMEM_InputFile)
 - cen - center coordinates of sphere
 - axes - semi-axes of ellipsoid in X,Y,Z
 - Origin - the origin, used to rotate the box around. Default is the left-front-top corner
@@ -422,7 +422,7 @@ Example
 
 Ellipsoid with constant phase and temperature, rotated 90 degrees and tilted by 45 degrees:
 ```julia
-julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
+julia> Grid = readLaMEM_InputFile("test_files/SaltModels.dat")
 LaMEM Grid:
   nel         : (32, 32, 32)
   marker/cell : (3, 3, 3)
@@ -490,7 +490,7 @@ Parameters
 ====
 - Phase - Phase array (consistent with Grid)
 - Temp  - Temperature array (consistent with Grid)
-- Grid - Grid structure (usually obtained with ReadLaMEM_InputFile)
+- Grid - Grid structure (usually obtained with readLaMEM_InputFile)
 - base - center coordinate of bottom of cylinder
 - cap - center coordinate of top of cylinder
 - radius - radius of the cylinder
@@ -503,7 +503,7 @@ Example
 
 Cylinder with constant phase and temperature:
 ```julia
-julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
+julia> Grid = readLaMEM_InputFile("test_files/SaltModels.dat")
 LaMEM Grid:
   nel         : (32, 32, 32)
   marker/cell : (3, 3, 3)
@@ -583,7 +583,7 @@ Parameters
 ====
 - `Phase` - Phase array (consistent with Grid)
 - `Temp`  - Temperature array (consistent with Grid)
-- `Grid`  - Grid structure (usually obtained with ReadLaMEM_InputFile)
+- `Grid`  - Grid structure (usually obtained with readLaMEM_InputFile)
 - `xlim`  - `x`-coordinate of the polygon points, same ordering as zlim, number of points unlimited
 - `ylim`  - `y`-coordinate, limitation in length possible (two values (start and stop))
 - `zlim`  - `z`-coordinate of the polygon points, same ordering as xlim, number of points unlimited
@@ -596,7 +596,7 @@ Example
 Polygon with constant phase and temperature:
 
 ```julia
-julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
+julia> Grid = readLaMEM_InputFile("test_files/SaltModels.dat")
 LaMEM Grid:
   nel         : (32, 32, 32)
   marker/cell : (3, 3, 3)
@@ -677,7 +677,7 @@ Creates a generic volcano topography (cones and truncated cones)
 
 Parameters
 ====
-- Grid - LaMEM grid (created by ReadLaMEM_InputFile)
+- Grid - LaMEM grid (created by readLaMEM_InputFile)
 - center - x- and -coordinates of center of volcano
 - height - height of volcano
 - radius - radius of volcano
@@ -694,7 +694,7 @@ Example
 
 Cylinder with constant phase and temperature:
 ```julia
-julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
+julia> Grid = readLaMEM_InputFile("test_files/SaltModels.dat")
 LaMEM Grid:
   nel         : (32, 32, 32)
   marker/cell : (3, 3, 3)
@@ -1209,7 +1209,7 @@ Parameters
 - Z     - Vertical coordinate array (consistent with Phase and Temp)
 - s     - LithosphericPhases
 - Ztop  - Vertical coordinate of top of model box
-- Grid  - Grid structure (usually obtained with ReadLaMEM_InputFile)
+- Grid  - Grid structure (usually obtained with readLaMEM_InputFile)
 """
 function compute_Phase(Phase, Temp, X, Y, Z, s::LithosphericPhases; Ztop=0)
     @unpack Layers, Phases, Tlab  = s

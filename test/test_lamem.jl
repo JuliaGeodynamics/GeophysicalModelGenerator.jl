@@ -2,13 +2,13 @@
 using Test, GeophysicalModelGenerator
 
 # Load LaMEM input file with grid refinement:
-Grid        = ReadLaMEM_InputFile("test_files/non-uniform_grid.dat")
+Grid        = readLaMEM_InputFile("test_files/non-uniform_grid.dat")
 @test Grid.X[2358] ≈  1.833333333333335
 @test Grid.Y[7741] ≈ -0.450000000000000
 @test Grid.Z[5195] ≈ -8.897114711471147
 
 # Non-uniform grid in z-direction (taken from LaMEM test suite)
-Grid        = ReadLaMEM_InputFile("test_files/Subduction_VEP.dat")
+Grid        = readLaMEM_InputFile("test_files/Subduction_VEP.dat")
 @test maximum(diff(Grid.z_vec)) ≈ 2.626262626262701
 @test minimum(diff(Grid.z_vec)) ≈ 1.3333333333333321
 @test maximum(diff(Grid.x_vec)) ≈ 10.4166666666667
@@ -21,11 +21,11 @@ nel_z = GeophysicalModelGenerator.ParseValue_LaMEM_InputFile("test_files/Subduct
 @test coord_z ≈  [-660.0, -300.0, 5.0, 25.0]
 @test nel_z ==  [36, 90, 5]
 
-Grid        = ReadLaMEM_InputFile("test_files/Subduction_VEP.dat", args=args)
+Grid        = readLaMEM_InputFile("test_files/Subduction_VEP.dat", args=args)
 @test Grid.nel_z == 131
 
 # Load LaMEM input file:
-Grid        =   ReadLaMEM_InputFile("test_files/SaltModels.dat")
+Grid        =   readLaMEM_InputFile("test_files/SaltModels.dat")
 @test Grid.X[10] ≈ -2.40625
 
 # Transfer into ParaviewData struct:
@@ -36,18 +36,18 @@ Model3D     =   CartData(Grid, (Phases=Grid.Z,));
 
 # Read Partitioning file: 
 PartitioningFile = "test_files/ProcessorPartitioning_4cpu_1.2.2.bin"
-Nprocx,Nprocy,Nprocz, xc,yc,zc, nNodeX,nNodeY,nNodeZ = GetProcessorPartitioning(PartitioningFile)
+Nprocx,Nprocy,Nprocz, xc,yc,zc, nNodeX,nNodeY,nNodeZ = getProcessorPartitioning(PartitioningFile)
 @test Nprocz==2
 @test yc[2]==0.0
 
 # Save serial output
-Save_LaMEMMarkersParallel(Model3D, verbose=false)
+save_LaMEMMarkersParallel(Model3D, verbose=false)
 
 # Save parallel output
-Save_LaMEMMarkersParallel(Model3D, PartitioningFile=PartitioningFile, verbose=false)
+save_LaMEMMarkersParallel(Model3D, PartitioningFile=PartitioningFile, verbose=false)
 
 # Test creating model setups
-Grid        =   ReadLaMEM_InputFile("test_files/Subduction2D_FreeSlip_Particles_Linear_DirectSolver.dat")
+Grid        =   readLaMEM_InputFile("test_files/Subduction2D_FreeSlip_Particles_Linear_DirectSolver.dat")
 Phases      =   zeros(Int32,   size(Grid.X));
 
 # constant T
@@ -85,12 +85,12 @@ X,Y,Z = xyzGrid(-20:20,-10:10,0);
 Z = cos.(2*pi.*X./5).*cos.(2*pi.*Y./10)
 
 Topo = CartData(X,Y,Z,(Topography=Z,))
-@test Save_LaMEMTopography(Topo, "test_topo.dat")==nothing
+@test save_LaMEMTopography(Topo, "test_topo.dat")==nothing
 rm("test_topo.dat")
 
 
 # Test adding geometric primitives
-Grid    = ReadLaMEM_InputFile("test_files/GeometricPrimitives.dat")
+Grid    = readLaMEM_InputFile("test_files/GeometricPrimitives.dat")
 Phases  = zeros(Int32,size(Grid.X));
 Temp    = zeros(Float64,size(Grid.X));
 addSphere!(Phases,Temp,Grid, cen=(0,0,-6), radius=2, phase=ConstantPhase(1), T=ConstantTemp(800))
@@ -112,7 +112,7 @@ addCylinder!(Phases,Temp,Grid, base=(0,0,-5), cap=(3,3,-2), radius=1.5, phase=Co
 @test Temp[55,45,45]   == 800.0
 
 # test adding generic volcano topography
-Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat");
+Grid = readLaMEM_InputFile("test_files/SaltModels.dat");
 Topo = makeVolcTopo(Grid, center=[0.0,0.0], height=0.4, radius=1.5, crater=0.5, base=0.1);
 @test Topo.fields.Topography[13,13] ≈ 0.279583654km
 Topo = makeVolcTopo(Grid, center=[0.0,0.0], height=0.8, radius=0.5, crater=0.0, base=0.4, background=Topo.fields.Topography);
