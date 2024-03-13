@@ -11,7 +11,7 @@ import Base: show
 # These are routines that help to create input geometries, such as slabs with a given angle
 #
 
-export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!, AddLayer!, addSlab!, addStripes!,
+export  AddBox!, AddSphere!, AddEllipsoid!, AddCylinder!, AddLayer!, addPolygon!, addSlab!, addStripes!,
         makeVolcTopo,
         ConstantTemp, LinearTemp, HalfspaceCoolingTemp, SpreadingRateTemp, LithosphericTemp,
         ConstantPhase, LithosphericPhases,
@@ -571,6 +571,81 @@ function Rot3D!(X,Y,Z, StrikeAngle, DipAngle)
     return nothing
 end
 
+
+
+"""
+        addPolygon!(Phase, Temp, Grid::AbstractGeneralGrid; xlim::Vector(), ylim=Vector(2), zlim=Vector(), phase = ConstantPhase(1), T=nothing )   
+
+Adds a polygon with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
+
+Parameters
+====
+- `Phase` - Phase array (consistent with Grid)
+- `Temp`  - Temperature array (consistent with Grid)
+- `Grid`  - Grid structure (usually obtained with ReadLaMEM_InputFile)
+- `xlim`  - `x`-coordinate of the polygon points, same ordering as zlim, number of points unlimited
+- `ylim`  - `y`-coordinate, limitation in length possible (two values (start and stop))
+- `zlim`  - `z`-coordinate of the polygon points, same ordering as xlim, number of points unlimited
+- `phase` - specifies the phase of the box. See `ConstantPhase()`
+- `T` - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
+
+Example
+========
+
+Polygon with constant phase and temperature:
+
+```julia
+julia> Grid = ReadLaMEM_InputFile("test_files/SaltModels.dat")
+LaMEM Grid:
+  nel         : (32, 32, 32)
+  marker/cell : (3, 3, 3)
+  markers     : (96, 96, 96)
+  x           ϵ [-3.0 : 3.0]
+  y           ϵ [-2.0 : 2.0]
+  z           ϵ [-2.0 : 0.0]
+julia> Phases = zeros(Int32,   size(Grid.X));
+julia> Temp   = zeros(Float64, size(Grid.X));
+julia> addPolygon!(Phase, Temp, Cart; xlim=(0.0,0.0, 1.6, 2.0),ylim=(0.0,0.8), zlim=(0.0,-1.0,-2.0,0.0), phase = ConstantPhase(8), T=ConstantTemp(30))
+julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
+julia> Write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
+1-element Vector{String}:
+ "LaMEM_ModelSetup.vts"
+```
+
+"""
+function addPolygon!(Phase, Temp, Grid::AbstractGeneralGrid;    # required input
+    xlim::Vector=[], ylim::Vector=[], zlim::Vector=[],          # limits of the box
+    phase = ConstantPhase(1),                                   # Sets the phase number(s) in the box
+    T=nothing )                                                 # Sets the thermal structure (various functions are available)
+
+# Retrieve 3D data arrays for the grid
+X,Y,Z = coordinate_grids(Grid)
+
+ind = zeros(Bool,size(X))
+ind_slice = zeros(Bool,size(X[:,1,:]))
+
+# find points within the polygon, only in 2D
+for i = 1:size(Y)[2]
+    if Y[1,i,1] >= ylim[1] && Y[1,i,1]<=ylim[2] 
+        inPolygon!(ind_slice, xlim,zlim, X[:,i,:], Z[:,i,:])
+        ind[:,i,:] = ind_slice
+    else
+        ind[:,i,:] = zeros(size(X[:,1,:]))
+    end
+end
+
+
+# Compute thermal structure accordingly. See routines below for different options
+if T != nothing
+   Temp[ind] = Compute_ThermalStructure(Temp[ind], X[ind], Y[ind], Z[ind], Phase[ind], T)
+end
+
+# Set the phase. Different routines are available for that - see below.
+Phase[ind] = Compute_Phase(Phase[ind], Temp[ind], X[ind], Y[ind], Z[ind], phase)
+
+return nothing
+end
+
 """
     xrot, yrot, zrot = Rot3D(X::Number,Y::Number,Z::Number, cosStrikeAngle, sindStrikeAngle, cosDipAngle, sinDipAngle)
 
@@ -822,7 +897,6 @@ function Compute_ThermalStructure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp)
     kappa       =   1e-6;
     SecYear     =   3600*24*365
     dz          =   Z[end]-Z[1];
-
 
     MantleAdiabaticT    =   Tmantle .+ Adiabat*abs.(Z);   # Adiabatic temperature of mantle
 
@@ -1162,7 +1236,6 @@ end
 Compute_Phase(Phase, Temp, Grid::LaMEM_grid, s::LithosphericPhases) = Compute_Phase(Phase, Temp, Grid.X, Grid.Y, Grid.Z, s::LithosphericPhases, Ztop=maximum(Grid.coord_z))
 
 
-
 """
     McKenzie_subducting_slab
 
@@ -1193,7 +1266,9 @@ end
 Compute the temperature field of a `McKenzie_subducting_slab`. Uses the analytical solution
 of McKenzie (1969) ["Speculations on the consequences and causes of plate motions"]. The functions assumes
 that the bottom of the slab is the coordinate Z=0. Internally the function shifts the coordinate. 
+
 Parameters
+
 =============================
 Temp Temperature array
 - `X`    X Array 
@@ -1201,7 +1276,6 @@ Temp Temperature array
 - `Z`    Z Array 
 - `Phase` Phase array 
 - `s`    McKenzie_subducting_slab
-
 """
 function Compute_ThermalStructure(Temp, X, Y, Z,Phase, s::McKenzie_subducting_slab)
     @unpack Tsurface, Tmantle, Adiabat, v_cm_yr, κ, it = s
@@ -1662,4 +1736,3 @@ function addSlab!(Phase, Temp, Grid::AbstractGeneralGrid,  trench::Trench;      
 
     return nothing
 end
-
