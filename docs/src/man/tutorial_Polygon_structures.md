@@ -22,17 +22,17 @@ nz = 200
 x        = LinRange(0.0,800.0,nx)
 y        = LinRange(0.0,800.0,ny)
 z        = LinRange(-660,50,nz)
-Cart     = CartData(XYZGrid(x, y, z))
+Cart     = CartData(xyzGrid(x, y, z))
 
 # initialize phase and temperature matrix
 Phase   = ones(Int32,size(X))
 Temp    = ones(Float64,size(X))*1350
 
 # add different phases: crust->2, Mantle Lithosphere->3 Mantle->1
-AddBox!(Phase, Temp, Cart; xlim=(0.0,800.0),ylim=(0.0,800.0), zlim=(-800.0,0.0), phase = LithosphericPhases(Layers=[15 30 100 800], Phases=[2 3 1 5], Tlab=1300 ), T=LinearTemp(Ttop=20, Tbot=1600))
+addBox!(Phase, Temp, Cart; xlim=(0.0,800.0),ylim=(0.0,800.0), zlim=(-800.0,0.0), phase = LithosphericPhases(Layers=[15 30 100 800], Phases=[2 3 1 5], Tlab=1300 ), T=LinearTemp(Ttop=20, Tbot=1600))
 
 # add air phase 0
-AddBox!(Phase, Temp, Cart; xlim=(0.0,800.0),ylim=(0.0,800.0), zlim=(0.0,50.0), phase = ConstantPhase(0), T=ConstantTemp(20.0))
+addBox!(Phase, Temp, Cart; xlim=(0.0,800.0),ylim=(0.0,800.0), zlim=(0.0,50.0), phase = ConstantPhase(0), T=ConstantTemp(20.0))
 ```
 
 
@@ -62,7 +62,7 @@ For visualisation and comparison to actual measured data, the mode setup is save
 ```julia
 # # Save data to paraview:
 Data_Final      =   CartData(X,Y,Z,(Phase=Phase,Temp=Temp)); 
-Write_Paraview(Data_Final, "Sedimentary_basin");
+write_Paraview(Data_Final, "Sedimentary_basin");
 ```
 
 After importing and looking at the file to paraview, some unresolved areas might be visible as they are visible in this model. That is due to the resolution and shape of the polygon. To reduce those artefacts an increase in resolution or a change of the polygon angle might help.

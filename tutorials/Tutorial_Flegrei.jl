@@ -26,10 +26,10 @@ depth               = data[:,4];
 
 # 1.2 save in both formats
 EQ_Data_Cart        = CartData(WE, SN, depth, (Depth = depth * m, Time = time * yr,));
-Write_Paraview(EQ_Data_Cart, "CF_Earthquakes_Cartesian", PointsData=true)
+write_Paraview(EQ_Data_Cart, "CF_Earthquakes_Cartesian", PointsData=true)
 EQ_Data_UTM         = UTMData(WE, SN, depth, 33, true, (Depth = depth * m, Time = time * yr,));
 Data_set_UTM        =   convert(GeophysicalModelGenerator.GeoData, EQ_Data_UTM)
-Write_Paraview(Data_set_UTM, "CF_Earthquakes_UTM", PointsData=true)
+write_Paraview(Data_set_UTM, "CF_Earthquakes_UTM", PointsData=true)
 
 # 2 load the velocity model and assign the locations of nodes and velocities + Vp/Vs
 data            =   readdlm("TravelTimeTomography/modvPS.dat", '\t', Float64, skipstart=0, header=false);
@@ -50,10 +50,10 @@ Vp3d            =   permutedims(reshape(Vp, resolution), dim_perm);
 Vs3d            =   permutedims(reshape(Vs, resolution), dim_perm);
 Vp_Vs3d         =   permutedims(reshape(VpVs, resolution), dim_perm);
 Data_set_Cartesian  =   CartData(we, sn, depth, (vp = Vp3d * (km / s), vs = Vs3d * (km / s), vpvs = Vp_Vs3d,))
-Write_Paraview(Data_set_Cartesian, "CF_Velocity_Cartesian")
+write_Paraview(Data_set_Cartesian, "CF_Velocity_Cartesian")
 Data_set        =   UTMData(we, sn, depth, 33, true, (vp = Vp3d * (km / s), vs = Vs3d * (km / s), vpvs = Vp_Vs3d,))
 Data_set_UTM    =   convert(GeophysicalModelGenerator.GeoData, Data_set)
-Write_Paraview(Data_set_UTM, "CF_Velocity_UTM")
+write_Paraview(Data_set_UTM, "CF_Velocity_UTM")
 
 # 3 Create a list of text files containing sections and loop through them
 list_files        = glob("AmbientNoiseTomography/*.txt");
@@ -79,7 +79,7 @@ for i = 1:li
 
     n_WE            = minimum(WE):100:maximum(WE);
     n_SN            = minimum(SN):100:maximum(SN);
-    we, sn, Depth   = XYZGrid(n_WE, n_SN, depth[1]);
+    we, sn, Depth   = xyzGrid(n_WE, n_SN, depth[1]);
     Vs_3D           = zeros(size(Depth));
     Cgrid           = GeoStats.CartesianGrid((size(we, 1), size(we, 2)), (minimum(we), minimum(sn)), (we[2,2,1] - we[1,1,1], sn[2,2,1] - sn[1,1,1]))
     coord           = PointSet([WE[:]'; SN[:]']);
@@ -91,8 +91,8 @@ for i = 1:li
     Vs_2D           = reshape(sol_Vs, size(domain(sol)));
     Vs_3D[:,:,1]    = Vs_2D;
     Data_set_Cart   = CartData(we, sn, Depth, (Vs = Vs_3D  * (km / s),))
-    Write_Paraview(Data_set_Cart, "CF_Noise" * name_vts * "_Cartesian")
+    write_Paraview(Data_set_Cart, "CF_Noise" * name_vts * "_Cartesian")
     Data_set        = UTMData(we, sn, Depth, 33, true, (Vs = Vs_3D * (km / s),));
     Data_set_UTM    = convert(GeophysicalModelGenerator.GeoData, Data_set);
-    Write_Paraview(Data_set_UTM, "CF_Noise" * name_vts * "_UTM")
+    write_Paraview(Data_set_UTM, "CF_Noise" * name_vts * "_UTM")
 end

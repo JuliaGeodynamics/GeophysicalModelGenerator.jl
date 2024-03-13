@@ -115,7 +115,7 @@ GeoData
 
 and save it to Paraview in the usual way
 ```julia
-julia> Write_Paraview(Data_LM_lonlat, "Data_LM_lonlat")
+julia> write_Paraview(Data_LM_lonlat, "Data_LM_lonlat")
 ```
 
 Opening and plotting the vertical field gives:

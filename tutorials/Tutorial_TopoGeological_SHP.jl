@@ -29,7 +29,7 @@ region = [lon_min lon_max lat_min lat_max]
 
 # 2. load desired topography data using GMT.jl and adapt the data to make it compatible with GeoData
 G = gmtread(filename_topo, limits=[lon_min,lon_max,lat_min,lat_max]);
-Lon,Lat,Depth    =   LonLatDepthGrid(G.x[1:end],G.y[1:end],0);
+Lon,Lat,Depth    =   lonlatdepthGrid(G.x[1:end],G.y[1:end],0);
 Depth[:,:,1]     =   1e-3*G.z';
 
 
@@ -71,7 +71,7 @@ tectunits = unique(table.tect_unit); # get tectonic units
 Data_set        =   GeoData(Lon, Lat, Depth, (Topography=Depth*km,tect_unit=TectUnitData))
 
 # Export the data structure to Paraview format
-Write_Paraview(Data_set, "test_GeoMap")
+write_Paraview(Data_set, "test_GeoMap")
 
 
 
@@ -93,4 +93,4 @@ Write_Paraview(Data_set, "test_GeoMap")
 data_Topo        =   GeoData(Lon, Lat, Depth, (Topography=Depth*km,))
 
 # Export the data structure to Paraview format
-Write_Paraview(Data_set, "test_netcdf_ETOPO1")
+write_Paraview(Data_set, "test_netcdf_ETOPO1")

@@ -52,27 +52,27 @@ include("movies_from_pics.jl")
 # GMT routines
 
 """
-        ImportTopo
+        importTopo
 Optional routine that imports topography. It requires you to load `GMT`
 """
-function ImportTopo end
+function importTopo end
 
 """
-        ImportGeoTIFF
+        importGeoTIFF
 Optional routine that imports GeoTIFF images. It requires you to load `GMT`
 """
-function ImportGeoTIFF end
-export ImportTopo, ImportGeoTIFF
+function importGeoTIFF end
+export importTopo, importGeoTIFF
 
 # GLMakie routines
 
 """
-        Visualise
+        visualise
 Interactive widget that allows you to explore a 3D data set `DataSet` in an interactive manner.
 It requires you to load `GLMakie`.
 """
-function Visualise end
-export Visualise
+function visualise end
+export visualise
 
 
 

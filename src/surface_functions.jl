@@ -72,7 +72,7 @@ function drape_on_topo(Topo::GeoData, Data::GeoData)
     @assert is_surface(Topo)
     @assert is_surface(Data)
    
-    Lon,Lat,_   =   LonLatDepthGrid( Topo.lon.val[:,1,1], Topo.lat.val[1,:,1],Topo.depth.val[1,1,:]);
+    Lon,Lat,_   =   lonlatdepthGrid( Topo.lon.val[:,1,1], Topo.lat.val[1,:,1],Topo.depth.val[1,1,:]);
 
     # use nearest neighbour to interpolate data
     idx         =   nearest_point_indices(Lon,Lat, vec(Data.lon.val), vec(Data.lat.val) ); 
@@ -198,7 +198,7 @@ This can be used, for example, to mask points above/below the Moho in a volumetr
 # Example
 First we create a 3D data set and a 2D surface:
 ```julia
-julia> Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,(-300:25:0)km);
+julia> Lon,Lat,Depth   =   lonlatdepthGrid(10:20,30:40,(-300:25:0)km);
 julia> Data            =   Depth*2;
 julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon))
 GeoData
@@ -207,7 +207,7 @@ GeoData
   lat   ϵ [ 30.0 : 40.0]
   depth ϵ [ -300.0 km : 0.0 km]
   fields: (:Depthdata, :LonData)
-julia> Lon,Lat,Depth   =   LonLatDepthGrid(10:20,30:40,-40km);
+julia> Lon,Lat,Depth   =   lonlatdepthGrid(10:20,30:40,-40km);
 julia> Data_Moho       =   GeoData(Lon,Lat,Depth+Lon*km, (MohoDepth=Depth,))
   GeoData
     size  : (11, 11, 1)
@@ -288,7 +288,7 @@ Determines if points described by the `Grid` CartGrid structure are above the Ca
 """
 function aboveSurface(Grid::CartGrid, DataSurface_Cart::CartData; above=true)
 
-    X,Y,Z = XYZGrid(Grid.coord1D...)
+    X,Y,Z = xyzGrid(Grid.coord1D...)
     Data = CartData(Grid,(Z=Z,))
 
     return aboveSurface(Data, DataSurface_Cart; above=above)
@@ -391,7 +391,7 @@ Interpolates a 3D data set `V` on a surface defined by `Surf`
 """
 function interpolateDataOnSurface(V::GeoData, Surf::GeoData)
 
-    Surf_interp = InterpolateDataFields(V, Surf.lon.val, Surf.lat.val, Surf.depth.val)
+    Surf_interp = interpolateDataFields(V, Surf.lon.val, Surf.lat.val, Surf.depth.val)
 
     return Surf_interp
 end

@@ -79,7 +79,7 @@ Let's create a regular grid, which describes a somewhat smaller area than the da
 
 ```julia
 julia> using GeophysicalModelGenerator
-julia> Lon,Lat,Depth     =   LonLatDepthGrid(-10:0.5:40,32:0.25:50,Depth_vec);
+julia> Lon,Lat,Depth     =   lonlatdepthGrid(-10:0.5:40,32:0.25:50,Depth_vec);
 julia> size(Lon)
 (101, 73, 301)
 ```
@@ -176,7 +176,7 @@ GeoData
   lat   ϵ [ 32.0 - 50.0]
   depth ϵ [ -350.0 km - -50.0 km]
   fields: (:Vs_km_s,)
-julia> Write_Paraview(Data_set, "MeRe_ElSharkawy")
+julia> write_Paraview(Data_set, "MeRe_ElSharkawy")
 1-element Vector{String}:
  "MeRe_ElSharkawy.vts"
 ```

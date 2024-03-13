@@ -32,25 +32,25 @@ using GeophysicalModelGenerator
 filename            =   "test.png";             # fake png
 Corner_LowerLeft    =   (18.0, 51.0, -590.0)
 Corner_UpperRight   =   (9.0, 42.0,    0.0)
-data_Image          =   Screenshot_To_GeoData(filename,Corner_LowerLeft, Corner_UpperRight)
+data_Image          =   screenshotToGeoData(filename,Corner_LowerLeft, Corner_UpperRight)
 @test data_Image.lon[1000] ≈ 17.592964824120603
 @test data_Image.lat[1000] ≈ 50.59296482412061
 @test Value(data_Image.depth[1000])==-590km
-@test Write_Paraview(data_Image, "Profile_1")==nothing
+@test write_Paraview(data_Image, "Profile_1")==nothing
 
 # test if we use a different name for the color dataset
-data_Image_newfieldname  =   Screenshot_To_GeoData(filename,Corner_LowerLeft, Corner_UpperRight, fieldname=:fake)
+data_Image_newfieldname  =   screenshotToGeoData(filename,Corner_LowerLeft, Corner_UpperRight, fieldname=:fake)
 @test  keys(data_Image_newfieldname.fields)[1] == :fake
 
 # Test in CartData
-data_Image          =   Screenshot_To_GeoData(filename,Corner_LowerLeft, Corner_UpperRight, Cartesian=true)
+data_Image          =   screenshotToGeoData(filename,Corner_LowerLeft, Corner_UpperRight, Cartesian=true)
 @test Value(data_Image.x[22]) == 18.0km
 @test Value(data_Image.y[22]) == 51.0km
 @test Value(data_Image.z[22]) ≈ -125.15151515151516km
 
 
 # Test in UTM zone [note that depth should be in m]
-data_Image          =   Screenshot_To_GeoData(filename,Corner_LowerLeft, Corner_UpperRight, UTM=true, UTMzone=33, isnorth=true)
+data_Image          =   screenshotToGeoData(filename,Corner_LowerLeft, Corner_UpperRight, UTM=true, UTMzone=33, isnorth=true)
 @test data_Image.EW.val[22] == 18.0
 @test data_Image.NS.val[22] == 51.0
 @test Value(data_Image.depth[22]) ≈ -125.15151515151516m
@@ -61,20 +61,20 @@ Corner_LowerLeft    =   (2.0,  40.0, -15.0)
 Corner_UpperRight   =   (22.0, 51.0, -15.0)
 Corner_LowerRight   =   (20.0, 40.0, -15.0)
 Corner_UpperLeft    =   (0.0,  51.0, -15.0)
-data_Image          =   Screenshot_To_GeoData(filename,Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft)
+data_Image          =   screenshotToGeoData(filename,Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft)
 @test data_Image.lon[1000]  ≈  2.814070351758794
 @test data_Image.lat[1000]  ≈ 40.00000000000001
 @test Value(data_Image.depth[1000])==-15km
-@test Write_Paraview(data_Image, "MapView_1") == nothing
+@test write_Paraview(data_Image, "MapView_1") == nothing
 
 # MapView in CartData
-data_Image          =   Screenshot_To_CartData(filename,Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft)
+data_Image          =   screenshotToCartData(filename,Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft)
 @test Value(data_Image.x[22]) ≈ 0.42424242424242425km
 @test Value(data_Image.y[22]) ≈ 48.666666666666664km
 @test Value(data_Image.z[22]) ≈ -15km
 
 # MapView in UTMData
-data_Image          =   Screenshot_To_UTMData(filename,Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, UTMzone=33, isnorth=true)
+data_Image          =   screenshotToUTMData(filename,Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, UTMzone=33, isnorth=true)
 @test data_Image.EW.val[22] ≈ 0.42424242424242425
 @test data_Image.NS.val[22] ≈ 48.666666666666664
 @test Value(data_Image.depth[22]) ≈ -15.0m
@@ -82,6 +82,6 @@ data_Image          =   Screenshot_To_UTMData(filename,Corner_LowerLeft, Corner_
 # test the import of xml files from ISC
 # the search criteria are set in a way that only one event should be found
 download_data("http://www.isc.ac.uk/cgi-bin/web-db-run?request=COLLECTED&req_agcy=ISC-EHB&out_format=QuakeML&ctr_lat=&ctr_lon=&radius=&max_dist_units=deg&searchshape=RECT&top_lat=49&bot_lat=37&left_lon=4&right_lon=20&srn=&grn=&start_year=2000&start_month=1&start_day=01&start_time=00%3A00%3A00&end_year=2005&end_month=12&end_day=31&end_time=00%3A00%3A00&min_dep=&max_dep=&min_mag=5.8&max_mag=&req_mag_type=Any&req_mag_agcy=Any&min_def=&max_def=&include_magnitudes=on&include_links=on&include_headers=on&include_comments=on&table_owner=iscehb","ISCTest.xml")
-Data_ISC = GetLonLatDepthMag_QuakeML("ISCTest.xml");
+Data_ISC = getlonlatdepthmag_QuakeML("ISCTest.xml");
 @test Value(Data_ISC.depth[1])==-13.0km
 @test Data_ISC.fields.Magnitude[1]==5.8

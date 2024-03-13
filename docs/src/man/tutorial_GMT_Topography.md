@@ -11,11 +11,11 @@ In many cases, we want to add topographic data as well to our visualization. Thi
 
 #### 1. Download topographic data of the Alpine region
 
-The nice thing about GMT is that it automatically downloads data for you for a certain region and with a certain resolution. As this is a routine that you may use often in your daily workflow, we added the function `ImportTopo` that simplifies this. Note that this function only is available once `GMT` is loaded. 
+The nice thing about GMT is that it automatically downloads data for you for a certain region and with a certain resolution. As this is a routine that you may use often in your daily workflow, we added the function `importTopo` that simplifies this. Note that this function only is available once `GMT` is loaded. 
 
 ```julia
 julia> using GeophysicalModelGenerator, GMT
-julia> Topo = ImportTopo([4,20,37,49], file="@earth_relief_01m.grd")
+julia> Topo = importTopo([4,20,37,49], file="@earth_relief_01m.grd")
 GeoData 
   size  : (960, 720, 1)
   lon   ϵ [ 4.0 : 19.983333333333334]
@@ -48,7 +48,7 @@ Generally, it is advisable to not use the largest resolution if you have a large
 Transforming this to Paraview is a piece of cake:
 
 ```julia
-julia> Write_Paraview(Topo, "Topography_Alps") 
+julia> write_Paraview(Topo, "Topography_Alps") 
 ```
 The result is shown here, together with Moho data
 

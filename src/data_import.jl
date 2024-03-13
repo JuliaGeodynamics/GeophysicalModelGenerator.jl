@@ -6,7 +6,7 @@
 
 using LightXML
 
-export Screenshot_To_GeoData, Screenshot_To_CartData, Screenshot_To_UTMData, GetLonLatDepthMag_QuakeML
+export screenshotToGeoData, screenshotToCartData, screenshotToUTMData, getlonlatdepthmag_QuakeML
 
 # import CSV data using standard library functions
 # here we assume that the data is indeed comma separated and that comments are preceded with a "#"
@@ -160,7 +160,7 @@ end
 
 
 """
-    Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, Cartesian=false, UTM=false, UTMzone, isnorth=true, fieldname::Symbol=:colors)
+    screenshotToGeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, Cartesian=false, UTM=false, UTMzone, isnorth=true, fieldname::Symbol=:colors)
 
 Take a screenshot of Georeferenced image either a `lat/lon`, `x,y` (if `Cartesian=true`) or in UTM coordinates (if `UTM=true`) at a given depth or along profile and converts it to a `GeoData`, `CartData` or `UTMData` struct, which can be saved to Paraview
 
@@ -170,7 +170,7 @@ The lower right and upper left corners can be specified optionally (to take non-
 
 *Note*: if your data is in `UTM` coordinates you also need to provide the `UTMzone` and whether we are on the northern hemisphere or not (`isnorth`).
 """
-function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, Cartesian=false, UTM=false, UTMzone=nothing, isnorth::Bool=true, fieldname::Symbol=:colors)
+function screenshotToGeoData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, Cartesian=false, UTM=false, UTMzone=nothing, isnorth::Bool=true, fieldname::Symbol=:colors)
 
     img         =   load(filename)      # load image
 
@@ -260,7 +260,7 @@ function Screenshot_To_GeoData(filename::String, Corner_LowerLeft, Corner_UpperR
     interp_linear_depth     =   linear_interpolation((xs, zs), Corners_depth)     # create interpolation object
 
     # Interpolate
-    X_int,Y_int,Depth       =   XYZGrid(1:grid_size[1],1:grid_size[2],0)
+    X_int,Y_int,Depth       =   xyzGrid(1:grid_size[1],1:grid_size[2],0)
     X                       =   interp_linear_lon.(X_int,   Y_int);
     Y                       =   interp_linear_lat.(X_int,   Y_int);
     Depth                   =   interp_linear_depth.(X_int, Y_int);
@@ -287,39 +287,39 @@ end
 
 
 """
-    Data = Screenshot_To_CartData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing)
+    Data = screenshotToCartData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing)
 
-Does the same as `Screenshot_To_GeoData`, but returns a `CartData` structure
+Does the same as `screenshotToGeoData`, but returns a `CartData` structure
 """
-function Screenshot_To_CartData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, fieldname::Symbol=:colors)
+function screenshotToCartData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, fieldname::Symbol=:colors)
 
 
     # first create a GeoData struct
-    Data_Cart = Screenshot_To_GeoData(filename, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, Cartesian=true, fieldname=fieldname)
+    Data_Cart = screenshotToGeoData(filename, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, Cartesian=true, fieldname=fieldname)
 
     return Data_Cart
 
 end
 
 """
-    Data = Screenshot_To_UTMData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, UTMzone::Int64=nothing, isnorth::Bool=true, fieldname=:colors)
+    Data = screenshotToUTMData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, UTMzone::Int64=nothing, isnorth::Bool=true, fieldname=:colors)
 
-Does the same as `Screenshot_To_GeoData`, but returns for UTM data
+Does the same as `screenshotToGeoData`, but returns for UTM data
 Note that you have to specify the `UTMzone` and `isnorth`
 """
-function Screenshot_To_UTMData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, UTMzone::Int64=nothing, isnorth::Bool=true, fieldname::Symbol=:colors)
+function screenshotToUTMData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, UTMzone::Int64=nothing, isnorth::Bool=true, fieldname::Symbol=:colors)
 
       # first create a GeoData struct
-      Data_UTM = Screenshot_To_GeoData(filename, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, Cartesian=false, UTM=true, UTMzone=UTMzone, isnorth=isnorth, fieldname=fieldname)
+      Data_UTM = screenshotToGeoData(filename, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=Corner_LowerRight, Corner_UpperLeft=Corner_UpperLeft, Cartesian=false, UTM=true, UTMzone=UTMzone, isnorth=isnorth, fieldname=fieldname)
       return Data_UTM
 end
 
 """
-    Data = GetLonLatDepthMag_QuakeML(filename::String)
+    Data = getlonlatdepthmag_QuakeML(filename::String)
 
 Extracts longitude, latitude, depth and magnitude from a QuakeML file that has been e.g. downloaded from ISC. The data is then returned in GeoData format.
 """
-function GetLonLatDepthMag_QuakeML(filename::String)
+function getlonlatdepthmag_QuakeML(filename::String)
     # The QuakeML format consists of a tree with quite a lot of branches, so we have to traverse it to quite some extent to get the desired values
     # using LightXML: extension???
     xdoc = parse_file(filename); # parse the whole file

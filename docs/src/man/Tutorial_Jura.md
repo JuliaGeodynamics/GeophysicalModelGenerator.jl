@@ -18,7 +18,7 @@ using GeophysicalModelGenerator, GMT
 Download the topography with:
 
 ```julia
-Topo = ImportTopo(lat=[45.5,47.7], lon=[5, 8.1], file="@earth_relief_03s.grd")
+Topo = importTopo(lat=[45.5,47.7], lon=[5, 8.1], file="@earth_relief_03s.grd")
 ```
 
 Next, we drape the geological map on top of the geological map.
@@ -41,7 +41,7 @@ upperright = [8.948117154811715, 47.781282316442606, 0.0]
 We can now import the map with the `Screensho_To_GeoData` function:
 
 ```julia
-Geology  = Screenshot_To_GeoData("SchoriM_Encl_01_Jura-map_A1.png", lowerleft, upperright, fieldname=:geology_colors) # name should have "colors" in it
+Geology  = screenshotToGeoData("SchoriM_Encl_01_Jura-map_A1.png", lowerleft, upperright, fieldname=:geology_colors) # name should have "colors" in it
 ```
 
 You can "drape" this image on the topographic map with
@@ -73,7 +73,7 @@ download_data("https://zenodo.org/records/10726801/files/BMes_Spline_longlat.tif
 Now, import the GeoTIFF as:
 
 ```julia
-Basement = ImportGeoTIFF("BMes_Spline_longlat.tif", fieldname=:Basement, removeNaN_z=true)
+Basement = importGeoTIFF("BMes_Spline_longlat.tif", fieldname=:Basement, removeNaN_z=true)
 ```
 
 the `removeNaN_z` option removes `NaN` values from the dataset and instead uses the z-value of the nearest point.
@@ -89,7 +89,7 @@ As example, we use the cross-section
 download_data("https://zenodo.org/records/10726801/files/Schori_2020_Ornans-Miserey-v2_whiteBG.png", "Schori_2020_Ornans-Miserey-v2_whiteBG.png")
 Corner_LowerLeft = (5.92507, 47.31300, -2.0)
 Corner_UpperRight = (6.25845, 46.99550, 2.0)
-CrossSection_1 = Screenshot_To_GeoData("Schori_2020_Ornans-Miserey-v2_whiteBG.png", Corner_LowerLeft, Corner_UpperRight) # name should have "colors" in it
+CrossSection_1 = screenshotToGeoData("Schori_2020_Ornans-Miserey-v2_whiteBG.png", Corner_LowerLeft, Corner_UpperRight) # name should have "colors" in it
 ```
 
 Note that we slightly modified the image to save it with a white instead of a transparent background
@@ -100,16 +100,16 @@ Moreover, the resolution of the grids is different. Whereas the `TopoGeology` ha
 It is often useful to have them on exactly the same size grid
 
 We can do this in two steps:
-First, we define a `ProjectionPoint` along which we perform the projection
+First, we define a `projectionPoint` along which we perform the projection
 
 ```julia
-proj = ProjectionPoint(Lon=6, Lat=46.5)
+proj = projectionPoint(Lon=6, Lat=46.5)
 ```
 
 We can simply transfer the TopoGeology map to Cartesian values with:
 
 ```julia
-Convert2CartData(Topo,proj)
+convert2CartData(Topo,proj)
 ```
 
 ```julia
@@ -123,11 +123,11 @@ CartData
 
 The problem is that the result is not strictly orthogonal, but instead slightly curved.
 That causes issues later on when we want to intersect the surface with a 3D box.
-It is therefore better to use the `ProjectCartData` to project the `GeoData` structure to a `CartData` struct.
+It is therefore better to use the `projectCartData` to project the `GeoData` structure to a `CartData` struct.
 Let's first create this structure by using `x`,`y` coordinates that are slightly within the ranges given above:
 
 ```julia
-TopoGeology_cart = CartData(XYZGrid(range(-70,150,length=3500), range(-105,130,length=2500), 0.0))
+TopoGeology_cart = CartData(xyzGrid(range(-70,150,length=3500), range(-105,130,length=2500), 0.0))
 ```
 
 ```julia
@@ -142,7 +142,7 @@ CartData
 Next, we project the data with:
 
 ```julia
-TopoGeology_cart = ProjectCartData(TopoGeology_cart, TopoGeology, proj)
+TopoGeology_cart = projectCartData(TopoGeology_cart, TopoGeology, proj)
 ```
 
 ```julia
@@ -157,7 +157,7 @@ CartData
 And we can do the same with the basement topography
 
 ```julia
-Basement_cart = ProjectCartData(TopoGeology_cart, Basement, proj)
+Basement_cart = projectCartData(TopoGeology_cart, Basement, proj)
 ```
 
 ```julia
@@ -170,10 +170,10 @@ CartData
 ```
 
 Finally, we can also transfer the cross-section to cartesian coordinates. As this is just for visualization, we will
-use `Convert2CartData` in this case
+use `convert2CartData` in this case
 
 ```julia
-CrossSection_1_cart = Convert2CartData(CrossSection_1,proj)
+CrossSection_1_cart = convert2CartData(CrossSection_1,proj)
 ```
 
 for visualization, it is nice if we can remove the part of the cross-section that is above the topography.
@@ -194,9 +194,9 @@ Note that we transfer the boolean to an integer
 Let's have a look at this in Paraview:
 
 ```julia
-Write_Paraview(Basement_cart,"Basement_cart")
-Write_Paraview(TopoGeology_cart,"TopoGeology_cart")
-Write_Paraview(CrossSection_1_cart,"CrossSection_1_cart")
+write_Paraview(Basement_cart,"Basement_cart")
+write_Paraview(TopoGeology_cart,"TopoGeology_cart")
+write_Paraview(CrossSection_1_cart,"CrossSection_1_cart")
 ```
 
 The result looks like:
@@ -204,13 +204,13 @@ The result looks like:
 
 ## 3. Geological block model
 Yet, if you want to perform a numerical simulation of the Jura, it is more convenient to rotate the maps such that we can perform a simulation perpendicular to the strike of the mountain belt.
-This can be done with `RotateTranslateScale`:
+This can be done with `rotateTranslateScale`:
 
 ```julia
 RotationAngle = -43
-TopoGeology_cart_rot    = RotateTranslateScale(TopoGeology_cart, Rotate=RotationAngle)
-Basement_cart_rot       = RotateTranslateScale(Basement_cart, Rotate=RotationAngle)
-CrossSection_1_cart_rot = RotateTranslateScale(CrossSection_1_cart, Rotate=RotationAngle)
+TopoGeology_cart_rot    = rotateTranslateScale(TopoGeology_cart, Rotate=RotationAngle)
+Basement_cart_rot       = rotateTranslateScale(Basement_cart, Rotate=RotationAngle)
+CrossSection_1_cart_rot = rotateTranslateScale(CrossSection_1_cart, Rotate=RotationAngle)
 ```
 
 Next, we can create a new computational grid that is more conveniently oriented:
@@ -219,15 +219,15 @@ We create both a surface and a 3D block
 ```julia
 nx, ny, nz = 1024, 1024, 128
 x,y,z = range(-100,180,nx), range(-50,70,ny), range(-8,4,nz)
-ComputationalSurf  =  CartData(XYZGrid(x,y,0))
-ComputationalGrid  =  CartData(XYZGrid(x,y,z))
+ComputationalSurf  =  CartData(xyzGrid(x,y,0))
+ComputationalGrid  =  CartData(xyzGrid(x,y,z))
 ```
 
 Re-interpolate the rotated to the new grid:
 
 ```julia
-GeologyTopo_comp_surf = InterpolateDataFields2D(TopoGeology_cart_rot, ComputationalSurf, Rotate=RotationAngle)
-Basement_comp_surf    = InterpolateDataFields2D(Basement_cart_rot,    ComputationalSurf, Rotate=RotationAngle)
+GeologyTopo_comp_surf = interpolateDataFields2D(TopoGeology_cart_rot, ComputationalSurf, Rotate=RotationAngle)
+Basement_comp_surf    = interpolateDataFields2D(Basement_cart_rot,    ComputationalSurf, Rotate=RotationAngle)
 ```
 
 Next we can use the surfaces to create a 3D block model.
@@ -255,16 +255,16 @@ Add to the computational grid:
 
 ```julia
 ComputationalGrid = addField(ComputationalGrid,"Phases", Phases)
-ComputationalGrid = RemoveField(ComputationalGrid,"Z")
+ComputationalGrid = removeField(ComputationalGrid,"Z")
 ```
 
 Save the surfaces, cross-section and the grid:
 
 ```julia
-Write_Paraview(GeologyTopo_comp_surf,"GeologyTopo_comp_surf")
-Write_Paraview(Basement_comp_surf,   "Basement_comp_surf")
-Write_Paraview(CrossSection_1_cart_rot,"CrossSection_1_cart_rot")
-Write_Paraview(ComputationalGrid,"ComputationalGrid")
+write_Paraview(GeologyTopo_comp_surf,"GeologyTopo_comp_surf")
+write_Paraview(Basement_comp_surf,   "Basement_comp_surf")
+write_Paraview(CrossSection_1_cart_rot,"CrossSection_1_cart_rot")
+write_Paraview(ComputationalGrid,"ComputationalGrid")
 ```
 
 We can visualize this in paraview:

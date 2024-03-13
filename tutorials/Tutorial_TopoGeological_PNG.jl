@@ -24,7 +24,7 @@ lon_max = 20.0
 
 # 2.1 load desired topography data using GMT.jl and adapt the data to make it compatible with GeoData
 G = gmtread(filename_topo, limits=[lon_min,lon_max,lat_min,lat_max]);
-Lon,Lat,Depth    =   LonLatDepthGrid(G.x[1:end],G.y[1:end],0);
+Lon,Lat,Depth    =   lonlatdepthGrid(G.x[1:end],G.y[1:end],0);
 numel_topo       =   prod(size(Lon));
 Depth[:,:,1]     =   1e-3*G.z';
 DataTopo         =   GeophysicalModelGenerator.GeoData(Lon, Lat, Depth, (Topography=Depth*km,))
@@ -36,7 +36,7 @@ Corner_UpperRight   =   (17.0, 48.5 , 0.0)
 Corner_LowerLeft    =   ( lon_min, lat_min , 0.0)
 Corner_UpperRight   =   (lon_max, lat_max , 0.0)
 
-DataPNG = Screenshot_To_GeoData(filename_geo, Corner_LowerLeft, Corner_UpperRight)
+DataPNG = screenshotToGeoData(filename_geo, Corner_LowerLeft, Corner_UpperRight)
 
 # 4. interpolate geological map data colors onto topo grid using nearest neighbor interpolation
 
@@ -83,4 +83,4 @@ blue[ind_tmp] .= 1;
 Data_set        =   GeoData(Lon, Lat, Depth, (Topography=Depth*km,colors=(red,green,blue)))
 
 # Export the data structure to Paraview format
-Write_Paraview(Data_set, "test_GeoMap")
+write_Paraview(Data_set, "test_GeoMap")
