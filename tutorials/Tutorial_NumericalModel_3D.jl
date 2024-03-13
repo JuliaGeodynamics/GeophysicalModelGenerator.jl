@@ -34,7 +34,8 @@ Temp = fill(1350.0, nx,ny,nz);
 # We use a lithospheric structure, which can be specified with the `LithosphericPhases` structure, where you can indicate `Layers` (the thickness of each lithospheric layer, starting from the top), and `Phases` the phases of the corresponding layers.
 # Note that if the lowermost layer has the same phase as the mantle, you can define `Tlab` as the lithosphere-asthenosphere boundary which will automatically adjust the phase depending on temperature
 # Note 2 : Origin must be set at [xmin,ymin,zmax] of the box. Or it can be also not set directly for such examples. The function AddBox! internally 
-# check for these coordinate. If Origin is not coincident with [xmin,ymin,zmax] it may not found particles and crashes. 
+# check for these coordinate. If Origin is not coincident with [xmin,ymin,zmax] it may not found particles and crashes or produce NaN. [This comment is valid only for the context of generating the slab 
+# with McKenzie temperature, in which you need to know where is the direction of dipping] 
 
 
 lith = LithosphericPhases(Layers=[15 45 10], Phases=[0 1 2], Tlab=1250)
