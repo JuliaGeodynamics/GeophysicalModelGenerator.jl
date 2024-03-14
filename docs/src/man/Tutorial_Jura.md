@@ -18,7 +18,7 @@ using GeophysicalModelGenerator, GMT
 Download the topography with:
 
 ```julia
-Topo = importTopo(lat=[45.5,47.7], lon=[5, 8.1], file="@earth_relief_03s.grd")
+Topo = import_topo(lat=[45.5,47.7], lon=[5, 8.1], file="@earth_relief_03s.grd")
 ```
 
 Next, we drape the geological map on top of the geological map.
@@ -73,7 +73,7 @@ download_data("https://zenodo.org/records/10726801/files/BMes_Spline_longlat.tif
 Now, import the GeoTIFF as:
 
 ```julia
-Basement = importGeoTIFF("BMes_Spline_longlat.tif", fieldname=:Basement, removeNaN_z=true)
+Basement = import_GeoTIFF("BMes_Spline_longlat.tif", fieldname=:Basement, removeNaN_z=true)
 ```
 
 the `removeNaN_z` option removes `NaN` values from the dataset and instead uses the z-value of the nearest point.

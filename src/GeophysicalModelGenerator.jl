@@ -52,17 +52,17 @@ include("movies_from_pics.jl")
 # GMT routines
 
 """
-        importTopo
+        import_topo
 Optional routine that imports topography. It requires you to load `GMT`
 """
-function importTopo end
+function import_topo end
 
 """
-        importGeoTIFF
+        import_GeoTIFF
 Optional routine that imports GeoTIFF images. It requires you to load `GMT`
 """
-function importGeoTIFF end
-export importTopo, importGeoTIFF
+function import_GeoTIFF end
+export import_topo, import_GeoTIFF
 
 # GLMakie routines
 

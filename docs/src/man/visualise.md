@@ -27,7 +27,7 @@ Note that this tends to take a while, the first time you do this (faster afterwa
 
 Let's add topography to the plot as well, which requires us to first load that:
 ```julia
-julia> Topo = importTopo([0,18,38,52], file="@earth_relief_01m.grd");
+julia> Topo = import_topo([0,18,38,52], file="@earth_relief_01m.grd");
 julia> visualise(Data, Topography=Topo);    
 ```
 Which will look like:

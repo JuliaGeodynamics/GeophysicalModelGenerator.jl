@@ -6,6 +6,6 @@ We have a number of ways to import data, besides using any of the additional pac
 GeophysicalModelGenerator.screenshot_to_GeoData
 GeophysicalModelGenerator.screenshot_to_CartData
 GeophysicalModelGenerator.screenshot_to_UTMData
-GeophysicalModelGenerator.importTopo
-GeophysicalModelGenerator.importGeoTIFF
+GeophysicalModelGenerator.import_topo
+GeophysicalModelGenerator.import_GeoTIFF
 ```

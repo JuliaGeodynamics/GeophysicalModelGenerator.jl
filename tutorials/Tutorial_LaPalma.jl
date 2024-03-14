@@ -14,7 +14,7 @@
 using GeophysicalModelGenerator, GMT, DelimitedFiles
 
 # We will use GMT to download the topography with:
-Topo = importTopo(lon = [-18.2, -17.5], lat=[28.4, 29.0], file="@earth_relief_15s.grd")
+Topo = import_topo(lon = [-18.2, -17.5], lat=[28.4, 29.0], file="@earth_relief_15s.grd")
 
 # Next, lets load the seismicity. The earthquake data is available on [https://www.ign.es/web/ign/portal/vlc-catalogo](https://www.ign.es/web/ign/portal/vlc-catalogo). 
 # We have filtered them and prepared a file with earthquake locations up to early November 2021 (from january 2021).
