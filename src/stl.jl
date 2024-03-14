@@ -10,7 +10,7 @@ using LinearAlgebra
 #using TriangleIntersect
 
 export Ray, Intersection, IntersectRayTriangle, load, TriangleNormal, Point, IntersectRayMesh, coordinates
-export STLToSurface, isInsideClosedSTL
+export STLToSurface, isinside_closed_STL
 
 #=
 # Conversion routines from GeometryBasics triangles to TriangleIntersect triangles:
@@ -163,7 +163,7 @@ end
 
 
 """
-    inside = isInsideClosedSTL(mesh::Mesh, Pt, eps=1e-3)
+    inside = isinside_closed_STL(mesh::Mesh, Pt, eps=1e-3)
 
 Determine whether a point `Pt` is inside a 3D closed triangular `*.stl` surface or not.
 
@@ -172,7 +172,7 @@ https://github.com/marmakoide/inside-3d-mesh
 
 This again is described in the following [paper](https://igl.ethz.ch/projects/winding-number/) by Alec Jacobson, Ladislav Kavan and Olga Sorkine-Hornung.
 """
-function isInsideClosedSTL(mesh::Mesh, Pt::Vector, eps=1e-3)
+function isinside_closed_STL(mesh::Mesh, Pt::Vector, eps=1e-3)
 
      # Compute triangle vertices and their norms relative to X
      M_vec  = [mesh.position[i]-Pt[:]   for i in eachindex(mesh.position)];

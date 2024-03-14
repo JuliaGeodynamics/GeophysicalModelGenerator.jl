@@ -14,7 +14,7 @@ interpolate_data_surface
 interpolate_topography_plane
 parse_columns_CSV
 rotate_translate_scale!
-pointData2NearestGrid
+point_to_nearest_grid
 convert2UTMzone
 convert2CartData
 project_CartData
