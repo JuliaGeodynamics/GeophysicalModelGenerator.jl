@@ -16,7 +16,7 @@ Vs          =   data[:,4];
 
 # Create 3D regular grid:
 Depth_vec       =   unique(depth)
-Lon,Lat,Depth   =   lonlatdepthGrid(-10:0.5:40,32:0.25:50,Depth_vec);
+Lon,Lat,Depth   =   lonlatdepth_grid(-10:0.5:40,32:0.25:50,Depth_vec);
 
 # Employ GeoStats to interpolate irregular data points to a regular grid
 Cgrid = CartesianGrid((size(Lon,1),size(Lon,2)),(minimum(Lon),minimum(Lat)),(Lon[2,2,2]-Lon[1,1,1],Lat[2,2,2]-Lat[1,1,1]))

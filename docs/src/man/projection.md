@@ -4,7 +4,7 @@ Typically, you load a dataset by reading it into julia and either generating a `
 
 If you write the data to `Paraview`, it is internally converted to a Paraview structure (which involves `x,y,z` Cartesian Earth-Centered-Earth-Fixed (ECEF) coordinates using the `wgs84` ellipsoid). 
 
-Yet, if you do geodynamic calculations the chances are that the geodynamic code does not operate in spherical coordinates, but rather use cartesian ones. In that case you should transfer your data to the `CartData` structure, which requires you to specify a `projectionPoint` that is a point on the map that will later have the coordinates `(0,0)` in the `CartData` structure.
+Yet, if you do geodynamic calculations the chances are that the geodynamic code does not operate in spherical coordinates, but rather use cartesian ones. In that case you should transfer your data to the `CartData` structure, which requires you to specify a `ProjectionPoint` that is a point on the map that will later have the coordinates `(0,0)` in the `CartData` structure.
 
 
 #### 1. Converting
@@ -41,8 +41,8 @@ As the area is large, it covers a range of `UTM` zones (and every point has a UT
 Yet, what we could do instead is show all data with respect to a single UTM zone. For this, we have to select a point around which we project (in this case more or less in the center):
 
 ```julia
-julia> p=projectionPoint(Lon=17.3, Lat=37.5)
-projectionPoint(37.5, 17.3, 703311.4380385976, 4.152826288024972e6, 33, true)
+julia> p=ProjectionPoint(Lon=17.3, Lat=37.5)
+ProjectionPoint(37.5, 17.3, 703311.4380385976, 4.152826288024972e6, 33, true)
 ```
 
 Projecting the `GeoData` set using this projection point is done with:
@@ -77,7 +77,7 @@ Whereas this is ok to look at and compare with a LaMEM model setup, we cannot us
 #### 2. Projecting data
 For use with LaMEM, you would need an orthogonal cartesian grid. From the last command above we get some idea on the area, so we can create this:
 ```julia
-julia> Topo_Cart_orth  = CartData(xyzGrid(-2000:20:2000,-1000:20:1000,0))
+julia> Topo_Cart_orth  = CartData(xyz_grid(-2000:20:2000,-1000:20:1000,0))
 CartData 
     size   : (201, 101, 1)
     x      ϵ [ -2000.0 km : 2000.0 km]

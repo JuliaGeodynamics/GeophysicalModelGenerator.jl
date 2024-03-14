@@ -2,7 +2,7 @@
 using Test, GeophysicalModelGenerator, GeoParams
 
 # GeoData
-Lon3D,Lat3D,Depth3D =   lonlatdepthGrid(1.0:1:10.0, 11.0:1:20.0, (-20:1:-10)*km);
+Lon3D,Lat3D,Depth3D =   lonlatdepth_grid(1.0:1:10.0, 11.0:1:20.0, (-20:1:-10)*km);
 Data                =   zeros(size(Lon3D));
 Temp                =   ones(Float64, size(Data))*1350;
 Phases              =   zeros(Int32,   size(Data));
@@ -17,7 +17,7 @@ addEllipsoid!(Phases,Temp,Grid, cen=(4,15,-17), axes=(1,2,3), StrikeAngle=90, Di
 
 
 # CartData 
-X,Y,Z               =   xyzGrid(1.0:1:10.0, 11.0:1:20.0, -20:1:-10);
+X,Y,Z               =   xyz_grid(1.0:1:10.0, 11.0:1:20.0, -20:1:-10);
 Data                =   zeros(size(X));
 Temp                =   ones(Float64, size(Data))*1350;
 Phases              =   zeros(Int32,   size(Data));
@@ -30,7 +30,7 @@ addEllipsoid!(Phases,Temp,Grid, cen=(4,15,-17), axes=(1,2,3), StrikeAngle=90, Di
 @test sum(Temp[1,1,:]) ≈ 14850.0
 
 # CartGrid
-Grid                =   createCartGrid(size=(10,20,30),x=(0.,10), y=(0.,10), z=(2.,10))
+Grid                =   create_CartGrid(size=(10,20,30),x=(0.,10), y=(0.,10), z=(2.,10))
 Temp                =   ones(Float64, Grid.N...)*1350;
 Phases              =   zeros(Int32,  Grid.N...);
 
@@ -46,7 +46,7 @@ Data = CartData(Grid, (T=Temp, Phases=Phases))
 @test NumValue(Data.x[3,3,2]) ≈ 2.2222222222222223
 
 # Doing the same for vertical cross-sections
-Grid2D              =   createCartGrid(size=(10,30),x=(0.,10), z=(2.,10))
+Grid2D              =   create_CartGrid(size=(10,30),x=(0.,10), z=(2.,10))
 Temp2D              =   ones(Float64, Grid2D.N...)*1350;
 Phases2D            =   zeros(Int32,  Grid2D.N...);
 
@@ -57,7 +57,7 @@ Data2D = CartData(Grid2D, (T=Temp2D, Phases=Phases2D))
 
 # LithosphericPhases
 LP                  =   LithosphericPhases(Layers=[5 10 6], Phases=[0 1 2 3], Tlab=nothing);
-X,Y,Z               =   xyzGrid(-5:1:5,-5:1:5,-20:1:5);
+X,Y,Z               =   xyz_grid(-5:1:5,-5:1:5,-20:1:5);
 Phases              =   zeros(Int32,   size(X));
 Temp                =   zeros(Int32,   size(X));
 Phases              =   compute_Phase(Phases, Temp, X, Y, Z, LP);
@@ -81,13 +81,13 @@ Phases              =   compute_Phase(Phases, Temp, Grid, LP);
 
 # Create Grid & nondimensionalize it
 CharDim     =   GEO_units();
-Grid        =   createCartGrid(size=(10,20,30),x=(0.0km,10km), y=(0.0km, 10km), z=(-10.0km, 2.0km), CharDim=CharDim)
+Grid        =   create_CartGrid(size=(10,20,30),x=(0.0km,10km), y=(0.0km, 10km), z=(-10.0km, 2.0km), CharDim=CharDim)
 @test Grid.Δ[2] ≈ 0.0005263157894736842
 
 
 # test 1D-explicit thermal solver for AddBox -----------
 nel         =   96
-Grid        =   createCartGrid(size=(nel,nel,nel),x=(-200.,200.), y=(-200.,200.), z=(-200.,0))
+Grid        =   create_CartGrid(size=(nel,nel,nel),x=(-200.,200.), y=(-200.,200.), z=(-200.,0))
 Temp        =   zeros(Float64, Grid.N...);
 Phases      =   zeros(Int64,  Grid.N...);
 
@@ -173,7 +173,7 @@ addBox!(Phases,Temp,Grid, xlim=(-100,100), zlim=(-100,0),
 x        = LinRange(0.0,1200.0,64);
 y        = LinRange(0.0,1200.0,64);
 z        = LinRange(-660,50,64);
-Cart     = CartData(xyzGrid(x, y, z));
+Cart     = CartData(xyz_grid(x, y, z));
 
 # initialize phase and temperature matrix
 Phase   = ones(Int32,size(Cart));
@@ -221,7 +221,7 @@ Data_Final =   addfield(Cart,"Temp",Temp)
 x        = LinRange(0.0,1200.0,64);
 y        = LinRange(0.0,1200.0,64);
 z        = LinRange(-660,50,64);
-Cart     = CartData(xyzGrid(x, y, z));
+Cart     = CartData(xyz_grid(x, y, z));
 
 # initialize phase and temperature matrix
 Phase   = ones(Int32,(length(x),length(y),length(z)));
@@ -242,8 +242,8 @@ addPolygon!(Phase, Temp, Cart; xlim=[500.0, 200.0, 500.0],ylim=[100.0,400.0], zl
 x        = LinRange(0.0,1200.0,128);
 y        = LinRange(0.0,1200.0,128);
 z        = LinRange(-660,50,128);
-Cart     = CartData(xyzGrid(x, y, z));
-X,Y,Z    = xyzGrid(x, y, z);
+Cart     = CartData(xyz_grid(x, y, z));
+X,Y,Z    = xyz_grid(x, y, z);
 
 # initialize phase and temperature matrix
 Phase   = ones(Int32,size(Cart));
@@ -295,7 +295,7 @@ Data_Final      =   CartData(X,Y,Z,(Phase=Phase,Temp=Temp))
 nx,nz = 512,128
 x = range(-1000,1000, nx);
 z = range(-660,0,    nz);
-Grid2D = CartData(xyzGrid(x,0,z))
+Grid2D = CartData(xyz_grid(x,0,z))
 Phases = zeros(Int64, nx, 1, nz);
 Temp = fill(1350.0, nx, 1, nz);
 addBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = ConstantPhase(1),  T=HalfspaceCoolingTemp(Age=40));    
@@ -318,7 +318,7 @@ addSlab!(Phases, Temp, Grid2D, trench, phase = ConstantPhase(2), T=T_slab);
 nx,nz = 512,128
 x = range(-1000,1000, nx);
 z = range(-660,0,    nz);
-Grid2D = CartData(xyzGrid(x,0,z))
+Grid2D = CartData(xyz_grid(x,0,z))
 Phases = zeros(Int64, nx, 1, nz);
 Temp = fill(1350.0, nx, 1, nz);
 lith = LithosphericPhases(Layers=[15 20 55], Phases=[3 4 5], Tlab=1250)

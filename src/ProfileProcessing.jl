@@ -228,7 +228,7 @@ function combine_VolData(VolData::NamedTuple; lat=nothing, lon=nothing, depth=no
     lon1D   = range(lon...,     dims[1])
     lat1D   = range(lat...,     dims[2])
     z1D     = range(depth...,   dims[3])
-    Lon,Lat,Z  =   xyzGrid(lon1D, lat1D, z1D);
+    Lon,Lat,Z  =   xyz_grid(lon1D, lat1D, z1D);
     DataSetRef =   GeoData(Lon, Lat, Z, (Temporary=Z,))
 
     # Loop through all datasets

@@ -65,7 +65,7 @@ In order to create model setups, it is helpful to first transfer the data to Car
 This requires us to first determine a *projection point*, that is fixed. Often, it is helpful to use the center of the topography for this. In the present example, we will center the model around La Palma itself:
 
 ```julia
-proj = projectionPoint(Lon=-17.84, Lat=28.56)
+proj = ProjectionPoint(Lon=-17.84, Lat=28.56)
 ```
 
 Once this is done you can convert the topographic data to the cartesian reference frame
@@ -80,7 +80,7 @@ In other cases, however, this is quite substantial (e.g., India-Asia collision z
 LaMEM needs an orthogonal grid of topography, which we can create with:
 
 ```julia
-Topo_model = CartData(xyzGrid(-35:.1:30,-15:.2:45,0));
+Topo_model = CartData(xyz_grid(-35:.1:30,-15:.2:45,0));
 nothing #hide
 ```
 
@@ -102,7 +102,7 @@ It is useful to plot the earthquake density in 3D, which indicates where most ac
 For this, we first create a 3D grid of the region:
 
 ```julia
-Grid_3D = CartData(xyzGrid(-35:.3:30,-15:.25:45,-50:.5:5))
+Grid_3D = CartData(xyz_grid(-35:.3:30,-15:.25:45,-50:.5:5))
 ```
 
 Next we check how many earthquakes are around the grid points:

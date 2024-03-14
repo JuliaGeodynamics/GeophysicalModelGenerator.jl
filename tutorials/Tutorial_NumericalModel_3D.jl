@@ -18,7 +18,7 @@ nx,ny,nz = 256,256,128
 x = range(-1000,1000, nx);
 y = range(-1000,1000, ny);
 z = range(-660,0,    nz);
-Grid = CartData(xyzGrid(x,y,z));
+Grid = CartData(xyz_grid(x,y,z));
 
 # Now we create an integer array that will hold the `Phases` information (which usually refers to the material or rock type in the simulation)
 Phases = fill(2,nx,ny,nz);
@@ -64,7 +64,7 @@ nx,ny,nz = 512,512,128
 x = range(-1000,1000, nx);
 y = range(-1000,1000, ny);
 z = range(-660,0,    nz);
-Grid = CartData(xyzGrid(x,y,z));
+Grid = CartData(xyz_grid(x,y,z));
 
 Phases = fill(2,nx,ny,nz);
 Temp = fill(1350.0, nx,ny,nz);

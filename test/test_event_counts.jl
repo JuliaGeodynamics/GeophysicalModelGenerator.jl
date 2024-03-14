@@ -1,13 +1,13 @@
 using Test
 
 # Create a CartGrid
-Grid_cart = CartData(xyzGrid(-20:20,-20:.1:20,-30:30))
+Grid_cart = CartData(xyz_grid(-20:20,-20:.1:20,-30:30))
 
-Lon,Lat,Depth = lonlatdepthGrid(-20:20,-20:.1:20,-30:30);
+Lon,Lat,Depth = lonlatdepth_grid(-20:20,-20:.1:20,-30:30);
 Grid_geo = GeoData(Lon,Lat,Depth,(;Depth))
 
 # create 2D GeoData struct
-Lon,Lat,Depth   =   lonlatdepthGrid(10:20,30:40,0);
+Lon,Lat,Depth   =   lonlatdepth_grid(10:20,30:40,0);
 CM              =   zeros(size(Depth)); CM[1:5,1:5] .= 1.0
 Data_set2D      =   GeoData(Lon,Lat,Depth,(Count=CM,))  
 

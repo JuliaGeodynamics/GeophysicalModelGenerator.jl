@@ -156,7 +156,7 @@ search: cross_section cross_section_volume cross_section_points cross_section_su
   Example:
   ≡≡≡≡≡≡≡≡
 
-  julia> Lon,Lat,Depth   =   lonlatdepthGrid(10:20,30:40,(-300:25:0)km);
+  julia> Lon,Lat,Depth   =   lonlatdepth_grid(10:20,30:40,(-300:25:0)km);
   julia> Data            =   Depth*2;                # some data
   julia> Vx,Vy,Vz        =   ustrip(Data*3),ustrip(Data*4),ustrip(Data*5);
   julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)));
@@ -204,10 +204,10 @@ In creating this image, I used the `Clip` tool of Paraview to only show topograp
 ### 4. Cartesian data
 As you can see, the curvature or the Earth is taken into account here. Yet, for many applications it is more convenient to work in Cartesian coordinates (kilometers) rather then in geographic coordinates.
 `GeophysicalModelGenerator` has a number of tools for this.
-First we need do define a `projectionPoint`  around which we project the data
+First we need do define a `ProjectionPoint`  around which we project the data
 
 ```julia
-proj = projectionPoint(Lon=12.0,Lat =43)
+proj = ProjectionPoint(Lon=12.0,Lat =43)
 
 Topo_cart = convert2CartData(Topo_Alps, proj)
 ```
@@ -259,7 +259,7 @@ Yet, because of the curvature of the Earth, the resulting 3D model is not strict
 This can be achieved in a relatively straightforward manner, by creating a new 3D dataset that is slightly within the curved boundaries of the projected data set:
 
 ```julia
-Tomo_rect = CartData(xyzGrid(-550.0:10:600, -500.0:10:700, -600.0:5:-17));
+Tomo_rect = CartData(xyz_grid(-550.0:10:600, -500.0:10:700, -600.0:5:-17));
 ```
 
 the routine `project_CartData` will then project the data from the geographic coordinates to the new rectilinear grid:
@@ -281,7 +281,7 @@ CartData
 we can do the same with topography:
 
 ```julia
-Topo_rect = CartData(xyzGrid(-550.0:1:600, -500.0:1:700, 0))
+Topo_rect = CartData(xyz_grid(-550.0:1:600, -500.0:1:700, 0))
 Topo_rect = project_CartData(Topo_rect, Topo_Alps, proj)
 ```
 

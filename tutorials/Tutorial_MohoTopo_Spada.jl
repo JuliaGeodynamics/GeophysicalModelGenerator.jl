@@ -75,7 +75,7 @@ depth = [data_Moho1.depth.val; data_Moho2.depth.val; data_Moho3.depth.val];
 data_Moho_combined = GeoData(lon, lat, depth, (MohoDepth=depth*km,))
 
 # Next, we define a regular lon/lat grid
-Lon, Lat, Depth  = lonlatdepthGrid(4.1:0.1:11.9,42.5:.1:49,-30km)
+Lon, Lat, Depth  = lonlatdepth_grid(4.1:0.1:11.9,42.5:.1:49,-30km)
 
 # We will use a nearest neighbor interpolation method to fit a surface through the data, which has the advantage that it will take the discontinuities into account. 
 # This can be done with `nearest_point_indices`

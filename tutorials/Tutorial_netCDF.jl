@@ -26,7 +26,7 @@ depth = -1 .* depth # CAREFUL: MAKE SURE DEPTH IS NEGATIVE, AS THIS IS THE ASSUM
 
 # For netCDF data, 3D coordinates of a regular grid are only given as 1D vectors. As we need to compute Cartesian coordinates for
 # Paraview, we need the full matrix of grid coordinates
-Lon3D,Lat3D,Depth3D = lonlatdepthGrid(lon, lat, depth);
+Lon3D,Lat3D,Depth3D = lonlatdepth_grid(lon, lat, depth);
 
 # Set up the Data structure
 Data_set       =   GeoData(Lon3D,Lat3D,Depth3D,(VS=vs,))

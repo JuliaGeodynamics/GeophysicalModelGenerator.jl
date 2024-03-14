@@ -81,7 +81,7 @@ write_Paraview(Model3D,"LaMEM_ModelSetup")                  # Save model to para
 
 
 # Test writing a LaMEM topography file
-X,Y,Z = xyzGrid(-20:20,-10:10,0);
+X,Y,Z = xyz_grid(-20:20,-10:10,0);
 Z = cos.(2*pi.*X./5).*cos.(2*pi.*Y./10)
 
 Topo = CartData(X,Y,Z,(Topography=Z,))

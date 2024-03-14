@@ -47,32 +47,32 @@ Data_cart = convert(ParaviewData,Data_set)
 @test Data_cart.z[3] ≈ 1421.35608984477 
 
 # Create Lon/Lat/Depth and X/Y/Z grids from given numbers or 1D vectors
-Lon,Lat,Depth =  lonlatdepthGrid(10:20,30:40,(-10:-1)km);
-X,Y,Z         =  xyzGrid(10:20,30:40,(-10:-1)km);
+Lon,Lat,Depth =  lonlatdepth_grid(10:20,30:40,(-10:-1)km);
+X,Y,Z         =  xyz_grid(10:20,30:40,(-10:-1)km);
 @test size(Lon)==(11, 11, 10)
 @test Lat[2,2,2]==31.0
 @test size(X)==(11, 11, 10)
 @test Y[2,2,2]==31.0
 
-Lon,Lat,Depth   =  lonlatdepthGrid(10:20,30:40,-50km);
-X,Y,Z           =  xyzGrid(10:20,30:40,-50km);
+Lon,Lat,Depth   =  lonlatdepth_grid(10:20,30:40,-50km);
+X,Y,Z           =  xyz_grid(10:20,30:40,-50km);
 @test Lon[2,2] == 11.0
 @test X[2,2]   == 11.0
 
-Lon,Lat,Depth   =  lonlatdepthGrid(10,30,(-10:-1)km); # 1D line @ given lon/lat
-X,Y,Z           =  xyzGrid(10,30,(-10:-1)km);
+Lon,Lat,Depth   =  lonlatdepth_grid(10,30,(-10:-1)km); # 1D line @ given lon/lat
+X,Y,Z           =  xyz_grid(10,30,(-10:-1)km);
 @test size(Lon)==(1,1,10)
 @test Lat[2]==30.0
 @test size(X)==(1,1,10)
 @test Y[2]==30.0
 
 # throw an error if a 2D array is passed as input
-@test_throws ErrorException lonlatdepthGrid(10:20,30:40,[20 30; 40 50]);
-@test_throws ErrorException xyzGrid(10:20,30:40,[20 30; 40 50]);
+@test_throws ErrorException lonlatdepth_grid(10:20,30:40,[20 30; 40 50]);
+@test_throws ErrorException xyz_grid(10:20,30:40,[20 30; 40 50]);
 
 
 # Create 3D arrays & convert them 
-Lon,Lat,Depth   =  lonlatdepthGrid(10:20,30:40,(-10:-1)km); # 3D grid
+Lon,Lat,Depth   =  lonlatdepth_grid(10:20,30:40,(-10:-1)km); # 3D grid
 Data            =   ustrip(Depth);
 
 Data_set1       =   GeoData(Lon,Lat,Depth,(FakeData=Data,Data2=Data.+1.))  
@@ -85,7 +85,7 @@ Data_set2  =  GeoData(Lat,Lon,Depth,(FakeData=Data,Data2=Data.+1.))
 #@test (test_logger.logs[1].level==Warn && test_logger.logs[1].message=="It appears that the lon array has a wrong ordering")
 
 # Create 2D arrays & convert them 
-Lon,Lat,Depth   =   lonlatdepthGrid(10:20,30:40,-50km);
+Lon,Lat,Depth   =   lonlatdepth_grid(10:20,30:40,-50km);
 Data            =   ustrip(Depth);
 Data_set2       =   GeoData(Lon,Lat,Depth,(FakeData=Data,Data2=Data.+1.))  
 @test Value(Data_set2.depth[2,2])== -50.0km
@@ -100,20 +100,20 @@ Data_cart2      = convert(ParaviewData,Data_set2)
 @test Data_cart2.z[2,2] ≈ 3240.141612908441
 
 # Test projection points (used for map projections)
-p1 = projectionPoint();
+p1 = ProjectionPoint();
 @test  p1.Lat==49.9929
 @test  p1.Lon==8.2473
 @test  p1.EW ≈ 446048.5158750616
 @test  p1.NS ≈ 5.53811274482716e6
 
-p2 = projectionPoint(p1.EW,p1.NS,p1.zone,p1.isnorth)
+p2 = ProjectionPoint(p1.EW,p1.NS,p1.zone,p1.isnorth)
 @test p1.EW-p2.EW + p1.NS-p2.NS + p1.zone-p2.zone == 0.0
 
 # Create UTM Data structure
 ew          =   422123.0:100:433623.0
 ns          =   4.514137e6:100:4.523637e6
 depth       =   -5400:250:600
-EW,NS,Depth =   xyzGrid(ew, ns, depth);
+EW,NS,Depth =   xyz_grid(ew, ns, depth);
 Data        =   ustrip.(Depth);
 Data_set    =   UTMData(EW,NS,Depth,33, true, (FakeData=Data,Data2=Data.+1.))  
 
@@ -135,12 +135,12 @@ Data_set2 = convert(UTMData, Data_set1)
 @test sum(abs.(Data_set2.EW.val-Data_set.EW.val)) < 1e-5 
 
 # Test Projection point for negative values
-proj = projectionPoint(Lat= -2.8, Lon=36)
+proj = ProjectionPoint(Lat= -2.8, Lon=36)
 @test proj.zone == 37
 @test proj.isnorth == false
 
 # Convert from GeoData -> UTMData, but for a fixed zone (used for map projection)
-proj = projectionPoint(Lat= 40.77470011887963, Lon=14.099668158564413)
+proj = ProjectionPoint(Lat= 40.77470011887963, Lon=14.099668158564413)
 Data_set3 = convert2UTMzone(Data_set1, proj)
 @test Data_set3.EW.val[100] ≈  432022.99999999994   
 
@@ -148,7 +148,7 @@ Data_set3 = convert2UTMzone(Data_set1, proj)
 x        =   0:2:10
 y        =   -5:5
 z        =   -10:2:2
-X,Y,Z    =   xyzGrid(x, y, z);
+X,Y,Z    =   xyz_grid(x, y, z);
 Data     =   Z
 Data_setC =   CartData(X,Y,Z, (FakeData=Data,Data2=Data.+1.))
 @test sum(abs.(Value(Data_setC.x))) ≈ 2310.0km

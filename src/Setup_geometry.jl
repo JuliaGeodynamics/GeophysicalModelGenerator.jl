@@ -174,7 +174,7 @@ julia> write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
 
 Example 2) Box with halfspace cooling profile
 ```julia
-julia> Grid = CartData(xyzGrid(-1000:10:1000,0,-660:10:0))
+julia> Grid = CartData(xyz_grid(-1000:10:1000,0,-660:10:0))
 julia> Phases = zeros(Int32,   size(Grid));
 julia> Temp   = zeros(Float64, size(Grid));
 julia> addBox!(Phases,Temp,Grid, xlim=(0,500), zlim=(-50,0), phase=ConstantPhase(3), DipAngle=10, T=HalfspaceCoolingTemp(Age=30))
@@ -1687,7 +1687,7 @@ Example 1) Slab
 julia> x     = LinRange(0.0,1200.0,128);
 julia> y     = LinRange(0.0,1200.0,128);
 julia> z     = LinRange(-660,50,128);
-julia> Cart  = CartData(xyzGrid(x, y, z));
+julia> Cart  = CartData(xyz_grid(x, y, z));
 julia> Phase = ones(Int64,size(Cart));
 julia> Temp  = fill(1350.0,size(Cart));
 # Define the trench:

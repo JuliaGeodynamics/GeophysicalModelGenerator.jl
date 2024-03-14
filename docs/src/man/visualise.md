@@ -36,10 +36,10 @@ Which will look like:
 
 This is an example where we used `GeoData` to visualize results. Alternatively, we can also visualize results in km (often more useful for numerical modelling setups). For `Visualize` to work with this, we however need orthogonal cartesian data, which can be obtained by projecting both the data.
 ```julia
-julia> p=projectionPoint(Lon=10, Lat=45)
-projectionPoint(45.0, 10.0, 578815.302916711, 4.983436768349297e6, 32, true)
-julia> Data_Cart  = CartData(xyzGrid(-600:10:600,-600:10:600,-1000:10:-1));
-julia> Topo_Cart  = CartData(xyzGrid(-600:10:600,-600:10:600,0));
+julia> p=ProjectionPoint(Lon=10, Lat=45)
+ProjectionPoint(45.0, 10.0, 578815.302916711, 4.983436768349297e6, 32, true)
+julia> Data_Cart  = CartData(xyz_grid(-600:10:600,-600:10:600,-1000:10:-1));
+julia> Topo_Cart  = CartData(xyz_grid(-600:10:600,-600:10:600,0));
 julia> Topo_Cart  = project_CartData(Topo_Cart, Topo, p)
 CartData 
     size    : (121, 121, 1)

@@ -5,35 +5,35 @@ using GeophysicalModelGenerator
 @testset "Paraview" begin
 
 # Generate a 3D grid
-Lon,Lat,Depth   =   lonlatdepthGrid(10:20,30:40,(-300:25:0)km);
+Lon,Lat,Depth   =   lonlatdepth_grid(10:20,30:40,(-300:25:0)km);
 Data            =   Depth*2; # some data
 Data_set        =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon))  
 @test write_Paraview(Data_set, "test_depth3D") == nothing
 
 # Horizontal profile @ 10 km height
-Lon,Lat,Depth     =   lonlatdepthGrid(10:20,30:40,10km);
+Lon,Lat,Depth     =   lonlatdepth_grid(10:20,30:40,10km);
 Depth[2:4,2:4,1] .= 25km     # add some fake topography
 
 Data_set2       =   GeoData(Lon,Lat,Depth,(Topography=Depth,))  
 @test write_Paraview(Data_set2, "test2")    ==  nothing
 
 # Cross sections
-Lon,Lat,Depth   =   lonlatdepthGrid(10:20,35,(-300:25:0)km);
+Lon,Lat,Depth   =   lonlatdepth_grid(10:20,35,(-300:25:0)km);
 Data_set3       =   GeoData(Lon,Lat,Depth,(DataSet=Depth,))  
 @test write_Paraview(Data_set3, "test3")   ==  nothing
 
 
-Lon,Lat,Depth   =   lonlatdepthGrid(15,30:40,(-300:25:0)km);
+Lon,Lat,Depth   =   lonlatdepth_grid(15,30:40,(-300:25:0)km);
 Data_set4       =   GeoData(Lon,Lat,Depth,(DataSet=Depth,))  
 @test write_Paraview(Data_set4, "test4")    ==  nothing
 
-Lon,Lat,Depth   =   lonlatdepthGrid(15,35,(-300:25:0)km);
+Lon,Lat,Depth   =   lonlatdepth_grid(15,35,(-300:25:0)km);
 Data_set5       =   GeoData(Lon,Lat,Depth,(DataSet=Depth,))  
 @test write_Paraview(Data_set5, "test5")   ==  nothing
 
 
 # Test saving vectors 
-Lon,Lat,Depth           =   lonlatdepthGrid(10:20,30:40,50km);
+Lon,Lat,Depth           =   lonlatdepth_grid(10:20,30:40,50km);
 Ve                      =   zeros(size(Depth)) .+ 1.0;
 Vn                      =   zeros(size(Depth));
 Vz                      =   zeros(size(Depth));
@@ -50,7 +50,7 @@ Data_set_color          =   GeoData(Lon, Lat, Depth, (Velocity=Velocity,colors=(
 
 # Manually test the in-place conversion from spherical -> cartesian (done automatically when converting GeoData->ParaviewData  )
 Vel_Cart                =   (copy(Ve),copy(Vn),copy(Vz)) 
-velocity_SphericalToCartesian!(Data_set_vel, Vel_Cart);
+velocity_spherical_to_cartesian!(Data_set_vel, Vel_Cart);
 @test Vel_Cart[2][15]   ≈   0.9743700647852352
 @test Vel_Cart[1][15]   ≈   -0.224951054343865
 @test Vel_Cart[3][15]   ≈   0.0

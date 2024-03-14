@@ -68,8 +68,8 @@ CrossSection_1 = screenshotToGeoData("Schori_2020_Ornans-Miserey-v2_whiteBG.png"
 # It is often useful to have them on exactly the same size grid
 #
 # We can do this in two steps:
-# First, we define a `projectionPoint` along which we perform the projection
-proj = projectionPoint(Lon=6, Lat=46.5)
+# First, we define a `ProjectionPoint` along which we perform the projection
+proj = ProjectionPoint(Lon=6, Lat=46.5)
 
 # We can simply transfer the TopoGeology map to Cartesian values with:
 convert2CartData(Topo,proj)
@@ -87,7 +87,7 @@ convert2CartData(Topo,proj)
 # It is therefore better to use the `project_CartData` to project the `GeoData` structure to a `CartData` struct. 
 # Let's first create this structure by using `x`,`y` coordinates that are slightly within the ranges given above:
 
-TopoGeology_cart = CartData(xyzGrid(range(-70,150,length=3500), range(-105,130,length=2500), 0.0))
+TopoGeology_cart = CartData(xyz_grid(range(-70,150,length=3500), range(-105,130,length=2500), 0.0))
 # ```julia
 # CartData 
 #     size    : (3500, 2500, 1)
@@ -152,8 +152,8 @@ CrossSection_1_cart_rot = rotate_translate_scale(CrossSection_1_cart, Rotate=Rot
 # We create both a surface and a 3D block 
 nx, ny, nz = 1024, 1024, 128
 x,y,z = range(-100,180,nx), range(-50,70,ny), range(-8,4,nz)
-ComputationalSurf  =  CartData(xyzGrid(x,y,0))
-ComputationalGrid  =  CartData(xyzGrid(x,y,z))
+ComputationalSurf  =  CartData(xyz_grid(x,y,0))
+ComputationalGrid  =  CartData(xyz_grid(x,y,z))
 
 # Re-interpolate the rotated to the new grid: 
 GeologyTopo_comp_surf = interpolate_datafields_2D(TopoGeology_cart_rot, ComputationalSurf, Rotate=RotationAngle)

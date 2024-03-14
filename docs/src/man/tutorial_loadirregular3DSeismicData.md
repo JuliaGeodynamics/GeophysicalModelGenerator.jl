@@ -79,7 +79,7 @@ Let's create a regular grid, which describes a somewhat smaller area than the da
 
 ```julia
 julia> using GeophysicalModelGenerator
-julia> Lon,Lat,Depth     =   lonlatdepthGrid(-10:0.5:40,32:0.25:50,Depth_vec);
+julia> Lon,Lat,Depth     =   lonlatdepth_grid(-10:0.5:40,32:0.25:50,Depth_vec);
 julia> size(Lon)
 (101, 73, 301)
 ```

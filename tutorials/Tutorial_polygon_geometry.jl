@@ -10,7 +10,7 @@ nz = 200
 x        = LinRange(0.0,800.0,nx)
 y        = LinRange(0.0,800.0,ny)
 z        = LinRange(-660,50,nz)
-X,Y,Z    = xyzGrid(x, y, z);
+X,Y,Z    = xyz_grid(x, y, z);
 Cart     = CartData(X,Y,Z, (Data=Z,))
 
 # initialize phase and temperature matrix

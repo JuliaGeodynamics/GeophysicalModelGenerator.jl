@@ -17,7 +17,7 @@ using GeophysicalModelGenerator
 nx,nz = 512,128
 x = range(-1000,1000, nx);
 z = range(-660,0,    nz);
-Grid2D = CartData(xyzGrid(x,0,z))
+Grid2D = CartData(xyz_grid(x,0,z))
 ```
 
 ````
@@ -233,7 +233,7 @@ We start with the horizontal part:
 nx,nz = 512,128
 x = range(-1000,1000, nx);
 z = range(-660,0,    nz);
-Grid2D = CartData(xyzGrid(x,0,z))
+Grid2D = CartData(xyz_grid(x,0,z))
 Phases = zeros(Int64, nx, 1, nz);
 Temp = fill(1350.0, nx, 1, nz);
 addBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = ConstantPhase(1));
@@ -271,7 +271,7 @@ Our starting basis is the example above with ridge and overriding slab
 nx,nz = 512,128
 x = range(-1000,1000, nx);
 z = range(-660,0,    nz);
-Grid2D = CartData(xyzGrid(x,0,z))
+Grid2D = CartData(xyz_grid(x,0,z))
 Phases = zeros(Int64, nx, 1, nz);
 Temp = fill(1350.0, nx, 1, nz);
 lith = LithosphericPhases(Layers=[15 20 55], Phases=[3 4 5], Tlab=1250)

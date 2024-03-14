@@ -3,7 +3,7 @@ using Test, GeophysicalModelGenerator
 
 # Load cat MESH
 mesh    =   load("./test_files/cat.stl")
-X,Y,Z   =   xyzGrid(150:180, -15:2:15, 10:5:60) # Create mesh
+X,Y,Z   =   xyz_grid(150:180, -15:2:15, 10:5:60) # Create mesh
 
 # Test isinside_closed_STL routine for individual points (note: bit slow)
 Phase = zeros(size(X));

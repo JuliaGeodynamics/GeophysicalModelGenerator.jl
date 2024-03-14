@@ -236,10 +236,10 @@ function readLaMEM_InputFile(file; args::Union{String,Nothing}=nothing )
     zn, z = Create1D_grid_vector(coord_z, nel_z, nmark_z, nseg_z, bias_z)
 
     # node grid
-    Xn,Yn,Zn = xyzGrid(xn, yn, zn);
+    Xn,Yn,Zn = xyz_grid(xn, yn, zn);
 
     # marker grid
-    X,Y,Z    = xyzGrid(x, y, z);
+    X,Y,Z    = xyz_grid(x, y, z);
 
     # finish Grid
     Grid    =  LaMEM_grid(  nmark_x,    nmark_y,    nmark_z,
@@ -918,7 +918,7 @@ function  readData_PVTR(fname, dir)
     end
 
     # Create a ParaviewData struct from it.
-    X,Y,Z       =   xyzGrid(coord_x, coord_y, coord_z)
+    X,Y,Z       =   xyz_grid(coord_x, coord_y, coord_z)
     DataC       =   ParaviewData(X,Y,Z, fields);
 
     return DataC

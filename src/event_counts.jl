@@ -178,7 +178,7 @@ function countmap(DataSet::GeoData,field::String,stepslon::Int64,stepslat::Int64
     countmap = countmap ./ maxcount
 
     # create new GeoData
-    Lon3D,Lat3D, Data = lonlatdepthGrid(loncen,latcen,0);
+    Lon3D,Lat3D, Data = lonlatdepth_grid(loncen,latcen,0);
     Data[:,:,1]       .= countmap
     DatasetcountMap   = GeoData(Lon3D,Lat3D,Data,(countmap=Data,))
 

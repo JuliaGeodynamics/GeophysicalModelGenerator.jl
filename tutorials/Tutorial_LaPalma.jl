@@ -41,7 +41,7 @@ write_Paraview(Topo,"Topo")
 # ## 2. Convert data to cartesian coordinates 
 # In order to create model setups, it is helpful to first transfer the data to Cartesian.
 # This requires us to first determine a *projection point*, that is fixed. Often, it is helpful to use the center of the topography for this. In the present example, we will center the model around La Palma itself:
-proj = projectionPoint(Lon=-17.84, Lat=28.56)
+proj = ProjectionPoint(Lon=-17.84, Lat=28.56)
 
 # Once this is done you can convert the topographic data to the cartesian reference frame
 EQ_cart   = convert2CartData(data_all_EQ, proj);
@@ -50,7 +50,7 @@ Topo_cart = convert2CartData(Topo, proj)
 # It is important to realize that the cartesian coordinates of the topographic grid is no longer strictly orthogonal after this conversion. You don't notice that in the current example, as the model domain is rather small.
 # In other cases, however, this is quite substantial (e.g., India-Asia collision zone).
 # LaMEM needs an orthogonal grid of topography, which we can create with:
-Topo_model = CartData(xyzGrid(-35:.1:30,-15:.2:45,0));
+Topo_model = CartData(xyz_grid(-35:.1:30,-15:.2:45,0));
 
 # In a next step, the routine `project_CartData` projects a `GeoData` structure to a `CartData` struct
 Topo_model = project_CartData(Topo_model, Topo, proj)
@@ -62,7 +62,7 @@ write_Paraview(Topo_model,"Topo_model")
 # ## 3. Create a volumetric earthquake plot
 # It is useful to plot the earthquake density in 3D, which indicates where most action is happening in the system.
 # For this, we first create a 3D grid of the region:
-Grid_3D = CartData(xyzGrid(-35:.3:30,-15:.25:45,-50:.5:5))
+Grid_3D = CartData(xyz_grid(-35:.3:30,-15:.25:45,-50:.5:5))
 
 # Next we check how many earthquakes are around the grid points:
 Grid_3D =point_to_nearest_grid(EQ_cart, Grid_3D, radius_factor=3)
