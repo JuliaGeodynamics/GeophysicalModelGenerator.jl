@@ -16,7 +16,7 @@ p2                  = @__FILE__;
 p2last              = findlast("/",p2);
 p3=chop(p2,head=0,tail = length(p2)-p2last[1]+1);
 output_path         = string(p3,"/");
-movie               = movie_Paraview(name=string(p3,"/TemporalSeismicity"), Initialize=true);
+movie               = movie_paraview(name=string(p3,"/TemporalSeismicity"), Initialize=true);
 if isdir(string(p3,"/TemporalSeismicity"))==0
     mkdir(string(p3,"/TemporalSeismicity"));
 end
@@ -51,7 +51,7 @@ for itime = 1:length(t)-1
     label_time      = Dates.value(DN[end]);
     if size(tt,1)>1
         Data_set    = UTMData(we, sn, Depth1, 33, true, (Depth=Depth1*km,Timedata=DN));
-        movie       = write_Paraview(Data_set, name,pvd=movie,time=label_time,PointsData=true);
+        movie       = write_paraview(Data_set, name,pvd=movie,time=label_time,PointsData=true);
     end
 end
-movie_Paraview(pvd=movie, Finalize=true)
+movie_paraview(pvd=movie, Finalize=true)

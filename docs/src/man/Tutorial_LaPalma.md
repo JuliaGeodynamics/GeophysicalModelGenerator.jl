@@ -23,7 +23,7 @@ using GeophysicalModelGenerator, GMT, DelimitedFiles
 We will use GMT to download the topography with:
 
 ```julia
-Topo = importTopo(lon = [-18.2, -17.5], lat=[28.4, 29.0], file="@earth_relief_15s.grd")
+Topo = import_topo(lon = [-18.2, -17.5], lat=[28.4, 29.0], file="@earth_relief_15s.grd")
 ```
 
 Next, lets load the seismicity. The earthquake data is available on [https://www.ign.es/web/ign/portal/vlc-catalogo](https://www.ign.es/web/ign/portal/vlc-catalogo).
@@ -53,8 +53,8 @@ data_all_EQ = GeoData(lon,lat,depth, (Magnitude=Mag,))
 Next, we can write the data to paraview along with the topography. Note that we have to specify that we have `PointData`:
 
 ```julia
-write_Paraview(data_all_EQ,"data_all_EQ",PointsData=true)
-write_Paraview(Topo,"Topo")
+write_paraview(data_all_EQ,"data_all_EQ",PointsData=true)
+write_paraview(Topo,"Topo")
 ```
 
 ![LaPalma_EQTopo_GeoData](../assets/img/TopoEQs_LaPalma_GeoData.png)
@@ -65,7 +65,7 @@ In order to create model setups, it is helpful to first transfer the data to Car
 This requires us to first determine a *projection point*, that is fixed. Often, it is helpful to use the center of the topography for this. In the present example, we will center the model around La Palma itself:
 
 ```julia
-proj = projectionPoint(Lon=-17.84, Lat=28.56)
+proj = ProjectionPoint(Lon=-17.84, Lat=28.56)
 ```
 
 Once this is done you can convert the topographic data to the cartesian reference frame
@@ -80,21 +80,21 @@ In other cases, however, this is quite substantial (e.g., India-Asia collision z
 LaMEM needs an orthogonal grid of topography, which we can create with:
 
 ```julia
-Topo_model = CartData(xyzGrid(-35:.1:30,-15:.2:45,0));
+Topo_model = CartData(xyz_grid(-35:.1:30,-15:.2:45,0));
 nothing #hide
 ```
 
-In a next step, the routine `projectCartData` projects a `GeoData` structure to a `CartData` struct
+In a next step, the routine `project_CartData` projects a `GeoData` structure to a `CartData` struct
 
 ```julia
-Topo_model = projectCartData(Topo_model, Topo, proj)
+Topo_model = project_CartData(Topo_model, Topo, proj)
 ```
 
 Let's have a look at the data:
 
 ```julia
-write_Paraview(EQ_cart,"EQ_cart",PointsData=true)
-write_Paraview(Topo_model,"Topo_model")
+write_paraview(EQ_cart,"EQ_cart",PointsData=true)
+write_paraview(Topo_model,"Topo_model")
 ```
 
 ## 3. Create a volumetric earthquake plot
@@ -102,13 +102,13 @@ It is useful to plot the earthquake density in 3D, which indicates where most ac
 For this, we first create a 3D grid of the region:
 
 ```julia
-Grid_3D = CartData(xyzGrid(-35:.3:30,-15:.25:45,-50:.5:5))
+Grid_3D = CartData(xyz_grid(-35:.3:30,-15:.25:45,-50:.5:5))
 ```
 
 Next we check how many earthquakes are around the grid points:
 
 ```julia
-Grid_3D =pointData2NearestGrid(EQ_cart, Grid_3D, radius_factor=3)
+Grid_3D =point_to_nearest_grid(EQ_cart, Grid_3D, radius_factor=3)
 ```
 
 And we can define an array with rock types:
@@ -120,7 +120,7 @@ Phases = zeros(Int64,size(Grid_3D.x))
 Points that are below the surface are set to one:
 
 ```julia
-Below = belowSurface(Grid_3D, Topo_model);
+Below = below_surface(Grid_3D, Topo_model);
 Phases[Below] .= 1
 ```
 
@@ -140,13 +140,13 @@ Phases[ind] .= 3 #Magma
 Add rocktypes to the grid:
 
 ```julia
-Grid_3D = addField(Grid_3D,"Phases",Phases)
+Grid_3D = addfield(Grid_3D,"Phases",Phases)
 ```
 
 We can save this to paraview format
 
 ```julia
-write_Paraview(Grid_3D,"Grid_3D")
+write_paraview(Grid_3D,"Grid_3D")
 ```
 
 The paraview statefile `/tutorials/LaPalma.pvsm` can be used to reproduce the following plot:

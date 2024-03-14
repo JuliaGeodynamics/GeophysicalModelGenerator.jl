@@ -27,7 +27,7 @@ Note that this tends to take a while, the first time you do this (faster afterwa
 
 Let's add topography to the plot as well, which requires us to first load that:
 ```julia
-julia> Topo = importTopo([0,18,38,52], file="@earth_relief_01m.grd");
+julia> Topo = import_topo([0,18,38,52], file="@earth_relief_01m.grd");
 julia> visualise(Data, Topography=Topo);    
 ```
 Which will look like:
@@ -36,11 +36,11 @@ Which will look like:
 
 This is an example where we used `GeoData` to visualize results. Alternatively, we can also visualize results in km (often more useful for numerical modelling setups). For `Visualize` to work with this, we however need orthogonal cartesian data, which can be obtained by projecting both the data.
 ```julia
-julia> p=projectionPoint(Lon=10, Lat=45)
-projectionPoint(45.0, 10.0, 578815.302916711, 4.983436768349297e6, 32, true)
-julia> Data_Cart  = CartData(xyzGrid(-600:10:600,-600:10:600,-1000:10:-1));
-julia> Topo_Cart  = CartData(xyzGrid(-600:10:600,-600:10:600,0));
-julia> Topo_Cart  = projectCartData(Topo_Cart, Topo, p)
+julia> p=ProjectionPoint(Lon=10, Lat=45)
+ProjectionPoint(45.0, 10.0, 578815.302916711, 4.983436768349297e6, 32, true)
+julia> Data_Cart  = CartData(xyz_grid(-600:10:600,-600:10:600,-1000:10:-1));
+julia> Topo_Cart  = CartData(xyz_grid(-600:10:600,-600:10:600,0));
+julia> Topo_Cart  = project_CartData(Topo_Cart, Topo, p)
 CartData 
     size    : (121, 121, 1)
     x       ϵ [ -600.0 : 600.0]
@@ -48,7 +48,7 @@ CartData
     z       ϵ [ -3.6270262031545473 : 3.654942280296281]
     fields  : (:Topography,)
   attributes: ["note"]
-julia> Data_Cart  = projectCartData(Data_Cart, Data, p)
+julia> Data_Cart  = project_CartData(Data_Cart, Data, p)
 CartData 
     size    : (121, 121, 100)
     x       ϵ [ -600.0 : 600.0]

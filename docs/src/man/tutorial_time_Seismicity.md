@@ -18,7 +18,7 @@ Make sure that you are in the unzipped directory. To reproduce exactly the figur
 
 ### 2. Earthquakes in movie
 
-Create the folder **TemporalSeismicity** in the current folder and open the movie with the function *movie_Paraview*.
+Create the folder **TemporalSeismicity** in the current folder and open the movie with the function *movie_paraview*.
 
 ```julia
 julia> using DelimitedFiles, GeophysicalModelGenerator, Dates
@@ -26,7 +26,7 @@ julia> p2                  = @__FILE__;
 julia> p2last              = findlast("/",p2);
 julia> p3                  = chop(p2,head=0,tail = length(p2)-p2last[1]+1);
 julia> output_path         = string(p3,"/");
-julia> movie               = movie_Paraview(name=string(p3,"/TemporalSeismicity"), Initialize=true);
+julia> movie               = movie_paraview(name=string(p3,"/TemporalSeismicity"), Initialize=true);
 julia> if isdir(string(p3,"/TemporalSeismicity"))==0
            mkdir(string(p3,"/TemporalSeismicity"));
        end
@@ -68,10 +68,10 @@ julia> for itime = 1:length(t)-1
            label_time      = Dates.value(DN[end]);
            if size(tt,1)>1
                Data_set    = UTMData(we, sn, Depth1, 33, true, (Depth=Depth1*km,Timedata=DN));
-               movie       = write_Paraview(Data_set, name,pvd=movie,time=label_time,PointsData=true);
+               movie       = write_paraview(Data_set, name,pvd=movie,time=label_time,PointsData=true);
            end
        end
-julia>movie_Paraview(pvd=movie, Finalize=true)
+julia>movie_paraview(pvd=movie, Finalize=true)
 ```
 
 This tutorial has created a new *TemporalSeismicity.pvd* file that can be loaded in Paraview.

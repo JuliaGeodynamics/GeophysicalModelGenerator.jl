@@ -12,14 +12,14 @@ Tomo_Alps_full = load_GMG("https://zenodo.org/records/10738510/files/Paffrath_20
 
 # This is a so-called `GeoData` object, which is a 3D grid of seismic velocities as a function of longitude, latitude and depth, which can include various fields (here we only have a single field: `:dVp_Percentage`)
 # We can save this in `VTK` format, which is a widely used format that can for exampke be read by the 3D open-source visualization tool [Paraview](https://www.paraview.org/):
-write_Paraview(Tomo_Alps_full,"Tomo_Alps_full")
+write_paraview(Tomo_Alps_full,"Tomo_Alps_full")
 
 # We also uploaded a dataset with the topography of the Alpine region which can be downloaded with:
 Topo_Alps = load_GMG("https://zenodo.org/records/10738510/files/AlpsTopo.jld2?download=1")
 
 # Different than the 3D tomographic model, the topography has size 1 for the last index which indicates that this is a 3D surface. As you can see, the depth varies, which is because it is a warped surface.
 # We can write this to disk as well
-write_Paraview(Topo_Alps,"Topo_Alps")
+write_paraview(Topo_Alps,"Topo_Alps")
 
 # If we open both datasets in Paraview, we see this (after giving some color to the topography):
 # ![Basic_Tutorial_1](../assets/img/Basic_Tutorial_1.png)
@@ -27,10 +27,10 @@ write_Paraview(Topo_Alps,"Topo_Alps")
 #
 # ### 2. Extract subset of data
 # As you can see the tomographic data covers a much larger area than the Alps itself, and in most of that area there is no data.
-# It is thus advantageous to cut out a piece of the dataset that we are interested in which can be done with `extractSubvolume`:
-Tomo_Alps = extractSubvolume(Tomo_Alps_full,Lon_level=(4,20),Lat_level=(36,50), Depth_level=(-600,-10))
+# It is thus advantageous to cut out a piece of the dataset that we are interested in which can be done with `extract_subvolume`:
+Tomo_Alps = extract_subvolume(Tomo_Alps_full,Lon_level=(4,20),Lat_level=(36,50), Depth_level=(-600,-10))
 
-write_Paraview(Tomo_Alps,"Tomo_Alps");
+write_paraview(Tomo_Alps,"Tomo_Alps");
 
 # Which looks like:
 # ![Basic_Tutorial_2](../assets/img/Basic_Tutorial_2.png)
@@ -38,18 +38,18 @@ write_Paraview(Tomo_Alps,"Tomo_Alps");
 # ### 3. Create cross sections
 # Paraview has the option to `Slice` through the data but it is not very intuitive to do this in 3D. Another limitation of Paraview is that it does not have native support for spherical coordinates, and therefore the data is translated to cartesian (`x`,`y`,`z`) coordinates (with the center of the Earth at `(0,0,0)`).
 # That makes this a bit cumbersome to make a cross-section at a particular location.
-# If you are interested in this you can use the `crossSection` function:
-data_200km = crossSection(Tomo_Alps, Depth_level=-200)
+# If you are interested in this you can use the `cross_section` function:
+data_200km = cross_section(Tomo_Alps, Depth_level=-200)
 #
 # As you see, this is not exactly at 200 km depth, but at the closest `z`-level in the data sets. If you want to be exactly at 200 km, use the `Interpolate` option:
-data_200km_exact = crossSection(Tomo_Alps, Depth_level=-200, Interpolate=true)
+data_200km_exact = cross_section(Tomo_Alps, Depth_level=-200, Interpolate=true)
 
 # In general, you can get help info for all functions with `?`:
 # ```julia
-# help?> crossSection
-# search: crossSection crossSectionVolume crossSectionPoints crossSectionSurface flattenCrossSection
+# help?> cross_section
+# search: cross_section cross_section_volume cross_section_points cross_section_surface flatten_cross_section
 # 
-#   crossSection(DataSet::AbstractGeneralGrid; dims=(100,100), Interpolate=false, Depth_level=nothing, Lat_level=nothing, Lon_level=nothing, Start=nothing, End=nothing, Depth_extent=nothing, section_width=50km)
+#   cross_section(DataSet::AbstractGeneralGrid; dims=(100,100), Interpolate=false, Depth_level=nothing, Lat_level=nothing, Lon_level=nothing, Start=nothing, End=nothing, Depth_extent=nothing, section_width=50km)
 # 
 #   Creates a cross-section through a GeoData object.
 # 
@@ -73,11 +73,11 @@ data_200km_exact = crossSection(Tomo_Alps, Depth_level=-200, Interpolate=true)
 #   Example:
 #   ≡≡≡≡≡≡≡≡
 # 
-#   julia> Lon,Lat,Depth   =   lonlatdepthGrid(10:20,30:40,(-300:25:0)km);
+#   julia> Lon,Lat,Depth   =   lonlatdepth_grid(10:20,30:40,(-300:25:0)km);
 #   julia> Data            =   Depth*2;                # some data
 #   julia> Vx,Vy,Vz        =   ustrip(Data*3),ustrip(Data*4),ustrip(Data*5);
 #   julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz))); 
-#   julia> Data_cross      =   crossSection(Data_set3D, Depth_level=-100km)  
+#   julia> Data_cross      =   cross_section(Data_set3D, Depth_level=-100km)  
 #   GeoData 
 #     size  : (11, 11, 1)
 #     lon   ϵ [ 10.0 : 20.0]
@@ -87,11 +87,11 @@ data_200km_exact = crossSection(Tomo_Alps, Depth_level=-200, Interpolate=true)
 # ```
 #
 # Let's use this to make a vertical cross-section as well:
-Cross_vert = crossSection(Tomo_Alps, Start=(5,47), End=(15,44))
+Cross_vert = cross_section(Tomo_Alps, Start=(5,47), End=(15,44))
 
 # And write them to paraview:
-write_Paraview(Cross_vert,"Cross_vert");
-write_Paraview(data_200km,"data_200km");
+write_paraview(Cross_vert,"Cross_vert");
+write_paraview(data_200km,"data_200km");
 
 # ![Basic_Tutorial_3](../assets/img/Basic_Tutorial_3.png)
 # In creating this image, I used the `Clip` tool of Paraview to only show topography above sealevel and made it 50% transparent.
@@ -99,8 +99,8 @@ write_Paraview(data_200km,"data_200km");
 # ### 4. Cartesian data
 # As you can see, the curvature or the Earth is taken into account here. Yet, for many applications it is more convenient to work in Cartesian coordinates (kilometers) rather then in geographic coordinates.
 # `GeophysicalModelGenerator` has a number of tools for this.
-# First we need do define a `projectionPoint`  around which we project the data
-proj = projectionPoint(Lon=12.0,Lat =43)
+# First we need do define a `ProjectionPoint`  around which we project the data
+proj = ProjectionPoint(Lon=12.0,Lat =43)
 
 Topo_cart = convert2CartData(Topo_Alps, proj)
 
@@ -108,8 +108,8 @@ Topo_cart = convert2CartData(Topo_Alps, proj)
 Tomo_cart = convert2CartData(Tomo_Alps, proj)
 
 # Save:
-write_Paraview(Tomo_cart,"Tomo_cart");
-write_Paraview(Topo_cart,"Topo_cart");
+write_paraview(Tomo_cart,"Tomo_cart");
+write_paraview(Topo_cart,"Topo_cart");
 
 # ![Basic_Tutorial_4](../assets/img/Basic_Tutorial_4.png)
 # As the coordinates are now aligned with the `x`,`y`,`z` coordinate axes in Paraview it is now straightforward to use the build-in tools to explore the data.
@@ -120,18 +120,18 @@ Yet, because of the curvature of the Earth, the resulting 3D model is not strict
 This can be achieved in a relatively straightforward manner, by creating a new 3D dataset that is slightly within the curved boundaries of the projected data set:
 =#
 
-Tomo_rect = CartData(xyzGrid(-550.0:10:600, -500.0:10:700, -600.0:5:-17)); 
+Tomo_rect = CartData(xyz_grid(-550.0:10:600, -500.0:10:700, -600.0:5:-17)); 
 #
-# the routine `projectCartData` will then project the data from the geographic coordinates to the new rectilinear grid:
-Tomo_rect = projectCartData(Tomo_rect, Tomo_Alps, proj)
+# the routine `project_CartData` will then project the data from the geographic coordinates to the new rectilinear grid:
+Tomo_rect = project_CartData(Tomo_rect, Tomo_Alps, proj)
 
 # we can do the same with topography:
-Topo_rect = CartData(xyzGrid(-550.0:1:600, -500.0:1:700, 0)) 
-Topo_rect = projectCartData(Topo_rect, Topo_Alps, proj)
+Topo_rect = CartData(xyz_grid(-550.0:1:600, -500.0:1:700, 0)) 
+Topo_rect = project_CartData(Topo_rect, Topo_Alps, proj)
 
 # Save it:
-write_Paraview(Tomo_rect,"Tomo_rect");
-write_Paraview(Topo_rect,"Topo_rect");
+write_paraview(Tomo_rect,"Tomo_rect");
+write_paraview(Topo_rect,"Topo_rect");
 # ![Basic_Tutorial_5](../assets/img/Basic_Tutorial_5.png)
 
 # At this stage, the data can directly be used to generate cartesian numerical model setups, as explained in the other tutorials. 

@@ -2,7 +2,7 @@ module GLMakie_Visualisation
 # This contains visualisation widgets which are optionally made available when GLMakie is loaded along with GMG
 
 using Statistics
-using GeophysicalModelGenerator: lonlatdepthGrid, GeoData, CartData, km, AbstractGeneralGrid
+using GeophysicalModelGenerator: lonlatdepth_grid, GeoData, CartData, km, AbstractGeneralGrid
 import GeophysicalModelGenerator: visualise
 
 # We do not check `isdefined(Base, :get_extension)` as recommended since
@@ -25,7 +25,7 @@ This starts an interactive widget that allows you to explore a 3D data set `Data
 All fields in the dataset can be explored, and if the optional parameter `Topography` is provided, the topography will be drawn on top.
 
 Note that this requires orthogonal grids, so it will work with a `GeoData` set, or with an orthogonal `CartData` set.
-Note that you may have to use `projectCartData` to project it to orthogonal cartesian coordinates.
+Note that you may have to use `project_CartData` to project it to orthogonal cartesian coordinates.
 """
 function visualise(Data::AbstractGeneralGrid; Topography=nothing, Topo_range=nothing)
 
