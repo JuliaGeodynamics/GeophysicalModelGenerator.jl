@@ -13,7 +13,7 @@ export
         km, m, cm, mm, Myrs, yr, s, MPa, Pa, Pas, K, C, kg, mol,
         isDimensional, Value, NumValue, Unit, UnitValue
 
-export ReadCSV_LatLon, meshgrid, voxGrav
+export ReadCSV_LatLon, meshgrid, voxel_grav
 
 abstract type AbstractGeneralGrid end                                    # general grid types
 

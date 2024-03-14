@@ -70,13 +70,13 @@ for iS = 1 : numSpheres
 end
 
 # Voxel Code
-dg1, gradX1, gradY1 = voxGrav(X, Y, Z, RHO, refMod = RefMod, outName = "Benchmark1", printing = false)
+dg1, gradX1, gradY1 = voxel_grav(X, Y, Z, RHO, refMod = RefMod, outName = "Benchmark1", printing = false)
 
 # Other options (same result)
-dg2, gradX2, gradY2 = voxGrav(X, Y, Z, RHO, rhoTol = 1, refMod = "SW", outName = "Benchmark2", printing = false)
+dg2, gradX2, gradY2 = voxel_grav(X, Y, Z, RHO, rhoTol = 1, refMod = "SW", outName = "Benchmark2", printing = false)
 
 # Other options (different result)
-dg3, gradX3, gradY3 = voxGrav(X, Y, Z, RHO, rhoTol = 70, refMod = "NW", outName = "Benchmark3", printing = false)
+dg3, gradX3, gradY3 = voxel_grav(X, Y, Z, RHO, rhoTol = 70, refMod = "NW", outName = "Benchmark3", printing = false)
 #################################
 
 ############# Test ##############
