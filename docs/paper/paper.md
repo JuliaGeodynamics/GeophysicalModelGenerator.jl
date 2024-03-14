@@ -180,17 +180,17 @@ julia> write_paraview(Topo_rect,"Topo_rect");
 We can now use the build-in tools of Paraview to visualise the data (see \autoref{fig:basic} b), and use this as inspiration to create an initial numerical model setup. It is also possible to interpolate other seismic tomography datasets to the same grid and subsequently compute a "votemap" to count in how many tomographic models a specific seismic anomaly is present [see e.g., @Shephard_Matthews_Hosseini_Domeier_2017].
 
 # Examples of usage
-`GeophysicalModelGenerator.jl` comes with build-in (CI/CD) tests and [tutorials](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/stable) that explain the most important use cases, from importing data to generating input model setups for numerical simulations. In the following, we present a number of examples that illustrate various aspects of the package.
+`GeophysicalModelGenerator.jl` comes with build-in (CI/CD) tests and [tutorials](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev) that explain the most important use cases, from importing data to generating input model setups for numerical simulations. In the following, we present a number of examples that illustrate various aspects of the package.
 
 ### Visualise data of the Alps
 The European Alps are among the best studied mountain belts on the planet, and have therefore been the focus of numerous geological and geophysical studies. Different seismic tomography models have been published (using different parameterisations and datasets), and those do not necessarily agree with each other. 
 
-In `Tutorial_AlpineData.jl`, users learn how to load the topography of the region, import Moho data, load and visualise GPS vectors, import and plot earthquake locations, along with cross-sections through the model (\autoref{fig:alps}).
+In [`Tutorial_AlpineData.jl`](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev/man/Tutorial_AlpineData/), users learn how to load the topography of the region, import Moho data, load and visualise GPS vectors, import and plot earthquake locations, along with cross-sections through the model (\autoref{fig:alps}).
 
 ![Example of combined data of the Alps, which shows the GPS surface velocity (arrows), topography, earthquake locations (colored dots) and cross-sections through a recent anisotropic P-wave tomography model by [@Rappisi_VanderBeek_Faccenda_Morelli_Molinari_2022]. \label{fig:alps}](../src/assets/img/GMG_AlpineData.png){ width=90% }
 
 ### La Palma volcanic eruption
-The 2019 Cumbre Viejo eruption in La Palma, Canary Islands, was accompanied by seismic activity. In `Tutorial_LaPalma.jl`, users learn to generate a Cartesian block model of the island, import seismicity and use that to generate a 3D volumetric seismic activity map (\autoref{fig:lapalma}). 
+The 2019 Cumbre Viejo eruption in La Palma, Canary Islands, was accompanied by seismic activity. In [`Tutorial_LaPalma.jl`](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev/man/Tutorial_LaPalma/), users learn to generate a Cartesian block model of the island, import seismicity and use that to generate a 3D volumetric seismic activity map (\autoref{fig:lapalma}). 
 
 ![Example of a model of La Palma which shows seismicity during the 2019 Cumbre Viejo eruption. \label{fig:lapalma}](../src/assets/img/Tutorial_LaPalma.png){ width=100% }
 
@@ -198,13 +198,13 @@ The 2019 Cumbre Viejo eruption in La Palma, Canary Islands, was accompanied by s
 ### Jura mountains
 The Jura mountains are a small-scale fold and thrust belt located in Switzerland and France. Thanks to seismic cross-sections and boreholes, a lot of information is available about its structure at depth, which was used to generate extensive 3D models of the subsurface including thickness maps of various geological units, generate a new geological map of the region, and create balanced reconstructions [@Schori_2021].  
 
-In `Tutorial_Jura.jl` users learn how to drape the geological map over the topography, import surfaces from GeoTIFF images (such as basement topography), and include screenshots from geological cross-sections. The data is rotated and transferred to Cartesian coordinates such that we obtain a 3D block model that is perpendicular to the strike of the mountain range (\autoref{fig:jura}).
+In [`Tutorial_Jura.jl`](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev/man/Tutorial_Jura/) users learn how to drape the geological map over the topography, import surfaces from GeoTIFF images (such as basement topography), and include screenshots from geological cross-sections. The data is rotated and transferred to Cartesian coordinates such that we obtain a 3D block model that is perpendicular to the strike of the mountain range (\autoref{fig:jura}).
 
 ![Example of creating a 3D Cartesian block model that runs perpendicular to the Jura mountains, combining surface geology, with screenshots from interpreted cross-sections (in the center right), and digital data of the the basement topography [using data of @Schori_2021]. \label{fig:jura}](../src/assets/img/Jura_2.png){ width=100% }
 
 
 ### Slab model setup 
-In `Tutorial_NumericalModel_3D.jl`, users learn how to generate a 3D geodynamic model setup with subducting slabs, a mid oceanic ridge and an overriding cratonic lithosphere. The thermal structure of the oceanic slab increases away from the ridge until the trench following a halfspace cooling analytical solution, whereas the thermal structure of the subducted part of the slab is based on an analytical solution that takes heating from the surrounding, hot, mantle into account [after @McKenzie_1969]. Between the mantle and the trench, the slab uses a mixture between these two thermal models, and a weak-zone is added above the slab (to facilitate subduction in numerical models). A sedimentary wedge is situated at the continental margin and a grid-like pattern is put on top of the oceanic slab to simplify tracking deformation throughout the simulation (\autoref{fig:slab3d}).
+In [`Tutorial_NumericalModel_3D.jl`](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev/man/Tutorial_NumericalModel_3D/), users learn how to generate a 3D geodynamic model setup with subducting slabs, a mid oceanic ridge and an overriding cratonic lithosphere. The thermal structure of the oceanic slab increases away from the ridge until the trench following a halfspace cooling analytical solution, whereas the thermal structure of the subducted part of the slab is based on an analytical solution that takes heating from the surrounding, hot, mantle into account [after @McKenzie_1969]. Between the mantle and the trench, the slab uses a mixture between these two thermal models, and a weak-zone is added above the slab (to facilitate subduction in numerical models). A sedimentary wedge is situated at the continental margin and a grid-like pattern is put on top of the oceanic slab to simplify tracking deformation throughout the simulation (\autoref{fig:slab3d}).
 
 ![Example of a geodynamic setup of a subducting oceanic plate beneath a continental lithosphere with a smoothly bending slab. \label{fig:slab3d}](../src/assets/img/Mechanical3D_Tutorial_2.png){ width=100% }
 
