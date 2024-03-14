@@ -60,6 +60,9 @@ end
     include("test_create_movie.jl")
 end
 
+# Include tutorials
+include("test_tutorials.jl")
+
 # Cleanup
 foreach(rm, filter(endswith(".vts"), readdir()))
 foreach(rm, filter(endswith(".vtu"), readdir()))
