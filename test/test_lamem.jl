@@ -52,28 +52,28 @@ Phases      =   zeros(Int32,   size(Grid.X));
 
 # constant T
 Temp        =   ones(Float64, size(Grid.X))*1350;
-addBox!(Phases,Temp,Grid, xlim=(0,500), zlim=(-50,0), phase=ConstantPhase(3), DipAngle=10, T=ConstantTemp(1000))
+add_box!(Phases,Temp,Grid, xlim=(0,500), zlim=(-50,0), phase=ConstantPhase(3), DipAngle=10, T=ConstantTemp(1000))
 @test sum(Temp) == 1.1905107e9
 
 # Add a layer above the slab with a different phase but no thermal structure
-addBox!(Phases,Temp,Grid, xlim=(0,500), zlim=(0,20), phase=ConstantPhase(1), DipAngle=10, Origin=(0,0,0))
+add_box!(Phases,Temp,Grid, xlim=(0,500), zlim=(0,20), phase=ConstantPhase(1), DipAngle=10, Origin=(0,0,0))
 @test sum(Temp) == 1.1905107e9
 
 # Linear T
 Temp        =   ones(Float64, size(Grid.X))*1350;
-addBox!(Phases,Temp,Grid, xlim=(0,500), zlim=(-50,0), phase=ConstantPhase(3), DipAngle=10, T=LinearTemp(Tbot=1350, Ttop=200))
+add_box!(Phases,Temp,Grid, xlim=(0,500), zlim=(-50,0), phase=ConstantPhase(3), DipAngle=10, T=LinearTemp(Tbot=1350, Ttop=200))
 @test sum(Temp) == 1.1881296265169694e9
 
 # Halfspace cooling T structure
 Phases      =   zeros(Int32,   size(Grid.X));
 Temp        =   ones(Float64, size(Grid.X))*1350;
-addBox!(Phases,Temp,Grid, xlim=(0,500), zlim=(-500,0), phase=LithosphericPhases(Layers=[15 15 250], Phases=[1 2 3 0], Tlab=1250), DipAngle=10, T=HalfspaceCoolingTemp(Age=20, Adiabat=0.3))
+add_box!(Phases,Temp,Grid, xlim=(0,500), zlim=(-500,0), phase=LithosphericPhases(Layers=[15 15 250], Phases=[1 2 3 0], Tlab=1250), DipAngle=10, T=HalfspaceCoolingTemp(Age=20, Adiabat=0.3))
 @test sum(Temp) == 1.1942982365477426e9
 
 # Mid-oceanic ridge cooling temperature structure
 Phases      =   zeros(Int32,   size(Grid.X));
 Temp        =   ones(Float64, size(Grid.X))*1350;
-addBox!(Phases,Temp,Grid, xlim=(0,500), zlim=(-500,-20), phase=LithosphericPhases(Layers=[15 15 250], Phases=[1 2 3 0],Tlab=1250), DipAngle=10, T=SpreadingRateTemp(MORside="right", SpreadingVel=3))
+add_box!(Phases,Temp,Grid, xlim=(0,500), zlim=(-500,-20), phase=LithosphericPhases(Layers=[15 15 250], Phases=[1 2 3 0],Tlab=1250), DipAngle=10, T=SpreadingRateTemp(MORside="right", SpreadingVel=3))
 @test sum(Temp) == 1.189394358568891e9
 
 Model3D     =   CartData(Grid, (Phases=Phases,Temp=Temp));
@@ -93,19 +93,19 @@ rm("test_topo.dat")
 Grid    = readLaMEM_InputFile("test_files/GeometricPrimitives.dat")
 Phases  = zeros(Int32,size(Grid.X));
 Temp    = zeros(Float64,size(Grid.X));
-addSphere!(Phases,Temp,Grid, cen=(0,0,-6), radius=2, phase=ConstantPhase(1), T=ConstantTemp(800))
+add_sphere!(Phases,Temp,Grid, cen=(0,0,-6), radius=2, phase=ConstantPhase(1), T=ConstantTemp(800))
 @test Phases[55,55,55] == 1
 @test Phases[56,56,56] == 0
 @test Temp[44,52,21]   == 800.0
 @test Temp[44,52,20]   == 0.0
 
-addEllipsoid!(Phases,Temp,Grid, cen=(-2,-1,-7), axes=(1,2,3), StrikeAngle=90, DipAngle=45, phase=ConstantPhase(2), T=ConstantTemp(600))
+add_ellipsoid!(Phases,Temp,Grid, cen=(-2,-1,-7), axes=(1,2,3), StrikeAngle=90, DipAngle=45, phase=ConstantPhase(2), T=ConstantTemp(600))
 @test Phases[11,37,28] == 2
 @test Phases[10,37,28] == 0
 @test Temp[31,58,18]   == 600.0
 @test Temp[31,59,18]   == 0.0
 
-addCylinder!(Phases,Temp,Grid, base=(0,0,-5), cap=(3,3,-2), radius=1.5, phase=ConstantPhase(3), T=ConstantTemp(400))
+add_cylinder!(Phases,Temp,Grid, base=(0,0,-5), cap=(3,3,-2), radius=1.5, phase=ConstantPhase(3), T=ConstantTemp(400))
 @test Phases[55,65,75] == 3
 @test Phases[54,65,75] == 0
 @test Temp[55,46,45]   == 400.0
@@ -113,8 +113,8 @@ addCylinder!(Phases,Temp,Grid, base=(0,0,-5), cap=(3,3,-2), radius=1.5, phase=Co
 
 # test adding generic volcano topography
 Grid = readLaMEM_InputFile("test_files/SaltModels.dat");
-Topo = makeVolcTopo(Grid, center=[0.0,0.0], height=0.4, radius=1.5, crater=0.5, base=0.1);
+Topo = make_volc_topo(Grid, center=[0.0,0.0], height=0.4, radius=1.5, crater=0.5, base=0.1);
 @test Topo.fields.Topography[13,13] ≈ 0.279583654km
-Topo = makeVolcTopo(Grid, center=[0.0,0.0], height=0.8, radius=0.5, crater=0.0, base=0.4, background=Topo.fields.Topography);
+Topo = make_volc_topo(Grid, center=[0.0,0.0], height=0.8, radius=0.5, crater=0.0, base=0.4, background=Topo.fields.Topography);
 @test Topo.fields.Topography[13,13] ≈ 0.279583654km
 @test Topo.fields.Topography[16,18] ≈ 0.619722436km

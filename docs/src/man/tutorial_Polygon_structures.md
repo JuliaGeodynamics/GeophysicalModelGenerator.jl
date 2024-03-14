@@ -8,7 +8,7 @@ This tutorial visualizes simplified geological as it is done here for a passive 
 ## Steps
 
 #### 1. Set up your simplified background model
-Before adding specific geological features, a general simplified model setup is necessary. The construction is made by using the `addBox!` function. For the model the discontinuities are in 15, 45, 145, and 945 km depth.
+Before adding specific geological features, a general simplified model setup is necessary. The construction is made by using the `add_box!` function. For the model the discontinuities are in 15, 45, 145, and 945 km depth.
 
 ```julia
 using GeophysicalModelGenerator
@@ -29,10 +29,10 @@ Phase   = ones(Int32,size(X))
 Temp    = ones(Float64,size(X))*1350
 
 # add different phases: crust->2, Mantle Lithosphere->3 Mantle->1
-addBox!(Phase, Temp, Cart; xlim=(0.0,800.0),ylim=(0.0,800.0), zlim=(-800.0,0.0), phase = LithosphericPhases(Layers=[15 30 100 800], Phases=[2 3 1 5], Tlab=1300 ), T=LinearTemp(Ttop=20, Tbot=1600))
+add_box!(Phase, Temp, Cart; xlim=(0.0,800.0),ylim=(0.0,800.0), zlim=(-800.0,0.0), phase = LithosphericPhases(Layers=[15 30 100 800], Phases=[2 3 1 5], Tlab=1300 ), T=LinearTemp(Ttop=20, Tbot=1600))
 
 # add air phase 0
-addBox!(Phase, Temp, Cart; xlim=(0.0,800.0),ylim=(0.0,800.0), zlim=(0.0,50.0), phase = ConstantPhase(0), T=ConstantTemp(20.0))
+add_box!(Phase, Temp, Cart; xlim=(0.0,800.0),ylim=(0.0,800.0), zlim=(0.0,50.0), phase = ConstantPhase(0), T=ConstantTemp(20.0))
 ```
 
 
@@ -47,13 +47,13 @@ To include the geological structures of a passive margin into the model, we use 
 # unlimited number of points possible to create the polygon
 
 # add sediment basin 
-addPolygon!(Phase, Temp, Cart; xlim=[0.0,0.0, 160.0, 200.0],ylim=[100.0,300.0], zlim=[0.0,-10.0,-20.0,0.0], phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30));
+add_polygon!(Phase, Temp, Cart; xlim=[0.0,0.0, 160.0, 200.0],ylim=[100.0,300.0], zlim=[0.0,-10.0,-20.0,0.0], phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30));
 
 # add thinning of the continental crust attached to the slab and its thickness 
-addPolygon!(Phase, Temp, Cart; xlim=[0.0, 200.0, 0.0],ylim=[500.0,800.0], zlim=[-100.0,-150.0,-150.0], phase = ConstantPhase(5), T=LinearTemp(Ttop=1000, Tbot=1100));
+add_polygon!(Phase, Temp, Cart; xlim=[0.0, 200.0, 0.0],ylim=[500.0,800.0], zlim=[-100.0,-150.0,-150.0], phase = ConstantPhase(5), T=LinearTemp(Ttop=1000, Tbot=1100));
 
 # add accretionary prism 
-addPolygon!(Phase, Temp, Cart; xlim=[800.0, 600.0, 800.0],ylim=[100.0,800.0], zlim=[0.0,0.0,-60.0], phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30));
+add_polygon!(Phase, Temp, Cart; xlim=[800.0, 600.0, 800.0],ylim=[100.0,800.0], zlim=[0.0,0.0,-60.0], phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30));
 ```
 
 #### 3. Export final model setup to a paraview file
