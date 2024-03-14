@@ -43,7 +43,7 @@ Once this is done, and we saved the picture under `Lippitsch_Fig13a.png`, you ca
 
 ```julia
 julia> using GeophysicalModelGenerator
-julia> data_profile1 = screenshotToGeoData("Lippitsch_Fig13a.png",Corner_LowerLeft, Corner_UpperRight)
+julia> data_profile1 = screenshot_to_GeoData("Lippitsch_Fig13a.png",Corner_LowerLeft, Corner_UpperRight)
 Extracting GeoData from: Lippitsch_Fig13a.png
            └ Corners:         lon       lat       depth
               └ lower left  = (4.65   , 45.73  ,  -400.0 )
@@ -80,7 +80,7 @@ Corner_LowerLeft    =   ( 3.5, 43.0 , -150.0)
 Corner_UpperRight   =   (15.5, 50.0 , -150.0)
 Corner_LowerRight   =   (15.5, 43.0 , -150.0)
 Corner_UpperLeft    =   (3.5 , 50.0 , -150.0)
-data_Fig13_map      =   screenshotToGeoData("Fig13_mapview.png",Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight,Corner_UpperLeft=Corner_UpperLeft)
+data_Fig13_map      =   screenshot_to_GeoData("Fig13_mapview.png",Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight,Corner_UpperLeft=Corner_UpperLeft)
 write_Paraview(data_Fig13_map, "Lippitsch_Fig13_mapview")
 ```
 

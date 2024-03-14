@@ -12,13 +12,13 @@ using GeophysicalModelGenerator
 
 # Process cross-sections of Figure 13. Note that we estimated some of the lon/lat locations
 	       
-data_Fig13a         =   screenshotToGeoData("Lippitsch_Fig13a.png",( 4.65,45.73, -400.0), (17.23, 43.80, 0.0))
+data_Fig13a         =   screenshot_to_GeoData("Lippitsch_Fig13a.png",( 4.65,45.73, -400.0), (17.23, 43.80, 0.0))
 write_Paraview(data_Fig13a, "Lippitsch_Fig13a") 
 	      
-data_Fig13b         =   screenshotToGeoData("Lippitsch_Fig13b.png",( 5.51,51.53, -400.0), (12.04, 43.68 , 0.0))
+data_Fig13b         =   screenshot_to_GeoData("Lippitsch_Fig13b.png",( 5.51,51.53, -400.0), (12.04, 43.68 , 0.0))
 write_Paraview(data_Fig13b, "Lippitsch_Fig13b") 
 	   
-data_Fig13c         =   screenshotToGeoData("Lippitsch_Fig13c.png",(17.78,50.95, -400.0), (11.66, 43.68, 0.0))
+data_Fig13c         =   screenshot_to_GeoData("Lippitsch_Fig13c.png",(17.78,50.95, -400.0), (11.66, 43.68, 0.0))
 write_Paraview(data_Fig13c, "Lippitsch_Fig13c") 
 
 # Mapview images
@@ -26,7 +26,7 @@ Corner_LowerLeft    =   ( 3.5, 43.0 , -150.0)
 Corner_UpperRight   =   (15.5, 50.0 , -150.0)
 Corner_LowerRight   =   (15.5, 43.0 , -150.0)
 Corner_UpperLeft    =   (3.5 , 50.0 , -150.0)
-data_Fig13_map      =   screenshotToGeoData("Fig13_mapview.png",Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight,Corner_UpperLeft=Corner_UpperLeft)
+data_Fig13_map      =   screenshot_to_GeoData("Fig13_mapview.png",Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight,Corner_UpperLeft=Corner_UpperLeft)
 write_Paraview(data_Fig13_map, "Lippitsch_Fig13_mapview") 
 
 Depth                   =   -90.0;
@@ -34,7 +34,7 @@ Corner_LowerLeft        =   (Corner_LowerLeft[1],   Corner_LowerLeft[2],    Dept
 Corner_UpperRight       =   (Corner_UpperRight[1],  Corner_UpperRight[2],   Depth)
 Corner_LowerRight       =   (Corner_LowerRight[1],  Corner_LowerRight[2],   Depth)
 Corner_UpperLeft        =   (Corner_UpperLeft[1],   Corner_UpperLeft[2],    Depth)
-data_Fig12_90km    =   screenshotToGeoData("Fig12_90km.png",Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight,Corner_UpperLeft=Corner_UpperLeft)
+data_Fig12_90km    =   screenshot_to_GeoData("Fig12_90km.png",Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight,Corner_UpperLeft=Corner_UpperLeft)
 write_Paraview(data_Fig12_90km, "Lippitsch_Fig12_90km") 
 
 Depth                   = -180.0;
@@ -42,7 +42,7 @@ Corner_LowerLeft        =   (Corner_LowerLeft[1],   Corner_LowerLeft[2],    Dept
 Corner_UpperRight       =   (Corner_UpperRight[1],  Corner_UpperRight[2],   Depth)
 Corner_LowerRight       =   (Corner_LowerRight[1],  Corner_LowerRight[2],   Depth)
 Corner_UpperLeft        =   (Corner_UpperLeft[1],   Corner_UpperLeft[2],    Depth)
-data_Fig12_180km   =   screenshotToGeoData("Fig12_180km.png",Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight,Corner_UpperLeft=Corner_UpperLeft)
+data_Fig12_180km   =   screenshot_to_GeoData("Fig12_180km.png",Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight,Corner_UpperLeft=Corner_UpperLeft)
 write_Paraview(data_Fig12_180km, "Lippitsch_Fig12_180km") 
 
 Depth                   = -300.0;
@@ -50,7 +50,7 @@ Corner_LowerLeft        =   (Corner_LowerLeft[1],   Corner_LowerLeft[2],    Dept
 Corner_UpperRight       =   (Corner_UpperRight[1],  Corner_UpperRight[2],   Depth)
 Corner_LowerRight       =   (Corner_LowerRight[1],  Corner_LowerRight[2],   Depth)
 Corner_UpperLeft        =   (Corner_UpperLeft[1],   Corner_UpperLeft[2],    Depth)
-data_Fig12_300km   =   screenshotToGeoData("Fig12_300km.png",Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight,Corner_UpperLeft=Corner_UpperLeft)
+data_Fig12_300km   =   screenshot_to_GeoData("Fig12_300km.png",Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight,Corner_UpperLeft=Corner_UpperLeft)
 write_Paraview(data_Fig12_300km, "Lippitsch_Fig12_300km") 
 
 Depth                   = -400.0;
@@ -58,7 +58,7 @@ Corner_LowerLeft        =   (Corner_LowerLeft[1],   Corner_LowerLeft[2],    Dept
 Corner_UpperRight       =   (Corner_UpperRight[1],  Corner_UpperRight[2],   Depth)
 Corner_LowerRight       =   (Corner_LowerRight[1],  Corner_LowerRight[2],   Depth)
 Corner_UpperLeft        =   (Corner_UpperLeft[1],   Corner_UpperLeft[2],    Depth)
-data_Fig12_400km   =   screenshotToGeoData("Fig12_400km.png",Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight,Corner_UpperLeft=Corner_UpperLeft)
+data_Fig12_400km   =   screenshot_to_GeoData("Fig12_400km.png",Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight,Corner_UpperLeft=Corner_UpperLeft)
 write_Paraview(data_Fig12_400km, "Lippitsch_Fig12_400km") 
 
 
