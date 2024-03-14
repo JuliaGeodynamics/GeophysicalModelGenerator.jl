@@ -129,22 +129,22 @@ julia> Topo_Alps = load_GMG(
 
 The seismic data covers a much wider region than the Alps itself, but in much of that region there is poor data coverage. We can therefore extract a part of the data that has coverage:
 ```julia
-julia> Tomo_Alps = extractSubvolume(Tomo_Alps_full, Lon_level=(4,20), 
+julia> Tomo_Alps = extract_subvolume(Tomo_Alps_full, Lon_level=(4,20), 
                         Lat_level=(36,50), Depth_level=(-600,-10));
 ```
 
 At this stage, we can save the data to `VTK`  format:
 ```julia
-julia> write_Paraview(Tomo_Alps,"Tomo_Alps");
-julia> write_Paraview(Topo_Alps,"Topo_Alps");
+julia> write_paraview(Tomo_Alps,"Tomo_Alps");
+julia> write_paraview(Topo_Alps,"Topo_Alps");
 ```
 and open it with Paraview (see \autoref{fig:basic}a).
 We can create vertical and horizontal cross-sections through the data with:
 ```julia
-julia> Cross_200km = crossSection(Tomo_Alps, Depth_level=-200, Interpolate=true);
-julia> Cross_vert  = crossSection(Tomo_Alps, Start=(5,47), End=(15,44));
-julia> write_Paraview(Cross_vert, "Cross_vert");
-julia> write_Paraview(Cross_200km,"Cross_200km");
+julia> Cross_200km = cross_section(Tomo_Alps, Depth_level=-200, Interpolate=true);
+julia> Cross_vert  = cross_section(Tomo_Alps, Start=(5,47), End=(15,44));
+julia> write_paraview(Cross_vert, "Cross_vert");
+julia> write_paraview(Cross_200km,"Cross_200km");
 ```
 and visualise them along with the volumetric data (\autoref{fig:basic}a).
 
@@ -155,7 +155,7 @@ In addition, many numerical models work in (orthogonal) Cartesian rather than in
 
 `GeophysicalModelGenerator.jl` includes tools to transfer the data from geographic to Cartesian coordinates, which requires defining a projection point, along which the projection is performed:
 ```julia
-julia> proj = projectionPoint(Lon=12.0,Lat =43)
+julia> proj = ProjectionPoint(Lon=12.0,Lat =43)
 ProjectionPoint(43.0, 12.0, 255466.98055255096, 4.765182932801006e6, 33, true)
 ```
 We can now project the topography with:
@@ -165,15 +165,15 @@ julia> Topo_cart = convert2CartData(Topo_Alps, proj);
 which returns a `CartData` (Cartesian data) structure. The disadvantage of doing this projection is that the resulting Cartesian grid is no longer strictly orthogonal which is a problem for some Cartesian numerical models (e.g., using finite difference discretisations).
 We can project the data on an orthogonal grid as well, by first creating appropriately sized orthogonal grids for the tomography and topography:
 ```julia
-julia> Tomo_rect = CartData(XYZGrid(-550.0:10:600, -500.0:10:700, -600.0:5:-17));
-julia> Topo_rect = CartData(XYZGrid(-550.0:1:600, -500.0:1:700, 0)); 
+julia> Tomo_rect = CartData(xyz_grid(-550.0:10:600, -500.0:10:700, -600.0:5:-17));
+julia> Topo_rect = CartData(xyz_grid(-550.0:1:600, -500.0:1:700, 0)); 
 ```
 Next, we can project the data to the orthogonal grids with:
 ```julia
-julia> Topo_rect = projectCartData(Topo_rect, Topo_Alps, proj);
-julia> Tomo_rect = projectCartData(Tomo_rect, Tomo_Alps, proj);
-julia> write_Paraview(Tomo_rect,"Tomo_rect");
-julia> write_Paraview(Topo_rect,"Topo_rect");
+julia> Topo_rect = project_CartData(Topo_rect, Topo_Alps, proj);
+julia> Tomo_rect = project_CartData(Tomo_rect, Tomo_Alps, proj);
+julia> write_paraview(Tomo_rect,"Tomo_rect");
+julia> write_paraview(Topo_rect,"Topo_rect");
 ```
 We can now use the build-in tools of Paraview to visualise the data (see \autoref{fig:basic} b), and use this as inspiration to create an initial numerical model setup. It is also possible to interpolate other seismic tomography datasets to the same grid and subsequently compute a "votemap" to count in how many tomographic models a specific seismic anomaly is present.
 
