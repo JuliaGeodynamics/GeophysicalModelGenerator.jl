@@ -187,7 +187,7 @@ The European Alps are among the best studied mountain belts on the planet, and h
 
 In [`Tutorial_AlpineData.jl`](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev/man/Tutorial_AlpineData/), users learn how to load the topography of the region, import Moho data, load and visualise GPS vectors, import and plot earthquake locations, along with cross-sections through the model (\autoref{fig:alps}).
 
-![Example of combined data of the Alps, which shows the GPS surface velocity (arrows), topography, earthquake locations (colored dots) and cross-sections through a recent anisotropic P-wave tomography model by [@Rappisi_VanderBeek_Faccenda_Morelli_Molinari_2022]. \label{fig:alps}](../src/assets/img/GMG_AlpineData.png){ width=90% }
+![Example of combined data of the Alps, which shows the GPS surface velocity (arrows), topography, earthquake locations (colored dots) and cross-sections through a recent anisotropic P-wave tomography model by [@Rappisi_VanderBeek_Faccenda_Morelli_Molinari_2022]. \label{fig:alps}](../src/assets/img/GMG_AlpineData_.png){ width=90% }
 
 ### La Palma volcanic eruption
 The 2019 Cumbre Viejo eruption in La Palma, Canary Islands, was accompanied by seismic activity. In [`Tutorial_LaPalma.jl`](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev/man/Tutorial_LaPalma/), users learn to generate a Cartesian block model of the island, import seismicity and use that to generate a 3D volumetric seismic activity map (\autoref{fig:lapalma}). 
