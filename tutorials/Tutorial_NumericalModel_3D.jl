@@ -50,7 +50,7 @@ AgeTrench = 800e3/(v_spreading_cm_yr/100)/1e6;
 addBox!(Phases, Temp, Grid; xlim=(0,300), ylim=(-400, 400.0), zlim=(-80.0, 0.0), phase = lith, Origin = (0,0,0), T=HalfspaceCoolingTemp(Age=AgeTrench), DipAngle=30, StrikeAngle=30);
 
 # Add them to the `CartData` dataset:
-Grid = addField(Grid,(;Phases, Temp))
+Grid = addfield(Grid,(;Phases, Temp))
 
 # Which looks like
 write_Paraview(Grid,"Grid3D_FreeSubduction");
@@ -116,7 +116,7 @@ addSlab!(Phases, Temp, Grid, trench1, phase = lith, T=T_slab);
 addStripes!(Phases, Grid; stripAxes = (1,1,0), phase = ConstantPhase(0), stripePhase = ConstantPhase(9), stripeWidth=50, stripeSpacing=200)
 
 # Finally, we can add all this to the `CartData` dataset:
-Grid = addField(Grid,(;Phases, Temp))
+Grid = addfield(Grid,(;Phases, Temp))
 write_Paraview(Grid,"Grid3D_Ridges");
 
 # And the resulting image looks like

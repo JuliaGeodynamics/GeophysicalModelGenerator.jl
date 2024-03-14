@@ -140,7 +140,7 @@ Phases[ind] .= 3 #Magma
 Add rocktypes to the grid:
 
 ```julia
-Grid_3D = addField(Grid_3D,"Phases",Phases)
+Grid_3D = addfield(Grid_3D,"Phases",Phases)
 ```
 
 We can save this to paraview format

@@ -59,7 +59,7 @@ addBox!(Phases, Temp, Grid; xlim=(0,300), ylim=(-400, 400.0), zlim=(-80.0, 0.0),
 Add them to the `CartData` dataset:
 
 ```julia
-Grid = addField(Grid,(;Phases, Temp))
+Grid = addfield(Grid,(;Phases, Temp))
 ```
 
 ````
@@ -162,7 +162,7 @@ addStripes!(Phases, Grid; stripAxes = (1,1,0), phase = ConstantPhase(0), stripeP
 Finally, we can add all this to the `CartData` dataset:
 
 ```julia
-Grid = addField(Grid,(;Phases, Temp))
+Grid = addfield(Grid,(;Phases, Temp))
 write_Paraview(Grid,"Grid3D_Ridges");
 ```
 

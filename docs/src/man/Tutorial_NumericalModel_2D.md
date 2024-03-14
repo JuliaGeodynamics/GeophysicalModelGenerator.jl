@@ -59,7 +59,7 @@ addBox!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = ConstantP
 Add them to the `CartData` dataset:
 
 ```julia
-Grid2D = addField(Grid2D,(;Phases, Temp))
+Grid2D = addfield(Grid2D,(;Phases, Temp))
 ```
 
 ````
@@ -107,7 +107,7 @@ addBox!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = lith, Dip
 Which looks like:
 
 ```julia
-Grid2D = addField(Grid2D,(;Phases, Temp))
+Grid2D = addfield(Grid2D,(;Phases, Temp))
 write_Paraview(Grid2D,"Grid2D_SubductionMechanicalLayered");
 ```
 
@@ -131,7 +131,7 @@ addBox!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = lith, T =
 Which looks like:
 
 ```julia
-Grid2D = addField(Grid2D,(;Phases, Temp))
+Grid2D = addfield(Grid2D,(;Phases, Temp))
 write_Paraview(Grid2D,"Grid2D_SubductionHalfspaceCooling");
 ```
 
@@ -174,7 +174,7 @@ We can set the mantle lithosphere that is hotter > 1250 C to mantle:
 ind = findall(Temp .> 1250 .&& Phases .==2);
 Phases[ind] .= 0;
 
-Grid2D = addField(Grid2D,(;Phases, Temp))
+Grid2D = addfield(Grid2D,(;Phases, Temp))
 write_Paraview(Grid2D,"Grid2D_SubductionRidge");
 ```
 
@@ -213,7 +213,7 @@ Lithosphere-asthenosphere boundary:
 ind = findall(Temp .> 1250 .&& Phases .==2);
 Phases[ind] .= 0;
 
-Grid2D = addField(Grid2D,(;Phases, Temp))
+Grid2D = addfield(Grid2D,(;Phases, Temp))
 write_Paraview(Grid2D,"Grid2D_SubductionOverriding");
 ```
 
@@ -250,7 +250,7 @@ addSlab!(Phases, Temp, Grid2D, trench, phase = ConstantPhase(1));
 Add them to the `CartData` dataset:
 
 ```julia
-Grid2D = addField(Grid2D,(;Phases, Temp))
+Grid2D = addfield(Grid2D,(;Phases, Temp))
 write_Paraview(Grid2D,"Grid2D_SubductionCurvedMechanical");
 ```
 
@@ -330,7 +330,7 @@ Lithosphere-asthenosphere boundary:
 ind = findall(Temp .> 1250 .&& (Phases.==2 .|| Phases.==5));
 Phases[ind] .= 0;
 
-Grid2D = addField(Grid2D,(;Phases, Temp))
+Grid2D = addfield(Grid2D,(;Phases, Temp))
 write_Paraview(Grid2D,"Grid2D_SubductionCurvedOverriding");
 ```
 

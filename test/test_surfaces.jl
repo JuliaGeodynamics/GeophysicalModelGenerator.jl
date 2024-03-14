@@ -5,7 +5,7 @@ using Test
 cartdata1 = CartData(xyzGrid(1:4,1:5,0))
 cartdata2 = CartData(xyzGrid(1:4,1:5,2))
 cartdata3 = CartData(xyzGrid(1:4,1:5,2:5))
-cartdata2 = addField(cartdata2,"Z2",cartdata2.x.val)
+cartdata2 = addfield(cartdata2,"Z2",cartdata2.x.val)
 
 @test is_surface(cartdata1)
 @test is_surface(cartdata2)

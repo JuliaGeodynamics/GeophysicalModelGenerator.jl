@@ -47,8 +47,8 @@ Grid_Count = pointData2NearestGrid(pt[:,1],pt[:,2],pt[:,3], Grid_geo; radius_fac
 Grid_Count = pointData2NearestGrid(EQ_geo, Grid_geo; radius_factor=2)
 @test extrema(Grid_Count.fields.Count) == (0, 85)
 
-# Test countMap
-Data_countMap = countMap(Data_set2D,"Count",5,5)
-@test Data_countMap.fields.countMap[1,1] == 1.0
-@test Data_countMap.fields.countMap[2,2] == 0.4444444444444444
-@test Data_countMap.fields.countMap[4,4] == 0.0
+# Test countmap
+Data_countMap = countmap(Data_set2D,"Count",5,5)
+@test Data_countMap.fields.countmap[1,1] == 1.0
+@test Data_countMap.fields.countmap[2,2] == 0.4444444444444444
+@test Data_countMap.fields.countmap[4,4] == 0.0

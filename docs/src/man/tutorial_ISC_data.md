@@ -15,9 +15,9 @@ The main data-file, `ISC1.dat`, has 23 lines of comments (indicated with `#`), a
 julia> using CSV, GeophysicalModelGenerator
 julia> data_file = CSV.File("ISC1.dat",datarow=24,header=false,delim=',')
 ```
-As this data contains a lot of information that we are not interested in at the moment and which is given in non-numeric formats (e.g. date, time etc.), we will use our helper function *parseColumns_CSV_File* to only extract columns with numeric data.
+As this data contains a lot of information that we are not interested in at the moment and which is given in non-numeric formats (e.g. date, time etc.), we will use our helper function *parse_columns_CSV* to only extract columns with numeric data.
 ```julia-repl
-julia> data      = parseColumns_CSV_File(data_file, 14)
+julia> data      = parse_columns_CSV(data_file, 14)
 julia> lon       = data[:,2];
 julia> lat       = data[:,1];
 julia> depth     = -1* data[:,3];

@@ -37,7 +37,7 @@ download_data("https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_
 data_file               =   CSV.File("ALPS2017_DEF_VT.GRD",datarow=18,header=false,delim=' ')
 
 num_columns             =   4;
-data                    =   parseColumns_CSV_File(data_file, num_columns);     #Read numerical data from the file
+data                    =   parse_columns_CSV(data_file, num_columns);     #Read numerical data from the file
 lon_Vz, lat_Vz, Vz_vec  =   data[:,1], data[:,2], data[:,3]
 
 # ## 2. Check & reshape vertical velocity
@@ -100,7 +100,7 @@ Vn                      =   ones(size(Vz))*NaN
 # Next, we load the horizontal velocities which is available in the file `ALPS2017_DEF_HZ.GRD`
 download_data("https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_DEF_HZ.GRD","ALPS2017_DEF_HZ.GRD")
 data_file                       =   CSV.File("ALPS2017_DEF_HZ.GRD",datarow=18,header=false,delim=' ')
-data                            =   parseColumns_CSV_File(data_file, 10)
+data                            =   parse_columns_CSV(data_file, 10)
 lon_Hz, lat_Hz, Ve_Hz, Vn_Hz    =   data[:,1], data[:,2], data[:,3], data[:,4]
 
 # Let's plot the data as well:

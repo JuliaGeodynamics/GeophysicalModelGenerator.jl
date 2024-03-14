@@ -363,10 +363,10 @@ nothing #hide
 At this stage we have the 3D velocity components on a grid. Yet, we don't have information yet about the elevation of the stations (as the provided data set did not give this).
 We could ignore that and set the elevation to zero, which would allow saving the data directly.
 Yet, a better way is to load the topographic map of the area and interpolate the elevation to the velocity grid.
-As we have already the loaded the topographic map in section 1 of this tutorial, we can simply reuse it. To interpolate, we will use the function `interpolateDataFields2D`
+As we have already the loaded the topographic map in section 1 of this tutorial, we can simply reuse it. To interpolate, we will use the function `interpolate_datafields_2D`
 
 ```julia
-topo_v, fields_v = interpolateDataFields2D(Topo, Lon, Lat)
+topo_v, fields_v = interpolate_datafields_2D(Topo, Lon, Lat)
 ```
 
 The variable we are interested in is the variable `topo_v`. `fields_v` contains the interpolation of all the fields in `Topo` to the new grid and we only keep it here for completeness.

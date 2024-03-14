@@ -9,7 +9,7 @@ The routines provided here have the following functionality:
 ```@docs
 load_GMG
 save_GMG
-crossSection
+cross_section
 ProfileData
 extractProfileData
 createProfileData

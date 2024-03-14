@@ -1,6 +1,6 @@
 using NearestNeighbors
 
-export pointData2NearestGrid, countMap
+export pointData2NearestGrid, countmap
 
 
 """
@@ -21,7 +21,7 @@ function pointData2NearestGrid(Point::CartData, Grid::CartData; radius_factor=1)
     Count = pointData2NearestGrid(NumValue(Point.x),NumValue(Point.y), NumValue(Point.z), NumValue(Grid.x),NumValue(Grid.y),NumValue(Grid.z); radius_factor=radius_factor)
 
     # return CartGrid with added field
-    return  addField(Grid,"Count",Count);
+    return  addfield(Grid,"Count",Count);
 end
 
 
@@ -39,7 +39,7 @@ function pointData2NearestGrid(pt_x,pt_y,pt_z, Grid::CartData; radius_factor=1)
     Count = pointData2NearestGrid(pt_x,pt_y,pt_z, NumValue(Grid.x),NumValue(Grid.y),NumValue(Grid.z); radius_factor=radius_factor)
 
     # return CartGrid with added field
-    return  addField(Grid,"Count",Count);
+    return  addfield(Grid,"Count",Count);
 end
 
 
@@ -61,7 +61,7 @@ function pointData2NearestGrid(Point::GeoData, Grid::GeoData; radius_factor=1)
     Count = pointData2NearestGrid(NumValue(Point.lon),NumValue(Point.lat), NumValue(Point.depth), NumValue(Grid.lon),NumValue(Grid.lat),NumValue(Grid.depth); radius_factor=radius_factor)
 
     # return CartGrid with added field
-    return  addField(Grid,"Count",Count);
+    return  addfield(Grid,"Count",Count);
 end
 
 
@@ -79,7 +79,7 @@ function pointData2NearestGrid(pt_x,pt_y,pt_z, Grid::GeoData; radius_factor=1)
     Count = pointData2NearestGrid(pt_x,pt_y,pt_z, NumValue(Grid.lon),NumValue(Grid.lat),NumValue(Grid.depth); radius_factor=radius_factor)
 
     # return CartGrid with added field
-    return  addField(Grid,"Count",Count);
+    return  addfield(Grid,"Count",Count);
 end
 
 """
@@ -115,7 +115,7 @@ function pointData2NearestGrid(pt_x,pt_y,pt_z, X,Y,Z; radius_factor=1)
 end
 
 """
-    DatasetcountMap = countMap(DataSet::GeoData,field::String,stepslon::Int64,stepslat::Int64)
+    DatasetcountMap = countmap(DataSet::GeoData,field::String,stepslon::Int64,stepslat::Int64)
 
 Takes a 2D GeoData struct and counts entries of `field` per predefined control area. `field` should only consist of 1.0s and 0.0s. The control area is defined by `steplon` and `steplat`.
 `steplon` is the number of control areas in longitude direction and `steplat` the number of control areas in latitude direction.
@@ -132,18 +132,18 @@ GeoData
 
 julia> steplon  = 125
 julia> steplat  = 70
-julia> countMap = countMap(Data_Faults,"Faults",steplon,steplat)
+julia> countmap = countmap(Data_Faults,"Faults",steplon,steplat)
 
 GeoData 
     size      : (124, 69, 1)
     lon       ϵ [ -9.751471789279 : 34.75891471959677]
     lat       ϵ [ 35.26604656731949 : 59.73926004602028]
     depth     ϵ [ 0.0 : 1.0]
-    fields    : (:countMap,)
+    fields    : (:countmap,)
 ```julia
 
 """
-function countMap(DataSet::GeoData,field::String,stepslon::Int64,stepslat::Int64)
+function countmap(DataSet::GeoData,field::String,stepslon::Int64,stepslat::Int64)
 
     lon      = unique(DataSet.lon.val)
     lat      = unique(DataSet.lat.val)
@@ -155,7 +155,7 @@ function countMap(DataSet::GeoData,field::String,stepslon::Int64,stepslat::Int64
     dlat     = abs(latstep[2]-latstep[1])
     loncen   = lonstep[1]+dlon/2:dlon:lonstep[end]-dlon/2
     latcen   = latstep[1]+dlat/2:dlat:latstep[end]-dlat/2
-    countMap = zeros(length(loncen),length(latcen))
+    countmap = zeros(length(loncen),length(latcen))
 
     expr =   Meta.parse(field)
     if !haskey(DataSet.fields,expr[1])
@@ -169,18 +169,18 @@ function countMap(DataSet::GeoData,field::String,stepslon::Int64,stepslat::Int64
             indj          = findall((lat .>= latstep[j]) .& (lat .<= latstep[j+1]))
             dataint       = DataSet.fields[expr[1]][indi,indj,1]
             count         = sum(dataint)
-            countMap[i,j] = count
+            countmap[i,j] = count
         end
     end
 
     # normalize count in every control area
-    maxcount = maximum(countMap)
-    countMap = countMap ./ maxcount
+    maxcount = maximum(countmap)
+    countmap = countmap ./ maxcount
 
     # create new GeoData
     Lon3D,Lat3D, Data = lonlatdepthGrid(loncen,latcen,0);
-    Data[:,:,1]       .= countMap
-    DatasetcountMap   = GeoData(Lon3D,Lat3D,Data,(countMap=Data,))
+    Data[:,:,1]       .= countmap
+    DatasetcountMap   = GeoData(Lon3D,Lat3D,Data,(countmap=Data,))
 
     return DatasetcountMap
 end

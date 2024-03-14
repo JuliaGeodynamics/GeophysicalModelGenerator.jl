@@ -391,7 +391,7 @@ Interpolates a 3D data set `V` on a surface defined by `Surf`
 """
 function interpolateDataOnSurface(V::GeoData, Surf::GeoData)
 
-    Surf_interp = interpolateDataFields(V, Surf.lon.val, Surf.lat.val, Surf.depth.val)
+    Surf_interp = interpolate_datafields(V, Surf.lon.val, Surf.lat.val, Surf.depth.val)
 
     return Surf_interp
 end

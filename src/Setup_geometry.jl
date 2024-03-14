@@ -178,7 +178,7 @@ julia> Grid = CartData(xyzGrid(-1000:10:1000,0,-660:10:0))
 julia> Phases = zeros(Int32,   size(Grid));
 julia> Temp   = zeros(Float64, size(Grid));
 julia> addBox!(Phases,Temp,Grid, xlim=(0,500), zlim=(-50,0), phase=ConstantPhase(3), DipAngle=10, T=HalfspaceCoolingTemp(Age=30))
-julia> Grid = addField(Grid, (;Phases,Temp));       # Add to Cartesian model
+julia> Grid = addfield(Grid, (;Phases,Temp));       # Add to Cartesian model
 julia> write_Paraview(Grid,"LaMEM_ModelSetup")  # Save model to paraview
 1-element Vector{String}:
  "LaMEM_ModelSetup.vts"
@@ -635,7 +635,7 @@ ind_slice = zeros(Bool,size(X[:,1,:]))
 # find points within the polygon, only in 2D
 for i = 1:size(Y)[2]
     if Y[1,i,1] >= ylim[1] && Y[1,i,1]<=ylim[2] 
-        inPolygon!(ind_slice, xlim,zlim, X[:,i,:], Z[:,i,:])
+        inpolygon!(ind_slice, xlim,zlim, X[:,i,:], Z[:,i,:])
         ind[:,i,:] = ind_slice
     else
         ind[:,i,:] = zeros(size(X[:,1,:]))
@@ -1613,7 +1613,7 @@ function find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench::Trench)
 
         # Initialize the ind that are going to be used by inpoly
         ind = zeros(Bool,size(zp));
-        inPolygon!(ind,poly_y,poly_z,yp,zp);        # determine whether points are inside the polygon or not
+        inpolygon!(ind,poly_y,poly_z,yp,zp);        # determine whether points are inside the polygon or not
 
         # indexes of the segment
         ind_seg = ind_s[ind]

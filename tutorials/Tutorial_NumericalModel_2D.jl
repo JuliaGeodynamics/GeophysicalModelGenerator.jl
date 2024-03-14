@@ -34,7 +34,7 @@ addBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = Consta
 addBox!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = ConstantPhase(1), DipAngle=30);
 
 # Add them to the `CartData` dataset:
-Grid2D = addField(Grid2D,(;Phases, Temp))
+Grid2D = addfield(Grid2D,(;Phases, Temp))
 
 # Which looks like
 write_Paraview(Grid2D,"Grid2D_SubductionMechanical");
@@ -50,7 +50,7 @@ addBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = lith);
 addBox!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = lith, DipAngle=30);
 
 # Which looks like:
-Grid2D = addField(Grid2D,(;Phases, Temp))
+Grid2D = addfield(Grid2D,(;Phases, Temp))
 write_Paraview(Grid2D,"Grid2D_SubductionMechanicalLayered");
 # ![Mechanical2D_Tutorial_2](../assets/img/Mechanical2D_Tutorial_2.png) 
 
@@ -62,7 +62,7 @@ addBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = lith, 
 addBox!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = lith, T = therm, DipAngle=30);
 
 # Which looks like:
-Grid2D = addField(Grid2D,(;Phases, Temp))
+Grid2D = addfield(Grid2D,(;Phases, Temp))
 write_Paraview(Grid2D,"Grid2D_SubductionHalfspaceCooling");
 # ![Mechanical2D_Tutorial_3](../assets/img/Mechanical2D_Tutorial_3.png) 
 
@@ -90,7 +90,7 @@ addBox!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = lith, T =
 ind = findall(Temp .> 1250 .&& Phases .==2);
 Phases[ind] .= 0;
 
-Grid2D = addField(Grid2D,(;Phases, Temp))
+Grid2D = addfield(Grid2D,(;Phases, Temp))
 write_Paraview(Grid2D,"Grid2D_SubductionRidge");
 # ![Mechanical2D_Tutorial_4](../assets/img/Mechanical2D_Tutorial_4.png) 
 
@@ -111,7 +111,7 @@ addBox!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 10.0), phase = lith, T 
 ind = findall(Temp .> 1250 .&& Phases .==2);
 Phases[ind] .= 0;
 
-Grid2D = addField(Grid2D,(;Phases, Temp))
+Grid2D = addfield(Grid2D,(;Phases, Temp))
 write_Paraview(Grid2D,"Grid2D_SubductionOverriding");
 # ![Mechanical2D_Tutorial_5](../assets/img/Mechanical2D_Tutorial_5.png) 
 
@@ -135,7 +135,7 @@ trench = Trench(Start=(0.0,-100.0), End=(0.0,100.0), Thickness=80.0, θ_max=45.0
 addSlab!(Phases, Temp, Grid2D, trench, phase = ConstantPhase(1));
 
 # Add them to the `CartData` dataset:
-Grid2D = addField(Grid2D,(;Phases, Temp))
+Grid2D = addfield(Grid2D,(;Phases, Temp))
 write_Paraview(Grid2D,"Grid2D_SubductionCurvedMechanical");
 # ![Mechanical2D_Tutorial_6](../assets/img/Mechanical2D_Tutorial_6.png) 
 
@@ -177,7 +177,7 @@ addSlab!(Phases, Temp, Grid2D, trench, phase = lith, T=T_slab);
 ind = findall(Temp .> 1250 .&& (Phases.==2 .|| Phases.==5));
 Phases[ind] .= 0;
 
-Grid2D = addField(Grid2D,(;Phases, Temp))
+Grid2D = addfield(Grid2D,(;Phases, Temp))
 write_Paraview(Grid2D,"Grid2D_SubductionCurvedOverriding");
 # The result is a smooth transition in thermal structure around the subduction zone:
 # ![Mechanical2D_Tutorial_7](../assets/img/Mechanical2D_Tutorial_7.png) 
