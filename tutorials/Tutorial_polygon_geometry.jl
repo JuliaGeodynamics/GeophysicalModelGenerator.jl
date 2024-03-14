@@ -40,6 +40,6 @@ add_box!(Phase, Temp, Cart; xlim=(0.0,800.0),ylim=(0.0,800.0), zlim=(0.0,50.0), 
 
 # # Save data to paraview:
 Data_Final      =   CartData(X,Y,Z,(Phase=Phase,Temp=Temp)) 
-write_Paraview(Data_Final, "Sedimentary_basin")
+write_paraview(Data_Final, "Sedimentary_basin")
 
 

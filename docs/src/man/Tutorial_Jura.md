@@ -194,9 +194,9 @@ Note that we transfer the boolean to an integer
 Let's have a look at this in Paraview:
 
 ```julia
-write_Paraview(Basement_cart,"Basement_cart")
-write_Paraview(TopoGeology_cart,"TopoGeology_cart")
-write_Paraview(CrossSection_1_cart,"CrossSection_1_cart")
+write_paraview(Basement_cart,"Basement_cart")
+write_paraview(TopoGeology_cart,"TopoGeology_cart")
+write_paraview(CrossSection_1_cart,"CrossSection_1_cart")
 ```
 
 The result looks like:
@@ -261,10 +261,10 @@ ComputationalGrid = removefield(ComputationalGrid,"Z")
 Save the surfaces, cross-section and the grid:
 
 ```julia
-write_Paraview(GeologyTopo_comp_surf,"GeologyTopo_comp_surf")
-write_Paraview(Basement_comp_surf,   "Basement_comp_surf")
-write_Paraview(CrossSection_1_cart_rot,"CrossSection_1_cart_rot")
-write_Paraview(ComputationalGrid,"ComputationalGrid")
+write_paraview(GeologyTopo_comp_surf,"GeologyTopo_comp_surf")
+write_paraview(Basement_comp_surf,   "Basement_comp_surf")
+write_paraview(CrossSection_1_cart_rot,"CrossSection_1_cart_rot")
+write_paraview(ComputationalGrid,"ComputationalGrid")
 ```
 
 We can visualize this in paraview:

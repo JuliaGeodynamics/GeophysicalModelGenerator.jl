@@ -59,7 +59,7 @@ GeoData
 ```
 Finally, you save it in Paraview format as always:
 ```julia
-julia> write_Paraview(data_profile1, "Lippitsch_Fig13a_profile")
+julia> write_paraview(data_profile1, "Lippitsch_Fig13a_profile")
 ```
 
 You can open this in paraview. Here, it is shown along with topographic data (made transparent):
@@ -81,7 +81,7 @@ Corner_UpperRight   =   (15.5, 50.0 , -150.0)
 Corner_LowerRight   =   (15.5, 43.0 , -150.0)
 Corner_UpperLeft    =   (3.5 , 50.0 , -150.0)
 data_Fig13_map      =   screenshot_to_GeoData("Fig13_mapview.png",Corner_LowerLeft, Corner_UpperRight, Corner_LowerRight=Corner_LowerRight,Corner_UpperLeft=Corner_UpperLeft)
-write_Paraview(data_Fig13_map, "Lippitsch_Fig13_mapview")
+write_paraview(data_Fig13_map, "Lippitsch_Fig13_mapview")
 ```
 
 Once added to paraview (together with a few additional map views from the same paper):
@@ -108,14 +108,14 @@ Which can again be used to set your profile.
 
 If you are importing a lot of cross-sections at the same time in Paraview, you end up having a lot of open profiles.
 For that reason it is possible to save a "multi-block" *.vtm file, which combines several files into one.
-The general approach is simple: open a multiblock file, and pass the filename to `write_Paraview`. Once you are done, save it.
+The general approach is simple: open a multiblock file, and pass the filename to `write_paraview`. Once you are done, save it.
 An example showing you how this works is:
 ```julia
 julia> vtmfile = vtk_multiblock("Lippitsch_CrossSections")
-julia> write_Paraview(data_Fig12_90km, vtmfile)
-julia> write_Paraview(data_Fig12_180km, vtmfile)
-julia> write_Paraview(data_Fig12_300km, vtmfile)
-julia> write_Paraview(data_Fig12_400km, vtmfile)
+julia> write_paraview(data_Fig12_90km, vtmfile)
+julia> write_paraview(data_Fig12_180km, vtmfile)
+julia> write_paraview(data_Fig12_300km, vtmfile)
+julia> write_paraview(data_Fig12_400km, vtmfile)
 julia> vtk_save(vtmfile)
 ```
 Note that you have to create the cross-sections first (see the julia script below).

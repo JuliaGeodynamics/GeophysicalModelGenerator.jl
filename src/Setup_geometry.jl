@@ -66,7 +66,7 @@ export  add_box!, add_sphere!, add_ellipsoid!, add_cylinder!, add_layer!, add_po
     julia> add_box!(Phases,Temp,Grid, xlim=(0,500), zlim=(-50,0), phase=ConstantPhase(3), DipAngle=10, T=ConstantTemp(1000))
     julia> add_stripes!(Phases, Grid, stripAxes=(1,1,1), stripeWidth=0.2, stripeSpacing=1, Origin=nothing, StrikeAngle=0, DipAngle=10, phase=ConstantPhase(3), stripePhase=ConstantPhase(4))
     julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
-    julia> write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
+    julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
     1-element Vector{String}:
      "LaMEM_ModelSetup.vts"
     ```
@@ -167,7 +167,7 @@ julia> Phases = zeros(Int32,   size(Grid.X));
 julia> Temp   = zeros(Float64, size(Grid.X));
 julia> add_box!(Phases,Temp,Grid, xlim=(0,500), zlim=(-50,0), phase=ConstantPhase(3), DipAngle=10, T=ConstantTemp(1000))
 julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
-julia> write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
+julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
 1-element Vector{String}:
  "LaMEM_ModelSetup.vts"
 ```
@@ -179,7 +179,7 @@ julia> Phases = zeros(Int32,   size(Grid));
 julia> Temp   = zeros(Float64, size(Grid));
 julia> add_box!(Phases,Temp,Grid, xlim=(0,500), zlim=(-50,0), phase=ConstantPhase(3), DipAngle=10, T=HalfspaceCoolingTemp(Age=30))
 julia> Grid = addfield(Grid, (;Phases,Temp));       # Add to Cartesian model
-julia> write_Paraview(Grid,"LaMEM_ModelSetup")  # Save model to paraview
+julia> write_paraview(Grid,"LaMEM_ModelSetup")  # Save model to paraview
 1-element Vector{String}:
  "LaMEM_ModelSetup.vts"
 ```
@@ -276,7 +276,7 @@ julia> Phases = zeros(Int32,   size(Grid.X));
 julia> Temp   = zeros(Float64, size(Grid.X));
 julia> add_layer!(Phases,Temp,Grid, zlim=(-50,0), phase=ConstantPhase(3), T=ConstantTemp(1000))
 julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
-julia> write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
+julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
 1-element Vector{String}:
  "LaMEM_ModelSetup.vts"
 ```
@@ -288,7 +288,7 @@ julia> Phases = zeros(Int32,   size(Grid.X));
 julia> Temp   = zeros(Float64, size(Grid.X));
 julia> add_layer!(Phases,Temp,Grid, zlim=(-50,0), phase=ConstantPhase(3), T=HalfspaceCoolingTemp())
 julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
-julia> write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
+julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
 1-element Vector{String}:
  "LaMEM_ModelSetup.vts"
 ```
@@ -374,7 +374,7 @@ julia> Phases = zeros(Int32,   size(Grid.X));
 julia> Temp   = zeros(Float64, size(Grid.X));
 julia> add_sphere!(Phases,Temp,Grid, cen=(0,0,-1), radius=0.5, phase=ConstantPhase(2), T=ConstantTemp(800))
 julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
-julia> write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
+julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
 1-element Vector{String}:
  "LaMEM_ModelSetup.vts"
 ```
@@ -441,7 +441,7 @@ julia> Phases = zeros(Int32,   size(Grid.X));
 julia> Temp   = zeros(Float64, size(Grid.X));
 julia> add_ellipsoid!(Phases,Temp,Grid, cen=(-1,-1,-1), axes=(0.2,0.1,0.5), StrikeAngle=90, DipAngle=45, phase=ConstantPhase(3), T=ConstantTemp(600))
 julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
-julia> write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
+julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
 1-element Vector{String}:
  "LaMEM_ModelSetup.vts"
 ```
@@ -522,7 +522,7 @@ julia> Phases = zeros(Int32,   size(Grid.X));
 julia> Temp   = zeros(Float64, size(Grid.X));
 julia> add_cylinder!(Phases,Temp,Grid, base=(-1,-1,-1.5), cap=(1,1,-0.5), radius=0.25, phase=ConstantPhase(4), T=ConstantTemp(400))
 julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
-julia> write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
+julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
 1-element Vector{String}:
  "LaMEM_ModelSetup.vts"
 ```
@@ -615,7 +615,7 @@ julia> Phases = zeros(Int32,   size(Grid.X));
 julia> Temp   = zeros(Float64, size(Grid.X));
 julia> add_polygon!(Phase, Temp, Cart; xlim=(0.0,0.0, 1.6, 2.0),ylim=(0.0,0.8), zlim=(0.0,-1.0,-2.0,0.0), phase = ConstantPhase(8), T=ConstantTemp(30))
 julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
-julia> write_Paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
+julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
 1-element Vector{String}:
  "LaMEM_ModelSetup.vts"
 ```
@@ -725,7 +725,7 @@ CartData
     z       ϵ [ 0.1 : 0.8]
     fields  : (:Topography,)
   attributes: ["note"]
-julia> write_Paraview(Topo,"VolcanoTopo")           # Save topography to paraview
+julia> write_paraview(Topo,"VolcanoTopo")           # Save topography to paraview
 Saved file: VolcanoTopo.vts
 ```
 """

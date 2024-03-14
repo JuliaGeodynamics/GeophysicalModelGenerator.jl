@@ -50,10 +50,10 @@ julia> WE                  = data[:,2];
 julia> SN                  = data[:,3];
 julia> depth               = data[:,4];
 julia> EQ_Data_Cart        = CartData(WE,SN,depth,(Depth=depth * m,Time=time * yr,));
-julia> write_Paraview(EQ_Data_Cart, "CF_Earthquakes_Cartesian", PointsData=true)
+julia> write_paraview(EQ_Data_Cart, "CF_Earthquakes_Cartesian", PointsData=true)
 julia> EQ_Data_UTM         = UTMData(WE, SN, depth, 33, true, (Depth=depth * m,Time=time * yr,));
 julia> Data_set_UTM        =   convert(GeophysicalModelGenerator.GeoData,EQ_Data_UTM)
-julia> write_Paraview(Data_set_UTM, "CF_Earthquakes_UTM", PointsData=true)
+julia> write_paraview(Data_set_UTM, "CF_Earthquakes_UTM", PointsData=true)
 ```
 Save in paraview with both cartesian and UTM formats. The final seismicity map looks like this:
 
@@ -83,10 +83,10 @@ julia> Vp3d            =   permutedims(reshape(Vp, resolution), dim_perm);
 julia> Vs3d            =   permutedims(reshape(Vs, resolution), dim_perm);
 julia> Vp_Vs3d         =   permutedims(reshape(VpVs, resolution), dim_perm);
 julia> Data_set_Cartesian  =   CartData(we, sn, depth, (vp = Vp3d * (km / s), vs = Vs3d * (km / s), vpvs = Vp_Vs3d,))
-julia> write_Paraview(Data_set_Cartesian, "CF_Velocity_Cartesian")
+julia> write_paraview(Data_set_Cartesian, "CF_Velocity_Cartesian")
 julia> Data_set        =   UTMData(we, sn, depth, 33, true, (vp = Vp3d * (km / s), vs = Vs3d * (km / s), vpvs = Vp_Vs3d,))
 julia> Data_set_UTM    =   convert(GeophysicalModelGenerator.GeoData,Data_set)
-julia> write_Paraview(Data_set_UTM, "CF_Velocity_UTM")
+julia> write_paraview(Data_set_UTM, "CF_Velocity_UTM")
 ```
 Including the Vp/Vs model in the previous Paraview file workspace:
 
@@ -135,10 +135,10 @@ Also, nodes are irregular, hence we create a 3D regular UTM:
         Vs_2D            = reshape(sol_Vs, size(domain(sol)));
         Vs_3D[:,:,1]     = Vs_2D;
         Data_set_Cart    = CartData(we, sn, Depth, (Vs = Vs_3D  * (km / s),))
-        write_Paraview(Data_set_Cart, "CF_Noise" * name_vts * "_Cartesian")
+        write_paraview(Data_set_Cart, "CF_Noise" * name_vts * "_Cartesian")
         Data_set         = UTMData(we, sn, Depth, 33, true, (Vs = Vs_3D*(km / s),));
         Data_set_UTM     = convert(GeophysicalModelGenerator.GeoData, Data_set);
-        write_Paraview(Data_set_UTM, "CF_Noise_UTM_"*name_vts)
+        write_paraview(Data_set_UTM, "CF_Noise_UTM_"*name_vts)
     end
 ```
 This is one of the horizontal sections created by the code in the previous model in both reference systems:

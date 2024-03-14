@@ -139,7 +139,7 @@ GeoData
   lat   ϵ [ 38.0 - 51.95]
   depth ϵ [ -1001.0 km - -1.0 km]
   fields: (:dVp_Percentage,)
-julia> write_Paraview(Data_set, "Zhao_etal_2016_dVp_percentage")
+julia> write_paraview(Data_set, "Zhao_etal_2016_dVp_percentage")
 1-element Vector{String}:
  "Zhao_etal_2016_dVp_percentage.vts"
 ```
@@ -183,7 +183,7 @@ GeoData
   lat   ϵ [ 38.0 : 51.95]
   depth ϵ [ -101.0 km : -101.0 km]
   fields: (:dVp_Percentage,)
-julia> write_Paraview(Data_cross, "Zhao_CrossSection_100km")
+julia> write_paraview(Data_cross, "Zhao_CrossSection_100km")
 1-element Vector{String}:
  "Zhao_CrossSection_100km.vts"
 ```
@@ -197,7 +197,7 @@ GeoData
   lat   ϵ [ 38.0 : 51.95]
   depth ϵ [ -1001.0 km : -1.0 km]
   fields: (:dVp_Percentage,) 
-julia> write_Paraview(Data_cross, "Zhao_CrossSection_Lon10")
+julia> write_paraview(Data_cross, "Zhao_CrossSection_Lon10")
 1-element Vector{String}:
  "Zhao_CrossSection_Lon10.vts"
 ```
@@ -212,7 +212,7 @@ GeoData
   lat   ϵ [ 38.0 : 51.95]
   depth ϵ [ -1001.0 km : -1.0 km]
   fields: (:dVp_Percentage,)
-julia> write_Paraview(Data_cross, "Zhao_CrossSection_Lon10_interpolated");
+julia> write_paraview(Data_cross, "Zhao_CrossSection_Lon10_interpolated");
 ```
 as you see, this causes the data to be interpolated on a `(100,100)` grid (which can be changed by adding a `dims` input parameter).
 
@@ -225,7 +225,7 @@ GeoData
   lat   ϵ [ 39.0 : 50.0]
   depth ϵ [ -1001.0 km : -1.0 km]
   fields: (:dVp_Percentage,)
-julia> write_Paraview(Data_cross, "Zhao_CrossSection_diagonal")
+julia> write_paraview(Data_cross, "Zhao_CrossSection_diagonal")
 ```
 
 Here an image that shows the resulting cross-sections: 
@@ -242,7 +242,7 @@ GeoData
   lat   ϵ [ 39.95 : 45.05]
   depth ϵ [ -1001.0 km : -1.0 km]
   fields: (:dVp_Percentage,)
-julia> write_Paraview(Data_subset, "Zhao_Subset")
+julia> write_paraview(Data_subset, "Zhao_Subset")
 ```
 This gives the resulting image. You can obviously use that new, smaller, data set to create cross-sections etc.
 ![Paraview_8](../assets/img/Tutorial_Zhao_Paraview_8.png)
@@ -257,7 +257,7 @@ GeoData
   lat   ϵ [ 40.0 : 45.0]
   depth ϵ [ -1001.0 km : -1.0 km]
   fields: (:dVp_Percentage,)
-julia> write_Paraview(Data_subset, "Zhao_Subset_interp")
+julia> write_paraview(Data_subset, "Zhao_Subset_interp")
 ```
 #### 7. Load and save data to disk
 It would be useful to save the 3D data set we just created to disk, such that we can easily load it again at a later stage and create cross-sections etc, or compare it with other models. This can be done with the `save_GMG` function:

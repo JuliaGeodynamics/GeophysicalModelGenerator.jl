@@ -18,4 +18,4 @@ end
 @test Phase[14,6,2] == 1.0
 
 #Data_Cat = ParaviewData(X,Y,Z, (Phase=Phase,))
-#write_Paraview(Data_Cat,"Data_Cat")
+#write_paraview(Data_Cat,"Data_Cat")

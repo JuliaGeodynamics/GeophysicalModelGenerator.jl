@@ -62,7 +62,7 @@ For visualisation and comparison to actual measured data, the mode setup is save
 ```julia
 # # Save data to paraview:
 Data_Final      =   CartData(X,Y,Z,(Phase=Phase,Temp=Temp)); 
-write_Paraview(Data_Final, "Sedimentary_basin");
+write_paraview(Data_Final, "Sedimentary_basin");
 ```
 
 After importing and looking at the file to paraview, some unresolved areas might be visible as they are visible in this model. That is due to the resolution and shape of the polygon. To reduce those artefacts an increase in resolution or a change of the polygon angle might help.

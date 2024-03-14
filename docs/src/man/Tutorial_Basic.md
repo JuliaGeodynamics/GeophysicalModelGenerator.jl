@@ -34,7 +34,7 @@ This is a so-called `GeoData` object, which is a 3D grid of seismic velocities a
 We can save this in `VTK` format, which is a widely used format that can for exampke be read by the 3D open-source visualization tool [Paraview](https://www.paraview.org/):
 
 ```julia
-write_Paraview(Tomo_Alps_full,"Tomo_Alps_full")
+write_paraview(Tomo_Alps_full,"Tomo_Alps_full")
 ```
 
 ````
@@ -62,7 +62,7 @@ Different than the 3D tomographic model, the topography has size 1 for the last 
 We can write this to disk as well
 
 ```julia
-write_Paraview(Topo_Alps,"Topo_Alps")
+write_paraview(Topo_Alps,"Topo_Alps")
 ```
 
 ````
@@ -81,7 +81,7 @@ It is thus advantageous to cut out a piece of the dataset that we are interested
 ```julia
 Tomo_Alps = extract_subvolume(Tomo_Alps_full,Lon_level=(4,20),Lat_level=(36,50), Depth_level=(-600,-10))
 
-write_Paraview(Tomo_Alps,"Tomo_Alps");
+write_paraview(Tomo_Alps,"Tomo_Alps");
 ```
 
 ````
@@ -188,8 +188,8 @@ GeoData
 And write them to paraview:
 
 ```julia
-write_Paraview(Cross_vert,"Cross_vert");
-write_Paraview(data_200km,"data_200km");
+write_paraview(Cross_vert,"Cross_vert");
+write_paraview(data_200km,"data_200km");
 ```
 
 ````
@@ -241,8 +241,8 @@ CartData
 Save:
 
 ```julia
-write_Paraview(Tomo_cart,"Tomo_cart");
-write_Paraview(Topo_cart,"Topo_cart");
+write_paraview(Tomo_cart,"Tomo_cart");
+write_paraview(Topo_cart,"Topo_cart");
 ```
 
 ````
@@ -298,8 +298,8 @@ CartData
 Save it:
 
 ```julia
-write_Paraview(Tomo_rect,"Tomo_rect");
-write_Paraview(Topo_rect,"Topo_rect");
+write_paraview(Tomo_rect,"Tomo_rect");
+write_paraview(Topo_rect,"Topo_rect");
 ```
 
 ````

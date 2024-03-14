@@ -32,8 +32,8 @@ Mag         =   data_EQ[:,10]
 data_all_EQ = GeoData(lon,lat,depth, (Magnitude=Mag,))
 
 # Next, we can write the data to paraview along with the topography. Note that we have to specify that we have `PointData`:
-write_Paraview(data_all_EQ,"data_all_EQ",PointsData=true)
-write_Paraview(Topo,"Topo")
+write_paraview(data_all_EQ,"data_all_EQ",PointsData=true)
+write_paraview(Topo,"Topo")
 
 # ![LaPalma_EQTopo_GeoData](../assets/img/TopoEQs_LaPalma_GeoData.png)
 # Note that this data is in geographic coordinates, which makes it non-trivial to create slices through the data (see coordinate axis in the plot, where `z` is *not* pointing upwards).
@@ -56,8 +56,8 @@ Topo_model = CartData(xyz_grid(-35:.1:30,-15:.2:45,0));
 Topo_model = project_CartData(Topo_model, Topo, proj)
 
 # Let's have a look at the data:
-write_Paraview(EQ_cart,"EQ_cart",PointsData=true)
-write_Paraview(Topo_model,"Topo_model")
+write_paraview(EQ_cart,"EQ_cart",PointsData=true)
+write_paraview(Topo_model,"Topo_model")
 
 # ## 3. Create a volumetric earthquake plot
 # It is useful to plot the earthquake density in 3D, which indicates where most action is happening in the system.
@@ -85,7 +85,7 @@ Phases[ind] .= 3 #Magma
 Grid_3D = addfield(Grid_3D,"Phases",Phases)
 
 # We can save this to paraview format
-write_Paraview(Grid_3D,"Grid_3D")
+write_paraview(Grid_3D,"Grid_3D")
 
 # The paraview statefile `/tutorials/LaPalma.pvsm` can be used to reproduce the following plot:
 # ![LaPalma_Tutorial](../assets/img/Tutorial_LaPalma.png) 

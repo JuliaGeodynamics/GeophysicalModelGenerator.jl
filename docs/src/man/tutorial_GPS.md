@@ -185,7 +185,7 @@ GPS_Sanchez_grid        =   GeoData(lon,lat,height,(Velocity_mm_year=(Ve,Vn,Vz),
 Save paraview is as always:
 
 ```julia
-write_Paraview(GPS_Sanchez_grid, "GPSAlps_Sanchez_2017_grid")
+write_paraview(GPS_Sanchez_grid, "GPSAlps_Sanchez_2017_grid")
 ```
 
 Opening and plotting the vertical field gives:

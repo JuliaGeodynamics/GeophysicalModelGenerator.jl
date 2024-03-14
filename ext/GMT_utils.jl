@@ -60,7 +60,7 @@ GeoData
 ```
 And you can save this to Paraview with
 ```julia
-julia> write_Paraview(Topo,"Topo_Alps")
+julia> write_paraview(Topo,"Topo_Alps")
 1-element Vector{String}:
  "Topo_Alps.vts"
 ```

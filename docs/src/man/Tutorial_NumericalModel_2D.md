@@ -75,7 +75,7 @@ CartData
 Which looks like
 
 ```julia
-write_Paraview(Grid2D,"Grid2D_SubductionMechanical");
+write_paraview(Grid2D,"Grid2D_SubductionMechanical");
 ```
 
 ````
@@ -108,7 +108,7 @@ Which looks like:
 
 ```julia
 Grid2D = addfield(Grid2D,(;Phases, Temp))
-write_Paraview(Grid2D,"Grid2D_SubductionMechanicalLayered");
+write_paraview(Grid2D,"Grid2D_SubductionMechanicalLayered");
 ```
 
 ````
@@ -132,7 +132,7 @@ Which looks like:
 
 ```julia
 Grid2D = addfield(Grid2D,(;Phases, Temp))
-write_Paraview(Grid2D,"Grid2D_SubductionHalfspaceCooling");
+write_paraview(Grid2D,"Grid2D_SubductionHalfspaceCooling");
 ```
 
 ````
@@ -175,7 +175,7 @@ ind = findall(Temp .> 1250 .&& Phases .==2);
 Phases[ind] .= 0;
 
 Grid2D = addfield(Grid2D,(;Phases, Temp))
-write_Paraview(Grid2D,"Grid2D_SubductionRidge");
+write_paraview(Grid2D,"Grid2D_SubductionRidge");
 ```
 
 ````
@@ -214,7 +214,7 @@ ind = findall(Temp .> 1250 .&& Phases .==2);
 Phases[ind] .= 0;
 
 Grid2D = addfield(Grid2D,(;Phases, Temp))
-write_Paraview(Grid2D,"Grid2D_SubductionOverriding");
+write_paraview(Grid2D,"Grid2D_SubductionOverriding");
 ```
 
 ````
@@ -251,7 +251,7 @@ Add them to the `CartData` dataset:
 
 ```julia
 Grid2D = addfield(Grid2D,(;Phases, Temp))
-write_Paraview(Grid2D,"Grid2D_SubductionCurvedMechanical");
+write_paraview(Grid2D,"Grid2D_SubductionCurvedMechanical");
 ```
 
 ````
@@ -331,7 +331,7 @@ ind = findall(Temp .> 1250 .&& (Phases.==2 .|| Phases.==5));
 Phases[ind] .= 0;
 
 Grid2D = addfield(Grid2D,(;Phases, Temp))
-write_Paraview(Grid2D,"Grid2D_SubductionCurvedOverriding");
+write_paraview(Grid2D,"Grid2D_SubductionCurvedOverriding");
 ```
 
 ````

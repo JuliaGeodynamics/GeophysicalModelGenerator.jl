@@ -32,4 +32,4 @@ Lon3D,Lat3D,Depth3D = lonlatdepth_grid(lon, lat, depth);
 Data_set       =   GeoData(Lon3D,Lat3D,Depth3D,(VS=vs,))
 
 # Export the data structure to Paraview format
-write_Paraview(Data_set, "test_netcdf_3D")
+write_paraview(Data_set, "test_netcdf_3D")

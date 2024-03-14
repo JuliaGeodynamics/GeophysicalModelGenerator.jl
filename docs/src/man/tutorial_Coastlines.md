@@ -24,7 +24,7 @@ julia> Lon,Lat,Depth    =   lonlatdepth_grid(lon[ind_lon],lat[ind_lat],0km);
 julia> data_surf        =   zeros(size(Lon));
 julia> data_surf[:,:,1] =   data[ind_lon,ind_lat]
 julia> data_surface     =   GeoData(Lon, Lat, Depth, (SurfaceType=data_surf,))
-julia> write_Paraview(data_surface, "ContinentOcean") 
+julia> write_paraview(data_surface, "ContinentOcean") 
 ```
 The result is shown here, together with Moho data
 

@@ -16,7 +16,7 @@ end
 Lon,Lat,Depth   =   lonlatdepth_grid(10:20,30:40,(-300:25:0)km);
 Data            =   Depth*2; # some data
 Data_set        =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon))
-write_Paraview(Data_set, "./test_files/test_depth3D")
+write_paraview(Data_set, "./test_files/test_depth3D")
 
 make_paraview_collection(;dir = "./test_files", pvd_name="test", file_extension=".vti")
 @test isfile("test.pvd")

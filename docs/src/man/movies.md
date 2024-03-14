@@ -6,7 +6,7 @@ The first one takes `*.png` images generated with the `Save Animation` option in
 movie_from_images
 ```
 
-The other one creates `*.pvd` files that can be saved with the `pvd=...` optional option in `write_Paraview`, such that you can animate temporal data in paraview (yif you're happy you can save the result as images and use `movies_from_pics`). See the corresponding tutorial on how to generate `*.pvd` files.
+The other one creates `*.pvd` files that can be saved with the `pvd=...` optional option in `write_paraview`, such that you can animate temporal data in paraview (yif you're happy you can save the result as images and use `movies_from_pics`). See the corresponding tutorial on how to generate `*.pvd` files.
 ```@docs
-write_Paraview
+write_paraview
 ```

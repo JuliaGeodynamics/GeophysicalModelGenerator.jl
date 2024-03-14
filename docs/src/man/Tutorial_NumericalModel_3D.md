@@ -75,7 +75,7 @@ CartData
 Which looks like
 
 ```julia
-write_Paraview(Grid,"Grid3D_FreeSubduction");
+write_paraview(Grid,"Grid3D_FreeSubduction");
 ```
 
 ````
@@ -163,7 +163,7 @@ Finally, we can add all this to the `CartData` dataset:
 
 ```julia
 Grid = addfield(Grid,(;Phases, Temp))
-write_Paraview(Grid,"Grid3D_Ridges");
+write_paraview(Grid,"Grid3D_Ridges");
 ```
 
 ````

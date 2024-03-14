@@ -83,4 +83,4 @@ blue[ind_tmp] .= 1;
 Data_set        =   GeoData(Lon, Lat, Depth, (Topography=Depth*km,colors=(red,green,blue)))
 
 # Export the data structure to Paraview format
-write_Paraview(Data_set, "test_GeoMap")
+write_paraview(Data_set, "test_GeoMap")

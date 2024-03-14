@@ -37,7 +37,7 @@ add_box!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = Constant
 Grid2D = addfield(Grid2D,(;Phases, Temp))
 
 # Which looks like
-write_Paraview(Grid2D,"Grid2D_SubductionMechanical");
+write_paraview(Grid2D,"Grid2D_SubductionMechanical");
 # ![Mechanical2D_Tutorial_1](../assets/img/Mechanical2D_Tutorial_1.png) 
 
 # #### Add lithospheric layers
@@ -51,7 +51,7 @@ add_box!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = lith, Di
 
 # Which looks like:
 Grid2D = addfield(Grid2D,(;Phases, Temp))
-write_Paraview(Grid2D,"Grid2D_SubductionMechanicalLayered");
+write_paraview(Grid2D,"Grid2D_SubductionMechanicalLayered");
 # ![Mechanical2D_Tutorial_2](../assets/img/Mechanical2D_Tutorial_2.png) 
 
 # #### Add halfspace cooling thermal structure
@@ -63,7 +63,7 @@ add_box!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = lith, T 
 
 # Which looks like:
 Grid2D = addfield(Grid2D,(;Phases, Temp))
-write_Paraview(Grid2D,"Grid2D_SubductionHalfspaceCooling");
+write_paraview(Grid2D,"Grid2D_SubductionHalfspaceCooling");
 # ![Mechanical2D_Tutorial_3](../assets/img/Mechanical2D_Tutorial_3.png) 
 
 # Note that you can specify other 1D thermal profiles, such as 
@@ -91,7 +91,7 @@ ind = findall(Temp .> 1250 .&& Phases .==2);
 Phases[ind] .= 0;
 
 Grid2D = addfield(Grid2D,(;Phases, Temp))
-write_Paraview(Grid2D,"Grid2D_SubductionRidge");
+write_paraview(Grid2D,"Grid2D_SubductionRidge");
 # ![Mechanical2D_Tutorial_4](../assets/img/Mechanical2D_Tutorial_4.png) 
 
 # #### Overriding slab and weak layer 
@@ -112,7 +112,7 @@ ind = findall(Temp .> 1250 .&& Phases .==2);
 Phases[ind] .= 0;
 
 Grid2D = addfield(Grid2D,(;Phases, Temp))
-write_Paraview(Grid2D,"Grid2D_SubductionOverriding");
+write_paraview(Grid2D,"Grid2D_SubductionOverriding");
 # ![Mechanical2D_Tutorial_5](../assets/img/Mechanical2D_Tutorial_5.png) 
 
 
@@ -136,7 +136,7 @@ add_slab!(Phases, Temp, Grid2D, trench, phase = ConstantPhase(1));
 
 # Add them to the `CartData` dataset:
 Grid2D = addfield(Grid2D,(;Phases, Temp))
-write_Paraview(Grid2D,"Grid2D_SubductionCurvedMechanical");
+write_paraview(Grid2D,"Grid2D_SubductionCurvedMechanical");
 # ![Mechanical2D_Tutorial_6](../assets/img/Mechanical2D_Tutorial_6.png) 
 
 
@@ -178,7 +178,7 @@ ind = findall(Temp .> 1250 .&& (Phases.==2 .|| Phases.==5));
 Phases[ind] .= 0;
 
 Grid2D = addfield(Grid2D,(;Phases, Temp))
-write_Paraview(Grid2D,"Grid2D_SubductionCurvedOverriding");
+write_paraview(Grid2D,"Grid2D_SubductionCurvedOverriding");
 # The result is a smooth transition in thermal structure around the subduction zone:
 # ![Mechanical2D_Tutorial_7](../assets/img/Mechanical2D_Tutorial_7.png) 
 
