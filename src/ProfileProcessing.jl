@@ -2,8 +2,8 @@
 # this is ProfileProcessing.jl
 # It contains functions and type definitions to gather selected data for given profiles
 
-export ProfileData, extractProfileData, createProfileData, GMG_Dataset, load_Dataset_file, combine_VolData
-export extractProfileData!, readPickedProfiles
+export ProfileData, extract_ProfileData, create_ProfileData, GMG_Dataset, load_dataset_file, combine_vol_data
+export extract_ProfileData!, read_picked_profiles
 import Base: show
 
 """
@@ -133,7 +133,7 @@ end
 
 """
 
-    Datasets = load_Dataset_file(file_datasets::String)
+    Datasets = load_dataset_file(file_datasets::String)
 
 This loads a CSV textfile that lists datasets, which is expected to have the following format:
 
@@ -149,7 +149,7 @@ Here, the meaning of the variables is:
 - `Active`: Do we want this file to be loaded or not? Optional parameter that defaults to `true`
 
 """
-function load_Dataset_file(file_datasets::String)
+function load_dataset_file(file_datasets::String)
     datasets    = readdlm(file_datasets,',',skipstart =1); # read information on datasets to be used from text file
     n           = size(datasets,1)
 
@@ -209,13 +209,13 @@ end
 
 """
 
-    VolData_combined = combine_VolData(VolData::NamedTuple; lat=nothing, lon=nothing, depth=nothing, dims=(100,100,100), dataset_preferred = 1)
+    VolData_combined = combine_vol_data(VolData::NamedTuple; lat=nothing, lon=nothing, depth=nothing, dims=(100,100,100), dataset_preferred = 1)
 
 This takes different volumetric datasets (specified in `VolData`) & merges them into a single one.
 You need to either provide the "reference" dataset within the NamedTuple (`dataset_preferred`), or the lat/lon/depth and dimensions of the new dataset.
 
 """
-function combine_VolData(VolData::NamedTuple; lat=nothing, lon=nothing, depth=nothing, dims=(100,100,100), dataset_preferred = 1)
+function combine_vol_data(VolData::NamedTuple; lat=nothing, lon=nothing, depth=nothing, dims=(100,100,100), dataset_preferred = 1)
 
     # Get dimensions of new Data_set
     i = dataset_preferred
@@ -349,11 +349,11 @@ end
 
 
 """
-    extractProfileData!(Profile::ProfileData,VolData::GeoData, SurfData::NamedTuple, PointData::NamedTuple; DimsVolCross=(100,100),Depth_extent=nothing,DimsSurfCross=(100,),section_width=50)
+    extract_ProfileData!(Profile::ProfileData,VolData::GeoData, SurfData::NamedTuple, PointData::NamedTuple; DimsVolCross=(100,100),Depth_extent=nothing,DimsSurfCross=(100,),section_width=50)
 
 Extracts data along a vertical or horizontal profile
 """
-function extractProfileData!(Profile::ProfileData,VolData::Union{Nothing,GeoData}=nothing, SurfData::NamedTuple=NamedTuple(), PointData::NamedTuple=NamedTuple(); DimsVolCross=(100,100),Depth_extent=nothing,DimsSurfCross=(100,),section_width=50km)
+function extract_ProfileData!(Profile::ProfileData,VolData::Union{Nothing,GeoData}=nothing, SurfData::NamedTuple=NamedTuple(), PointData::NamedTuple=NamedTuple(); DimsVolCross=(100,100),Depth_extent=nothing,DimsSurfCross=(100,),section_width=50km)
 
     if !isnothing(VolData)
         CreateProfileVolume!(Profile, VolData; DimsVolCross=DimsVolCross, Depth_extent=Depth_extent)
@@ -367,7 +367,7 @@ end
 """
 This reads the picked profiles from disk and returns a vector of ProfileData
 """
-function readPickedProfiles(ProfileCoordFile::String)
+function read_picked_profiles(ProfileCoordFile::String)
 
     profiles = Vector{ProfileData}()
     profile_data = readdlm(ProfileCoordFile,skipstart=1,',')
@@ -384,14 +384,14 @@ end
 
 # this is mostly for backwards compatibility
 """
-    extractProfileData(ProfileCoordFile::String,ProfileNumber::Int64,DataSetFile::String; DimsVolCross=(100,100),DepthVol=nothing,DimsSurfCross=(100,),WidthPointProfile=50km)
+    extract_ProfileData(ProfileCoordFile::String,ProfileNumber::Int64,DataSetFile::String; DimsVolCross=(100,100),DepthVol=nothing,DimsSurfCross=(100,),WidthPointProfile=50km)
 
 This is a convenience function (mostly for backwards compatibility with the MATLAB GUI) that loads the data from file & projects it onto a profile
 """
-function extractProfileData(ProfileCoordFile::String,ProfileNumber::Int64,DataSetFile::String; DimsVolCross=(100,100),DepthVol=nothing,DimsSurfCross=(100,),WidthPointProfile=50km)
+function extract_ProfileData(ProfileCoordFile::String,ProfileNumber::Int64,DataSetFile::String; DimsVolCross=(100,100),DepthVol=nothing,DimsSurfCross=(100,),WidthPointProfile=50km)
 
     # read profile
-    profile_list = readPickedProfiles(ProfileCoordFile)
+    profile_list = read_picked_profiles(ProfileCoordFile)
     profile = profile_list[ProfileNumber]
 
     println("lon start ",   profile.start_lonlat[1])
@@ -400,16 +400,16 @@ function extractProfileData(ProfileCoordFile::String,ProfileNumber::Int64,DataSe
     println("lat end ",     profile.end_lonlat[2])
 
     # read all datasets:
-    Datasets_all = load_Dataset_file(DataSetFile)
+    Datasets_all = load_dataset_file(DataSetFile)
 
     # load all Data
     VolData, SurfData, PointData, ScreenshotData, TopoData = load_GMG(Datasets_all)
 
     # merge VolData:
-    VolData_combined = combine_VolData(VolData)
+    VolData_combined = combine_vol_data(VolData)
 
     # project data onto profile:
-    extractProfileData!(profile, VolData_combined, SurfData, PointData,
+    extract_ProfileData!(profile, VolData_combined, SurfData, PointData,
                         DimsVolCross=DimsVolCross, DimsSurfCross=DimsSurfCross,
                         Depth_extent=DepthVol, section_width=WidthPointProfile)
 
@@ -421,7 +421,7 @@ end
 
 # Boris: I don't know exactly in which format you have your current files;
 ### wrapper function to extract data for a single profile
-function extractProfileData(ProfileCoordFile,ProfileNumber,DataSetName,DataSetFile,DataSetType,DimsVolCross,DepthVol,DimsSurfCross,WidthPointProfile)
+function extract_ProfileData(ProfileCoordFile,ProfileNumber,DataSetName,DataSetFile,DataSetType,DimsVolCross,DepthVol,DimsSurfCross,WidthPointProfile)
 
     # start and end points are saved in a text file
     profile_data = readdlm(ProfileCoordFile,skipstart=1,',')
@@ -463,7 +463,7 @@ end
 ### currently, the function is quite slow, as the different data sets are reloaded for each profile.
 ### a faster way would be to load one data set and create the profiles from it and then move on to the next one. However, this would require to hold all the profile data in memory, which may be a bit much...
 
-function createProfileData(file_profiles,file_datasets;Depth_extent=(-300,0),DimsVolCross=(500,300),DimsSurfCross = (100,),WidthPointProfile = 20km)
+function create_ProfileData(file_profiles,file_datasets;Depth_extent=(-300,0),DimsVolCross=(500,300),DimsSurfCross = (100,),WidthPointProfile = 20km)
     # get the number of profiles
     profile_data = readdlm(file_profiles,skipstart=1,',')
     NUM          = convert.(Int,profile_data[:,1]);
@@ -480,7 +480,7 @@ function createProfileData(file_profiles,file_datasets;Depth_extent=(-300,0),Dim
     for iprofile = 1:length(ProfileNumber)
 
         # 2. process the profiles
-        ExtractedData = extractProfileData(file_profiles,ProfileNumber[iprofile],DataSetName,DataSetFile,DataSetType,DimsVolCross,Depth_extent,DimsSurfCross,WidthPointProfile)
+        ExtractedData = extract_ProfileData(file_profiles,ProfileNumber[iprofile],DataSetName,DataSetFile,DataSetType,DimsVolCross,Depth_extent,DimsSurfCross,WidthPointProfile)
 
         # 3. save data as JLD2
         fn = "Profile"*string(ProfileNumber[iprofile])

@@ -11,11 +11,11 @@ load_GMG
 save_GMG
 cross_section
 ProfileData
-extractProfileData
-createProfileData
+extract_ProfileData
+create_ProfileData
 GMG_Dataset
-load_Dataset_file
-combine_VolData
-extractProfileData!
-readPickedProfiles
+load_dataset_file
+combine_vol_data
+extract_ProfileData!
+read_picked_profiles
 ```
