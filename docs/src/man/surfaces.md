@@ -7,9 +7,9 @@ Surfaces can be added and subtracted.
 ```@docs
 drape_on_topo
 fit_surface_to_points
-aboveSurface
-belowSurface
-interpolateDataOnSurface
+above_surface
+below_surface
+interpolate_data_surface
 is_surface
-remove_NaN_Surface!
+remove_NaN_surface!
 ```

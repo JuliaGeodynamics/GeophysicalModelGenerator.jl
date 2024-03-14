@@ -12,7 +12,7 @@ else
   using ..GMT
 end
 
-using GeophysicalModelGenerator: lonlatdepthGrid, GeoData, UTMData, km, remove_NaN_Surface!
+using GeophysicalModelGenerator: lonlatdepthGrid, GeoData, UTMData, km, remove_NaN_surface!
 
 println("Loading GMT routines within GMG")
 
@@ -167,10 +167,10 @@ function importGeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=tr
   end
   
   if removeNaN_z
-    remove_NaN_Surface!(Depth, Lon, Lat)
+    remove_NaN_surface!(Depth, Lon, Lat)
   end
   if removeNaN_field
-    remove_NaN_Surface!(data, Lon, Lat)
+    remove_NaN_surface!(data, Lon, Lat)
   end
   data_field  = NamedTuple{(fieldname,)}((data,));
 

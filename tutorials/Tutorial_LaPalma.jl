@@ -52,8 +52,8 @@ Topo_cart = convert2CartData(Topo, proj)
 # LaMEM needs an orthogonal grid of topography, which we can create with:
 Topo_model = CartData(xyzGrid(-35:.1:30,-15:.2:45,0));
 
-# In a next step, the routine `projectCartData` projects a `GeoData` structure to a `CartData` struct
-Topo_model = projectCartData(Topo_model, Topo, proj)
+# In a next step, the routine `project_CartData` projects a `GeoData` structure to a `CartData` struct
+Topo_model = project_CartData(Topo_model, Topo, proj)
 
 # Let's have a look at the data:
 write_Paraview(EQ_cart,"EQ_cart",PointsData=true)
@@ -71,7 +71,7 @@ Grid_3D =pointData2NearestGrid(EQ_cart, Grid_3D, radius_factor=3)
 Phases = zeros(Int64,size(Grid_3D.x))
 
 # Points that are below the surface are set to one:
-Below = belowSurface(Grid_3D, Topo_model);
+Below = below_surface(Grid_3D, Topo_model);
 Phases[Below] .= 1
 
 # Lets assume that the crust is 15 km thick

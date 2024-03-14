@@ -39,7 +39,7 @@ geodata5 = geodata1 - geodata2
 # Test removing NaN;
 Z = NumValue(cartdata5.z)
 Z[2,2] = NaN;
-remove_NaN_Surface!(Z,NumValue(cartdata5.x), NumValue(cartdata5.y))
+remove_NaN_surface!(Z,NumValue(cartdata5.x), NumValue(cartdata5.y))
 @test any(isnan.(Z))==false
 
 # Test draping values on topography
@@ -69,7 +69,7 @@ cartdata2b = fit_surface_to_points(cartdata2, X[:], Y[:], v[:])
 
 
 #-------------
-# test aboveSurface with the Grid object
+# test above_surface with the Grid object
 Grid        =   createCartGrid(size=(10,20,30),x=(0.,10), y=(0.,10), z=(-10.,2.))
 @test Grid.Δ[2] ≈ 0.5263157894736842
 
@@ -77,8 +77,8 @@ Temp        =   ones(Float64, Grid.N...)*1350;
 Phases      =   zeros(Int32,  Grid.N...);
 
 Topo_cart   =   CartData(xyzGrid(-1:.2:20,-12:.2:13,0));
-ind         =   aboveSurface(Grid, Topo_cart);
+ind         =   above_surface(Grid, Topo_cart);
 @test sum(ind[1,1,:]) == 5
 
-ind         =   belowSurface(Grid, Topo_cart);
+ind         =   below_surface(Grid, Topo_cart);
 @test sum(ind[1,1,:]) == 25

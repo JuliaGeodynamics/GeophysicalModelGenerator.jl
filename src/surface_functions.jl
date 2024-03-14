@@ -1,6 +1,6 @@
 # This contains a number of routines that deal with surfaces
-export remove_NaN_Surface!, drape_on_topo, is_surface, fit_surface_to_points
-export aboveSurface, belowSurface, interpolateDataOnSurface
+export remove_NaN_surface!, drape_on_topo, is_surface, fit_surface_to_points
+export above_surface, below_surface, interpolate_data_surface
 import Base: +,-
 
 """
@@ -39,11 +39,11 @@ _subtractSurfaces(a::_T, b::_T) where _T<:CartData       = CartData(a.x.val, a.y
 _subtractSurfaces(a::_T, b::_T) where _T<:ParaviewData   = ParaviewData(a.x.val, a.y.val, a.z.val - b.z.val, merge(a.fields,b.fields))
 
 """
-    remove_NaN_Surface!(Z::Array,X::Array,Y::Array)
+    remove_NaN_surface!(Z::Array,X::Array,Y::Array)
 
 Removes NaN's from a grid `Z` by taking the closest points as specified by `X` and `Y`.
 """
-function remove_NaN_Surface!(Z,X,Y)
+function remove_NaN_surface!(Z,X,Y)
     @assert size(Z) == size(X) == size(Y)
 
     # use nearest neighbour to interpolate data
@@ -189,7 +189,7 @@ end
 
 
 """
-    aboveSurface(Data::GeoData, DataSurface::GeoData; above=true)
+    above_surface(Data::GeoData, DataSurface::GeoData; above=true)
 
 Returns a boolean array of size(Data.Lon), which is true for points that are above the surface DataSurface (or for points below if above=false).
 
@@ -218,12 +218,12 @@ julia> Data_Moho       =   GeoData(Lon,Lat,Depth+Lon*km, (MohoDepth=Depth,))
 ```
 Next, we intersect the surface with the data set:
 ```julia
-julia> Above       =   aboveSurface(Data_set3D, Data_Moho);
+julia> Above       =   above_surface(Data_set3D, Data_Moho);
 ```
 Now, `Above` is a boolean array that is true for points above the surface and false for points below and at the surface.
 
 """
-function aboveSurface(Data::GeoData, DataSurface::GeoData; above=true)
+function above_surface(Data::GeoData, DataSurface::GeoData; above=true)
 
     if size(DataSurface.lon)[3]!=1
         error("It seems that DataSurface is not a surface")
@@ -247,84 +247,84 @@ function aboveSurface(Data::GeoData, DataSurface::GeoData; above=true)
 end
 
 """
-    Below = belowSurface(Data::GeoData, DataSurface::GeoData)
+    Below = below_surface(Data::GeoData, DataSurface::GeoData)
 
 Determines if points within the 3D `Data` structure are below the GeoData surface `DataSurface`
 """
-function belowSurface(Data::GeoData, DataSurface::GeoData)
-    return aboveSurface(Data::GeoData, DataSurface::GeoData; above=false)
+function below_surface(Data::GeoData, DataSurface::GeoData)
+    return above_surface(Data::GeoData, DataSurface::GeoData; above=false)
 end
 
 """
-    Above = aboveSurface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData; above=true)
+    Above = above_surface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData; above=true)
 
 Determines if points within the 3D `Data_Cart` structure are above the Cartesian surface `DataSurface_Cart`
 """
-function aboveSurface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData; above=true)
+function above_surface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData; above=true)
 
     Data            =   GeoData(ustrip.(Data_Cart.x.val),       ustrip.(Data_Cart.y.val),        ustrip.(Data_Cart.z.val), Data_Cart.fields)
     DataSurface     =   GeoData(ustrip.(DataSurface_Cart.x.val),ustrip.(DataSurface_Cart.y.val), ustrip.(DataSurface_Cart.z.val), DataSurface_Cart.fields )
 
-    return Above    =   aboveSurface(Data, DataSurface; above=above)
+    return Above    =   above_surface(Data, DataSurface; above=above)
 end
 
 """
-    Above = aboveSurface(Data_Cart::CartData, DataSurface_Cart::CartData; above=true)
+    Above = above_surface(Data_Cart::CartData, DataSurface_Cart::CartData; above=true)
 
 Determines if points within the 3D `Data_Cart` structure are above the Cartesian surface `DataSurface_Cart`
 """
-function aboveSurface(Data_Cart::CartData, DataSurface_Cart::CartData; above=true)
+function above_surface(Data_Cart::CartData, DataSurface_Cart::CartData; above=true)
 
     Data            =   GeoData(ustrip.(Data_Cart.x.val),       ustrip.(Data_Cart.y.val),        ustrip.(Data_Cart.z.val), Data_Cart.fields)
     DataSurface     =   GeoData(ustrip.(DataSurface_Cart.x.val),ustrip.(DataSurface_Cart.y.val), ustrip.(DataSurface_Cart.z.val), DataSurface_Cart.fields )
 
-    return Above    =   aboveSurface(Data, DataSurface; above=above)
+    return Above    =   above_surface(Data, DataSurface; above=above)
 end
 
 """
-    Above = aboveSurface(Grid::CartGrid, DataSurface_Cart::CartData; above=true)
+    Above = above_surface(Grid::CartGrid, DataSurface_Cart::CartData; above=true)
 
 Determines if points described by the `Grid` CartGrid structure are above the Cartesian surface `DataSurface_Cart`
 """
-function aboveSurface(Grid::CartGrid, DataSurface_Cart::CartData; above=true)
+function above_surface(Grid::CartGrid, DataSurface_Cart::CartData; above=true)
 
     X,Y,Z = xyzGrid(Grid.coord1D...)
     Data = CartData(Grid,(Z=Z,))
 
-    return aboveSurface(Data, DataSurface_Cart; above=above)
+    return above_surface(Data, DataSurface_Cart; above=above)
 end
 
 
 """
-    Below = belowSurface(Grid::CartGrid, DataSurface_Cart::CartData)
+    Below = below_surface(Grid::CartGrid, DataSurface_Cart::CartData)
 
     Determines if points described by the `Grid` CartGrid structure are above the Cartesian surface `DataSurface_Cart`
 """
-function belowSurface(Grid::CartGrid, DataSurface_Cart::CartData)
-    return aboveSurface(Grid, DataSurface_Cart; above=false)
+function below_surface(Grid::CartGrid, DataSurface_Cart::CartData)
+    return above_surface(Grid, DataSurface_Cart; above=false)
 end
 
 
 """
-    Below = belowSurface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData)
+    Below = below_surface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData)
 
 Determines if points within the 3D Data_Cart structure are below the Cartesian surface DataSurface_Cart
 """
-function belowSurface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData)
-    return aboveSurface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData; above=false)
+function below_surface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData)
+    return above_surface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData; above=false)
 end
 
 """
-    Below = belowSurface(Data_Cart::CartData, DataSurface_Cart::CartData)
+    Below = below_surface(Data_Cart::CartData, DataSurface_Cart::CartData)
 
 Determines if points within the 3D Data_Cart structure are below the Cartesian surface DataSurface_Cart
 """
-function belowSurface(Data_Cart::CartData, DataSurface_Cart::CartData)
-    return aboveSurface(Data_Cart::CartData, DataSurface_Cart::CartData; above=false)
+function below_surface(Data_Cart::CartData, DataSurface_Cart::CartData)
+    return above_surface(Data_Cart::CartData, DataSurface_Cart::CartData; above=false)
 end
 
 """
-    Surf_interp = interpolateDataOnSurface(V::ParaviewData, Surf::ParaviewData)
+    Surf_interp = interpolate_data_surface(V::ParaviewData, Surf::ParaviewData)
 
 Interpolates a 3D data set `V` on a surface defined by `Surf`.
 # Example
@@ -343,7 +343,7 @@ ParaviewData
   y     ϵ [ -1.9791666666666667 : 1.9791666666666667]
   z     ϵ [ -1.5353766679763794 : -0.69925457239151]
   fields: (:Depth,)
-julia> Surf_interp = interpolateDataOnSurface(Data, surf)
+julia> Surf_interp = interpolate_data_surface(Data, surf)
   ParaviewData
     size  : (96, 96, 1)
     x     ϵ [ -2.9671875 : 3.2671875]
@@ -352,7 +352,7 @@ julia> Surf_interp = interpolateDataOnSurface(Data, surf)
     fields: (:phase, :density, :visc_total, :visc_creep, :velocity, :pressure, :temperature, :dev_stress, :strain_rate, :j2_dev_stress, :j2_strain_rate, :plast_strain, :plast_dissip, :tot_displ, :yield, :moment_res, :cont_res)
 ```
 """
-function interpolateDataOnSurface(V::ParaviewData, Surf::ParaviewData)
+function interpolate_data_surface(V::ParaviewData, Surf::ParaviewData)
 
     # Create GeoData structure:
     V_geo               =   GeoData(V.x.val, V.y.val, V.z.val, V.fields)
@@ -361,14 +361,14 @@ function interpolateDataOnSurface(V::ParaviewData, Surf::ParaviewData)
     Surf_geo            =   GeoData(Surf.x.val, Surf.y.val, Surf.z.val, Surf.fields)
     Surf_geo.depth.val  =   ustrip(Surf_geo.depth.val);
 
-    Surf_interp_geo     =   interpolateDataOnSurface(V_geo, Surf_geo)
+    Surf_interp_geo     =   interpolate_data_surface(V_geo, Surf_geo)
     Surf_interp         =   ParaviewData(Surf_interp_geo.lon.val, Surf_interp_geo.lat.val, ustrip.(Surf_interp_geo.depth.val), Surf_interp_geo.fields)
 
     return Surf_interp
 
 end
 
-function interpolateDataOnSurface(V::CartData, Surf::CartData)
+function interpolate_data_surface(V::CartData, Surf::CartData)
 
     # Create GeoData structure:
     V_geo               =   GeoData(V.x.val, V.y.val, V.z.val, V.fields)
@@ -377,7 +377,7 @@ function interpolateDataOnSurface(V::CartData, Surf::CartData)
     Surf_geo            =   GeoData(Surf.x.val, Surf.y.val, Surf.z.val, Surf.fields)
     Surf_geo.depth.val  =   ustrip(Surf_geo.depth.val);
 
-    Surf_interp_geo     =   interpolateDataOnSurface(V_geo, Surf_geo)
+    Surf_interp_geo     =   interpolate_data_surface(V_geo, Surf_geo)
     Surf_interp         =   CartData(Surf_interp_geo.lon.val, Surf_interp_geo.lat.val, ustrip.(Surf_interp_geo.depth.val), Surf_interp_geo.fields)
 
     return Surf_interp
@@ -385,11 +385,11 @@ function interpolateDataOnSurface(V::CartData, Surf::CartData)
 end
 
 """
-    Surf_interp = interpolateDataOnSurface(V::GeoData, Surf::GeoData)
+    Surf_interp = interpolate_data_surface(V::GeoData, Surf::GeoData)
 
 Interpolates a 3D data set `V` on a surface defined by `Surf`
 """
-function interpolateDataOnSurface(V::GeoData, Surf::GeoData)
+function interpolate_data_surface(V::GeoData, Surf::GeoData)
 
     Surf_interp = interpolate_datafields(V, Surf.lon.val, Surf.lat.val, Surf.depth.val)
 

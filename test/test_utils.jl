@@ -175,15 +175,15 @@ Data_Moho       =   GeoData(Lon,Lat,Depth,(MohoDepth=Depth,LonData=Lon,TestData=
 
 
 # Test intersecting a surface with 2D or 3D data sets
-Above       =   aboveSurface(Data_set3D, Data_Moho);            # 3D regular ordering
+Above       =   above_surface(Data_set3D, Data_Moho);            # 3D regular ordering
 @test Above[1,1,12]==true
 @test Above[1,1,11]==false
 
-Above       =   aboveSurface(Data_set3D_reverse, Data_Moho);    #  3D reverse depth ordering
+Above       =   above_surface(Data_set3D_reverse, Data_Moho);    #  3D reverse depth ordering
 @test Above[1,1,2]==true
 @test Above[1,1,3]==false
 
-Above       =   aboveSurface(Data_sub_cross, Data_Moho);        # 2D cross-section
+Above       =   above_surface(Data_sub_cross, Data_Moho);        # 2D cross-section
 @test Above[end]==true
 @test Above[1]==false
 

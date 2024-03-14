@@ -122,12 +122,12 @@ This can be achieved in a relatively straightforward manner, by creating a new 3
 
 Tomo_rect = CartData(xyzGrid(-550.0:10:600, -500.0:10:700, -600.0:5:-17)); 
 #
-# the routine `projectCartData` will then project the data from the geographic coordinates to the new rectilinear grid:
-Tomo_rect = projectCartData(Tomo_rect, Tomo_Alps, proj)
+# the routine `project_CartData` will then project the data from the geographic coordinates to the new rectilinear grid:
+Tomo_rect = project_CartData(Tomo_rect, Tomo_Alps, proj)
 
 # we can do the same with topography:
 Topo_rect = CartData(xyzGrid(-550.0:1:600, -500.0:1:700, 0)) 
-Topo_rect = projectCartData(Topo_rect, Topo_Alps, proj)
+Topo_rect = project_CartData(Topo_rect, Topo_Alps, proj)
 
 # Save it:
 write_Paraview(Tomo_rect,"Tomo_rect");

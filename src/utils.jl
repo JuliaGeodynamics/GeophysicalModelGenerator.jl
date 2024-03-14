@@ -1201,7 +1201,7 @@ end
 
 function interpolate_datafields_2D(LonLat::GeoData, proj::projectionPoint, x::AbstractRange, y::AbstractRange)
     cart_grid = CartData(xyzGrid(x, y, 0))
-    tproj = projectCartData(cart_grid, LonLat, proj)
+    tproj = project_CartData(cart_grid, LonLat, proj)
     return tproj.z.val[:, :, 1]
 end
 

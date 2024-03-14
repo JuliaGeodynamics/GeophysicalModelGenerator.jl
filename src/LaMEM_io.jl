@@ -69,21 +69,21 @@ Creates a `CartData` struct from a LaMEM grid and from fields stored on that gri
 CartData(Grid::LaMEM_grid, fields::NamedTuple) = CartData(Grid.X, Grid.Y, Grid.Z, fields)
 
 """
-    Below = belowSurface(Data_LaMEM::LaMEM_grid, DataSurface_Cart::CartData)
+    Below = below_surface(Data_LaMEM::LaMEM_grid, DataSurface_Cart::CartData)
 
 Determines if points within the 3D `LaMEM_grid` structure are below the Cartesian surface DataSurface_Cart
 """
-function belowSurface(Grid::LaMEM_grid, DataSurface_Cart::CartData)
-    return aboveSurface(CartData(Grid,(Z=Grid.Z,)), DataSurface_Cart; above=false)
+function below_surface(Grid::LaMEM_grid, DataSurface_Cart::CartData)
+    return above_surface(CartData(Grid,(Z=Grid.Z,)), DataSurface_Cart; above=false)
 end
 
 """
-    Above = aboveSurface(Data_LaMEM::LaMEM_grid, DataSurface_Cart::CartData)
+    Above = above_surface(Data_LaMEM::LaMEM_grid, DataSurface_Cart::CartData)
 
 Determines if points within the 3D `LaMEM_grid` structure are above the Cartesian surface DataSurface_Cart
 """
-function aboveSurface(Grid::LaMEM_grid, DataSurface_Cart::CartData)
-    return aboveSurface(CartData(Grid,(Z=Grid.Z,)), DataSurface_Cart; above=true)
+function above_surface(Grid::LaMEM_grid, DataSurface_Cart::CartData)
+    return above_surface(CartData(Grid,(Z=Grid.Z,)), DataSurface_Cart; above=true)
 end
 
 

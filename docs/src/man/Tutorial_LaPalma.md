@@ -84,10 +84,10 @@ Topo_model = CartData(xyzGrid(-35:.1:30,-15:.2:45,0));
 nothing #hide
 ```
 
-In a next step, the routine `projectCartData` projects a `GeoData` structure to a `CartData` struct
+In a next step, the routine `project_CartData` projects a `GeoData` structure to a `CartData` struct
 
 ```julia
-Topo_model = projectCartData(Topo_model, Topo, proj)
+Topo_model = project_CartData(Topo_model, Topo, proj)
 ```
 
 Let's have a look at the data:
@@ -120,7 +120,7 @@ Phases = zeros(Int64,size(Grid_3D.x))
 Points that are below the surface are set to one:
 
 ```julia
-Below = belowSurface(Grid_3D, Topo_model);
+Below = below_surface(Grid_3D, Topo_model);
 Phases[Below] .= 1
 ```
 

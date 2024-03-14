@@ -77,7 +77,7 @@ Basement = importGeoTIFF("BMes_Spline_longlat.tif", fieldname=:Basement, removeN
 ```
 
 the `removeNaN_z` option removes `NaN` values from the dataset and instead uses the z-value of the nearest point.
-That is important if you want to use this surface to generate a 3D model setup (using `belowSurface`, for example).
+That is important if you want to use this surface to generate a 3D model setup (using `below_surface`, for example).
 
 The thesis also provides a few interpreted vertical cross-sections. As before, we import them as a screenshot and estimate the lower-left and upper right corners.
 In this particular case, we are lucky that the `lon/lat` values are indicated on the cross-section.
@@ -123,7 +123,7 @@ CartData
 
 The problem is that the result is not strictly orthogonal, but instead slightly curved.
 That causes issues later on when we want to intersect the surface with a 3D box.
-It is therefore better to use the `projectCartData` to project the `GeoData` structure to a `CartData` struct.
+It is therefore better to use the `project_CartData` to project the `GeoData` structure to a `CartData` struct.
 Let's first create this structure by using `x`,`y` coordinates that are slightly within the ranges given above:
 
 ```julia
@@ -142,7 +142,7 @@ CartData
 Next, we project the data with:
 
 ```julia
-TopoGeology_cart = projectCartData(TopoGeology_cart, TopoGeology, proj)
+TopoGeology_cart = project_CartData(TopoGeology_cart, TopoGeology, proj)
 ```
 
 ```julia
@@ -157,7 +157,7 @@ CartData
 And we can do the same with the basement topography
 
 ```julia
-Basement_cart = projectCartData(TopoGeology_cart, Basement, proj)
+Basement_cart = project_CartData(TopoGeology_cart, Basement, proj)
 ```
 
 ```julia
@@ -177,10 +177,10 @@ CrossSection_1_cart = convert2CartData(CrossSection_1,proj)
 ```
 
 for visualization, it is nice if we can remove the part of the cross-section that is above the topography.
-We can do that with the `belowSurface` routine which returns a Boolean to indicate whether points are below or above the surface
+We can do that with the `below_surface` routine which returns a Boolean to indicate whether points are below or above the surface
 
 ```julia
-below = belowSurface(CrossSection_1_cart, TopoGeology_cart)
+below = below_surface(CrossSection_1_cart, TopoGeology_cart)
 ```
 
 We can add that to the cross-section with:
@@ -240,14 +240,14 @@ Phases = zeros(Int8,size(ComputationalGrid.x)) #Define rock types
 Set everything below the topography to 1
 
 ```julia
-id = belowSurface(ComputationalGrid, GeologyTopo_comp_surf)
+id = below_surface(ComputationalGrid, GeologyTopo_comp_surf)
 Phases[id] .= 1
 ```
 
 The basement is set to 2
 
 ```julia
-id = belowSurface(ComputationalGrid, Basement_comp_surf)
+id = below_surface(ComputationalGrid, Basement_comp_surf)
 Phases[id] .= 2
 ```
 

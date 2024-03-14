@@ -351,7 +351,7 @@ We have a number of other functions to help create a geometry, specifically:
 - `AddCylinder!`
 
 The help functions are quite self-explanatory, so we won't show it in detail here.
-If you have a topography surface or any other horizontal surface, you can surface with the cartesian grid with `aboveSurface` or `belowSurface`.
+If you have a topography surface or any other horizontal surface, you can surface with the cartesian grid with `above_surface` or `below_surface`.
 
 Also, if you wish to take a seismic tomography as inspiration to set a slab geometry, you can interpolate it to a `CartGrid` with the same dimensions and use that with the julia `findall` function.
 
