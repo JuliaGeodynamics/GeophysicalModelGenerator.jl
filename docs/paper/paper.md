@@ -79,7 +79,7 @@ The aim of the `GeophysicalModelGenerator.jl` package is therefore two-fold:
 
 `GeophysicalModelGenerator.jl` is a Julia [@bezanson2017julia] package that helps collect and visualise a wide variety of geophysical and geoscientific data coherently. It also simplifies the process of generating 2D or 3D models that can, for example, be used as input models in geodynamic simulations. It provides functions that transfer data from one format to the other, or project them from geographic `Longitude/Latitude/Depth` or `UTM` coordinates to Cartesian coordinates (`kilometers`). It allows performing tasks such as creating cross-sections through volumetric data, importing screenshots from published papers, downloading digital elevation data and saving the resulting data in `VTK` format, which can, for instance, be visualised with open source tools such as [Paraview](www.paraview.org).
 
-Most geoscientists tend to have their own Python/Matlab/Bash visualisation, and many perform part of this job on a daily basis. Yet, having all functionality in one place in an easy-to-use package makes this more extendable and will likely facilitate sharing data along with their interpretations.
+Most geoscientists tend to have their own Python/MATLAB/Bash visualisation, and many perform part of this job on a daily basis. Yet, having all functionality in one place in an easy-to-use package makes this more extendable and will likely facilitate sharing data along with their interpretations.
 
 # Related software packages
 Perhaps the most widely used package in geophysics to create figures or maps is the Generic Mapping Tools package ([`GMT`](https://www.generic-mapping-tools.org)), which also provides a Julia interface [GMT.jl](https://github.com/GenericMappingTools/GMT.jl) [@Wessel_Luis_Uieda_Scharroo_Wobbe_Smith_Tian_2019]. It mostly focuses on generating maps and postscript/pdf images and is therefore not ideally suited for interactive 3D data visualisation, or to generate input models for numerical codes.
@@ -96,11 +96,11 @@ There are also a number of commercial software solutions:
 
 - [GOCAD Mining Suite](https://www.mirageoscience.com/mining-industry-software/gocad-mining-suite/) (by MiraGeoscience) helps to generate geometric models of the subsurface in the vicinity of mines based on sparse geological measurements and drill hole data.
 
-- [GeoModeller](https://www.intrepid-geophysics.com/products/geomodeller/) (by Intrepid Geophysics) creates surface-near geometric geological models by implicit modelling of surface measurements while taking geophysical constraints into account.    
+- [GeoModeller](https://www.intrepid-geophysics.com/products/geomodeller/) (by Intrepid Geophysics) creates surface-near geometric geological models by implicit modelling of surface measurements while taking geophysical constraints into account.
 
 In all cases, the commercial license fees are far beyond what most researchers can afford, even if reduced license fees are often available for academia. The closed-source nature of the software packages makes them non-extendable by the community.
 
-The `GeophysicalModelGenerator.jl` package is already used to generate input models for the geodynamic codes [LaMEM](https://github.com/UniMainzGeo/LaMEM) [@Kaus_Popov_Baumann_Pusok_Bauville_Fernandez_Collignon_2016], [JustRelax.jl](https://github.com/PTsolvers/JustRelax.jl), and [MagmaThermokinematics.jl](https://github.com/boriskaus/MagmaThermoKinematics.jl). It is also used in a number of short courses and lectures at the universities of Mainz, Heidelberg, and Bologna.
+The `GeophysicalModelGenerator.jl` package is already used to generate input models for the geodynamic codes [LaMEM](https://github.com/UniMainzGeo/LaMEM) [@Kaus_Popov_Baumann_Pusok_Bauville_Fernandez_Collignon_2016], [JustRelax.jl](https://github.com/PTsolvers/JustRelax.jl), and [MagmaThermokinematics.jl](https://github.com/boriskaus/MagmaThermoKinematics.jl). It is also used in a number of short courses and lectures at the universities of Mainz, Heidelberg, and Bologna. Finally, the code has been used and cited by recent peer-reviewed papers for its ability to represent 3D [@gabrielli2023scattering], [@napolitano2023imaging] and 4D [@desiena2024geophysical] geophysical and geological data in a single Paraview space.  
 
 # Basic usage
 
@@ -118,7 +118,7 @@ and can be loaded with:
 julia> using GeophysicalModelGenerator
 ```
 
-As a first example, we will download a 3D seismic tomography dataset for the Alpine region (from @Paffrath_Friederich_Schmid_Handy_2021):
+As a first example, we will download a 3D seismic tomography dataset for the Alpine region (from [@Paffrath_Friederich_Schmid_Handy_2021]):
 ```julia
 julia> Tomo_Alps_full = load_GMG(
   "https://zenodo.org/records/10738510/files/Paffrath_2021_SE_Pwave.jld2?download=1");
