@@ -33,7 +33,7 @@ Some of the key features are:
 - Create initial model setups for the 3D geodynamic code [LaMEM](https://github.com/UniMainzGeo/LaMEM).
 - Import LaMEM timesteps.
 
-All data is transformed into either a `GeoData` or a `UTMData`  structure which contains info about `longitude/latitude/depth`, `ew/ns/depth` coordinates along with an arbitrary number of scalar/vector datasets, respectively. All data can be exported to Paraview with the `write_Paraview` routine, which transfers the data to a `ParaviewData` structure (that contains Cartesian Earth-Centered-Earth-Fixed (ECEF) `x/y/z` coordinates, used for plotting)
+All data is transformed into either a `GeoData` or a `UTMData`  structure which contains info about `longitude/latitude/depth`, `ew/ns/depth` coordinates along with an arbitrary number of scalar/vector datasets, respectively. All data can be exported to Paraview with the `write_paraview` routine, which transfers the data to a `ParaviewData` structure (that contains Cartesian Earth-Centered-Earth-Fixed (ECEF) `x/y/z` coordinates, used for plotting)
 
 ## Usage
 The best way to learn how to use this is to install the package (see below) and look at the tutorials in the [manual](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev/).

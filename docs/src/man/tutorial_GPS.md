@@ -49,7 +49,7 @@ We can load that in julia as:
 data_file               =   CSV.File("ALPS2017_DEF_VT.GRD",datarow=18,header=false,delim=' ')
 
 num_columns             =   4;
-data                    =   parseColumns_CSV_File(data_file, num_columns);     #Read numerical data from the file
+data                    =   parse_columns_CSV(data_file, num_columns);     #Read numerical data from the file
 lon_Vz, lat_Vz, Vz_vec  =   data[:,1], data[:,2], data[:,3]
 ```
 
@@ -123,7 +123,7 @@ Next, we load the horizontal velocities which is available in the file `ALPS2017
 ```julia
 download_data("https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_DEF_HZ.GRD","ALPS2017_DEF_HZ.GRD")
 data_file                       =   CSV.File("ALPS2017_DEF_HZ.GRD",datarow=18,header=false,delim=' ')
-data                            =   parseColumns_CSV_File(data_file, 10)
+data                            =   parse_columns_CSV(data_file, 10)
 lon_Hz, lat_Hz, Ve_Hz, Vn_Hz    =   data[:,1], data[:,2], data[:,3], data[:,4]
 ```
 
@@ -160,10 +160,10 @@ and interpolate the elevation on the GPS grid locations
 using GMT, Interpolations
 ```
 
-We use the `importTopo` function to read the topography from a file:
+We use the `import_topo` function to read the topography from a file:
 
 ```julia
-Elevation   =   importTopo([3,17,42,50], file="@earth_relief_01m.grd");
+Elevation   =   import_topo([3,17,42,50], file="@earth_relief_01m.grd");
 nothing #hide
 ```
 
@@ -185,7 +185,7 @@ GPS_Sanchez_grid        =   GeoData(lon,lat,height,(Velocity_mm_year=(Ve,Vn,Vz),
 Save paraview is as always:
 
 ```julia
-write_Paraview(GPS_Sanchez_grid, "GPSAlps_Sanchez_2017_grid")
+write_paraview(GPS_Sanchez_grid, "GPSAlps_Sanchez_2017_grid")
 ```
 
 Opening and plotting the vertical field gives:

@@ -1,12 +1,12 @@
 using Test, GeophysicalModelGenerator
 
 # 3D arrays
-c_1D = CartData(xyzGrid(1:4,0,0))
-c_2D = CartData(xyzGrid(1:4,1:5,2))
-c_3D = CartData(xyzGrid(1:4,1:5,2:5))
+c_1D = CartData(xyz_grid(1:4,0,0))
+c_2D = CartData(xyz_grid(1:4,1:5,2))
+c_3D = CartData(xyz_grid(1:4,1:5,2:5))
 
 # points
-X_pt, Y_pt, Z_pt = xyzGrid(1:.05:5,0:.07:8,1:.4:5)
+X_pt, Y_pt, Z_pt = xyz_grid(1:.05:5,0:.07:8,1:.4:5)
 
 # 1D test
 id_1D = nearest_point_indices(NumValue(c_1D.x),X_pt[:])

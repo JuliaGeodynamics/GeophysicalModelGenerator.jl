@@ -3,22 +3,22 @@
 We have a number of functions with which we can extract sub-data from a 2D or 3D `GeoData` structure.
 
 ```@docs
-crossSection
-extractSubvolume
-interpolateDataFields
-voteMap
-subtractHorizontalMean
-aboveSurface
-belowSurface
-interpolateDataOnSurface
-interpolateTopographyOnPlane
-parseColumns_CSV_File
-rotateTranslateScale!
-pointData2NearestGrid
+cross_section
+extract_subvolume
+interpolate_datafields
+votemap
+subtract_horizontalmean
+above_surface
+below_surface
+interpolate_data_surface
+interpolate_topography_plane
+parse_columns_CSV
+rotate_translate_scale!
+point_to_nearest_grid
 convert2UTMzone
 convert2CartData
-projectCartData
+project_CartData
 drape_on_topo
-lithostaticPressure!
-countMap
+lithostatic_pressure!
+countmap
 ```

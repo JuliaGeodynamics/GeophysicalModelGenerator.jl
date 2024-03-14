@@ -23,7 +23,7 @@ Vs          =   data[:,4];
 
 # Create 3D regular grid:
 Depth_vec       =   unique(depth)
-Lon,Lat,Depth   =   lonlatdepthGrid(-10:0.5:40,32:0.25:50,Depth_vec);
+Lon,Lat,Depth   =   lonlatdepth_grid(-10:0.5:40,32:0.25:50,Depth_vec);
 
 # Employ GeoStats to interpolate irregular data points to a regular grid
 dLon = Lon[2,1,1]-Lon[1,1,1]
@@ -45,4 +45,4 @@ end
 
 # Save data to paraview:
 Data_set    =   GeophysicalModelGenerator.GeoData(Lon,Lat,Depth,(Vs_km_s=Vs_3D,))   # the GeoStats package defines its own GeoData structure, so you have to choose the correct one here
-write_Paraview(Data_set, "MeRe_ElSharkawy")
+write_paraview(Data_set, "MeRe_ElSharkawy")

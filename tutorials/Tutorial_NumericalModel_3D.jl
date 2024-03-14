@@ -18,7 +18,7 @@ nx,ny,nz = 256,256,128
 x = range(-1000,1000, nx);
 y = range(-1000,1000, ny);
 z = range(-660,0,    nz);
-Grid = CartData(xyzGrid(x,y,z));
+Grid = CartData(xyz_grid(x,y,z));
 
 # Now we create an integer array that will hold the `Phases` information (which usually refers to the material or rock type in the simulation)
 Phases = fill(2,nx,ny,nz);
@@ -39,21 +39,21 @@ Temp = fill(1350.0, nx,ny,nz);
 
 lith = LithosphericPhases(Layers=[15 45 10], Phases=[0 1 2])
 v_spreading_cm_yr = 3
-addBox!(Phases, Temp, Grid; xlim=(-800,0.0), ylim=(-400, 400.0), zlim=(-80.0, 0.0), phase = lith, 
+add_box!(Phases, Temp, Grid; xlim=(-800,0.0), ylim=(-400, 400.0), zlim=(-80.0, 0.0), phase = lith, 
         Origin=(-0,0,0),
         T=SpreadingRateTemp(SpreadingVel=v_spreading_cm_yr, MORside="right"), StrikeAngle=30);
 
 
 # And an an inclined part:
 AgeTrench = 800e3/(v_spreading_cm_yr/100)/1e6;
-#addBox!(Phases, Temp, Grid; xlim=(0,300), ylim=(-400, 400.0), zlim=(-80.0, 0.0), phase = lith, Origin = (0,0,0), T=HalfspaceCoolingTemp(Age=0), DipAngle=0, StrikeAngle=30);
-addBox!(Phases, Temp, Grid; xlim=(0,300), ylim=(-400, 400.0), zlim=(-80.0, 0.0), phase = lith, Origin = (0,0,0), T=HalfspaceCoolingTemp(Age=AgeTrench), DipAngle=30, StrikeAngle=30);
+#add_box!(Phases, Temp, Grid; xlim=(0,300), ylim=(-400, 400.0), zlim=(-80.0, 0.0), phase = lith, Origin = (0,0,0), T=HalfspaceCoolingTemp(Age=0), DipAngle=0, StrikeAngle=30);
+add_box!(Phases, Temp, Grid; xlim=(0,300), ylim=(-400, 400.0), zlim=(-80.0, 0.0), phase = lith, Origin = (0,0,0), T=HalfspaceCoolingTemp(Age=AgeTrench), DipAngle=30, StrikeAngle=30);
 
 # Add them to the `CartData` dataset:
-Grid = addField(Grid,(;Phases, Temp))
+Grid = addfield(Grid,(;Phases, Temp))
 
 # Which looks like
-write_Paraview(Grid,"Grid3D_FreeSubduction");
+write_paraview(Grid,"Grid3D_FreeSubduction");
 # ![Mechanical3D_Tutorial_1](../assets/img/Mechanical3D_Tutorial_1.png) 
 
 
@@ -64,34 +64,34 @@ nx,ny,nz = 512,512,128
 x = range(-1000,1000, nx);
 y = range(-1000,1000, ny);
 z = range(-660,0,    nz);
-Grid = CartData(xyzGrid(x,y,z));
+Grid = CartData(xyz_grid(x,y,z));
 
 Phases = fill(2,nx,ny,nz);
 Temp = fill(1350.0, nx,ny,nz);
 
 # Overriding plate with a 30 km crust and mantle lithosphere that where T<1250 celsius
 lith_cont = LithosphericPhases(Layers=[30 200 50], Phases=[3 4 2], Tlab=1250)
-addBox!(Phases, Temp, Grid; xlim=(400,1000), ylim=(-1000, 0.0), zlim=(-240.0, 0.0), phase = lith_cont, T=HalfspaceCoolingTemp(Age=150));
-addBox!(Phases, Temp, Grid; xlim=(200,1000), ylim=(-1000, 0.0), zlim=(-80.0, 0.0), phase = lith_cont,  T=HalfspaceCoolingTemp(Age=150));
+add_box!(Phases, Temp, Grid; xlim=(400,1000), ylim=(-1000, 0.0), zlim=(-240.0, 0.0), phase = lith_cont, T=HalfspaceCoolingTemp(Age=150));
+add_box!(Phases, Temp, Grid; xlim=(200,1000), ylim=(-1000, 0.0), zlim=(-80.0, 0.0), phase = lith_cont,  T=HalfspaceCoolingTemp(Age=150));
 
 lith_cont = LithosphericPhases(Layers=[30 200 10], Phases=[6 7 2], Tlab=1250)
-addBox!(Phases, Temp, Grid; xlim=(400,1000), ylim=(0, 1000),    zlim=(-240.0, 0.0), phase = lith_cont, T=HalfspaceCoolingTemp(Age=200));
-addBox!(Phases, Temp, Grid; xlim=(200,1000), ylim=(0, 1000),    zlim=( -80.0, 0.0), phase = lith_cont, T=HalfspaceCoolingTemp(Age=200));
+add_box!(Phases, Temp, Grid; xlim=(400,1000), ylim=(0, 1000),    zlim=(-240.0, 0.0), phase = lith_cont, T=HalfspaceCoolingTemp(Age=200));
+add_box!(Phases, Temp, Grid; xlim=(200,1000), ylim=(0, 1000),    zlim=( -80.0, 0.0), phase = lith_cont, T=HalfspaceCoolingTemp(Age=200));
 
 # Accretionary wedge
-addPolygon!(Phases, Temp, Grid; xlim=[250., 500., 350.], ylim=[-1000., 0.], zlim=[0., 0., -80.], phase = ConstantPhase(5), T=HalfspaceCoolingTemp(Age=200))
+add_polygon!(Phases, Temp, Grid; xlim=[250., 500., 350.], ylim=[-1000., 0.], zlim=[0., 0., -80.], phase = ConstantPhase(5), T=HalfspaceCoolingTemp(Age=200))
 
 # Define an oceanic plate with ridge  
 v_spread_cm_yr = 3      #spreading velocity
 lith = LithosphericPhases(Layers=[15 45 10], Phases=[0 1 2], Tlab=1250)
-addBox!(Phases, Temp, Grid; xlim=(-800 , 200), ylim=(-1000, -400.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
-addBox!(Phases, Temp, Grid; xlim=(-1000,-800), ylim=(-1000, -400.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3,MORside="right"));
+add_box!(Phases, Temp, Grid; xlim=(-800 , 200), ylim=(-1000, -400.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
+add_box!(Phases, Temp, Grid; xlim=(-1000,-800), ylim=(-1000, -400.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3,MORside="right"));
 
-addBox!(Phases, Temp, Grid; xlim=(-700,  200), ylim=(-400, 200.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
-addBox!(Phases, Temp, Grid; xlim=(-1000,-700), ylim=(-400, 200.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3,MORside="right"));
+add_box!(Phases, Temp, Grid; xlim=(-700,  200), ylim=(-400, 200.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
+add_box!(Phases, Temp, Grid; xlim=(-1000,-700), ylim=(-400, 200.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3,MORside="right"));
 
-addBox!(Phases, Temp, Grid; xlim=(-650,  200), ylim=(200, 1000.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
-addBox!(Phases, Temp, Grid; xlim=(-1000,-650), ylim=(200, 1000.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3,MORside="right"));
+add_box!(Phases, Temp, Grid; xlim=(-650,  200), ylim=(200, 1000.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
+add_box!(Phases, Temp, Grid; xlim=(-1000,-650), ylim=(200, 1000.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3,MORside="right"));
 
 # Subducting parts of the oceanic plate
 #
@@ -100,24 +100,24 @@ addBox!(Phases, Temp, Grid; xlim=(-1000,-650), ylim=(200, 1000.0), zlim=(-80.0, 
 AgeTrench_Myrs = 1000*1e3/(v_spread_cm_yr/1e2)/1e6    #plate age @ trench
 trench1 = Trench(Start=(200.0,-1000.0), End=(200.0,-400.0), Thickness=90.0, θ_max=45.0, Length=600, Lb=200, WeakzoneThickness=15, WeakzonePhase=8, d_decoupling=175);
 T_slab  = LinearWeightedTemperature( F1=HalfspaceCoolingTemp(Age=AgeTrench_Myrs), F2=McKenzie_subducting_slab(Tsurface=0,v_cm_yr=v_spread_cm_yr, Adiabat = 0.0))
-addSlab!(Phases, Temp, Grid, trench1, phase = lith, T=T_slab);
+add_slab!(Phases, Temp, Grid, trench1, phase = lith, T=T_slab);
 #
 AgeTrench_Myrs = (900)*1e3/(v_spread_cm_yr/1e2)/1e6    #plate age @ trench
 trench1 = Trench(Start=(200.0,-400.0), End=(200.0,200.0), Thickness=90.0, θ_max=45.0, Length=600, Lb=200, WeakzoneThickness=15, WeakzonePhase=8, d_decoupling=175);
 T_slab  = LinearWeightedTemperature( F1=HalfspaceCoolingTemp(Age=AgeTrench_Myrs), F2=McKenzie_subducting_slab(Tsurface=0,v_cm_yr=v_spread_cm_yr, Adiabat = 0.0))
-addSlab!(Phases, Temp, Grid, trench1, phase = lith, T=T_slab);
+add_slab!(Phases, Temp, Grid, trench1, phase = lith, T=T_slab);
 #
 AgeTrench_Myrs = 850e3/(v_spread_cm_yr/1e2)/1e6    #plate age @ trench
 trench1 = Trench(Start=(200.0,200.0), End=(200.0,1000.0), Thickness=90.0, θ_max=45.0, Length=600, Lb=200, WeakzoneThickness=15, WeakzonePhase=8, d_decoupling=175);
 T_slab  = LinearWeightedTemperature( F1=HalfspaceCoolingTemp(Age=AgeTrench_Myrs), F2=McKenzie_subducting_slab(Tsurface=0,v_cm_yr=v_spread_cm_yr, Adiabat = 0.0))
-addSlab!(Phases, Temp, Grid, trench1, phase = lith, T=T_slab);
+add_slab!(Phases, Temp, Grid, trench1, phase = lith, T=T_slab);
 #
 # Finally, it is often nice to see the deformation of the plate when it subducts. A simple way to do that is to put a `stripes` on top using `addStripes`, which has the same phase as the subducting crust.
-addStripes!(Phases, Grid; stripAxes = (1,1,0), phase = ConstantPhase(0), stripePhase = ConstantPhase(9), stripeWidth=50, stripeSpacing=200)
+add_stripes!(Phases, Grid; stripAxes = (1,1,0), phase = ConstantPhase(0), stripePhase = ConstantPhase(9), stripeWidth=50, stripeSpacing=200)
 
 # Finally, we can add all this to the `CartData` dataset:
-Grid = addField(Grid,(;Phases, Temp))
-write_Paraview(Grid,"Grid3D_Ridges");
+Grid = addfield(Grid,(;Phases, Temp))
+write_paraview(Grid,"Grid3D_Ridges");
 
 # And the resulting image looks like
 # ![Mechanical3D_Tutorial_2](../assets/img/Mechanical3D_Tutorial_2.png) 

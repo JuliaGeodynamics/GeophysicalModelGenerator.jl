@@ -9,21 +9,21 @@ The routines provided here have the following functionality:
 - Add various 1D thermal structures (and possibilities to combine them)
 
 ```@docs
-GeophysicalModelGenerator.addBox!
-GeophysicalModelGenerator.addLayer!
-GeophysicalModelGenerator.addSphere!
-GeophysicalModelGenerator.addEllipsoid!
-GeophysicalModelGenerator.addCylinder!
-GeophysicalModelGenerator.addStripes!
-GeophysicalModelGenerator.addSlab!
-GeophysicalModelGenerator.makeVolcTopo
+GeophysicalModelGenerator.add_box!
+GeophysicalModelGenerator.add_layer!
+GeophysicalModelGenerator.add_sphere!
+GeophysicalModelGenerator.add_ellipsoid!
+GeophysicalModelGenerator.add_cylinder!
+GeophysicalModelGenerator.add_stripes!
+GeophysicalModelGenerator.add_slab!
+GeophysicalModelGenerator.make_volc_topo
 GeophysicalModelGenerator.ConstantTemp
 GeophysicalModelGenerator.LinearTemp
 GeophysicalModelGenerator.HalfspaceCoolingTemp
 GeophysicalModelGenerator.SpreadingRateTemp
 GeophysicalModelGenerator.LithosphericTemp
 GeophysicalModelGenerator.ConstantPhase
-GeophysicalModelGenerator.compute_Phase
+GeophysicalModelGenerator.compute_phase
 GeophysicalModelGenerator.LithosphericPhases
 GeophysicalModelGenerator.McKenzie_subducting_slab
 GeophysicalModelGenerator.LinearWeightedTemperature

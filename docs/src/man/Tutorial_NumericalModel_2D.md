@@ -17,7 +17,7 @@ using GeophysicalModelGenerator
 nx,nz = 512,128
 x = range(-1000,1000, nx);
 z = range(-660,0,    nz);
-Grid2D = CartData(xyzGrid(x,0,z))
+Grid2D = CartData(xyz_grid(x,0,z))
 ```
 
 ````
@@ -47,19 +47,19 @@ Temp = fill(1350.0, nx, 1, nz);
 We will start with a simple subduction setup, which consists of a horizontal part:
 
 ```julia
-addBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = ConstantPhase(1));
+add_box!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = ConstantPhase(1));
 ```
 
 And with the inclined part:
 
 ```julia
-addBox!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = ConstantPhase(1), DipAngle=30);
+add_box!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = ConstantPhase(1), DipAngle=30);
 ```
 
 Add them to the `CartData` dataset:
 
 ```julia
-Grid2D = addField(Grid2D,(;Phases, Temp))
+Grid2D = addfield(Grid2D,(;Phases, Temp))
 ```
 
 ````
@@ -75,7 +75,7 @@ CartData
 Which looks like
 
 ```julia
-write_Paraview(Grid2D,"Grid2D_SubductionMechanical");
+write_paraview(Grid2D,"Grid2D_SubductionMechanical");
 ```
 
 ````
@@ -100,15 +100,15 @@ LithosphericPhases([15 55], [1 2], nothing)
 and set the slab again:
 
 ```julia
-addBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = lith);
-addBox!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = lith, DipAngle=30);
+add_box!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = lith);
+add_box!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = lith, DipAngle=30);
 ```
 
 Which looks like:
 
 ```julia
-Grid2D = addField(Grid2D,(;Phases, Temp))
-write_Paraview(Grid2D,"Grid2D_SubductionMechanicalLayered");
+Grid2D = addfield(Grid2D,(;Phases, Temp))
+write_paraview(Grid2D,"Grid2D_SubductionMechanicalLayered");
 ```
 
 ````
@@ -124,15 +124,15 @@ We can do that by specifying a thermal structure. For example, we can use the ha
 
 ```julia
 therm = HalfspaceCoolingTemp(Age=40)
-addBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = lith, T=therm);
-addBox!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = lith, T = therm, DipAngle=30);
+add_box!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = lith, T=therm);
+add_box!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = lith, T = therm, DipAngle=30);
 ```
 
 Which looks like:
 
 ```julia
-Grid2D = addField(Grid2D,(;Phases, Temp))
-write_Paraview(Grid2D,"Grid2D_SubductionHalfspaceCooling");
+Grid2D = addfield(Grid2D,(;Phases, Temp))
+write_paraview(Grid2D,"Grid2D_SubductionHalfspaceCooling");
 ```
 
 ````
@@ -159,13 +159,13 @@ a spreading velocity (note that this simply relates to the thermal structure and
 
 ```julia
 lith = LithosphericPhases(Layers=[15 55], Phases=[1 2], Tlab=1250)
-addBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
+add_box!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
 ```
 
 For the subduction we use a thermal structure of a slab heated by hot asthenosphere
 
 ```julia
-addBox!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = lith, T = McKenzie_subducting_slab(Tsurface=0,v_cm_yr=3), DipAngle=30);
+add_box!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = lith, T = McKenzie_subducting_slab(Tsurface=0,v_cm_yr=3), DipAngle=30);
 ```
 
 We can set the mantle lithosphere that is hotter > 1250 C to mantle:
@@ -174,8 +174,8 @@ We can set the mantle lithosphere that is hotter > 1250 C to mantle:
 ind = findall(Temp .> 1250 .&& Phases .==2);
 Phases[ind] .= 0;
 
-Grid2D = addField(Grid2D,(;Phases, Temp))
-write_Paraview(Grid2D,"Grid2D_SubductionRidge");
+Grid2D = addfield(Grid2D,(;Phases, Temp))
+write_paraview(Grid2D,"Grid2D_SubductionRidge");
 ```
 
 ````
@@ -190,21 +190,21 @@ Ok, lets add an overriding slab as well. For this, we use the `AddLayer!` functi
 
 ```julia
 lith = LithosphericPhases(Layers=[15 20 55], Phases=[3 4 5], Tlab=1250)
-addBox!(Phases, Temp, Grid2D; xlim=(0,1000), zlim=(-80.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
+add_box!(Phases, Temp, Grid2D; xlim=(0,1000), zlim=(-80.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
 ```
 
 The oceanic plate is as before
 
 ```julia
 lith = LithosphericPhases(Layers=[15 55], Phases=[1 2], Tlab=1250)
-addBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
+add_box!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
 ```
 
 For the inclined part, we set a layer above the slab (the "weak" layer to facilitate subduction initiation )
 
 ```julia
 lith = LithosphericPhases(Layers=[10 15 55], Phases=[6 1 2], Tlab=1250)
-addBox!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 10.0), phase = lith, T = McKenzie_subducting_slab(Tsurface=0,v_cm_yr=3), DipAngle=30);
+add_box!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 10.0), phase = lith, T = McKenzie_subducting_slab(Tsurface=0,v_cm_yr=3), DipAngle=30);
 ```
 
 Lithosphere-asthenosphere boundary:
@@ -213,8 +213,8 @@ Lithosphere-asthenosphere boundary:
 ind = findall(Temp .> 1250 .&& Phases .==2);
 Phases[ind] .= 0;
 
-Grid2D = addField(Grid2D,(;Phases, Temp))
-write_Paraview(Grid2D,"Grid2D_SubductionOverriding");
+Grid2D = addfield(Grid2D,(;Phases, Temp))
+write_paraview(Grid2D,"Grid2D_SubductionOverriding");
 ```
 
 ````
@@ -225,7 +225,7 @@ Saved file: Grid2D_SubductionOverriding.vts
 ![Mechanical2D_Tutorial_5](../assets/img/Mechanical2D_Tutorial_5.png)
 
 #### Curved slab - mechanics
-So far, the subducting part of the slab was always straight. We can also create a curved slab by using the `addSlab!` function. This uses a parametric representation of the slab and is a bit more involved than the `addBox!` function.
+So far, the subducting part of the slab was always straight. We can also create a curved slab by using the `add_slab!` function. This uses a parametric representation of the slab and is a bit more involved than the `add_box!` function.
 
 We start with the horizontal part:
 
@@ -233,10 +233,10 @@ We start with the horizontal part:
 nx,nz = 512,128
 x = range(-1000,1000, nx);
 z = range(-660,0,    nz);
-Grid2D = CartData(xyzGrid(x,0,z))
+Grid2D = CartData(xyz_grid(x,0,z))
 Phases = zeros(Int64, nx, 1, nz);
 Temp = fill(1350.0, nx, 1, nz);
-addBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = ConstantPhase(1));
+add_box!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = ConstantPhase(1));
 ```
 
 Next, we should define a `Trench` structure, which contains info about the trench which goes in 3D from `Start` - `End` coordinates (`x`,`y`)-coordinates respectively. As we are dealing with a 2D model, we set the `y`-coordinates to -100.0 and 100.0 respectively.
@@ -244,14 +244,14 @@ Other parameters to be specified are `Thickness` (Slab thickness), `θ_max` (max
 
 ```julia
 trench = Trench(Start=(0.0,-100.0), End=(0.0,100.0), Thickness=80.0, θ_max=45.0, Length=300, Lb=200, direction=-1.0);
-addSlab!(Phases, Temp, Grid2D, trench, phase = ConstantPhase(1));
+add_slab!(Phases, Temp, Grid2D, trench, phase = ConstantPhase(1));
 ```
 
 Add them to the `CartData` dataset:
 
 ```julia
-Grid2D = addField(Grid2D,(;Phases, Temp))
-write_Paraview(Grid2D,"Grid2D_SubductionCurvedMechanical");
+Grid2D = addfield(Grid2D,(;Phases, Temp))
+write_paraview(Grid2D,"Grid2D_SubductionCurvedMechanical");
 ```
 
 ````
@@ -262,7 +262,7 @@ Saved file: Grid2D_SubductionCurvedMechanical.vts
 ![Mechanical2D_Tutorial_6](../assets/img/Mechanical2D_Tutorial_6.png)
 
 #### Curved slab - thermo-mechanics
-The `addSlab!` function has a few more interesting options. You can, for example, specify a weak decoupling layer above the slab which adds a weak layer between the subducting and overriding slab.
+The `add_slab!` function has a few more interesting options. You can, for example, specify a weak decoupling layer above the slab which adds a weak layer between the subducting and overriding slab.
 You can also indicate a thermal structure for the slab, which can increase from a halfspace cooling model (of the horizontal part of the slab) to a slab that is heated by the surrounding mantle below a decouping depth `d_decoupling`.
 
 Our starting basis is the example above with ridge and overriding slab
@@ -271,7 +271,7 @@ Our starting basis is the example above with ridge and overriding slab
 nx,nz = 512,128
 x = range(-1000,1000, nx);
 z = range(-660,0,    nz);
-Grid2D = CartData(xyzGrid(x,0,z))
+Grid2D = CartData(xyz_grid(x,0,z))
 Phases = zeros(Int64, nx, 1, nz);
 Temp = fill(1350.0, nx, 1, nz);
 lith = LithosphericPhases(Layers=[15 20 55], Phases=[3 4 5], Tlab=1250)
@@ -284,8 +284,8 @@ LithosphericPhases([15 20 55], [3 4 5], 1250)
 Lets start with defining the horizontal part of the overriding plate. Note that we define this twice with different thickness to deal with the bending subduction area:
 
 ```julia
-addBox!(Phases, Temp, Grid2D; xlim=(200,1000), zlim=(-150.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
-addBox!(Phases, Temp, Grid2D; xlim=(0,200), zlim=(-50.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
+add_box!(Phases, Temp, Grid2D; xlim=(200,1000), zlim=(-150.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
+add_box!(Phases, Temp, Grid2D; xlim=(0,200), zlim=(-50.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
 ```
 
 The horizontal part of the oceanic plate is as before:
@@ -293,7 +293,7 @@ The horizontal part of the oceanic plate is as before:
 ```julia
 v_spread_cm_yr = 3      #spreading velocity
 lith = LithosphericPhases(Layers=[15 55], Phases=[1 2], Tlab=1250)
-addBox!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-150.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=v_spread_cm_yr));
+add_box!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-150.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=v_spread_cm_yr));
 ```
 
 Yet, now we add a trench as well. The starting thermal age at the trench is that of the horizontal part of the oceanic plate:
@@ -321,7 +321,7 @@ in this case, we have a more reasonable slab thickness:
 ```julia
 trench = Trench(Start=(0.0,-100.0), End=(0.0,100.0), Thickness=90.0, θ_max=30.0, Length=600, Lb=200,
                 WeakzoneThickness=15, WeakzonePhase=6, d_decoupling=125);
-addSlab!(Phases, Temp, Grid2D, trench, phase = lith, T=T_slab);
+add_slab!(Phases, Temp, Grid2D, trench, phase = lith, T=T_slab);
 ```
 
 Lithosphere-asthenosphere boundary:
@@ -330,8 +330,8 @@ Lithosphere-asthenosphere boundary:
 ind = findall(Temp .> 1250 .&& (Phases.==2 .|| Phases.==5));
 Phases[ind] .= 0;
 
-Grid2D = addField(Grid2D,(;Phases, Temp))
-write_Paraview(Grid2D,"Grid2D_SubductionCurvedOverriding");
+Grid2D = addfield(Grid2D,(;Phases, Temp))
+write_paraview(Grid2D,"Grid2D_SubductionCurvedOverriding");
 ```
 
 ````
@@ -351,7 +351,7 @@ We have a number of other functions to help create a geometry, specifically:
 - `AddCylinder!`
 
 The help functions are quite self-explanatory, so we won't show it in detail here.
-If you have a topography surface or any other horizontal surface, you can surface with the cartesian grid with `aboveSurface` or `belowSurface`.
+If you have a topography surface or any other horizontal surface, you can surface with the cartesian grid with `above_surface` or `below_surface`.
 
 Also, if you wish to take a seismic tomography as inspiration to set a slab geometry, you can interpolate it to a `CartGrid` with the same dimensions and use that with the julia `findall` function.
 

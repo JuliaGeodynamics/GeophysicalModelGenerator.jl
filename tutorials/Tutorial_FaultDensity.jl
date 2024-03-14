@@ -45,15 +45,15 @@ Lon    = lon[indlon]
 data   = faults.data[indlon,indlat]
 
 # Create GeoData from restricted data
-Lon3D,Lat3D, Faults = lonlatdepthGrid(Lon,Lat,0);
+Lon3D,Lat3D, Faults = lonlatdepth_grid(Lon,Lat,0);
 Faults[:,:,1]       = data
 Data_Faults         = GeoData(Lon3D,Lat3D,Faults,(Faults=Faults,))
 
 # ## 2. Create Density Map 
-# Create a density map of the fault data. This is done with the `countMap` function. This function takes a specified field of a 2D `GeoData` struct and counts the entries in all control areas which are defined by steplon (number of control areas in lon direction) and steplat (number of control areas in lat direction). The field should only consist of 0.0 and 1.0 and the steplength. The final result is normalized by the highest count.
+# Create a density map of the fault data. This is done with the `countmap` function. This function takes a specified field of a 2D `GeoData` struct and counts the entries in all control areas which are defined by steplon (number of control areas in lon direction) and steplat (number of control areas in lat direction). The field should only consist of 0.0 and 1.0 and the steplength. The final result is normalized by the highest count.
 steplon  = 188
 steplat  = 104
-cntmap   = countMap(Data_Faults,"Faults",steplon,steplat)
+cntmap   = countmap(Data_Faults,"Faults",steplon,steplat)
 
 # Plot the density map with coastlines
 lon = unique(cntmap.lon.val)
@@ -63,7 +63,7 @@ coastlinesEurope = map(y -> y > 1 ? 1 : y, coastlinesEurope)
 
 # Plot this using `Plots.jl`:
 heatmap(lon,lat,coastlinesEurope',colormap=cgrad(:gray1,rev=true),alpha=1.0);
-heatmap!(lon,lat,cntmap.fields.countMap[:,:,1]',colormap=cgrad(:batlowW,rev=true),alpha = 0.8,legend=true,title="Fault Density Map Europe",ylabel="Lat",xlabel="Lon")
+heatmap!(lon,lat,cntmap.fields.countmap[:,:,1]',colormap=cgrad(:batlowW,rev=true),alpha = 0.8,legend=true,title="Fault Density Map Europe",ylabel="Lat",xlabel="Lon")
 # ![tutorial_Fault_Map](../assets/img/FaultDensity.png)
 
 

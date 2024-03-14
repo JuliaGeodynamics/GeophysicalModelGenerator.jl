@@ -26,20 +26,20 @@ and load both `GMG` and `GMT` with:
 using GeophysicalModelGenerator, GMT
 ```
 
-When loading both packages, several `GMT` routines within `GMG` will be loaded. One of these routines is the function `importTopo`, where one simply has to provide the region for which to download the topographic data and the data source.
+When loading both packages, several `GMT` routines within `GMG` will be loaded. One of these routines is the function `import_topo`, where one simply has to provide the region for which to download the topographic data and the data source.
 
 ```julia
-Topo = importTopo([4,20,37,50], file="@earth_relief_01m.grd")
+Topo = import_topo([4,20,37,50], file="@earth_relief_01m.grd")
 ```
 
 The data is available in different resolutions; see [here](http://gmt.soest.hawaii.edu/doc/latest/grdimage.html) for an overview. Generally, it is advisable to not use the largest resolution if you have a large area, as the files become very large.
 
 If you have issues with loading the topography with `GMT`, there is also the alternative to download the data yourself and import it using `Rasters.jl`.
 
-We can now export this data to a `VTK` format so that we can visualize it with `Paraview`. To do so, `GMG` provides the function `write_Paraview`:
+We can now export this data to a `VTK` format so that we can visualize it with `Paraview`. To do so, `GMG` provides the function `write_paraview`:
 
 ```julia
-write_Paraview(Topo, "Topography_Alps")
+write_paraview(Topo, "Topography_Alps")
 ```
 
 Also, if you want to save this data for later use in julia, you can save it as `*.jld2` file using the function `save_GMG`:
@@ -126,10 +126,10 @@ units = unique(tag) #get different units
 We will use these units later to save the Moho data separately for each tectonic unit.
 
 ### 2.2 Converting the data to a `GMG` dataset
-To convert this data to a `GMG` dataset, we now have to interpolate it to a regular grid. You can generate the respective grid with the `GMG` function `lonlatdepthGrid`
+To convert this data to a `GMG` dataset, we now have to interpolate it to a regular grid. You can generate the respective grid with the `GMG` function `lonlatdepth_grid`
 
 ```julia
-Lon,Lat,Depth = lonlatdepthGrid(9.9:0.02:15.1,45.0:.02:49.0,0km);
+Lon,Lat,Depth = lonlatdepth_grid(9.9:0.02:15.1,45.0:.02:49.0,0km);
 nothing #hide
 ```
 
@@ -156,7 +156,7 @@ for iunit = 1:length(units)
     #for later checking, we can now save the original point data as a VTK file:
     data_Moho = GeophysicalModelGenerator.GeoData(lon_tmp,lat_tmp,depth_tmp,(MohoDepth=depth_tmp*km,))
     filename = "Mroczek_Moho_" * units[iunit]
-    write_Paraview(data_Moho, filename, PointsData=true)
+    write_paraview(data_Moho, filename, PointsData=true)
 
     #Now we create a KDTree for an effective nearest neighbor determination;
     kdtree = KDTree([lon_tmp';lat_tmp']; leafsize = 10)
@@ -187,7 +187,7 @@ for iunit = 1:length(units)
     #Finally, we can now export that data to VTK and save a `jld2` file using the `save_GMG` routine
     Data_Moho = GeophysicalModelGenerator.GeoData(Lon, Lat, Depth, (MohoDepth=Depth,PointDist=Dist),Data_attribs)
     filename = "Mrozek_Moho_Grid_" * units[iunit]
-    write_Paraview(Data_Moho, filename)
+    write_paraview(Data_Moho, filename)
     save_GMG(filename,Topo)
 
 end
@@ -218,7 +218,7 @@ nothing #hide
 As before, we can export this dataset to `VTK` and also save it as a `jld2` file (as we are now exporting point data, we have to use the option `PointsData=true`):
 
 ```julia
-write_Paraview(Data_ISC, "EQ_ISC", PointsData=true);
+write_paraview(Data_ISC, "EQ_ISC", PointsData=true);
 save_GMG("EQ_ISC",Data_ISC)
 ```
 
@@ -363,10 +363,10 @@ nothing #hide
 At this stage we have the 3D velocity components on a grid. Yet, we don't have information yet about the elevation of the stations (as the provided data set did not give this).
 We could ignore that and set the elevation to zero, which would allow saving the data directly.
 Yet, a better way is to load the topographic map of the area and interpolate the elevation to the velocity grid.
-As we have already the loaded the topographic map in section 1 of this tutorial, we can simply reuse it. To interpolate, we will use the function `interpolateDataFields2D`
+As we have already the loaded the topographic map in section 1 of this tutorial, we can simply reuse it. To interpolate, we will use the function `interpolate_datafields_2D`
 
 ```julia
-topo_v, fields_v = interpolateDataFields2D(Topo, Lon, Lat)
+topo_v, fields_v = interpolate_datafields_2D(Topo, Lon, Lat)
 ```
 
 The variable we are interested in is the variable `topo_v`. `fields_v` contains the interpolation of all the fields in `Topo` to the new grid and we only keep it here for completeness.
@@ -380,7 +380,7 @@ Data_GPS_Sanchez = GeoData(Lon,Lat,topo_v,(Velocity_mm_year=(Ve,Vn,Vz),V_north=V
 And as always, we'll save everything in `VTK` format and in `jld2` format
 
 ```julia
-write_Paraview(Data_GPS_Sanchez, "GPS_Sanchez")
+write_paraview(Data_GPS_Sanchez, "GPS_Sanchez")
 save_GMG("GPS_Sanchez",Data_GPS_Sanchez)
 ```
 
@@ -445,7 +445,7 @@ nothing #hide
 And then we save it again.
 
 ```julia
-write_Paraview(Data, "Rappisi2022")
+write_paraview(Data, "Rappisi2022")
 save_GMG("Rappisi2022",Data)
 ```
 

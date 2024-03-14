@@ -45,7 +45,7 @@ julia> keys(Data)
 
 If you want to compare different tomographic datasets with each other, and create votemaps, for example you can merge them all into a single dataset:
 ```julia
-julia> VolData_combined = combine_VolData(VolData, dataset_preferred = 1)
+julia> VolData_combined = combine_vol_data(VolData, dataset_preferred = 1)
 ```
 In this case, we take the dimensions of the first dataset and propject all other data onto that. You can customize that.
 
@@ -62,8 +62,8 @@ Horizontal ProfileData
 ## Project data onto profiles
 You can project all data onto the profiles with:
 ```julia
-julia> extractProfileData!(prof1, VolData_combined, SurfData, PointData)
-julia> extractProfileData!(prof2, VolData_combined, SurfData, PointData)
+julia> extract_ProfileData!(prof1, VolData_combined, SurfData, PointData)
+julia> extract_ProfileData!(prof2, VolData_combined, SurfData, PointData)
 julia> prof1
 Vertical ProfileData
   lon/lat    : (5.0, 45.0)-(15.0, 49.0)
@@ -74,7 +74,7 @@ Vertical ProfileData
 
 By default we use 50 km wide band of the data to project pointdata. You can change that with:
 ```julia
-julia> extractProfileData!(prof1, VolData_combined, SurfData, PointData, section_width=10km)
+julia> extract_ProfileData!(prof1, VolData_combined, SurfData, PointData, section_width=10km)
 ```
 
 <!---
@@ -111,7 +111,7 @@ Datasets        =   [data_Vol1,data_Vol2, data_Surf, data_EQ, data_SS]
 @test keys(VolData) == (:Hua2017, :Plomerova2022)
 
 # read datasets from file
-Datasets_temp = load_Dataset_file("test_files/AlpineData.txt")
+Datasets_temp = load_dataset_file("test_files/AlpineData.txt")
 @test Datasets_temp[2].DirName == GMG_Dataset("INGV","Point","./Seismicity/CLASS/class_seis_alps.jld2", true).DirName
 
 # Load data of all Datasets & split them in type of data
@@ -119,13 +119,13 @@ DataVol, DataSurf, DataPoint, DataScreenshot, DataTopo = load_GMG(Datasets)
 @test keys(DataVol) == (:Hua2017, :Plomerova2022)
 
 # Combine volumetric datasets into one
-VolData_combined1 = combine_VolData(VolData)
+VolData_combined1 = combine_vol_data(VolData)
 @test keys(VolData_combined1.fields) == (:Hua2017_Vp, :Hua2017_dVp_perc, :Plomerova2022_Vp, :Plomerova2022_dVp)
 
-VolData_combined2 = combine_VolData(VolData, dims=(50,51,52))
+VolData_combined2 = combine_vol_data(VolData, dims=(50,51,52))
 @test VolData_combined2.fields.Hua2017_Vp[1000] ≈ 10.6904
 
-VolData_combined3 = combine_VolData(VolData, lon=(1,22), lat=(40,52), dims=(50,51,52))
+VolData_combined3 = combine_vol_data(VolData, lon=(1,22), lat=(40,52), dims=(50,51,52))
 @test isnan(VolData_combined3.fields.Hua2017_Vp[1000])
 
 # Define horizontal & vertical profiles
@@ -156,20 +156,20 @@ GeophysicalModelGenerator.CreateProfilePoint!(prof4,PointData, section_width=10k
 
 
 # Test the main profile extraction routines:
-extractProfileData!(prof1, VolData_combined1, SurfData, PointData)
-extractProfileData!(prof2, VolData_combined1, SurfData, PointData)
-extractProfileData!(prof3, VolData_combined1, SurfData, PointData)
-extractProfileData!(prof4, VolData_combined1, SurfData, PointData)
+extract_ProfileData!(prof1, VolData_combined1, SurfData, PointData)
+extract_ProfileData!(prof2, VolData_combined1, SurfData, PointData)
+extract_ProfileData!(prof3, VolData_combined1, SurfData, PointData)
+extract_ProfileData!(prof4, VolData_combined1, SurfData, PointData)
 
-extractProfileData!(prof1, VolData_combined2, SurfData, PointData)
-extractProfileData!(prof2, VolData_combined2, SurfData, PointData)
-extractProfileData!(prof3, VolData_combined2, SurfData, PointData)
-extractProfileData!(prof4, VolData_combined2, SurfData, PointData)
+extract_ProfileData!(prof1, VolData_combined2, SurfData, PointData)
+extract_ProfileData!(prof2, VolData_combined2, SurfData, PointData)
+extract_ProfileData!(prof3, VolData_combined2, SurfData, PointData)
+extract_ProfileData!(prof4, VolData_combined2, SurfData, PointData)
 
-extractProfileData!(prof1, VolData_combined3, SurfData, PointData)
-extractProfileData!(prof2, VolData_combined3, SurfData, PointData)
-extractProfileData!(prof3, VolData_combined3, SurfData, PointData)
-extractProfileData!(prof4, VolData_combined3, SurfData, PointData)
+extract_ProfileData!(prof1, VolData_combined3, SurfData, PointData)
+extract_ProfileData!(prof2, VolData_combined3, SurfData, PointData)
+extract_ProfileData!(prof3, VolData_combined3, SurfData, PointData)
+extract_ProfileData!(prof4, VolData_combined3, SurfData, PointData)
 
 @test prof1.SurfData[1].fields[1][80] ≈ -37.58791461075397km
 @test isempty(prof2.SurfData)
@@ -177,7 +177,7 @@ extractProfileData!(prof4, VolData_combined3, SurfData, PointData)
 @test isempty(prof4.SurfData)
 
 # Read profiles from file
-profile_list = readPickedProfiles("test_files/PickedProfiles.txt")
+profile_list = read_picked_profiles("test_files/PickedProfiles.txt")
 @test profile_list[5].start_lonlat == ProfileData(start_lonlat=(9.40627872242647, 45.5128223429144), end_lonlat=(7.85480813419117, 47.8635353553922)).start_lonlat
 
 # Try the convenience function
@@ -187,7 +187,7 @@ Depth_extent=nothing
 DimsSurfCross=(100,)
 section_width=50km
 
-profile_backwards_compat = extractProfileData("test_files/PickedProfiles.txt",1,"test_files/AlpineData_remote.txt",DimsVolCross=DimsVolCross,DepthVol=Depth_extent,DimsSurfCross=DimsSurfCross,WidthPointProfile=section_width)
+profile_backwards_compat = extract_ProfileData("test_files/PickedProfiles.txt",1,"test_files/AlpineData_remote.txt",DimsVolCross=DimsVolCross,DepthVol=Depth_extent,DimsSurfCross=DimsSurfCross,WidthPointProfile=section_width)
 
 @test length(profile_backwards_compat.PointData[1].lon) == 440
 
