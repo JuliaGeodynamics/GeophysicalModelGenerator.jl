@@ -66,7 +66,7 @@ bibliography: paper.bib
 
 # Summary
 
-Geoscientific data exists in a wide variety of formats. Yet, to make a consistent interpretation of a certain region, it is often helpful to jointly visualise all this data using the same coordinates and compare, for example, seismic tomography, surface geology, Moho depth, Earthquake locations, and GPS surface velocities. If one wishes to create mechanical or thermo-mechanical numerical models of the region, creating an input setup that honors these  constraints is helpful. And since most numerical codes work in Cartesian boxes, it is helpful to have tools to project the data from geographic to Cartesian coordinates.
+Geoscientific data exists in a wide variety of formats. Yet, to make a consistent interpretation of a certain region, it is often helpful to jointly visualise all this data using the same coordinates and compare, for example, seismic tomography, surface geology, Moho (crust-mantle transition) depth, Earthquake locations, and GPS surface velocities. If one wishes to create mechanical or thermo-mechanical numerical models of the region, creating an input setup that honors these  constraints is crucial. And since most numerical codes work in Cartesian boxes, it is helpful to have tools to project the data from geographic to Cartesian coordinates.
 
 A significant challenge in doing this is that there is no standard format for geoscientific data. Seismic tomography, for example, may come in the form of ASCII data with `lon/lat/depth` axes or as NetCDF files, with the ordering of the data typically differing from one dataset to the other. In ideal cases, geological surfaces may be provided as GeoTIFF images. In many cases, however, the underlying data discussed in publications are not available in digital format and are only shown as figures in the paper. It is nevertheless still helpful to visualise these in 3D in the correct coordinates, along with more recent, digitally available datasets.
 
@@ -100,7 +100,7 @@ There are also a number of commercial software solutions:
 
 In all cases, the commercial license fees are far beyond what most researchers can afford, even if reduced license fees are often available for academia. The closed-source nature of the software packages makes them non-extendable by the community.
 
-The `GeophysicalModelGenerator.jl` package is already used to generate input models for the geodynamic codes [LaMEM](https://github.com/UniMainzGeo/LaMEM) [@Kaus_Popov_Baumann_Pusok_Bauville_Fernandez_Collignon_2016], [JustRelax.jl](https://github.com/PTsolvers/JustRelax.jl), and [MagmaThermokinematics.jl](https://github.com/boriskaus/MagmaThermoKinematics.jl). It is also used in a number of short courses and lectures at the universities of Mainz, Heidelberg, and Bologna. Finally, the code has been used and cited by recent peer-reviewed papers for its ability to represent 3D [@gabrielli2023scattering], [@napolitano2023imaging] and 4D [@desiena2024geophysical] geophysical and geological data in a single Paraview space.  
+The `GeophysicalModelGenerator.jl` package is already used to generate input models for the geodynamic codes [LaMEM](https://github.com/UniMainzGeo/LaMEM) [@Kaus_Popov_Baumann_Pusok_Bauville_Fernandez_Collignon_2016], [JustRelax.jl](https://github.com/PTsolvers/JustRelax.jl), and [MagmaThermokinematics.jl](https://github.com/boriskaus/MagmaThermoKinematics.jl). It is also used in a number of short courses and lectures at the universities of Mainz, Heidelberg, and Bologna, and has been used a number of recent publications to highlight 3D [@gabrielli2023scattering,@napolitano2023imaging] and 4D [@desiena2024geophysical] geophysical and geological data.  
 
 # Basic usage
 
@@ -163,7 +163,7 @@ We can now project the topography with:
 ```julia
 julia> Topo_cart = convert2CartData(Topo_Alps, proj);
 ```
-which returns a `CartData` (Cartesian data) structure. The disadvantage of doing this projection is that the resulting Cartesian grid is no longer strictly orthogonal, which is a problem for some Cartesian numerical models (e.g., those using a finite differences discretisation).
+which returns a `CartData` (Cartesian data) structure. The disadvantage of doing this projection is that the resulting Cartesian grid is no longer strictly orthogonal, which is a problem for some Cartesian numerical models (e.g., those using a finite difference discretisation).
 We can project the data on an orthogonal grid as well, by first creating appropriately sized orthogonal grids for the tomography and topography:
 ```julia
 julia> Tomo_rect = CartData(xyz_grid(-550.0:10:600, -500.0:10:700, -600.0:5:-17));
@@ -179,7 +179,7 @@ julia> write_paraview(Topo_rect,"Topo_rect");
 We can now use the built-in tools of Paraview to visualise the data (see \autoref{fig:basic} b), and use this as inspiration to create an initial numerical model setup. It is also possible to interpolate other seismic tomography datasets to the same grid and subsequently compute a _votemap_ to count in how many tomographic models a specific seismic anomaly is present [see, e.g., @Shephard_Matthews_Hosseini_Domeier_2017].
 
 # Examples of usage
-`GeophysicalModelGenerator.jl` comes with build-in (CI/CD) tests and [tutorials](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev) that explain the most important use cases, from importing data to generating input model setups for numerical simulations. In the following, we present a number of examples that illustrate various aspects of the package.
+`GeophysicalModelGenerator.jl` comes with build-in (CI/CD) tests and [tutorials](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev) that explain the most important use cases, from importing data to generating input model setups for numerical simulations. In the following, we present a number of examples that illustrate various aspects of the package. Many additional tutorials are available in the online documentation.
 
 ### Visualise data from the Alps
 The European Alps are among the best-studied mountain belts on the planet and have, therefore, been the focus of numerous geological and geophysical studies. Different seismic tomography models have been published (using different parameterisations and datasets), but those do not necessarily agree with each other. 
