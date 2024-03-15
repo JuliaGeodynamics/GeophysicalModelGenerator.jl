@@ -55,7 +55,7 @@ struct LaMEM_grid <: AbstractGeneralGrid
     Yn
     Zn
 end
-size(d::LaMEM_grid) = (d.nmark_x,d.nmark_y,d.nmark_z)
+size(d::LaMEM_grid) = (d.nump_x,d.nump_y,d.nump_z)
 
 """
     ParaviewData(Grid::LaMEM_grid, fields::NamedTuple)
