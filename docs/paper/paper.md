@@ -100,7 +100,7 @@ There are also a number of commercial software solutions:
 
 In all cases, the commercial license fees are far beyond what most researchers can afford, even if reduced license fees are often available for academia. The closed-source nature of the software packages makes them non-extendable by the community.
 
-The `GeophysicalModelGenerator.jl` package is already used to generate input models for the geodynamic codes [LaMEM](https://github.com/UniMainzGeo/LaMEM) [@Kaus_Popov_Baumann_Pusok_Bauville_Fernandez_Collignon_2016], [JustRelax.jl](https://github.com/PTsolvers/JustRelax.jl), and [MagmaThermokinematics.jl](https://github.com/boriskaus/MagmaThermoKinematics.jl). It is also used in a number of short courses and lectures at the universities of Mainz, Heidelberg, and Bologna, and has been used a number of recent publications to highlight 3D [@gabrielli2023scattering,@napolitano2023imaging] and 4D [@desiena2024geophysical] geophysical and geological data.  
+The `GeophysicalModelGenerator.jl` package is already used to generate input models for the geodynamic codes [LaMEM](https://github.com/UniMainzGeo/LaMEM) [@Kaus_Popov_Baumann_Pusok_Bauville_Fernandez_Collignon_2016], [JustRelax.jl](https://github.com/PTsolvers/JustRelax.jl), and [MagmaThermokinematics.jl](https://github.com/boriskaus/MagmaThermoKinematics.jl). It is also used in a number of short courses and lectures at the universities of Mainz, Heidelberg, and Bologna, and in number of recent publications to highlight 3D [@gabrielli2023scattering; @napolitano2023imaging] and 4D [@desiena2024geophysical] geophysical and geological data.  
 
 # Basic usage
 
