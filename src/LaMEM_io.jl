@@ -3,6 +3,8 @@ using Printf
 using Glob
 using Interpolations
 
+import Base: show, size
+
 # LaMEM I/O
 #
 # These are routines that help to create a LaMEM marker files from a ParaviewData structure, which can be used to perform geodynamic simulations
@@ -53,6 +55,7 @@ struct LaMEM_grid <: AbstractGeneralGrid
     Yn
     Zn
 end
+size(d::LaMEM_grid) = (d.nmark_x,d.nmark_y,d.nmark_z)
 
 """
     ParaviewData(Grid::LaMEM_grid, fields::NamedTuple)
