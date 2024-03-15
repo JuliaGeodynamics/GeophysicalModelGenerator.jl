@@ -66,11 +66,11 @@ bibliography: paper.bib
 
 # Summary
 
-Geoscientific data exists in a wide variety of formats. Yet, to make a consistent interpretation of a certain region, it is often helpful to jointly visualise all this data using the same coordinates and compare, for example, seismic tomography, surface geology, Moho depth, Earthquake locations, and GPS surface velocities. If one wishes to create mechanical or thermo-mechanical numerical models of the region, creating an input setup that honors these  constraints is helpful. And since most numerical codes work in Cartesian boxes, it is helpful to have tools to project the data from geographic to Cartesian coordinates.
+Geoscientific data exists in a wide variety of formats. Yet, to make a consistent interpretation of a certain region, it is often helpful to jointly visualise all this data using the same coordinates and compare, for example, seismic tomography, surface geology, Moho depth, earthquake locations, and GPS surface velocities. If one wishes to create mechanical or thermo-mechanical numerical models of the region, creating an input setup that honors these  constraints is helpful. And since most numerical codes work in Cartesian boxes, it is helpful to have tools to project the data from geographic to Cartesian coordinates.
 
 A significant challenge in doing this is that there is no standard format for geoscientific data. Seismic tomography, for example, may come in the form of ASCII data with `lon/lat/depth` axes or as NetCDF files, with the ordering of the data typically differing from one dataset to the other. In ideal cases, geological surfaces may be provided as GeoTIFF images. In many cases, however, the underlying data discussed in publications are not available in digital format and are only shown as figures in the paper. It is nevertheless still helpful to visualise these in 3D in the correct coordinates, along with more recent, digitally available datasets.
 
-The aim of the `GeophysicalModelGenerator.jl` package is therefore two-fold:
+The aim of the `GeophysicalModelGenerator.jl` package is therefore twofold:
 
 1) Simplify collecting and visualising a wide variety of geoscientific data that is provided as point (e.g., earthquake locations), surface (e.g., topography) or volumetric data (e.g., seismic tomography).  
 2) Create input setups for 2D or 3D numerical models.
@@ -182,7 +182,7 @@ We can now use the built-in tools of Paraview to visualise the data (see \autore
 `GeophysicalModelGenerator.jl` comes with build-in (CI/CD) tests and [tutorials](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev) that explain the most important use cases, from importing data to generating input model setups for numerical simulations. In the following, we present a number of examples that illustrate various aspects of the package.
 
 ### Visualise data from the Alps
-The European Alps are among the best-studied mountain belts on the planet and have, therefore, been the focus of numerous geological and geophysical studies. Different seismic tomography models have been published (using different parameterisations and datasets), but those do not necessarily agree with each other. 
+The European Alps are among the best-studied mountain belts on the planet and have therefore been the focus of numerous geological and geophysical studies. Different seismic tomography models have been published (using different parameterisations and datasets), but those do not necessarily agree with each other. 
 
 In [`Tutorial_AlpineData.jl`](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev/man/Tutorial_AlpineData/), users learn how to load the topography of the region, import Moho data, load and visualise GPS vectors, import and plot earthquake locations, along with cross-sections through the model (\autoref{fig:alps}).
 
