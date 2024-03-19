@@ -82,25 +82,25 @@ GeophysicalModelGenerator.create_profile_point!(prof4,Data.Point, section_width=
 
 
 # Test the main profile extraction routines:
-extract_profile_data!(prof1, VolData_combined1, Data.Surface, Data.Point)
-extract_profile_data!(prof2, VolData_combined1, Data.Surface, Data.Point)
-extract_profile_data!(prof3, VolData_combined1, Data.Surface, Data.Point)
-extract_profile_data!(prof4, VolData_combined1, Data.Surface, Data.Point)
+extract_ProfileData!(prof1, VolData_combined1, Data.Surface, Data.Point)
+extract_ProfileData!(prof2, VolData_combined1, Data.Surface, Data.Point)
+extract_ProfileData!(prof3, VolData_combined1, Data.Surface, Data.Point)
+extract_ProfileData!(prof4, VolData_combined1, Data.Surface, Data.Point)
 
-extract_profile_data!(prof1, VolData_combined2, Data.Surface, Data.Point)
-extract_profile_data!(prof2, VolData_combined2, Data.Surface, Data.Point)
-extract_profile_data!(prof3, VolData_combined2, Data.Surface, Data.Point)
-extract_profile_data!(prof4, VolData_combined2, Data.Surface, Data.Point)
+extract_ProfileData!(prof1, VolData_combined2, Data.Surface, Data.Point)
+extract_ProfileData!(prof2, VolData_combined2, Data.Surface, Data.Point)
+extract_ProfileData!(prof3, VolData_combined2, Data.Surface, Data.Point)
+extract_ProfileData!(prof4, VolData_combined2, Data.Surface, Data.Point)
 
-extract_profile_data!(prof1, VolData_combined3, Data.Surface, Data.Point)
-extract_profile_data!(prof2, VolData_combined3, Data.Surface, Data.Point)
-extract_profile_data!(prof3, VolData_combined3, Data.Surface, Data.Point)
-extract_profile_data!(prof4, VolData_combined3, Data.Surface, Data.Point)
+extract_ProfileData!(prof1, VolData_combined3, Data.Surface, Data.Point)
+extract_ProfileData!(prof2, VolData_combined3, Data.Surface, Data.Point)
+extract_ProfileData!(prof3, VolData_combined3, Data.Surface, Data.Point)
+extract_ProfileData!(prof4, VolData_combined3, Data.Surface, Data.Point)
 
 
 # Test that it works if only EQ's are provided:
 prof4 = ProfileData(depth = -20)
-extract_profile_data!(prof4, nothing, NamedTuple(), Data.Point)
+extract_ProfileData!(prof4, nothing, NamedTuple(), Data.Point)
 @test isnothing(prof4.VolData)
 @test isempty(prof4.SurfData)
 @test length(prof4.PointData[1].depth) == 3280
@@ -121,6 +121,6 @@ Depth_extent=nothing
 DimsSurfCross=(100,)
 section_width=50km
 
-profile_backwards_compat = extract_profile_data("test_files/PickedProfiles.txt",1,"test_files/AlpineData_remote.txt",DimsVolCross=DimsVolCross,DepthVol=Depth_extent,DimsSurfCross=DimsSurfCross,WidthPointProfile=section_width)
+profile_backwards_compat = extract_ProfileData("test_files/PickedProfiles.txt",1,"test_files/AlpineData_remote.txt",DimsVolCross=DimsVolCross,DepthVol=Depth_extent,DimsSurfCross=DimsSurfCross,WidthPointProfile=section_width)
 
 @test length(profile_backwards_compat.PointData[1].lon) == 440

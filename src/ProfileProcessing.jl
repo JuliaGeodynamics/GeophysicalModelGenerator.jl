@@ -2,8 +2,8 @@
 # this is ProfileProcessing.jl
 # It contains functions and type definitions to gather selected data for given profiles
 
-export ProfileData, extract_profile_data, create_ProfileData, GMG_Dataset, load_dataset_file, combine_vol_data
-export extract_profile_data!, read_picked_profiles
+export ProfileData, extract_ProfileData, create_ProfileData, GMG_Dataset, load_dataset_file, combine_vol_data
+export extract_ProfileData!, read_picked_profiles
 import Base: show
 
 """
@@ -348,11 +348,11 @@ end
 
 
 """
-    extract_profile_data!(Profile::ProfileData,VolData::GeoData, SurfData::NamedTuple, PointData::NamedTuple; DimsVolCross=(100,100),Depth_extent=nothing,DimsSurfCross=(100,),section_width=50)
+    extract_ProfileData!(Profile::ProfileData,VolData::GeoData, SurfData::NamedTuple, PointData::NamedTuple; DimsVolCross=(100,100),Depth_extent=nothing,DimsSurfCross=(100,),section_width=50)
 
 Extracts data along a vertical or horizontal profile
 """
-function extract_profile_data!(Profile::ProfileData,VolData::Union{Nothing,GeoData}=nothing, SurfData::NamedTuple=NamedTuple(), PointData::NamedTuple=NamedTuple(); DimsVolCross=(100,100),Depth_extent=nothing,DimsSurfCross=(100,),section_width=50km)
+function extract_ProfileData!(Profile::ProfileData,VolData::Union{Nothing,GeoData}=nothing, SurfData::NamedTuple=NamedTuple(), PointData::NamedTuple=NamedTuple(); DimsVolCross=(100,100),Depth_extent=nothing,DimsSurfCross=(100,),section_width=50km)
 
     if !isnothing(VolData)
         create_profile_volume!(Profile, VolData; DimsVolCross=DimsVolCross, Depth_extent=Depth_extent)
@@ -383,11 +383,11 @@ end
 
 # this is mostly for backwards compatibility
 """
-    extract_profile_data(ProfileCoordFile::String,ProfileNumber::Int64,DataSetFile::String; DimsVolCross=(100,100),DepthVol=nothing,DimsSurfCross=(100,),WidthPointProfile=50km)
+    extract_ProfileData(ProfileCoordFile::String,ProfileNumber::Int64,DataSetFile::String; DimsVolCross=(100,100),DepthVol=nothing,DimsSurfCross=(100,),WidthPointProfile=50km)
 
 This is a convenience function (mostly for backwards compatibility with the MATLAB GUI) that loads the data from file & projects it onto a profile
 """
-function extract_profile_data(ProfileCoordFile::String,ProfileNumber::Int64,DataSetFile::String; DimsVolCross=(100,100),DepthVol=nothing,DimsSurfCross=(100,),WidthPointProfile=50km)
+function extract_ProfileData(ProfileCoordFile::String,ProfileNumber::Int64,DataSetFile::String; DimsVolCross=(100,100),DepthVol=nothing,DimsSurfCross=(100,),WidthPointProfile=50km)
 
     # read profile
     profile_list = read_picked_profiles(ProfileCoordFile)
@@ -408,7 +408,7 @@ function extract_profile_data(ProfileCoordFile::String,ProfileNumber::Int64,Data
     VolData_combined = combine_vol_data(VolData)
 
     # project data onto profile:
-    extract_profile_data!(profile, VolData_combined, SurfData, PointData,
+    extract_ProfileData!(profile, VolData_combined, SurfData, PointData,
                         DimsVolCross=DimsVolCross, DimsSurfCross=DimsSurfCross,
                         Depth_extent=DepthVol, section_width=WidthPointProfile)
 
@@ -420,7 +420,7 @@ end
 
 # Boris: I don't know exactly in which format you have your current files;
 ### wrapper function to extract data for a single profile
-function extract_profile_data(ProfileCoordFile,ProfileNumber,DataSetName,DataSetFile,DataSetType,DimsVolCross,DepthVol,DimsSurfCross,WidthPointProfile)
+function extract_ProfileData(ProfileCoordFile,ProfileNumber,DataSetName,DataSetFile,DataSetType,DimsVolCross,DepthVol,DimsSurfCross,WidthPointProfile)
 
     # start and end points are saved in a text file
     profile_data = readdlm(ProfileCoordFile,skipstart=1,',')
@@ -479,7 +479,7 @@ function create_ProfileData(file_profiles,file_datasets;Depth_extent=(-300,0),Di
     for iprofile = 1:length(ProfileNumber)
 
         # 2. process the profiles
-        ExtractedData = extract_profile_data(file_profiles,ProfileNumber[iprofile],DataSetName,DataSetFile,DataSetType,DimsVolCross,Depth_extent,DimsSurfCross,WidthPointProfile)
+        ExtractedData = extract_ProfileData(file_profiles,ProfileNumber[iprofile],DataSetName,DataSetFile,DataSetType,DimsVolCross,Depth_extent,DimsSurfCross,WidthPointProfile)
 
         # 3. save data as JLD2
         fn = "Profile"*string(ProfileNumber[iprofile])
