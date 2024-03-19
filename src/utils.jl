@@ -124,7 +124,7 @@ GeoData
 """
 function cross_section_volume(V::AbstractGeneralGrid; dims=(100,100), Interpolate=false, Depth_level=nothing, Lat_level=nothing, Lon_level=nothing, Start=nothing, End=nothing, Depth_extent=nothing )
 
-    DataSetType = CheckDataSet(V);
+    DataSetType = check_data_set(V);
 
     if DataSetType != 3
         error("cross_section_volume: the input data set has to be a volume!")
@@ -253,7 +253,7 @@ GeoData
 """
 function cross_section_surface(S::AbstractGeneralGrid; dims=(100,), Interpolate=true, Depth_level=nothing, Lat_level=nothing, Lon_level=nothing, Start=nothing, End=nothing )
 
-    DataSetType = CheckDataSet(S);
+    DataSetType = check_data_set(S);
     if DataSetType != 2
         error("cross_section_surface: the input data set has to be a surface!")
     end
@@ -337,7 +337,7 @@ Creates a projection of separate points (saved as a GeoData object) onto a chose
 """
 function cross_section_points(P::GeoData; Depth_level=nothing, Lat_level=nothing, Lon_level=nothing, Start=nothing, End=nothing, section_width = 10km)
 
-    DataSetType = CheckDataSet(P);
+    DataSetType = check_data_set(P);
     if DataSetType != 1
         error("cross_section_points: the input data set has to be a pointwise data set!")
     end
@@ -529,7 +529,7 @@ GeoData
 """
 function cross_section(DataSet::AbstractGeneralGrid; dims=(100,100), Interpolate=false, Depth_level=nothing, Lat_level=nothing, Lon_level=nothing, Start=nothing, End=nothing, Depth_extent=nothing, section_width=50km)
 
-    DataSetType = CheckDataSet(DataSet); # check which kind of data set we are dealing with
+    DataSetType = check_data_set(DataSet); # check which kind of data set we are dealing with
 
     if DataSetType==1 # points
         DataProfile = cross_section_points(DataSet; Depth_level, Lat_level, Lon_level, Start, End, section_width)
@@ -814,7 +814,7 @@ function extract_subvolume(V::CartData;
             X_cross[i,j,1] = x_val
         end
 
-        Data_extract = InterpolateDataFields_CrossSection(V, X, Y, Z, X_cross);
+        Data_extract = interpolate_data_fields_cross_section(V, X, Y, Z, X_cross);
 
     else
         # Don't interpolate
@@ -838,11 +838,11 @@ end
 
 
 """
-    InterpolateDataFields_CrossSection(V::CartData, X,Y,Z,Xcross)
+    interpolate_data_fields_cross_section(V::CartData, X,Y,Z,Xcross)
 
 Interpolates data fields along a cross-section defined by `Xcross` and `Z`
 """
-function InterpolateDataFields_CrossSection(V::CartData, X,Y,Z, X_cross)
+function interpolate_data_fields_cross_section(V::CartData, X,Y,Z, X_cross)
 
     Data_extract = CartData(X,Y,Z, (FlatCrossSection=X_cross,))
 
@@ -895,7 +895,7 @@ function CheckBounds(Data::AbstractArray, Data_Cross)
 end
 
 # CHECKS FOR VOLUME, SURFACE OR POINTS
-function CheckDataSet(DataSet::GeoData)
+function check_data_set(DataSet::GeoData)
     if length(size(DataSet.lon)) == 1 # scattered points
         return 1
     else
@@ -907,7 +907,7 @@ function CheckDataSet(DataSet::GeoData)
     end
 end
 
-function CheckDataSet(DataSet::CartData)
+function check_data_set(DataSet::CartData)
     if length(size(DataSet.x)) == 1 # scattered points
         return 1
     else
