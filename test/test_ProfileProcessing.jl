@@ -61,22 +61,22 @@ prof3 = ProfileData(start_lonlat=(5,45), end_lonlat=(5,49))
 prof4 = ProfileData(depth = -20)
 
 # test internal routines to intersect profile with volumetric data:
-GeophysicalModelGenerator.CreateProfileVolume!(prof1, VolData_combined1)
+GeophysicalModelGenerator.create_profile_volume!(prof1, VolData_combined1)
 @test prof1.VolData.fields.Hua2017_Vp[30,40] ≈ 9.141520976523731
 
-GeophysicalModelGenerator.CreateProfileVolume!(prof2, VolData_combined1)
+GeophysicalModelGenerator.create_profile_volume!(prof2, VolData_combined1)
 @test prof2.VolData.fields.Hua2017_Vp[30,40] ≈ 8.177263544536272
 
-GeophysicalModelGenerator.CreateProfileVolume!(prof1, VolData_combined1,  Depth_extent=(-300, -100))
+GeophysicalModelGenerator.create_profile_volume!(prof1, VolData_combined1,  Depth_extent=(-300, -100))
 @test extrema(prof1.VolData.depth.val) == (-300.0, -100.0)
 
 # Intersect surface data:
-GeophysicalModelGenerator.CreateProfileSurface!(prof1,Data.Surface)
+GeophysicalModelGenerator.create_profile_surface!(prof1,Data.Surface)
 @test prof1.SurfData[1].fields.MohoDepth[80] ≈ -37.58791461075397km
 
 # ditto with EQ data:
-GeophysicalModelGenerator.CreateProfilePoint!(prof1,Data.Point, section_width=5km)
-GeophysicalModelGenerator.CreateProfilePoint!(prof4,Data.Point, section_width=10km)
+GeophysicalModelGenerator.create_profile_point!(prof1,Data.Point, section_width=5km)
+GeophysicalModelGenerator.create_profile_point!(prof4,Data.Point, section_width=10km)
 @test  length(prof1.PointData[1].lon) == 13
 @test  length(prof4.PointData[1].lon) == 445
 

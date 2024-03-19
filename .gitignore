@@ -22,3 +22,4 @@ tutorial/test.tiff
 *.jld2
 *.tiff
 *.nc
+!/test/test_files/ISCTest.xml
