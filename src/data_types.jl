@@ -3,7 +3,7 @@
 
 import Base: show, size
 
-export  GeoData, ParaviewData, UTMData, CartData,
+export  GeoData, ParaviewData, UTMData, CartData, Q1Data,
         lonlatdepth_grid, xyz_grid, velocity_spherical_to_cartesian!,
         convert2UTMzone, convert2CartData, ProjectionPoint,
         coordinate_grids, create_CartGrid, CartGrid, flip
@@ -1235,3 +1235,126 @@ function CartData(Grid::CartGrid, fields::NamedTuple; y_val=0.0)
 
     return CartData(X,Y,Z, fields)
 end
+
+
+
+
+"""
+
+Holds a Q1 Finite Element Data set with vertex and cell data. The specified coordinates are the ones of the vertices.
+"""
+struct Q1Data <: AbstractGeneralGrid
+    x           ::  GeoUnit
+    y           ::  GeoUnit
+    z           ::  GeoUnit
+    fields      ::  NamedTuple
+    fields_cell ::  NamedTuple
+    atts        ::  Dict
+
+    # Ensure that the data is of the correct format
+    function Q1Data(x,y,z,fields,fields_cell, atts=nothing)
+
+        # Check ordering of the arrays in case of 3D
+        if sum(size(x).>1)==3
+            if maximum(abs.(diff(x,dims=2)))>maximum(abs.(diff(x,dims=1))) || maximum(abs.(diff(x,dims=3)))>maximum(abs.(diff(x,dims=1)))
+                @warn "It appears that the x-array has a wrong ordering"
+            end
+            if maximum(abs.(diff(y,dims=1)))>maximum(abs.(diff(y,dims=2))) || maximum(abs.(diff(y,dims=3)))>maximum(abs.(diff(y,dims=2)))
+                @warn "It appears that the y-array has a wrong ordering"
+            end
+        end
+
+        # check depth & convert it to units of km in case no units are given or it has different length units
+        x = convert!(x,km)
+        y = convert!(y,km)
+        z = convert!(z,km)
+
+        # fields should be a NamedTuple. In case we simply provide an array, lets transfer it accordingly
+        if !(typeof(fields)<: NamedTuple)
+            if (typeof(fields)<: Tuple)
+                if length(fields)==1
+                    fields = (DataSet1=first(fields),)  # The field is a tuple; create a NamedTuple from it
+                else
+                    error("Please employ a NamedTuple as input, rather than a Tuple")  # out of luck
+                end
+            else
+                fields = (DataSet1=fields,)
+            end
+        end
+
+        DataField = fields[1];
+        if typeof(DataField)<: Tuple
+            DataField = DataField[1];           # in case we have velocity vectors as input
+        end
+
+        if !(size(x)==size(y)==size(z)==size(DataField))
+            error("The size of x/y/z and the vertex fields should all be the same!")
+        end
+
+        # take care of attributes
+        if isnothing(atts)
+            # if nothing is given as attributes, then we note that
+            atts = Dict("note" => "No attributes were given to this dataset")
+        else
+            # check if a dict was given
+            if !(typeof(atts)<: Dict)
+                error("Attributes should be given as Dict!")
+            end
+        end
+
+        return new(x,y,z,fields,fields_cell,atts)
+
+     end
+
+end
+size(d::Q1Data) = size(d.x.val) .- 1 # size of mesh
+
+# Print an overview of the Q1Data struct:
+function Base.show(io::IO, d::Q1Data)
+    println(io,"Q1Data ")
+    println(io,"      size    : $(size(d))")
+    println(io,"      x       ϵ [ $(minimum(d.x.val)) : $(maximum(d.x.val))]")
+    println(io,"      y       ϵ [ $(minimum(d.y.val)) : $(maximum(d.y.val))]")
+
+    if  any(isnan.(NumValue(d.z)))
+        z_vals = extrema(d.z.val[isnan.(d.z.val).==false])
+        println(io,"      z       ϵ [ $(z_vals[1]) : $(z_vals[2])]; has NaN's")
+    else
+        z_vals = extrema(d.z.val)
+        println(io,"      z       ϵ [ $(z_vals[1]) : $(z_vals[2])]")
+    end
+    println(io,"      fields  : $(keys(d.fields))")
+    println(io," cell fields  : $(keys(d.fields_cell))")
+
+    # Only print attributes if we have non-default attributes
+    if any( propertynames(d) .== :atts)
+        show_atts = true
+        if haskey(d.atts,"note")
+            if d.atts["note"]=="No attributes were given to this dataset"
+                show_atts = false
+            end
+        end
+        if show_atts
+        println(io,"  attributes: $(keys(d.atts))")
+        end
+    end
+end
+
+
+"""
+    Q1Data(xyz::Tuple{Array,Array,Array})
+
+This creates a `Q1Data` struct if you have a Tuple with 3D coordinates as input.
+# Example
+```julia
+julia> data = Q1Data(xyz_grid(-10:10,-5:5,0))
+CartData
+    size    : (21, 11, 1)
+    x       ϵ [ -10.0 km : 10.0 km]
+    y       ϵ [ -5.0 km : 5.0 km]
+    z       ϵ [ 0.0 km : 0.0 km]
+    fields  : (:Z,)
+  attributes: ["note"]
+```
+"""
+Q1Data(xyz::Tuple) = Q1Data(xyz[1],xyz[2],xyz[3],(Z=xyz[3],),NamedTuple())
