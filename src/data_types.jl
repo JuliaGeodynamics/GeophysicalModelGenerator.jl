@@ -1422,7 +1422,7 @@ end
 """
     fe_data::FEData = convert2FEData(d::Q1Data)
 
-Creates a Q1 FEM mesh from the `cart_vertex` cartesian data which holds the vertex coordinates
+Creates a Q1 FEM mesh from the `Q1Data` data which holds the vertex coordinates and cell/vertex fields
 """
 function convert2FEData(data::Q1Data)
 
