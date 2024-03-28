@@ -265,3 +265,13 @@ inpolygon!(yN, PolyX, PolyY, X, Y)
 @test sum(yN) == 217
 
 
+# add cell and vertex fields
+q1_data = Q1Data(xyz_grid(1:10,1:10,1:8))
+q1_data = addfield(q1_data, (region=zeros(Int64,size(q1_data)),), cellfield=true)
+@test keys(q1_data.fields) == (:Z,)
+@test keys(q1_data.cellfields) == (:region,)
+
+
+q1_data = addfield(q1_data, (T=ones(Float64,size(q1_data) .+1 ),))
+@test keys(q1_data.fields) == (:Z,:T)
+@test keys(q1_data.cellfields) == (:region,)

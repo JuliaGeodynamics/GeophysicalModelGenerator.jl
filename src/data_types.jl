@@ -1248,11 +1248,11 @@ struct Q1Data <: AbstractGeneralGrid
     y           ::  GeoUnit
     z           ::  GeoUnit
     fields      ::  NamedTuple
-    fields_cell ::  NamedTuple
+    cellfields  ::  NamedTuple
     atts        ::  Dict
 
     # Ensure that the data is of the correct format
-    function Q1Data(x,y,z,fields,fields_cell, atts=nothing)
+    function Q1Data(x,y,z,fields,cellfields, atts=nothing)
 
         # Check ordering of the arrays in case of 3D
         if sum(size(x).>1)==3
@@ -1302,7 +1302,7 @@ struct Q1Data <: AbstractGeneralGrid
             end
         end
 
-        return new(x,y,z,fields,fields_cell,atts)
+        return new(x,y,z,fields,cellfields,atts)
 
      end
 
@@ -1324,7 +1324,7 @@ function Base.show(io::IO, d::Q1Data)
         println(io,"      z       ϵ [ $(z_vals[1]) : $(z_vals[2])]")
     end
     println(io,"      fields  : $(keys(d.fields))")
-    println(io," cell fields  : $(keys(d.fields_cell))")
+    println(io,"  cellfields  : $(keys(d.cellfields))")
 
     # Only print attributes if we have non-default attributes
     if any( propertynames(d) .== :atts)

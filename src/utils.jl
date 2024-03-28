@@ -64,6 +64,21 @@ Add `new_fields` fields to a `GeoData` dataset
 """
 addfield(V::GeoData,new_fields::NamedTuple) = GeoData(V.lon.val, V.lat.val, V.depth.val, merge(V.fields, new_fields))
 
+
+"""
+    V = addfield(V::Q1Data,new_fields::NamedTuple; cellfield=false)
+
+Add `new_fields` fields to a `Q1Data` dataset; set `cellfield` to `true` if the field is a cell field; otherwise it is a vertex field
+"""
+function addfield(V::Q1Data,new_fields::NamedTuple; cellfield=false) 
+    if cellfield
+        return Q1Data(V.x.val, V.y.val, V.z.val, V.fields, merge(V.cellfields, new_fields))
+    else
+        return Q1Data(V.x.val, V.y.val, V.z.val, merge(V.fields, new_fields), V.cellfields)
+    end
+end
+
+
 # this function is taken from @JeffreySarnoff
 function dropnames(namedtuple::NamedTuple, names::Tuple{Vararg{Symbol}})
     keepnames = Base.diff_names(Base._nt_names(namedtuple), names)

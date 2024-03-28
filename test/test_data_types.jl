@@ -172,7 +172,9 @@ Data_set6 = convert2UTMzone(Data_set5, proj)
 @test sum(Data_set.NS.val-Data_set6.NS.val) ≈ 0.0
 
 
-# test Q1 data
+# Create Q1 data set
 q1_data = Q1Data(xyz_grid(1:10,1:10,1:8))
 @test size(q1_data.x)==(10,10,8)
 @test size(q1_data)==(9,9,7)
+
+
