@@ -271,7 +271,15 @@ q1_data = addfield(q1_data, (region=zeros(Int64,size(q1_data)),), cellfield=true
 @test keys(q1_data.fields) == (:Z,)
 @test keys(q1_data.cellfields) == (:region,)
 
-
+# Q1 data
 q1_data = addfield(q1_data, (T=ones(Float64,size(q1_data) .+1 ),))
 @test keys(q1_data.fields) == (:Z,:T)
 @test keys(q1_data.cellfields) == (:region,)
+
+
+# FE data
+fe_data = convert2FEData(q1_data)
+@test size(fe_data.fields.Z) == (800,)
+
+fe_data = addfield(fe_data, (T1=ones(Float64,size(fe_data.fields.Z) ),))
+@test keys(fe_data.fields) == (:Z,:T, :T1)

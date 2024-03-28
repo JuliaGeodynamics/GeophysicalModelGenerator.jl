@@ -177,4 +177,7 @@ q1_data = Q1Data(xyz_grid(1:10,1:10,1:8))
 @test size(q1_data.x)==(10,10,8)
 @test size(q1_data)==(9,9,7)
 
-
+# Create FE object from it:
+fe_data = convert2FEData(q1_data)
+@test size(fe_data.connectivity) == (8, 567)
+@test size(fe_data.vertices) == (3, 800)

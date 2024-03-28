@@ -3,9 +3,9 @@
 
 import Base: show, size
 
-export  GeoData, ParaviewData, UTMData, CartData, Q1Data,
+export  GeoData, ParaviewData, UTMData, CartData, Q1Data, FEData,
         lonlatdepth_grid, xyz_grid, velocity_spherical_to_cartesian!,
-        convert2UTMzone, convert2CartData, ProjectionPoint,
+        convert2UTMzone, convert2CartData, convert2FEData, ProjectionPoint,
         coordinate_grids, create_CartGrid, CartGrid, flip
 
 
@@ -1040,6 +1040,8 @@ function coordinate_grids(Data::ParaviewData)
 end
 
 
+
+
 """
     Structure that holds data for an orthogonal cartesian grid, which can be described with 1D vectors
 """
@@ -1358,3 +1360,108 @@ CartData
 ```
 """
 Q1Data(xyz::Tuple) = Q1Data(xyz[1],xyz[2],xyz[3],(Z=xyz[3],),NamedTuple())
+
+
+"""
+    FEData{dim, points_per_cell} 
+
+Structure that holds Finite Element info with vertex and cell data. Works in 2D/3D for arbitrary elements
+
+Parameters
+===
+- `vertices` with the points on the mesh (`dim` x `Npoints`)
+- `connectivity` with the connectivity of the mesh (`points_per_cell` x `Ncells`)
+- `fields` with the fields on the vertices
+- `cellfields` with the fields of the cells
+
+"""
+struct FEData{dim, points_per_cell} 
+    vertices     :: Array{Float64}
+    connectivity :: Array{Int64}
+    fields       :: NamedTuple
+    cellfields   :: NamedTuple
+
+    # Ensure that the data is of the correct format
+    function FEData(vertices,connectivity,fields=nothing,cellfields=nothing)
+        if isnothing(fields);       fields = NamedTuple();      end
+        if isnothing(cellfields);   cellfields = NamedTuple();  end
+
+        dim = size(vertices,1)
+        points_per_cell = size(connectivity,1)
+        if points_per_cell>size(connectivity,2)
+            println("# of points_per_cell > size(connectivity,2). Are you sure the ordering is ok?")
+        end
+        if dim>size(vertices,2)
+            println("# of dims > size(vertices,2). Are you sure the ordering is ok?")
+        end
+        
+        return new{dim,points_per_cell}(vertices,connectivity,fields,cellfields)
+     end
+
+end
+
+# Print an overview of the FEData struct:
+function Base.show(io::IO, d::FEData{dim, points_per_cell}) where {dim, points_per_cell}
+    println(io,"FEData{$dim,$points_per_cell} ")
+    println(io,"      # elements : $(size(d.connectivity,2))")
+    println(io,"      # vertices : $(size(d.vertices,2))")
+    println(io,"          fields : $(keys(d.fields))")
+    println(io,"      cellfields : $(keys(d.cellfields))")
+end
+
+"""
+    X,Y,Z = coordinate_grids(Data::Q1Data)
+
+Returns 3D coordinate arrays
+"""
+function coordinate_grids(Data::Q1Data)
+    return NumValue(Data.x), NumValue(Data.y), NumValue(Data.z)
+end
+
+
+"""
+    fe_data::FEData = convert2FEData(d::Q1Data)
+
+Creates a Q1 FEM mesh from the `cart_vertex` cartesian data which holds the vertex coordinates
+"""
+function convert2FEData(data::Q1Data)
+
+    X,Y,Z = coordinate_grids(data);
+        
+    # Unique number of all vertices
+    el_num = zeros(Int64,size(X))
+    num = 1;
+    for I in eachindex(el_num)
+        el_num[I]  = num;
+        num += 1;
+    end
+    
+    # Coordinates of all vertices
+    vertices = [X[:]'; Y[:]'; Z[:]']
+    
+    # Connectivity of all cells
+    nelx,nely,nelz = size(X) .- 1
+    connectivity = zeros(Int64, 8, nelx*nely*nelz)
+    n = 1;
+    for k=1:nelz
+        for j=1:nely
+            for i=1:nelx
+               connectivity[:,n] = [el_num[i,j,k  ], el_num[i+1,j,k  ], el_num[i,j+1,k  ], el_num[i+1,j+1,k  ],
+                                    el_num[i,j,k+1], el_num[i+1,j,k+1], el_num[i,j+1,k+1], el_num[i+1,j+1,k+1]]
+                n += 1                                    
+            end
+        end
+    end
+
+    data_fields=()
+    for f in data.fields
+        data_fields = (data_fields..., f[:])
+    end
+
+    data_cellfields=()
+    for f in data.cellfields
+        data_cellfields = (data_cellfields..., f[:])
+    end
+
+    return FEData(vertices,connectivity,  NamedTuple{keys(data.fields)}(data_fields),  NamedTuple{keys(data.cellfields)}(data_cellfields))
+end
