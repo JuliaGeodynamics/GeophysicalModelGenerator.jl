@@ -7,7 +7,7 @@ fname="test_files/subduction_ptatin.msh"
 fe_data, tag_names = import_Gmsh(fname)
 @test sum(fe_data.cellfields.regions) == 830
 
-# Swap y and z dimensions (as pTatin uses a differenty definition)
+# Swap y and z dimensions (as pTatin uses a different definition)
 data_fe = swap_yz_dims(fe_data)
 
 # Define a CartData set with the same dimensions as the Gmsh file
