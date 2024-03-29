@@ -8,6 +8,8 @@ For plotting, we transfer this into the `ParaviewData` structure, which has cart
 GeoData
 CartData
 UTMData
+Q1Data
+FEData
 ParaviewData
 lonlatdepth_grid
 xyz_grid
