@@ -1,5 +1,6 @@
 # This provides various transformations (GeoData <=> Cartesian; UTMData <=> Cartesian)
 #
+using StaticArrays
 
 export project_CartData, project_FEData_CartData
 
