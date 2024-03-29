@@ -51,6 +51,14 @@ function write_pTatin_mesh(fe_mesh::FEData; out_file="md.bin", connectivity_zero
 end
 
 """
+    write_pTatin_mesh(q1_mesh::Q1Data; out_file="md.bin", connectivity_zero_based=true)
+
+Write a binary file with the mesh information for pTatin
+"""
+write_pTatin_mesh(q1_mesh::Q1Data; out_file="md.bin", connectivity_zero_based=true) = write_pTatin_mesh(convert2FEData(q1_mesh), out_file=out_file, connectivity_zero_based=connectivity_zero_based)
+
+
+"""
     write_FEmesh_mesh(vdata::FEData; out_file="md.bin", connectivity_zero_based=true)
 
 Writes a binary file with the mesh information for pTatin
@@ -89,7 +97,8 @@ function write_FEmesh_mesh(data::FEData; out_file="md.bin", connectivity_zero_ba
     write(f,Int32.(arange))             # arange
 
     close(f)
-    println("Wrote file $(out_file) to disk with mesh info")
+    println("Wrote pTatin mesh  : $(out_file)")
+
     return nothing
 end
 
@@ -141,6 +150,7 @@ function _write_field_file(fname::String, field, len, dtype_map)
     write(f,Int32(dtype_map[Symbol(eltype(field))])) # field type
     write(f,field[:])                        # field
     close(f)
-    println("Wrote file $fname to disk")
+    println("Wrote pTatin field : $fname")
+
     return nothing
 end

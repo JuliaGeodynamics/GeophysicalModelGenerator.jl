@@ -998,48 +998,88 @@ function convert!(d,u)
     return d
 end
 
+""" 
+    out = average_q1(d::Array) 
+3D linear averaging of a 3D array
 """
-    X,Y,Z = coordinate_grids(Data::CartData)
+function average_q1(d::Array) 
+
+    # we are using multidimensional iterations in julia here following https://julialang.org/blog/2016/02/iteration/
+    out = zeros(eltype(d),size(d) .- 1)
+    R = CartesianIndices(out)
+    Ifirst, Ilast = first(R), last(R)
+    I1 = oneunit(Ifirst)
+    for I in R
+        n, s = 0, zero(eltype(out))
+        for J in max(Ifirst, I):min(Ilast + I1, I+I1)
+            s += d[J]
+            n += 1
+        end
+        out[I] = s/n
+    end
+
+    return out
+end    
+
+"""
+    X,Y,Z = coordinate_grids(Data::CartData; cell=false)
 
 Returns 3D coordinate arrays
 """
-function coordinate_grids(Data::CartData)
+function coordinate_grids(Data::CartData; cell=false)
+    X,Y,Z = NumValue(Data.x), NumValue(Data.y), NumValue(Data.z)
 
-    return NumValue(Data.x), NumValue(Data.y), NumValue(Data.z)
-end
-
-"""
-    LON,LAT,Z = coordinate_grids(Data::GeoData)
-
-Returns 3D coordinate arrays
-"""
-function coordinate_grids(Data::GeoData)
-
-    return NumValue(Data.lon), NumValue(Data.lat), NumValue(Data.depth)
-end
-
-"""
-    EW,NS,Z = coordinate_grids(Data::UTMData)
-
-Returns 3D coordinate arrays
-"""
-function coordinate_grids(Data::UTMData)
-
-    return NumValue(Data.EW), NumValue(Data.NS), NumValue(Data.depth)
-end
-
-"""
-    X,Y,Z = coordinate_grids(Data::ParaviewData)
-
-Returns 3D coordinate arrays
-"""
-function coordinate_grids(Data::ParaviewData)
-    X,Y,Z = xyz_grid(NumValue(Data.x), NumValue(Data.y), NumValue(Data.z))
+    if cell
+        X,Y,Z = average_q1(X),average_q1(Y), average_q1(Z)
+    end
 
     return X,Y,Z
 end
 
+"""
+    LON,LAT,Z = coordinate_grids(Data::GeoData; cell=false)
 
+Returns 3D coordinate arrays
+"""
+function coordinate_grids(Data::GeoData; cell=false)
+    X,Y,Z = NumValue(Data.lon), NumValue(Data.lat), NumValue(Data.depth)
+
+    if cell
+        X,Y,Z = average_q1(X),average_q1(Y), average_q1(Z)
+    end
+
+    return X,Y,Z
+end
+
+"""
+    EW,NS,Z = coordinate_grids(Data::UTMData; cell=false)
+
+Returns 3D coordinate arrays
+"""
+function coordinate_grids(Data::UTMData; cell=false)
+
+    X,Y,Z =  NumValue(Data.EW), NumValue(Data.NS), NumValue(Data.depth)
+
+    if cell
+        X,Y,Z = average_q1(X),average_q1(Y), average_q1(Z)
+    end
+
+    return X,Y,Z
+end
+
+"""
+    X,Y,Z = coordinate_grids(Data::ParaviewData; cell=false)
+
+Returns 3D coordinate arrays
+"""
+function coordinate_grids(Data::ParaviewData; cell=false)
+    X,Y,Z = xyz_grid(NumValue(Data.x), NumValue(Data.y), NumValue(Data.z))
+    if cell
+        X,Y,Z = average_q1(X),average_q1(Y), average_q1(Z)
+    end
+    
+    return X,Y,Z
+end
 
 
 """
@@ -1205,12 +1245,16 @@ end
 
 
 """
-    X,Y,Z = coordinate_grids(Data::CartGrid)
+    X,Y,Z = coordinate_grids(Data::CartGrid; cell=false)
 
 Returns 3D coordinate arrays
 """
-function coordinate_grids(Data::CartGrid)
+function coordinate_grids(Data::CartGrid; cell=false)
     X,Y,Z = xyz_grid(NumValue(Data.coord1D[1]), NumValue(Data.coord1D[2]), NumValue(Data.coord1D[3]))
+
+    if cell
+        X,Y,Z = average_q1(X),average_q1(Y), average_q1(Z)
+    end
 
     return X,Y,Z
 end
@@ -1410,12 +1454,16 @@ function Base.show(io::IO, d::FEData{dim, points_per_cell}) where {dim, points_p
 end
 
 """
-    X,Y,Z = coordinate_grids(Data::Q1Data)
+    X,Y,Z = coordinate_grids(Data::Q1Data; cell=false)
 
 Returns 3D coordinate arrays
 """
-function coordinate_grids(Data::Q1Data)
-    return NumValue(Data.x), NumValue(Data.y), NumValue(Data.z)
+function coordinate_grids(Data::Q1Data; cell=false)
+    X,Y,Z = NumValue(Data.x), NumValue(Data.y), NumValue(Data.z)
+    if cell
+        X,Y,Z = average_q1(X),average_q1(Y), average_q1(Z)
+    end
+    return X,Y,Z
 end
 
 

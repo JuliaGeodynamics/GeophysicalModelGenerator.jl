@@ -352,3 +352,28 @@ Phases[ind] .= 0;
 #Grid2D = CartData(Grid2D.x.val,Grid2D.y.val,Grid2D.z.val, (;Phases, Temp))
 #write_paraview(Grid2D,"Grid2D_SubductionCurvedOverriding");
 
+
+
+
+
+# Q1Data 
+Grid                =   Q1Data(xyz_grid(1.0:1:10.0, 11.0:1:20.0, -20:1:-10))   
+PhasesC             =   zeros(Int64,size(Grid));  # at cell
+TempC               =   ones(Float64, size(Grid))*1350;
+PhasesV             =   zeros(Int64,size(Grid.x));  # at vertex
+TempV               =   ones(Float64, size(Grid.x))*1350;
+
+# Add data to vertex fields:
+add_box!(PhasesV,TempV,Grid, xlim=(2,4), zlim=(-15,-10), phase=ConstantPhase(3), DipAngle=10, T=LinearTemp(Tbot=1350, Ttop=200))
+@test sum(TempV[1,1,:]) ≈ 14850.0
+
+add_ellipsoid!(PhasesV,TempV,Grid, cen=(4,15,-17), axes=(1,2,3), StrikeAngle=90, DipAngle=45, phase=ConstantPhase(2), T=ConstantTemp(600))
+@test sum(TempV[1,1,:]) ≈ 14850.0
+
+
+# Add data to cell fields:
+add_box!(PhasesC,TempC,Grid, xlim=(2,4), zlim=(-15,-10), phase=ConstantPhase(3), DipAngle=10, T=LinearTemp(Tbot=1350, Ttop=200), cell=true)
+@test sum(TempC[1,1,:]) ≈ 13360.239732164195
+
+add_ellipsoid!(PhasesC,TempC,Grid, cen=(4,15,-17), axes=(1,2,3), StrikeAngle=90, DipAngle=45, phase=ConstantPhase(2), T=ConstantTemp(1600), cell=true)
+@test all(extrema(TempC) .≈ (262.2231770957809, 1600.0))
