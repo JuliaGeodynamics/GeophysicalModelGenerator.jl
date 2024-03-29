@@ -57,6 +57,10 @@ end
     include("test_GMT.jl")
 end
 
+@testset "Gmsh integration" begin
+    include("test_Gmsh.jl")
+end
+
 @testset "Event counts" begin
     include("test_event_counts.jl")
 end
