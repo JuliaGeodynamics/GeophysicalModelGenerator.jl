@@ -269,13 +269,18 @@ function above_surface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData; 
 end
 
 """
-    Above = above_surface(Data_Cart::CartData, DataSurface_Cart::CartData; above=true)
+    Above = above_surface(Data_Cart::Union{Q1Data,CartData}, DataSurface_Cart::CartData; above=true)
 
 Determines if points within the 3D `Data_Cart` structure are above the Cartesian surface `DataSurface_Cart`
 """
-function above_surface(Data_Cart::CartData, DataSurface_Cart::CartData; above=true)
+function above_surface(Data_Cart::Union{Q1Data,CartData}, DataSurface_Cart::CartData; above=true, cell=false)
 
-    Data            =   GeoData(ustrip.(Data_Cart.x.val),       ustrip.(Data_Cart.y.val),        ustrip.(Data_Cart.z.val), Data_Cart.fields)
+    X,Y,Z           =   coordinate_grids(Data_Cart, cell=cell)
+    if cell
+        Data        =   GeoData(ustrip.(X),       ustrip.(Y),        ustrip.(Z), Data_Cart.cellfields)
+    else
+        Data        =   GeoData(ustrip.(X),       ustrip.(Y),        ustrip.(Z), Data_Cart.fields)
+    end
     DataSurface     =   GeoData(ustrip.(DataSurface_Cart.x.val),ustrip.(DataSurface_Cart.y.val), ustrip.(DataSurface_Cart.z.val), DataSurface_Cart.fields )
 
     return Above    =   above_surface(Data, DataSurface; above=above)
@@ -315,12 +320,12 @@ function below_surface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData)
 end
 
 """
-    Below = below_surface(Data_Cart::CartData, DataSurface_Cart::CartData)
+    Below = below_surface(Data_Cart::Union{CartData,Q1Data}, DataSurface_Cart::CartData, cell=false)
 
-Determines if points within the 3D Data_Cart structure are below the Cartesian surface DataSurface_Cart
+Determines if points within the 3D `Data_Cart` structure are below the Cartesian surface `DataSurface_Cart`
 """
-function below_surface(Data_Cart::CartData, DataSurface_Cart::CartData)
-    return above_surface(Data_Cart::CartData, DataSurface_Cart::CartData; above=false)
+function below_surface(Data_Cart::Union{CartData,Q1Data}, DataSurface_Cart::CartData, cell=false)
+    return above_surface(Data_Cart, DataSurface_Cart; above=false, cell=cell)
 end
 
 """
