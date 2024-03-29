@@ -3,7 +3,7 @@
 # We follow the python routines given here https://github.com/hpc4geo/gmsh_to_point_cloud, written by Dave May
 
 import Base: show, size
-export write_pTatin_mesh
+export write_pTatin_mesh, swap_yz_dims
 
 
 """
@@ -154,3 +154,14 @@ function _write_field_file(fname::String, field, len, dtype_map)
 
     return nothing
 end
+
+"""
+    fe_swap = swap_yz_dims(fe_data::FEData)
+
+This swaps the `y` and `z` dimensions of the FEData object, which is useful for pTatin as it uses `y` for what is `z` in GMG.
+"""
+function swap_yz_dims(fe_data::FEData)
+    vertices = copy(fe_data.vertices)
+    return FEData(vertices[[1,3,2],:], fe_data.connectivity, fe_data.fields, fe_data.cellfields)
+end
+
