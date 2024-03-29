@@ -11,7 +11,7 @@ fe_data, tag_names = import_Gmsh(fname)
 data_fe = swap_yz_dims(fe_data)
 
 # Define a CartData set with the same dimensions as the Gmsh file
-bbox = extrema(fe_data_gmg);
+bbox = extrema(data_fe);
 nx,ny,nz = 100,50,80
 data_cart = CartData( xyz_grid(range(bbox[1]...,length=nx),range(bbox[2]...,length=ny),range(bbox[3]...,length=nz) ))
 
