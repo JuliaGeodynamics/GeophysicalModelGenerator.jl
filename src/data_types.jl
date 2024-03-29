@@ -1,7 +1,7 @@
 # This is data_types.jl
 # contains type definitions to be used in GeophysicalModelGenerator
 
-import Base: show, size
+import Base: show, size, extrema
 
 export  GeoData, ParaviewData, UTMData, CartData, Q1Data, FEData,
         lonlatdepth_grid, xyz_grid, velocity_spherical_to_cartesian!,
@@ -217,6 +217,7 @@ struct GeoData <: AbstractGeneralGrid
 
 end
 size(d::GeoData) = size(d.lon.val)
+extrema(d::GeoData) = [extrema(d.lon); extrema(d.lat); extrema(d.depth)]
 
 # Print an overview of the Geodata struct:
 function Base.show(io::IO, d::GeoData)
@@ -484,6 +485,7 @@ struct UTMData <: AbstractGeneralGrid
 
 end
 size(d::UTMData) = size(d.EW.val)
+extrema(d::UTMData) = [extrema(d.EW.val); extrema(d.NS.val); extrema(d.depth.val)]
 
 # Print an overview of the UTMData struct:
 function Base.show(io::IO, d::UTMData)
@@ -769,6 +771,7 @@ struct CartData <: AbstractGeneralGrid
 
 end
 size(d::CartData) = size(d.x.val)
+extrema(d::CartData) = [extrema(d.x.val); extrema(d.y.val); extrema(d.z.val)]
 
 # Print an overview of the UTMData struct:
 function Base.show(io::IO, d::CartData)
@@ -1354,6 +1357,7 @@ struct Q1Data <: AbstractGeneralGrid
 
 end
 size(d::Q1Data) = size(d.x.val) .- 1 # size of mesh
+extrema(d::Q1Data) = [extrema(d.x.val); extrema(d.y.val); extrema(d.z.val)]
 
 # Print an overview of the Q1Data struct:
 function Base.show(io::IO, d::Q1Data)
@@ -1444,14 +1448,29 @@ struct FEData{dim, points_per_cell}
 
 end
 
+
 # Print an overview of the FEData struct:
 function Base.show(io::IO, d::FEData{dim, points_per_cell}) where {dim, points_per_cell}
     println(io,"FEData{$dim,$points_per_cell} ")
-    println(io,"      # elements : $(size(d.connectivity,2))")
-    println(io,"      # vertices : $(size(d.vertices,2))")
-    println(io,"          fields : $(keys(d.fields))")
-    println(io,"      cellfields : $(keys(d.cellfields))")
+    println(io,"    elements : $(size(d.connectivity,2))")
+    println(io,"    vertices : $(size(d.vertices,2))")
+    println(io,"     x       ϵ [ $(minimum(d.vertices)[1]) : $(maximum(d.vertices)[1])]")
+    println(io,"     y       ϵ [ $(minimum(d.vertices)[2]) : $(maximum(d.vertices)[2])]")
+    println(io,"     z       ϵ [ $(minimum(d.vertices)[3]) : $(maximum(d.vertices)[3])]")
+    println(io,"      fields : $(keys(d.fields))")
+    println(io,"  cellfields : $(keys(d.cellfields))")
 end
+
+extrema(d::FEData) = extrema(d.vertices, dims=2)
+size(d::FEData) = size(d.connectivity,2)
+
+"""
+    convert2FEData(d::Q1Data
+
+"""
+    convert2FEData(d::Q1Data)
+
+
 
 """
     X,Y,Z = coordinate_grids(Data::Q1Data; cell=false)
