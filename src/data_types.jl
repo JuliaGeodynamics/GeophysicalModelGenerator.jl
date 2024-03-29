@@ -1454,9 +1454,9 @@ function Base.show(io::IO, d::FEData{dim, points_per_cell}) where {dim, points_p
     println(io,"FEData{$dim,$points_per_cell} ")
     println(io,"    elements : $(size(d.connectivity,2))")
     println(io,"    vertices : $(size(d.vertices,2))")
-    println(io,"     x       ϵ [ $(minimum(d.vertices)[1]) : $(maximum(d.vertices)[1])]")
-    println(io,"     y       ϵ [ $(minimum(d.vertices)[2]) : $(maximum(d.vertices)[2])]")
-    println(io,"     z       ϵ [ $(minimum(d.vertices)[3]) : $(maximum(d.vertices)[3])]")
+    println(io,"     x       ϵ [ $(minimum(d.vertices,dims=2)[1]) : $(maximum(d.vertices,dims=2)[1])]")
+    println(io,"     y       ϵ [ $(minimum(d.vertices,dims=2)[2]) : $(maximum(d.vertices,dims=2)[2])]")
+    println(io,"     z       ϵ [ $(minimum(d.vertices,dims=2)[3]) : $(maximum(d.vertices,dims=2)[3])]")
     println(io,"      fields : $(keys(d.fields))")
     println(io,"  cellfields : $(keys(d.cellfields))")
 end
