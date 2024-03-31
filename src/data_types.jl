@@ -1,11 +1,11 @@
 # This is data_types.jl
 # contains type definitions to be used in GeophysicalModelGenerator
 
-import Base: show, size
+import Base: show, size, extrema
 
-export  GeoData, ParaviewData, UTMData, CartData,
+export  GeoData, ParaviewData, UTMData, CartData, Q1Data, FEData,
         lonlatdepth_grid, xyz_grid, velocity_spherical_to_cartesian!,
-        convert2UTMzone, convert2CartData, ProjectionPoint,
+        convert2UTMzone, convert2CartData, convert2FEData, ProjectionPoint,
         coordinate_grids, create_CartGrid, CartGrid, flip
 
 
@@ -217,6 +217,7 @@ struct GeoData <: AbstractGeneralGrid
 
 end
 size(d::GeoData) = size(d.lon.val)
+extrema(d::GeoData) = [extrema(d.lon); extrema(d.lat); extrema(d.depth)]
 
 # Print an overview of the Geodata struct:
 function Base.show(io::IO, d::GeoData)
@@ -484,6 +485,7 @@ struct UTMData <: AbstractGeneralGrid
 
 end
 size(d::UTMData) = size(d.EW.val)
+extrema(d::UTMData) = [extrema(d.EW.val); extrema(d.NS.val); extrema(d.depth.val)]
 
 # Print an overview of the UTMData struct:
 function Base.show(io::IO, d::UTMData)
@@ -769,6 +771,7 @@ struct CartData <: AbstractGeneralGrid
 
 end
 size(d::CartData) = size(d.x.val)
+extrema(d::CartData) = [extrema(d.x.val); extrema(d.y.val); extrema(d.z.val)]
 
 # Print an overview of the UTMData struct:
 function Base.show(io::IO, d::CartData)
@@ -998,44 +1001,86 @@ function convert!(d,u)
     return d
 end
 
+""" 
+    out = average_q1(d::Array) 
+3D linear averaging of a 3D array
 """
-    X,Y,Z = coordinate_grids(Data::CartData)
+function average_q1(d::Array) 
+
+    # we are using multidimensional iterations in julia here following https://julialang.org/blog/2016/02/iteration/
+    out = zeros(eltype(d),size(d) .- 1)
+    R = CartesianIndices(out)
+    Ifirst, Ilast = first(R), last(R)
+    I1 = oneunit(Ifirst)
+    for I in R
+        n, s = 0, zero(eltype(out))
+        for J in max(Ifirst, I):min(Ilast + I1, I+I1)
+            s += d[J]
+            n += 1
+        end
+        out[I] = s/n
+    end
+
+    return out
+end    
+
+"""
+    X,Y,Z = coordinate_grids(Data::CartData; cell=false)
 
 Returns 3D coordinate arrays
 """
-function coordinate_grids(Data::CartData)
+function coordinate_grids(Data::CartData; cell=false)
+    X,Y,Z = NumValue(Data.x), NumValue(Data.y), NumValue(Data.z)
 
-    return NumValue(Data.x), NumValue(Data.y), NumValue(Data.z)
+    if cell
+        X,Y,Z = average_q1(X),average_q1(Y), average_q1(Z)
+    end
+
+    return X,Y,Z
 end
 
 """
-    LON,LAT,Z = coordinate_grids(Data::GeoData)
+    LON,LAT,Z = coordinate_grids(Data::GeoData; cell=false)
 
 Returns 3D coordinate arrays
 """
-function coordinate_grids(Data::GeoData)
+function coordinate_grids(Data::GeoData; cell=false)
+    X,Y,Z = NumValue(Data.lon), NumValue(Data.lat), NumValue(Data.depth)
 
-    return NumValue(Data.lon), NumValue(Data.lat), NumValue(Data.depth)
+    if cell
+        X,Y,Z = average_q1(X),average_q1(Y), average_q1(Z)
+    end
+
+    return X,Y,Z
 end
 
 """
-    EW,NS,Z = coordinate_grids(Data::UTMData)
+    EW,NS,Z = coordinate_grids(Data::UTMData; cell=false)
 
 Returns 3D coordinate arrays
 """
-function coordinate_grids(Data::UTMData)
+function coordinate_grids(Data::UTMData; cell=false)
 
-    return NumValue(Data.EW), NumValue(Data.NS), NumValue(Data.depth)
+    X,Y,Z =  NumValue(Data.EW), NumValue(Data.NS), NumValue(Data.depth)
+
+    if cell
+        X,Y,Z = average_q1(X),average_q1(Y), average_q1(Z)
+    end
+
+    return X,Y,Z
 end
 
 """
-    X,Y,Z = coordinate_grids(Data::ParaviewData)
+    X,Y,Z = coordinate_grids(Data::ParaviewData; cell=false)
 
 Returns 3D coordinate arrays
 """
-function coordinate_grids(Data::ParaviewData)
+function coordinate_grids(Data::ParaviewData; cell=false)
     X,Y,Z = xyz_grid(NumValue(Data.x), NumValue(Data.y), NumValue(Data.z))
-
+    if cell
+        X,Y,Z = average_q1(X),average_q1(Y), average_q1(Z)
+    end
+    
     return X,Y,Z
 end
 
@@ -1203,12 +1248,16 @@ end
 
 
 """
-    X,Y,Z = coordinate_grids(Data::CartGrid)
+    X,Y,Z = coordinate_grids(Data::CartGrid; cell=false)
 
 Returns 3D coordinate arrays
 """
-function coordinate_grids(Data::CartGrid)
+function coordinate_grids(Data::CartGrid; cell=false)
     X,Y,Z = xyz_grid(NumValue(Data.coord1D[1]), NumValue(Data.coord1D[2]), NumValue(Data.coord1D[3]))
+
+    if cell
+        X,Y,Z = average_q1(X),average_q1(Y), average_q1(Z)
+    end
 
     return X,Y,Z
 end
@@ -1234,4 +1283,252 @@ function CartData(Grid::CartGrid, fields::NamedTuple; y_val=0.0)
     end
 
     return CartData(X,Y,Z, fields)
+end
+
+
+
+
+"""
+
+Holds a Q1 Finite Element Data set with vertex and cell data. The specified coordinates are the ones of the vertices.
+"""
+struct Q1Data <: AbstractGeneralGrid
+    x           ::  GeoUnit
+    y           ::  GeoUnit
+    z           ::  GeoUnit
+    fields      ::  NamedTuple
+    cellfields  ::  NamedTuple
+    atts        ::  Dict
+
+    # Ensure that the data is of the correct format
+    function Q1Data(x,y,z,fields,cellfields, atts=nothing)
+
+        # Check ordering of the arrays in case of 3D
+        if sum(size(x).>1)==3
+            if maximum(abs.(diff(x,dims=2)))>maximum(abs.(diff(x,dims=1))) || maximum(abs.(diff(x,dims=3)))>maximum(abs.(diff(x,dims=1)))
+                @warn "It appears that the x-array has a wrong ordering"
+            end
+            if maximum(abs.(diff(y,dims=1)))>maximum(abs.(diff(y,dims=2))) || maximum(abs.(diff(y,dims=3)))>maximum(abs.(diff(y,dims=2)))
+                @warn "It appears that the y-array has a wrong ordering"
+            end
+        end
+
+        # check depth & convert it to units of km in case no units are given or it has different length units
+        x = convert!(x,km)
+        y = convert!(y,km)
+        z = convert!(z,km)
+
+        # fields should be a NamedTuple. In case we simply provide an array, lets transfer it accordingly
+        if !(typeof(fields)<: NamedTuple)
+            if (typeof(fields)<: Tuple)
+                if length(fields)==1
+                    fields = (DataSet1=first(fields),)  # The field is a tuple; create a NamedTuple from it
+                else
+                    error("Please employ a NamedTuple as input, rather than a Tuple")  # out of luck
+                end
+            else
+                fields = (DataSet1=fields,)
+            end
+        end
+
+        DataField = fields[1];
+        if typeof(DataField)<: Tuple
+            DataField = DataField[1];           # in case we have velocity vectors as input
+        end
+
+        if !(size(x)==size(y)==size(z)==size(DataField))
+            error("The size of x/y/z and the vertex fields should all be the same!")
+        end
+
+        # take care of attributes
+        if isnothing(atts)
+            # if nothing is given as attributes, then we note that
+            atts = Dict("note" => "No attributes were given to this dataset")
+        else
+            # check if a dict was given
+            if !(typeof(atts)<: Dict)
+                error("Attributes should be given as Dict!")
+            end
+        end
+
+        return new(x,y,z,fields,cellfields,atts)
+
+     end
+
+end
+size(d::Q1Data) = size(d.x.val) .- 1 # size of mesh
+extrema(d::Q1Data) = [extrema(d.x.val); extrema(d.y.val); extrema(d.z.val)]
+
+# Print an overview of the Q1Data struct:
+function Base.show(io::IO, d::Q1Data)
+    println(io,"Q1Data ")
+    println(io,"      size    : $(size(d))")
+    println(io,"      x       ϵ [ $(minimum(d.x.val)) : $(maximum(d.x.val))]")
+    println(io,"      y       ϵ [ $(minimum(d.y.val)) : $(maximum(d.y.val))]")
+
+    if  any(isnan.(NumValue(d.z)))
+        z_vals = extrema(d.z.val[isnan.(d.z.val).==false])
+        println(io,"      z       ϵ [ $(z_vals[1]) : $(z_vals[2])]; has NaN's")
+    else
+        z_vals = extrema(d.z.val)
+        println(io,"      z       ϵ [ $(z_vals[1]) : $(z_vals[2])]")
+    end
+    println(io,"      fields  : $(keys(d.fields))")
+    println(io,"  cellfields  : $(keys(d.cellfields))")
+
+    # Only print attributes if we have non-default attributes
+    if any( propertynames(d) .== :atts)
+        show_atts = true
+        if haskey(d.atts,"note")
+            if d.atts["note"]=="No attributes were given to this dataset"
+                show_atts = false
+            end
+        end
+        if show_atts
+        println(io,"  attributes: $(keys(d.atts))")
+        end
+    end
+end
+
+
+"""
+    Q1Data(xyz::Tuple{Array,Array,Array})
+
+This creates a `Q1Data` struct if you have a Tuple with 3D coordinates as input.
+# Example
+```julia
+julia> data = Q1Data(xyz_grid(-10:10,-5:5,0))
+CartData
+    size    : (21, 11, 1)
+    x       ϵ [ -10.0 km : 10.0 km]
+    y       ϵ [ -5.0 km : 5.0 km]
+    z       ϵ [ 0.0 km : 0.0 km]
+    fields  : (:Z,)
+  attributes: ["note"]
+```
+"""
+Q1Data(xyz::Tuple) = Q1Data(xyz[1],xyz[2],xyz[3],(Z=xyz[3],),NamedTuple())
+
+
+"""
+    FEData{dim, points_per_cell} 
+
+Structure that holds Finite Element info with vertex and cell data. Works in 2D/3D for arbitrary elements
+
+Parameters
+===
+- `vertices` with the points on the mesh (`dim` x `Npoints`)
+- `connectivity` with the connectivity of the mesh (`points_per_cell` x `Ncells`)
+- `fields` with the fields on the vertices
+- `cellfields` with the fields of the cells
+
+"""
+struct FEData{dim, points_per_cell} 
+    vertices     :: Array{Float64}
+    connectivity :: Array{Int64}
+    fields       :: NamedTuple
+    cellfields   :: NamedTuple
+
+    # Ensure that the data is of the correct format
+    function FEData(vertices,connectivity,fields=nothing,cellfields=nothing)
+        if isnothing(fields);       fields = NamedTuple();      end
+        if isnothing(cellfields);   cellfields = NamedTuple();  end
+
+        dim = size(vertices,1)
+        points_per_cell = size(connectivity,1)
+        if points_per_cell>size(connectivity,2)
+            println("# of points_per_cell > size(connectivity,2). Are you sure the ordering is ok?")
+        end
+        if dim>size(vertices,2)
+            println("# of dims > size(vertices,2). Are you sure the ordering is ok?")
+        end
+        
+        return new{dim,points_per_cell}(vertices,connectivity,fields,cellfields)
+     end
+
+end
+
+
+# Print an overview of the FEData struct:
+function Base.show(io::IO, d::FEData{dim, points_per_cell}) where {dim, points_per_cell}
+    println(io,"FEData{$dim,$points_per_cell} ")
+    println(io,"    elements : $(size(d.connectivity,2))")
+    println(io,"    vertices : $(size(d.vertices,2))")
+    println(io,"     x       ϵ [ $(minimum(d.vertices,dims=2)[1]) : $(maximum(d.vertices,dims=2)[1])]")
+    println(io,"     y       ϵ [ $(minimum(d.vertices,dims=2)[2]) : $(maximum(d.vertices,dims=2)[2])]")
+    println(io,"     z       ϵ [ $(minimum(d.vertices,dims=2)[3]) : $(maximum(d.vertices,dims=2)[3])]")
+    println(io,"      fields : $(keys(d.fields))")
+    println(io,"  cellfields : $(keys(d.cellfields))")
+end
+
+extrema(d::FEData) = extrema(d.vertices, dims=2)
+size(d::FEData) = size(d.connectivity,2)
+
+"""
+    convert2FEData(d::Q1Data
+
+"""
+    convert2FEData(d::Q1Data)
+
+
+
+"""
+    X,Y,Z = coordinate_grids(Data::Q1Data; cell=false)
+
+Returns 3D coordinate arrays
+"""
+function coordinate_grids(Data::Q1Data; cell=false)
+    X,Y,Z = NumValue(Data.x), NumValue(Data.y), NumValue(Data.z)
+    if cell
+        X,Y,Z = average_q1(X),average_q1(Y), average_q1(Z)
+    end
+    return X,Y,Z
+end
+
+
+"""
+    fe_data::FEData = convert2FEData(d::Q1Data)
+
+Creates a Q1 FEM mesh from the `Q1Data` data which holds the vertex coordinates and cell/vertex fields
+"""
+function convert2FEData(data::Q1Data)
+
+    X,Y,Z = coordinate_grids(data);
+        
+    # Unique number of all vertices
+    el_num = zeros(Int64,size(X))
+    num = 1;
+    for I in eachindex(el_num)
+        el_num[I]  = num;
+        num += 1;
+    end
+    
+    # Coordinates of all vertices
+    vertices = [X[:]'; Y[:]'; Z[:]']
+    
+    # Connectivity of all cells
+    nelx,nely,nelz = size(X) .- 1
+    connectivity = zeros(Int64, 8, nelx*nely*nelz)
+    n = 1;
+    for k=1:nelz
+        for j=1:nely
+            for i=1:nelx
+               connectivity[:,n] = [el_num[i,j,k  ], el_num[i+1,j,k  ], el_num[i,j+1,k  ], el_num[i+1,j+1,k  ],
+                                    el_num[i,j,k+1], el_num[i+1,j,k+1], el_num[i,j+1,k+1], el_num[i+1,j+1,k+1]]
+                n += 1                                    
+            end
+        end
+    end
+
+    data_fields=()
+    for f in data.fields
+        data_fields = (data_fields..., f[:])
+    end
+
+    data_cellfields=()
+    for f in data.cellfields
+        data_cellfields = (data_cellfields..., f[:])
+    end
+
+    return FEData(vertices,connectivity,  NamedTuple{keys(data.fields)}(data_fields),  NamedTuple{keys(data.cellfields)}(data_cellfields))
 end

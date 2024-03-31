@@ -29,47 +29,49 @@ export  add_box!, add_sphere!, add_ellipsoid!, add_cylinder!, add_layer!, add_po
         StrikeAngle     =  0,
         DipAngle        =  10,
         phase           =  ConstantPhase(3),
-        stripePhase     =  ConstantPhase(4))
+        stripePhase     =  ConstantPhase(4),
+        cell            = false)
 
-    Adds stripes to a pre-defined phase (e.g. added using add_box!)
+Adds stripes to a pre-defined phase (e.g. added using add_box!)
 
 
-    Parameters
-    ====
-    - Phase - Phase array (consistent with Grid)
-    - Grid -  grid structure (usually obtained with read_LaMEM_inputfile, but can also be other grid types)
-    - stripAxes - sets the axis for which we want the stripes. Default is (1,1,0) i.e. X, Y and not Z
-    - stripeWidth - width of the stripe
-    - stripeSpacing - space between two stripes
-    - Origin - the origin, used to rotate the box around. Default is the left-front-top corner
-    - StrikeAngle - strike angle
-    - DipAngle - dip angle
-    - phase - specifies the phase we want to apply stripes to
-    - stripePhase - specifies the stripe phase
+Parameters
+====
+
+- `Phase` - Phase array (consistent with Grid)
+- `Grid` -  grid structure (usually obtained with read_LaMEM_inputfile, but can also be other grid types)
+- `stripAxes` - sets the axis for which we want the stripes. Default is (1,1,0) i.e. X, Y and not Z
+- `stripeWidth` - width of the stripe
+- `stripeSpacing` - space between two stripes
+- `Origin` - the origin, used to rotate the box around. Default is the left-front-top corner
+- `StrikeAngle` - strike angle
+- `DipAngle` - dip angle
+- `phase` - specifies the phase we want to apply stripes to
+- `stripePhase` - specifies the stripe phase
+- `cell` - if true, `Phase` and `Temp` are defined on centers
+
+Example
+========
     
-
-    Example
-    ========
-    
-    Example: Box with striped phase and constant temperature & a dip angle of 10 degrees:
-    ```julia
-    julia> Grid = read_LaMEM_inputfile("test_files/SaltModels.dat")
-    LaMEM Grid:
-      nel         : (32, 32, 32)
-      marker/cell : (3, 3, 3)
-      markers     : (96, 96, 96)
-      x           ϵ [-3.0 : 3.0]
-      y           ϵ [-2.0 : 2.0]
-      z           ϵ [-2.0 : 0.0]
-    julia> Phases = zeros(Int32,   size(Grid.X));
-    julia> Temp   = zeros(Float64, size(Grid.X));
-    julia> add_box!(Phases,Temp,Grid, xlim=(0,500), zlim=(-50,0), phase=ConstantPhase(3), DipAngle=10, T=ConstantTemp(1000))
-    julia> add_stripes!(Phases, Grid, stripAxes=(1,1,1), stripeWidth=0.2, stripeSpacing=1, Origin=nothing, StrikeAngle=0, DipAngle=10, phase=ConstantPhase(3), stripePhase=ConstantPhase(4))
-    julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
-    julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
-    1-element Vector{String}:
-     "LaMEM_ModelSetup.vts"
-    ```
+Example: Box with striped phase and constant temperature & a dip angle of 10 degrees:
+```julia
+julia> Grid = read_LaMEM_inputfile("test_files/SaltModels.dat")
+LaMEM Grid:
+  nel         : (32, 32, 32)
+  marker/cell : (3, 3, 3)
+  markers     : (96, 96, 96)
+  x           ϵ [-3.0 : 3.0]
+  y           ϵ [-2.0 : 2.0]
+  z           ϵ [-2.0 : 0.0]
+julia> Phases = zeros(Int32,   size(Grid.X));
+julia> Temp   = zeros(Float64, size(Grid.X));
+julia> add_box!(Phases,Temp,Grid, xlim=(0,500), zlim=(-50,0), phase=ConstantPhase(3), DipAngle=10, T=ConstantTemp(1000))
+julia> add_stripes!(Phases, Grid, stripAxes=(1,1,1), stripeWidth=0.2, stripeSpacing=1, Origin=nothing, StrikeAngle=0, DipAngle=10, phase=ConstantPhase(3), stripePhase=ConstantPhase(4))
+julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
+julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
+1-element Vector{String}:
+ "LaMEM_ModelSetup.vts"
+```
 """
 function add_stripes!(Phase, Grid::AbstractGeneralGrid;                # required input
     stripAxes       = (1,1,0),                          # activate stripes along dimensions x, y and z when set to 1
@@ -79,7 +81,8 @@ function add_stripes!(Phase, Grid::AbstractGeneralGrid;                # require
     StrikeAngle     =  0,                               # strike
     DipAngle        =  0,                               # dip angle
     phase           =  ConstantPhase(3),                # phase to be striped
-    stripePhase     =  ConstantPhase(4))                # stripe phase
+    stripePhase     =  ConstantPhase(4),                # stripe phase
+    cell            =  false )                          # if true, Phase and Temp are defined on cell centers 
 
     # warnings
     if stripeWidth >= stripeSpacing/2.0
@@ -89,7 +92,7 @@ function add_stripes!(Phase, Grid::AbstractGeneralGrid;                # require
     end
 
     # Retrieve 3D data arrays for the grid
-    X,Y,Z = coordinate_grids(Grid)
+    X,Y,Z = coordinate_grids(Grid, cell=cell)
 
     # sets origin
     if isnothing(Origin)
@@ -130,7 +133,8 @@ end
     add_box!(Phase, Temp, Grid::AbstractGeneralGrid; xlim=Tuple{2}, [ylim=Tuple{2}], zlim=Tuple{2},
             Origin=nothing, StrikeAngle=0, DipAngle=0,
             phase = ConstantPhase(1),
-            T=nothing )
+            T=nothing,
+            cell=false )
 
 Adds a box with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
 
@@ -148,7 +152,7 @@ Parameters
 - `DipAngle` - dip angle of slab
 - `phase` - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
 - `T` - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`,`LithosphericTemp()`
-
+- `cell` - if true, `Phase` and `Temp` are defined on centers
 
 Examples
 ========
@@ -184,14 +188,18 @@ julia> write_paraview(Grid,"LaMEM_ModelSetup")  # Save model to paraview
  "LaMEM_ModelSetup.vts"
 ```
 """
-function add_box!(Phase, Temp, Grid::AbstractGeneralGrid;                 # required input
+function add_box!(Phase, Temp, Grid::AbstractGeneralGrid;       # required input
                 xlim=Tuple{2}, ylim=nothing, zlim=Tuple{2},     # limits of the box
                 Origin=nothing, StrikeAngle=0, DipAngle=0,      # origin & dip/strike
                 phase = ConstantPhase(1),                       # Sets the phase number(s) in the box
-                T=nothing )                                     # Sets the thermal structure (various functions are available)
+                T=nothing,                                      # Sets the thermal structure (various functions are available)
+                cell=false )                                    # if true, Phase and Temp are defined on cell centers 
 
     # Retrieve 3D data arrays for the grid
-    X,Y,Z = coordinate_grids(Grid)
+    X,Y,Z = coordinate_grids(Grid, cell=cell)
+
+    # ensure that the input arrays have the correct size
+    @assert size(X) == size(Phase) == size(Temp)
 
     # Limits of block
     if ylim==nothing
@@ -241,7 +249,7 @@ end
 """
     add_layer!(Phase, Temp, Grid::AbstractGeneralGrid; xlim=Tuple{2}, [ylim=Tuple{2}], zlim=Tuple{2},
             phase = ConstantPhase(1),
-            T=nothing )
+            T=nothing, cell=false )
 
 Adds a layer with phase & temperature structure to a 3D model setup. The most common use would be to add a lithospheric layer to a model setup.
 This simplifies creating model geometries in geodynamic models
@@ -293,13 +301,14 @@ julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
  "LaMEM_ModelSetup.vts"
 ```
 """
-function add_layer!(Phase, Temp, Grid::AbstractGeneralGrid;      # required input
+function add_layer!(Phase, Temp, Grid::AbstractGeneralGrid;     # required input
                 xlim=nothing, ylim=nothing, zlim=nothing,       # limits of the layer
                 phase = ConstantPhase(1),                       # Sets the phase number(s) in the box
-                T=nothing )                                     # Sets the thermal structure (various functions are available)
-
+                T=nothing,                                      # Sets the thermal structure (various functions are available)
+                cell =  false )                                 # if true, Phase and Temp are defined on cell centers 
+                                  
     # Retrieve 3D data arrays for the grid
-    X,Y,Z = coordinate_grids(Grid)
+    X,Y,Z = coordinate_grids(Grid, cell=cell)
 
     # Limits of block
     if isnothing(xlim)==isnothing(ylim)==isnothing(zlim)
@@ -341,20 +350,21 @@ end
 """
     add_sphere!(Phase, Temp, Grid::AbstractGeneralGrid; cen=Tuple{3}, radius=Tuple{1},
             phase = ConstantPhase(1).
-            T=nothing )
+            T=nothing, cell=false )
 
 Adds a sphere with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
 
 
 Parameters
 ====
-- Phase - Phase array (consistent with Grid)
-- Temp  - Temperature array (consistent with Grid)
-- Grid - LaMEM grid structure (usually obtained with read_LaMEM_inputfile)
-- cen - center coordinates of sphere
-- radius - radius of sphere
-- phase - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
-- T - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
+- `Phase` - Phase array (consistent with Grid)
+- `Temp`  - Temperature array (consistent with Grid)
+- `Grid` - LaMEM grid structure (usually obtained with read_LaMEM_inputfile)
+- `cen` - center coordinates of sphere
+- `radius` - radius of sphere
+- `phase` - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
+- `T` - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
+- `cell` - if true, `Phase` and `Temp` are defined on cell centers
 
 
 Example
@@ -379,13 +389,13 @@ julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
  "LaMEM_ModelSetup.vts"
 ```
 """
-function add_sphere!(Phase, Temp, Grid::AbstractGeneralGrid;      # required input
-    cen=Tuple{3}, radius=Tuple{1},                         # center and radius of the sphere
-    phase = ConstantPhase(1),                           # Sets the phase number(s) in the sphere
-    T=nothing )                                         # Sets the thermal structure (various functions are available)
+function add_sphere!(Phase, Temp, Grid::AbstractGeneralGrid;    # required input
+    cen=Tuple{3}, radius=Tuple{1},                              # center and radius of the sphere
+    phase = ConstantPhase(1),                                   # Sets the phase number(s) in the sphere
+    T=nothing, cell=false )                                     # Sets the thermal structure (various functions are available)
 
     # Retrieve 3D data arrays for the grid
-    X,Y,Z = coordinate_grids(Grid)
+    X,Y,Z = coordinate_grids(Grid, cell=cell)
 
     # Set phase number & thermal structure in the full domain
     ind = findall(((X .- cen[1]).^2 + (Y .- cen[2]).^2 + (Z .- cen[3]).^2).^0.5 .< radius)
@@ -405,24 +415,24 @@ end
     add_ellipsoid!(Phase, Temp, Grid::AbstractGeneralGrid; cen=Tuple{3}, axes=Tuple{3},
             Origin=nothing, StrikeAngle=0, DipAngle=0,
             phase = ConstantPhase(1).
-            T=nothing )
+            T=nothing, cell=false )
 
 Adds an Ellipsoid with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
 
 
 Parameters
 ====
-- Phase - Phase array (consistent with Grid)
-- Temp  - Temperature array (consistent with Grid)
-- Grid - LaMEM grid structure (usually obtained with read_LaMEM_inputfile)
-- cen - center coordinates of sphere
-- axes - semi-axes of ellipsoid in X,Y,Z
-- Origin - the origin, used to rotate the box around. Default is the left-front-top corner
-- StrikeAngle - strike angle of slab
-- DipAngle - dip angle of slab
-- phase - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
-- T - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
-
+- `Phase` - Phase array (consistent with Grid)
+- `Temp`  - Temperature array (consistent with Grid)
+- `Grid` - LaMEM grid structure (usually obtained with read_LaMEM_inputfile)
+- `cen` - center coordinates of sphere
+- `axes` - semi-axes of ellipsoid in X,Y,Z
+- `Origin` - the origin, used to rotate the box around. Default is the left-front-top corner
+- `StrikeAngle` - strike angle of slab
+- `DipAngle` - dip angle of slab
+- `phase` - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
+- `T` - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
+- `cell` - if true, `Phase` and `Temp` are defined on cell centers
 
 Example
 ========
@@ -446,18 +456,18 @@ julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
  "LaMEM_ModelSetup.vts"
 ```
 """
-function add_ellipsoid!(Phase, Temp, Grid::AbstractGeneralGrid;      # required input
-    cen=Tuple{3}, axes=Tuple{3},                           # center and semi-axes of the ellpsoid
-    Origin=nothing, StrikeAngle=0, DipAngle=0,             # origin & dip/strike
-    phase = ConstantPhase(1),                              # Sets the phase number(s) in the box
-    T=nothing )                                            # Sets the thermal structure (various functions are available)
+function add_ellipsoid!(Phase, Temp, Grid::AbstractGeneralGrid;     # required input
+    cen=Tuple{3}, axes=Tuple{3},                                    # center and semi-axes of the ellpsoid
+    Origin=nothing, StrikeAngle=0, DipAngle=0,                      # origin & dip/strike
+    phase = ConstantPhase(1),                                       # Sets the phase number(s) in the box
+    T=nothing, cell=false )                                         # Sets the thermal structure (various functions are available)
 
     if Origin==nothing
         Origin = cen  # center
     end
 
     # Retrieve 3D data arrays for the grid
-    X,Y,Z = coordinate_grids(Grid)
+    X,Y,Z = coordinate_grids(Grid, cell=cell)
 
     # Perform rotation of 3D coordinates:
     Xrot = X .- Origin[1];
@@ -488,21 +498,22 @@ end
 """
     add_cylinder!(Phase, Temp, Grid::AbstractGeneralGrid; base=Tuple{3}, cap=Tuple{3}, radius=Tuple{1},
             phase = ConstantPhase(1).
-            T=nothing )
+            T=nothing, cell=false )
 
 Adds a cylinder with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
 
 
 Parameters
 ====
-- Phase - Phase array (consistent with Grid)
-- Temp  - Temperature array (consistent with Grid)
-- Grid - Grid structure (usually obtained with read_LaMEM_inputfile)
-- base - center coordinate of bottom of cylinder
-- cap - center coordinate of top of cylinder
-- radius - radius of the cylinder
-- phase - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
-- T - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
+- `Phase` - Phase array (consistent with Grid)
+- `Temp`  - Temperature array (consistent with Grid)
+- `Grid` - Grid structure (usually obtained with read_LaMEM_inputfile)
+- `base` - center coordinate of bottom of cylinder
+- `cap` - center coordinate of top of cylinder
+- `radius` - radius of the cylinder
+- `phase` - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
+- `T` - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
+- `cell` - if true, `Phase` and `Temp` are defined on cell centers
 
 
 Example
@@ -527,17 +538,17 @@ julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
  "LaMEM_ModelSetup.vts"
 ```
 """
-function add_cylinder!(Phase, Temp, Grid::AbstractGeneralGrid;   # required input
+function add_cylinder!(Phase, Temp, Grid::AbstractGeneralGrid;  # required input
     base=Tuple{3}, cap=Tuple{3}, radius=Tuple{1},               # center and radius of the sphere
-    phase = ConstantPhase(1),                           # Sets the phase number(s) in the sphere
-    T=nothing )                                         # Sets the thermal structure (various functions are available)
+    phase = ConstantPhase(1),                                   # Sets the phase number(s) in the sphere
+    T=nothing, cell=false )                                     # Sets the thermal structure (various functions are available)
 
     # axis vector of cylinder
     axVec = cap .- base
     ax2   = (axVec[1]^2 + axVec[2]^2 + axVec[3]^2)
 
     # Retrieve 3D data arrays for the grid
-    X,Y,Z = coordinate_grids(Grid)
+    X,Y,Z = coordinate_grids(Grid, cell=cell)
 
     # distance between grid points and cylinder base
     dx_b  = X .- base[1]
@@ -582,7 +593,7 @@ end
 
 
 """
-        add_polygon!(Phase, Temp, Grid::AbstractGeneralGrid; xlim::Vector(), ylim=Vector(2), zlim=Vector(), phase = ConstantPhase(1), T=nothing )   
+        add_polygon!(Phase, Temp, Grid::AbstractGeneralGrid; xlim::Vector(), ylim=Vector(2), zlim=Vector(), phase = ConstantPhase(1), T=nothing, cell=false )   
 
 Adds a polygon with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
 
@@ -595,7 +606,8 @@ Parameters
 - `ylim`  - `y`-coordinate, limitation in length possible (two values (start and stop))
 - `zlim`  - `z`-coordinate of the polygon points, same ordering as xlim, number of points unlimited
 - `phase` - specifies the phase of the box. See `ConstantPhase()`
-- `T` - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
+- `T`     - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
+- `cell`  - if true, `Phase` and `Temp` are defined on cell centers
 
 Example
 ========
@@ -621,13 +633,13 @@ julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
 ```
 
 """
-function add_polygon!(Phase, Temp, Grid::AbstractGeneralGrid;    # required input
+function add_polygon!(Phase, Temp, Grid::AbstractGeneralGrid;   # required input
     xlim::Vector=[], ylim::Vector=[], zlim::Vector=[],          # limits of the box
     phase = ConstantPhase(1),                                   # Sets the phase number(s) in the box
-    T=nothing )                                                 # Sets the thermal structure (various functions are available)
+    T=nothing, cell=false )                                     # Sets the thermal structure (various functions are available)
 
 # Retrieve 3D data arrays for the grid
-X,Y,Z = coordinate_grids(Grid)
+X,Y,Z = coordinate_grids(Grid, cell=cell)
 
 ind = zeros(Bool,size(X))
 ind_slice = zeros(Bool,size(X[:,1,:]))
@@ -1666,7 +1678,7 @@ function distance_to_linesegment(p::NTuple{2,_T}, v::NTuple{2,_T}, w::NTuple{2,_
 end
 
 """
-    add_slab!(Phase, Temp, Grid::AbstractGeneralGrid,  trench::Trench; phase = ConstantPhase(1), T = nothing)
+    add_slab!(Phase, Temp, Grid::AbstractGeneralGrid,  trench::Trench; phase = ConstantPhase(1), T = nothing, cell=false)
 
 Adds a curved slab with phase & temperature structure to a 3D model setup.  
 
@@ -1678,6 +1690,7 @@ Parameters
 - `trench`  - Trench structure
 - `phase`   - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
 - `T`       - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`,`LithosphericTemp()`
+- `cell`    - if true, `Phase` and `Temp` are defined on cells
 
 Examples
 ========
@@ -1698,12 +1711,12 @@ julia> add_slab!(Phase, Temp, Cart, trench, phase = phase, T = TsHC)
 ```
 
 """
-function add_slab!(Phase, Temp, Grid::AbstractGeneralGrid,  trench::Trench;        # required input
-        phase::AbstractPhaseNumber = ConstantPhase(1),                       # Sets the phase number(s) in the slab
-        T::Union{AbstractThermalStructure,Nothing}  = nothing )                             # Sets the thermal structure (various functions are available),
+function add_slab!(Phase, Temp, Grid::AbstractGeneralGrid,  trench::Trench;     # required input
+        phase::AbstractPhaseNumber = ConstantPhase(1),                          # Sets the phase number(s) in the slab
+        T::Union{AbstractThermalStructure,Nothing}  = nothing, cell=false )     # Sets the thermal structure (various functions are available),
         
     # Retrieve 3D data arrays for the grid
-    X,Y,Z = coordinate_grids(Grid)
+    X,Y,Z = coordinate_grids(Grid, cell=cell)
 
     # Compute top and bottom of the slab
     Top,Bottom, WeakZone = compute_slab_surface(trench); 
