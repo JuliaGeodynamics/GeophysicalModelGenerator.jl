@@ -316,7 +316,6 @@ function create_profile_point!(Profile::ProfileData, DataSet::NamedTuple; sectio
     tmp = NamedTuple()             # initialize empty one
     DataSetName = keys(DataSet)    # Names of the datasets
     for idata = 1:num_datasets
-
         # load data set --> each data set is a single GeoData structure, so we'll only have to get the respective key to load the correct type
         data_tmp = DataSet[idata]
 
@@ -324,25 +323,32 @@ function create_profile_point!(Profile::ProfileData, DataSet::NamedTuple; sectio
             # take a vertical cross section
             data    = cross_section_points(data_tmp, Start=Profile.start_lonlat, End=Profile.end_lonlat, section_width = section_width)        # create the cross section
 
-            # flatten cross section and add this data to the structure
-            x_profile    = flatten_cross_section(data,Start=Profile.start_lonlat)
-            data        = addfield(data,"x_profile",x_profile)
+            if isnothing(data)
+                # do nothing, as there is no data
+            else
+                # flatten cross section and add this data to the structure
+                x_profile    = flatten_cross_section(data,Start=Profile.start_lonlat)
+                data        = addfield(data,"x_profile",x_profile)
 
-            # add the data set as a NamedTuple
-            data_NT     = NamedTuple{(DataSetName[idata],)}((data,))
-            tmp         = merge(tmp,data_NT)
-
+                # add the data set as a NamedTuple
+                data_NT     = NamedTuple{(DataSetName[idata],)}((data,))
+                tmp         = merge(tmp,data_NT)
+                Profile.PointData = tmp # assign to profile data structure
+            end
         else
             # take a horizontal cross section
             data    = cross_section(data_tmp, Depth_level=Profile.depth, section_width = section_width)        # create the cross section
-
-            # add the data set as a NamedTuple
-            data_NT     = NamedTuple{(DataSetName[idata],)}((data,))
-            tmp         = merge(tmp,data_NT)
+            if isnothing(data)
+                # do nothing, as there is no data
+            else
+                # add the data set as a NamedTuple
+                data_NT     = NamedTuple{(DataSetName[idata],)}((data,))
+                tmp         = merge(tmp,data_NT)
+                Profile.PointData = tmp # assign to profile data structure
+            end
         end
     end
 
-    Profile.PointData = tmp # assign to profile data structure
     return
 end
 
