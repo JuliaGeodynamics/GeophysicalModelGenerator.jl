@@ -39,7 +39,7 @@ lon, lat, depth = data[:,1], data[:,2], -data[:,3];
 using Plots
 scatter(lon,lat,marker_z=depth, ylabel="latitude",xlabel="longitude",markersize=2.5, c = :roma)
 # ![DataPoints](../assets/img/Tutorial_MohoSpada_LonLat.png)
-# What we can see nicely here is that the data is reasonably regular but also that there are obviously locations where no data is define.
+# What we can see nicely here is that the data is reasonably regular but also that there are obviously locations where no data is defined.
 #
 # The easiest way to transfer this to Paraview is to simply save this as 3D data points:
 using GeophysicalModelGenerator
