@@ -593,7 +593,7 @@ end
 
 
 """
-        add_polygon!(Phase, Temp, Grid::AbstractGeneralGrid; xlim=Tuple{}, ylim=nothing, zlim=Tuple{}, phase = ConstantPhase(1), T=nothing, cell=false )   
+        add_polygon!(Phase, Temp, Grid::AbstractGeneralGrid; xlim=Tuple{}, ylim=Tuple{2}, zlim=Tuple{}, phase = ConstantPhase(1), T=nothing, cell=false )   
 
 Adds a polygon with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
 
@@ -634,7 +634,7 @@ julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
 
 """
 function add_polygon!(Phase, Temp, Grid::AbstractGeneralGrid;   # required input
-    xlim=Tuple{}, ylim=nothing, zlim=Tuple{},                  # limits of the box
+    xlim=Tuple{}, ylim=Tuple{2}, zlim=Tuple{},                  # limits of the box
     phase = ConstantPhase(1),                                   # Sets the phase number(s) in the box
     T=nothing, cell=false )                                     # Sets the thermal structure (various functions are available)
 
