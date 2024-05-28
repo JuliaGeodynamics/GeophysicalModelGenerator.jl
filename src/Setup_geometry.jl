@@ -593,7 +593,7 @@ end
 
 
 """
-        add_polygon!(Phase, Temp, Grid::AbstractGeneralGrid; xlim::Vector(), ylim=Vector(2), zlim=Vector(), phase = ConstantPhase(1), T=nothing, cell=false )   
+        add_polygon!(Phase, Temp, Grid::AbstractGeneralGrid; xlim=Tuple{}, ylim=nothing, zlim=Tuple{}, phase = ConstantPhase(1), T=nothing, cell=false )   
 
 Adds a polygon with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
 
@@ -625,7 +625,7 @@ LaMEM Grid:
   z           ϵ [-2.0 : 0.0]
 julia> Phases = zeros(Int32,   size(Grid.X));
 julia> Temp   = zeros(Float64, size(Grid.X));
-julia> add_polygon!(Phase, Temp, Cart; xlim=[0.0,0.0, 1.6, 2.0],ylim=[0.0,0.8], zlim=[0.0,-1.0,-2.0,0.0], phase = ConstantPhase(8), T=ConstantTemp(30))
+julia> add_polygon!(Phase, Temp, Cart; xlim=(0,0, 1.6, 2.0),ylim=(0,0.8), zlim=(0,-1,-2,0), phase = ConstantPhase(8), T=ConstantTemp(30))
 julia> Model3D = ParaviewData(Grid, (Phases=Phases,Temp=Temp)); # Create Cartesian model
 julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to paraview
 1-element Vector{String}:
@@ -634,9 +634,19 @@ julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
 
 """
 function add_polygon!(Phase, Temp, Grid::AbstractGeneralGrid;   # required input
-    xlim::Vector=[], ylim::Vector=[], zlim::Vector=[],          # limits of the box
+    xlim=Tuple{}, ylim=nothing, zlim=Tuple{},                  # limits of the box
     phase = ConstantPhase(1),                                   # Sets the phase number(s) in the box
     T=nothing, cell=false )                                     # Sets the thermal structure (various functions are available)
+
+
+    xlim = collect(xlim)
+    ylim = collect(ylim)
+    zlim = collect(zlim)
+    
+    xlim = Float64.(xlim)
+    ylim = Float64.(ylim)
+    zlim = Float64.(zlim)
+
 
 # Retrieve 3D data arrays for the grid
 X,Y,Z = coordinate_grids(Grid, cell=cell)

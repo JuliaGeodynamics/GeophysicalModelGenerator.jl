@@ -47,13 +47,13 @@ To include the geological structures of a passive margin into the model, we use 
 # unlimited number of points possible to create the polygon
 
 # add sediment basin 
-add_polygon!(Phase, Temp, Cart; xlim=[0.0,0.0, 160.0, 200.0],ylim=[100.0,300.0], zlim=[0.0,-10.0,-20.0,0.0], phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30));
+add_polygon!(Phase, Temp, Cart; xlim=(0.0,0.0, 160.0, 200.0),ylim=(100.0,300.0), zlim=(0.0,-10.0,-20.0,0.0), phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30));
 
 # add thinning of the continental crust attached to the slab and its thickness 
-add_polygon!(Phase, Temp, Cart; xlim=[0.0, 200.0, 0.0],ylim=[500.0,800.0], zlim=[-100.0,-150.0,-150.0], phase = ConstantPhase(5), T=LinearTemp(Ttop=1000, Tbot=1100));
+add_polygon!(Phase, Temp, Cart; xlim=(0.0, 200.0, 0.0),ylim=(500.0,800.0), zlim=(-100.0,-150.0,-150.0), phase = ConstantPhase(5), T=LinearTemp(Ttop=1000, Tbot=1100));
 
 # add accretionary prism 
-add_polygon!(Phase, Temp, Cart; xlim=[800.0, 600.0, 800.0],ylim=[100.0,800.0], zlim=[0.0,0.0,-60.0], phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30));
+add_polygon!(Phase, Temp, Cart; xlim=(800.0, 600.0, 800.0),ylim=(100.0,800.0), zlim=(0.0,0.0,-60.0), phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30));
 ```
 
 #### 3. Export final model setup to a paraview file

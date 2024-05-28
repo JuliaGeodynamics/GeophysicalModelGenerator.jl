@@ -230,7 +230,7 @@ Temp    = ones(Float64,(length(x),length(y),length(z)))*1350;
 add_box!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0, 0.0), phase = ConstantPhase(5), T=T=ConstantTemp(120.0));
 
 # add accretionary prism 
-add_polygon!(Phase, Temp, Cart; xlim=[500.0, 200.0, 500.0],ylim=[100.0,400.0], zlim=[0.0,0.0,-60.0], phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30))
+add_polygon!(Phase, Temp, Cart; xlim=(500.0, 200.0, 500.0),ylim=(100.0,400.0), zlim=(0.0,0.0,-60.0), phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30))
 
 @test maximum(Phase) == 8
 @test minimum(Temp) == 21.40845070422536
