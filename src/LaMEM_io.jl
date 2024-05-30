@@ -1016,11 +1016,15 @@ function create_partitioning_file(LaMEM_input::String,NumProc::Int64; LaMEM_dir:
 end
 
 """
-    X,Y,Z = coordinate_grids(Data::LaMEM_grid)
+    X,Y,Z = coordinate_grids(Data::LaMEM_grid; cell=false)
 
 Returns 3D coordinate arrays
 """
-function coordinate_grids(Data::LaMEM_grid)
-
-    return Data.X, Data.Y, Data.Z
+function coordinate_grids(Data::LaMEM_grid; cell=false)
+    X,Y,Z = Data.X, Data.Y, Data.Z
+    if cell
+        X,Y,Z = average_q1(X),average_q1(Y), average_q1(Z)
+    end
+    
+    return X,Y,Z
 end

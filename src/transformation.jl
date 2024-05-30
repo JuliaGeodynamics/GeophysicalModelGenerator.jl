@@ -1,7 +1,9 @@
 # This provides various transformations (GeoData <=> Cartesian; UTMData <=> Cartesian)
 #
+using StaticArrays
 
-export project_CartData
+export project_CartData, project_FEData_CartData
+
 
 
 """
@@ -100,3 +102,95 @@ function project_CartData(d_cart::CartData, d::UTMData, p::ProjectionPoint)
 
     return d_cart
 end
+
+
+
+"""
+    inside = point_in_tetrahedron(p::_T, a::_T, b::_T, c::_T, d::_T, tol=1e-10)
+Determines if a point `p` is inside a tetrahedron specified by `a`,`b`,`c`,`d` or not    
+"""
+function point_in_tetrahedron(p::_T, a::_T, b::_T, c::_T, d::_T, tol=1e-10) where _T<:Vector{Float64}
+
+    # check bounding box
+    xmin = min(a[1],b[1],c[1],d[1])
+    xmax = max(a[1],b[1],c[1],d[1])
+    ymin = min(a[2],b[2],c[2],d[2])
+    ymax = max(a[2],b[2],c[2],d[2])
+    zmin = min(a[3],b[3],c[3],d[3])
+    zmax = max(a[3],b[3],c[3],d[3])
+    
+    inside = true
+    if p[1] < xmin || p[1] > xmax 
+        inside = false
+    end
+    if (p[2] < ymin || p[2] > ymax) && inside  
+        inside = false
+    end
+    if (p[3] < zmin || p[3] > zmax) && inside  
+        inside = false
+    end
+    
+    if inside
+        v0 = @SVector [d[i] - a[i] for i in 1:3]
+        v1 = @SVector [b[i] - a[i] for i in 1:3]
+        v2 = @SVector [c[i] - a[i] for i in 1:3]
+        v3 = @SVector [p[i] - a[i] for i in 1:3]
+    
+        denom = dot(v0, cross(v1, v2))
+    
+        u = dot(v3, cross(v1, v2)) / denom
+        v = dot(v0, cross(v3, v2)) / denom
+        w = dot(v0, cross(v1, v3)) / denom
+    
+        inside =  (u >= -tol) && (v >= -tol) && (w >= -tol) && (u + v + w <= 1 + tol)
+    end
+
+    return inside
+end
+
+"""
+    data_cart = project_FEData_CartData(data_cart::CartData, data_fe::FEData)
+
+Projects a FEData object with tetrahedrons (e.g., from Gmsh) to a Cartesian grid
+"""
+function project_FEData_CartData(data_cart::CartData, data_fe::FEData)
+
+    cellfields_regions = data_fe.cellfields.regions
+    regions = zeros(Int64, size(data_cart.x.val))
+    
+    for i = 1:size(data_fe.connectivity,2) # loop over tetrahedrons
+        tetra = data_fe.connectivity[:,i]
+
+        a = data_fe.vertices[:,tetra[1]]
+        b = data_fe.vertices[:,tetra[2]]
+        c = data_fe.vertices[:,tetra[3]]
+        d = data_fe.vertices[:,tetra[4]]
+
+        xmin = min(a[1],b[1],c[1],d[1])
+        xmax = max(a[1],b[1],c[1],d[1])
+        ymin = min(a[2],b[2],c[2],d[2])
+        ymax = max(a[2],b[2],c[2],d[2])
+        zmin = min(a[3],b[3],c[3],d[3])
+        zmax = max(a[3],b[3],c[3],d[3])
+        
+        ind = findall(  data_cart.x.val .>= xmin .&& data_cart.x.val .<= xmax .&& 
+                        data_cart.y.val .>= ymin .&& data_cart.y.val .<= ymax .&& 
+                        data_cart.z.val .>= zmin .&& data_cart.z.val .<= zmax);
+
+        for I in ind
+            x = data_cart.x.val[I]
+            y = data_cart.y.val[I]
+            z = data_cart.z.val[I]
+            p = [x,y,z]
+            if point_in_tetrahedron(p,a,b,c,d)
+                regions[I] = cellfields_regions[i]
+            end
+        end
+
+    end
+
+    return addfield(data_cart, (regions=regions,))
+end
+
+
+

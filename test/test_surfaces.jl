@@ -82,3 +82,13 @@ ind         =   above_surface(Grid, Topo_cart);
 
 ind         =   below_surface(Grid, Topo_cart);
 @test sum(ind[1,1,:]) == 25
+
+
+#-------------
+# test above_surface with the Q1Data object
+q1data   =   Q1Data(xyz_grid(1:4,1:5,-5:5))
+ind      =   above_surface(q1data, cartdata2);
+@test sum(ind) == 60
+
+ind      =   below_surface(q1data, cartdata2);
+@test sum(ind) == 140
