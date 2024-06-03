@@ -639,13 +639,9 @@ function add_polygon!(Phase, Temp, Grid::AbstractGeneralGrid;   # required input
     T=nothing, cell=false )                                     # Sets the thermal structure (various functions are available)
 
 
-    xlim = collect(xlim)
-    ylim = collect(ylim)
-    zlim = collect(zlim)
-    
-    xlim = Float64.(xlim)
-    ylim = Float64.(ylim)
-    zlim = Float64.(zlim)
+    xlim_ = Float64.(collect(xlim))
+    ylim_ = Float64.(collect(ylim))
+    zlim_ = Float64.(collect(zlim))
 
 
 # Retrieve 3D data arrays for the grid
@@ -656,8 +652,8 @@ ind_slice = zeros(Bool,size(X[:,1,:]))
 
 # find points within the polygon, only in 2D
 for i = 1:size(Y)[2]
-    if Y[1,i,1] >= ylim[1] && Y[1,i,1]<=ylim[2] 
-        inpolygon!(ind_slice, xlim,zlim, X[:,i,:], Z[:,i,:])
+    if Y[1,i,1] >= ylim_[1] && Y[1,i,1]<=ylim_[2] 
+        inpolygon!(ind_slice, xlim_,zlim_, X[:,i,:], Z[:,i,:])
         ind[:,i,:] = ind_slice
     else
         ind[:,i,:] = zeros(size(X[:,1,:]))
