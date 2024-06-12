@@ -28,7 +28,7 @@ And as in the previous tutorials we initialize the temperature field:
 Temp = fill(1350.0, nx,ny,nz);
 ```
 
-For simplicity, we will asume a model with thee horizontal layers with different rheology where later we add the volcano and the magmatic chamber. We use `add_box!` to generate the initial horizontally layered model:
+For simplicity, we will assume a model with thee horizontal layers with different rheology where later we add the volcano and the magmatic chamber. We use `add_box!` to generate the initial horizontally layered model:
 
 ```julia
 lith = LithosphericPhases(Layers=[15 45 100], Phases=[1 2 3])
