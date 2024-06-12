@@ -105,7 +105,8 @@ makedocs(;
             "19 - Jura tutorial" =>  "man/Tutorial_Jura.md",
             "20 - 2D model setups" => "man/Tutorial_NumericalModel_2D.md",
             "21 - 3D model setups" => "man/Tutorial_NumericalModel_3D.md",
-            "22 - Build geometry from polygons" =>  "man/tutorial_Polygon_structures.md"
+            "22 - 3D model setups" => "man/Tutorial_VolcanoModel_3D.md",
+            "23 - Build geometry from polygons" =>  "man/tutorial_Polygon_structures.md"
         ],
         "User Guide" => Any[
             "Installation" =>  "man/installation.md",
