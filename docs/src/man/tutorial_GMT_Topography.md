@@ -15,7 +15,7 @@ The nice thing about GMT is that it automatically downloads data for you for a c
 
 ```julia
 julia> using GeophysicalModelGenerator, GMT
-julia> Topo = import_topo([4,20,37,49], file="@earth_relief_01m.grd")
+julia> Topo = import_topo([4,20,37,49], file="@earth_relief_01m")
 GeoData 
   size  : (960, 720, 1)
   lon   ϵ [ 4.0 : 19.983333333333334]
