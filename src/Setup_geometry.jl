@@ -349,7 +349,7 @@ end
 
 
 """
-    add_sphere!(Phase, Temp, Grid::AbstractGeneralGrid; cen::NTuple{3, _T} = (0,0,-1), radius::NTuple{1, _T} = (0.5),
+    add_sphere!(Phase, Temp, Grid::AbstractGeneralGrid; cen::NTuple{3, _T} = (0,0,-1), radius::Number,
             phase = ConstantPhase(1).
             T=nothing, cell=false ) where _T
 
@@ -392,7 +392,7 @@ julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
 ```
 """
 function add_sphere!(Phase, Temp, Grid::AbstractGeneralGrid;    # required input
-    cen::NTuple{3, _T} = (0,0,-1), radius::NTuple{1, _T} = (0.5),    # center and radius of the sphere
+    cen::NTuple{3, _T} = (0,0,-1), radius::Number,              # center and radius of the sphere
     phase = ConstantPhase(1),                                   # Sets the phase number(s) in the sphere
     T=nothing, cell=false )    where _T                         # Sets the thermal structure (various functions are available)
 
@@ -498,7 +498,7 @@ function add_ellipsoid!(Phase, Temp, Grid::AbstractGeneralGrid;     # required i
 end
 
 """
-    add_cylinder!(Phase, Temp, Grid::AbstractGeneralGrid; base::NTuple{3, _T} = (-1,-1,-1.5), cap::NTuple{3, _T} = (-1,-1,-0.5), radius::NTuple{1, _T} = (0.25),
+    add_cylinder!(Phase, Temp, Grid::AbstractGeneralGrid; base::NTuple{3, _T} = (-1,-1,-1.5), cap::NTuple{3, _T} = (-1,-1,-0.5), radius::Number,
             phase = ConstantPhase(1),
             T=nothing, cell=false ) where _T
 
@@ -542,7 +542,7 @@ julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
 ```
 """
 function add_cylinder!(Phase, Temp, Grid::AbstractGeneralGrid;  # required input
-    base::NTuple{3, _T} = (-1,-1,-1.5), cap::NTuple{3, _T} = (-1,-1,-0.5), radius=::NTuple{1, _T} = (0.25),               # center and radius of the sphere
+    base::NTuple{3, _T} = (-1,-1,-1.5), cap::NTuple{3, _T} = (-1,-1,-0.5), radius::Number,    # center and radius of the sphere
     phase = ConstantPhase(1),                                   # Sets the phase number(s) in the sphere
     T=nothing, cell=false )   where _T                          # Sets the thermal structure (various functions are available)
 
@@ -638,7 +638,7 @@ julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
 
 """
 function add_polygon!(Phase, Temp, Grid::AbstractGeneralGrid;   # required input
-    xlim=(), ylim=::NTuple{2, _T} = (0,0.8), zlim=(),           # limits of the box
+    xlim=(), ylim::NTuple{2, _T} = (0,0.8), zlim=(),           # limits of the box
     phase = ConstantPhase(1),                                   # Sets the phase number(s) in the box
     T=nothing, cell=false )  where _T                           # Sets the thermal structure (various functions are available)
 
