@@ -23,7 +23,7 @@ using GeophysicalModelGenerator, GMT, DelimitedFiles
 We will use GMT to download the topography with:
 
 ```julia
-Topo = import_topo(lon = [-18.2, -17.5], lat=[28.4, 29.0], file="@earth_relief_15s.grd")
+Topo = import_topo(lon = [-18.2, -17.5], lat=[28.4, 29.0], file="@earth_relief_15s")
 ```
 
 Next, lets load the seismicity. The earthquake data is available on [https://www.ign.es/web/ign/portal/vlc-catalogo](https://www.ign.es/web/ign/portal/vlc-catalogo).
