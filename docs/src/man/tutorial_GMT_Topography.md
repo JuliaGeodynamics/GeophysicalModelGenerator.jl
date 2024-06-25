@@ -23,7 +23,9 @@ GeoData
   depth ϵ [ -3.8725 km : 4.2495 km]
   fields: (:Topography,)
 ```
+
 The data is available in different resolutions:
+
 | Dataset                 |   Resolution |   Description                                               |
 |:----------------        | ------------ | ----------------------------------------------------------- |
 | "@earth\_relief\_01s" |	1 arc sec 	 | SRTM tiles (14297 tiles, land only, 60S-60N) [NASA/USGS]    |
