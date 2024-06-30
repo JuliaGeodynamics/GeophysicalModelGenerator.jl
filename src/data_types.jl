@@ -1465,14 +1465,6 @@ extrema(d::FEData) = extrema(d.vertices, dims=2)
 size(d::FEData) = size(d.connectivity,2)
 
 """
-    convert2FEData(d::Q1Data
-
-"""
-    convert2FEData(d::Q1Data)
-
-
-
-"""
     X,Y,Z = coordinate_grids(Data::Q1Data; cell=false)
 
 Returns 3D coordinate arrays
