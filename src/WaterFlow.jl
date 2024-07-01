@@ -37,9 +37,13 @@ end
 
 """
     Topo_water, sinks, pits, bnds  = waterflows(Topo::GeoData; 
-        flowdir_fn=WhereTheWaterFlows.d8dir_feature, feedback_fn=nothing, drain_pits=true, bnd_as_sink=true)
+        flowdir_fn=WhereTheWaterFlows.d8dir_feature, feedback_fn=nothing, drain_pits=true, bnd_as_sink=true,
+        rainfall = nothing)
 
-Takes a GMG GeoData object of a topographic map and routes water through the grid. We add a number of 
+Takes a GMG GeoData object of a topographic map and routes water through the grid. Optionally,
+you can specify `rainfall` in which case we accumulate the rain as specified in this 2D array instead of the cellarea. 
+This allows you to, for example, sum, up water if you have variable rainfall in the area.
+The other options are as in the `waterflows` function of the package `WhereTheWaterFlows`.
 
 Example
 ===
@@ -60,9 +64,15 @@ GeoData
 ```
 
 """
-function waterflows(Topo::GeoData, flowdir_fn= WhereTheWaterFlows.d8dir_feature; feedback_fn=nothing, drain_pits=true, bnd_as_sink=true) 
+function waterflows(Topo::GeoData, flowdir_fn= WhereTheWaterFlows.d8dir_feature; feedback_fn=nothing, drain_pits=true, bnd_as_sink=true, rainfall=nothing) 
 
     cellarea = cell_area(Topo)
+    cellarea_m2 = cellarea
+    if !isnothing(rainfall)
+        @assert typeof(rainfall) == Array{Float64,2}
+        cellarea = rainfall
+    end
+
     dem = Topo.depth.val[:,:,1]
 
     area    = zeros(Float64,size(Topo.depth.val))
@@ -75,6 +85,6 @@ function waterflows(Topo::GeoData, flowdir_fn= WhereTheWaterFlows.d8dir_feature;
     area[:,:,1], slen[:,:,1], dir[:,:,1], nout[:,:,1], nin[:,:,1], sinks, pits, c[:,:,1], bnds = waterflows(dem, cellarea, flowdir_fn;
                         feedback_fn=feedback_fn, drain_pits=drain_pits, bnd_as_sink=bnd_as_sink)
 
-    Topo_water =  addfield(Topo,(;area, slen, dir, nout, nin, c ))                        
+    Topo_water =  addfield(Topo,(;area, slen, dir, nout, nin, c, cellarea_m2 ))                        
     return Topo_water, sinks, pits, bnds 
 end

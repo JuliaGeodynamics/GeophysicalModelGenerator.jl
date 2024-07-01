@@ -12,4 +12,9 @@ Topo_water, sinks, pits, bnds  = waterflows(Topo)
 @test sum(Topo_water.fields.nin) == 459361
 @test sum(Topo_water.fields.dir) == 2412566
 
+# With rain in m3/s per cell
+rainfall = ones(size(Topo.lon.val[:,:,1]))*1e-3 # 2D array with rainfall per cell area
+Topo_water1, sinks, pits, bnds  = waterflows(Topo, rainfall=rainfall)
+
+@test maximum(Topo_water1.fields.area) ≈ 169.79800000000208
 
