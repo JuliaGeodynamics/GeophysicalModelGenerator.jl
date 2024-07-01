@@ -1,6 +1,6 @@
 export sea_level_files, SeaLevel, load_sea_level, curve_name
 
-const sea_level_path = "sea_level_data"
+const sea_level_path = joinpath(pwd(), "src/sea_level_data")
 
 const sea_level_files = Dict(
     :Spratt_800ka => "Spratt2016-800ka.txt",
@@ -38,10 +38,9 @@ Base.length(x::SeaLevel) = length(x.elevation)
 curve_name(x::SeaLevel) = x.name
 
 function load_sea_level(name::Symbol; flip_elevation = false, flip_age = false)
-    fname = sea_level_files[name]
-    data = readdlm(joinpath(sea_level_path, fname))
-    h = data[:, 1]
-    age = data[:, 2]
+    fname   = sea_level_files[name]
+    data    = readdlm(joinpath(sea_level_path, fname))
+    h, age  = data[:, 1], data[:, 2]
     flip_elevation && reverse!(h)
     flip_age && reverse!(age)
     return h, age
