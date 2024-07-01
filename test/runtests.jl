@@ -68,6 +68,11 @@ end
     include("test_create_movie.jl")
 end
 
+@testset "Sea level" begin
+    include("test_sea_level.jl")
+end
+
+
 # Cleanup
 foreach(rm, filter(endswith(".vts"), readdir()))
 foreach(rm, filter(endswith(".vtu"), readdir()))
