@@ -2,6 +2,7 @@
 MOR = "MOR"
 dum = "dum"
 Shepard = "Shepard"
+nin = "nin"
 
 [files]
 extend-exclude = ["tutorials/*.pvsm"]
