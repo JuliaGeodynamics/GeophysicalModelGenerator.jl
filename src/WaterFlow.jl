@@ -76,12 +76,13 @@ function waterflows(Topo::GeoData, flowdir_fn= WhereTheWaterFlows.d8dir_feature;
 
     dem = Topo.depth.val[:,:,1]
 
-    area    = zeros(Float64,size(Topo.depth.val))
-    slen    = zeros(Int64,size(Topo.depth.val))
-    dir     = zeros(Int8,size(Topo.depth.val))
-    nout    = zeros(Int8,size(Topo.depth.val))
-    nin     = zeros(Int8,size(Topo.depth.val))
-    c       = zeros(Int64,size(Topo.depth.val))
+    ni      = size(Topo.depth.val)
+    area    = zeros(ni)
+    slen    = zeros(Int64, ni)
+    dir     = zeros(Int8, ni)
+    nout    = zeros(Int8, ni)
+    nin     = zeros(Int8, ni)
+    c       = zeros(Int64, ni)
 
     area[:,:,1], slen[:,:,1], dir[:,:,1], nout[:,:,1], nin[:,:,1], sinks, pits, c[:,:,1], bnds = waterflows(dem, cellarea, flowdir_fn;
                         feedback_fn=feedback_fn, drain_pits=drain_pits, bnd_as_sink=bnd_as_sink)
