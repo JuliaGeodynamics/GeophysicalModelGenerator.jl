@@ -13,10 +13,10 @@ Computes the spacing with central differences
 function spacing(lon,lat)
     dlon = zero(size(lon.val)[1:2])
     dlat = zero(size(lat.val)[1:2])
-    dlon[2:end-1,:] = (lon.val[3:end,:,1] - lon.val[1:end-2,:,1])/2
-    dlon[1,:], dlon[end,:] = dlon[2,:], dlon[end-1,:]
-    dlat[:,2:end-1] = (lat.val[:,3:end,1] - lat.val[:,1:end-2,1])/2
-    dlat[:,1], dlat[:,end] = dlat[:,2], dlat[:,end-1]
+    @views dlon[2:end-1,:] = (lon.val[3:end,:,1] - lon.val[1:end-2,:,1])/2
+    @views dlon[1,:], dlon[end,:] = dlon[2,:], dlon[end-1,:]
+    @views dlat[:,2:end-1] = (lat.val[:,3:end,1] - lat.val[:,1:end-2,1])/2
+    @views dlat[:,1], dlat[:,end] = dlat[:,2], dlat[:,end-1]
     return dlon, dlat
 end
 
