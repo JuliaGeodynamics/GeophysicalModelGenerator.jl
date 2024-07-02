@@ -38,7 +38,8 @@ end
 """
     Topo_water, sinks, pits, bnds  = waterflows(Topo::GeoData; 
         flowdir_fn=WhereTheWaterFlows.d8dir_feature, feedback_fn=nothing, drain_pits=true, bnd_as_sink=true,
-        rainfall = nothing)
+        rainfall = nothing,
+        minsize=300)
 
 Takes a GMG GeoData object of a topographic map and routes water through the grid. Optionally,
 you can specify `rainfall` in which case we accumulate the rain as specified in this 2D array instead of the cellarea. 
@@ -64,7 +65,7 @@ GeoData
 ```
 
 """
-function waterflows(Topo::GeoData, flowdir_fn= WhereTheWaterFlows.d8dir_feature; feedback_fn=nothing, drain_pits=true, bnd_as_sink=true, rainfall=nothing) 
+function waterflows(Topo::GeoData, flowdir_fn= WhereTheWaterFlows.d8dir_feature; feedback_fn=nothing, drain_pits=true, bnd_as_sink=true, rainfall=nothing, minsize=300) 
 
     cellarea = cell_area(Topo)
     cellarea_m2 = cellarea
@@ -85,6 +86,8 @@ function waterflows(Topo::GeoData, flowdir_fn= WhereTheWaterFlows.d8dir_feature;
     area[:,:,1], slen[:,:,1], dir[:,:,1], nout[:,:,1], nin[:,:,1], sinks, pits, c[:,:,1], bnds = waterflows(dem, cellarea, flowdir_fn;
                         feedback_fn=feedback_fn, drain_pits=drain_pits, bnd_as_sink=bnd_as_sink)
 
-    Topo_water =  addfield(Topo,(;area, slen, dir, nout, nin, c, cellarea_m2 ))                        
+    catchment_large =  prune_catchments(c, minsize; val=0)
+
+    Topo_water =  addfield(Topo,(;area, slen, dir, nout, nin, c, cellarea_m2, catchment_large))                        
     return Topo_water, sinks, pits, bnds 
 end
