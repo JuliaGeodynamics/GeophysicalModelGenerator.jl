@@ -11,8 +11,8 @@ export waterflows
 Computes the spacing with central differences
 """
 function spacing(lon,lat)
-    dlon = zero(lon.val[:,:,1])
-    dlat = zero(lat.val[:,:,1])
+    dlon = zero(size(lon.val)[1:2])
+    dlat = zero(size(lat.val)[1:2])
     dlon[2:end-1,:] = (lon.val[3:end,:,1] - lon.val[1:end-2,:,1])/2
     dlon[1,:], dlon[end,:] = dlon[2,:], dlon[end-1,:]
     dlat[:,2:end-1] = (lat.val[:,3:end,1] - lat.val[:,1:end-2,1])/2
