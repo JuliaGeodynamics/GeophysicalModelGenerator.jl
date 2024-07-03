@@ -91,7 +91,13 @@ function waterflows(Topo::GeoData, flowdir_fn= WhereTheWaterFlows.d8dir_feature;
                         feedback_fn=feedback_fn, drain_pits=drain_pits, bnd_as_sink=bnd_as_sink)
 
     catchment_large =  prune_catchments(c, minsize; val=0)
-
-    Topo_water =  addfield(Topo,(;area, slen, dir, nout, nin, c, cellarea_m2, catchment_large))                        
+    largest_catchment = catchment_large .== maximum(catchment_large)
+    largest_area = copy(area)
+    largest_area[.!largest_catchment] .= NaN
+    
+    log10_area = log10.(area)
+    log10_largest_area = log10.(largest_area)
+     
+    Topo_water =  addfield(Topo,(;area, slen, dir, nout, nin, c, cellarea_m2, catchment_large, log10_area, largest_catchment, largest_area, log10_largest_area))                        
     return Topo_water, sinks, pits, bnds 
 end
