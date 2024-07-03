@@ -279,8 +279,24 @@ heatmap for a 2D GeoData object (surface)
 """
 function heatmap(x::GeoData, args...; field=:Topography, kwargs...)
     @assert size(x.depth.val,3)==1
+    @assert hasfield(typeof(x.fields), field)
 
     heatmap(x.lon.val[:,1], x.lat.val[1,:], ustrip.(x.fields[field][:,:,1]), args...; kwargs...)
+
+end
+
+"""
+    heatmap(x::GeoData, a::Array{_T,N}, args...; kwargs...)
+in-place heatmap for a 2D GeoData object (surface) with an array `a`. 
+"""
+function heatmap(x::GeoData, a::Array{_T,N}, args...; kwargs...) where{_T,N}
+    @assert size(x.depth.val,3)==1
+
+    if N==3
+        heatmap(x.lon.val[:,1], x.lat.val[1,:], ustrip.(a[:,:,1]), args...; kwargs...)
+    elseif N==2
+        heatmap(x.lon.val[:,1], x.lat.val[1,:], ustrip.(a), args...; kwargs...)
+    end
 
 end
 
@@ -290,10 +306,27 @@ heatmap for a 2D CartData object (surface)
 """
 function heatmap(x::CartData, args...; field=:Topography, kwargs...)
     @assert size(x.z.val,3)==1
+    @assert hasfield(typeof(x.fields), field)
 
     heatmap(x.x.val[:,1], x.y.val[1,:], ustrip.(x.fields[field][:,:,1]), args...; kwargs...)
 
 end
+
+"""
+    heatmap(x::CartData, a::Array{_T,N}, args...; kwargs...)
+in-place heatmap for a 2D CartData object (surface) with an array `a`. 
+"""
+function heatmap(x::CartData, a::Array{_T,N}, args...; kwargs...) where{_T,N}
+    @assert size(x.z.val,3)==1
+
+    if N==3
+        heatmap(x.x.val[:,1], x.y.val[1,:], ustrip.(a[:,:,1]), args...; kwargs...)
+    elseif N==2
+        heatmap(x.x.val[:,1], x.y.val[1,:], ustrip.(a), args...; kwargs...)
+    end
+
+end
+
 
 """
     heatmap!(x::GeoData, args...; field=:Topography, kwargs...)
@@ -301,8 +334,24 @@ in-place heatmap for a 2D GeoData object (surface),
 """
 function heatmap!(x::GeoData, args...; field=:Topography, kwargs...)
     @assert size(x.z.val,3)==1
+    @assert hasfield(typeof(x.fields), field)
 
-    heatmap!(x.lon.val[:,1], x.lat.val[1,:], ustrip.(x.fields[field][:,:,1]), args...; kwargs...)
+    heatmap(x.lon.val[:,1], x.lat.val[1,:], ustrip.(x.fields[field][:,:,1]), args...; kwargs...)
+
+end
+
+"""
+    heatmap!(x::GeoData, a::Array{_T,N}, args...; kwargs...)
+in-place heatmap for a 2D GeoData object (surface) with an array `a`. 
+"""
+function heatmap!(x::GeoData, a::Array{_T,N}, args...; kwargs...) where{_T,N}
+    @assert size(x.z.val,3)==1
+
+    if N==3
+        heatmap!(x.lon.val[:,1], x.lat.val[1,:], ustrip.(a[:,:,1]), args...; kwargs...)
+    elseif N==2
+        heatmap!(x.lon.val[:,1], x.lat.val[1,:], ustrip.(a), args...; kwargs...)
+    end
 
 end
 
@@ -312,8 +361,24 @@ in-place heatmap for a 2D CartData object (surface)
 """
 function heatmap!(x::CartData, args...; field=:Topography, kwargs...)
     @assert size(x.z.val,3)==1
+    @assert hasfield(typeof(x.fields), field)
+
     heatmap!(x.x.val[:,1], x.y.val[1,:], ustrip.(x.fields[field][:,:,1]), args...; kwargs...)
 end
 
+"""
+    heatmap!(x::CartData, a::Array{_T,N}, args...; kwargs...)
+in-place heatmap for a 2D CartData object (surface) with an array `a`. 
+"""
+function heatmap!(x::CartData, a::Array{_T,N}, args...; kwargs...) where{_T,N}
+    @assert size(x.z.val,3)==1
+
+    if N==3
+        heatmap!(x.x.val[:,1], x.y.val[1,:], ustrip.(a[:,:,1]), args...; kwargs...)
+    elseif N==2
+        heatmap!(x.x.val[:,1], x.y.val[1,:], ustrip.(a[:,:]), args...; kwargs...)
+    end
+
+end
 
 end
