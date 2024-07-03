@@ -40,7 +40,7 @@ curve_name(x::SeaLevel) = x.name
 function load_sea_level(name::Symbol; flip_elevation = false, flip_age = false)
     fname   = sea_level_files[name]
     data    = readdlm(joinpath(sea_level_path, fname))
-    h, age  = data[:, 1], data[:, 2]
+    age, h  = data[:, 1], data[:, 2]
     flip_elevation && reverse!(h)
     flip_age && reverse!(age)
     return h, age
