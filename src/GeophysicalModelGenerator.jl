@@ -47,6 +47,7 @@ include("IO.jl")
 include("event_counts.jl")
 include("surface_functions.jl")
 include("movies_from_pics.jl")
+include("sea_lvl.jl")
 
 # Add optional routines (only activated when the packages are loaded)
 
