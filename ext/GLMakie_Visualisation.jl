@@ -3,7 +3,7 @@ module GLMakie_Visualisation
 
 using Statistics
 using GeophysicalModelGenerator: lonlatdepth_grid, GeoData, CartData, km, AbstractGeneralGrid
-import GeophysicalModelGenerator: visualise
+import GeophysicalModelGenerator: visualise, ustrip
 
 # We do not check `isdefined(Base, :get_extension)` as recommended since
 # Julia v1.9.0 does not load package extensions when their dependency is
@@ -14,7 +14,9 @@ else
     using ..GLMakie
 end
 
-export visualise
+import GLMakie: heatmap!, heatmap
+
+export visualise, heatmap, heatmap!
 
 println("Loading GLMakie extensions for GMG")
 
@@ -269,6 +271,48 @@ function visualise(Data::AbstractGeneralGrid; Topography=nothing, Topo_range=not
     display(fig)
     
     return nothing
+end
+
+"""
+    heatmap(x::GeoData, args...; field=:Topography, kwargs...)
+heatmap for a 2D GeoData object (surface)
+"""
+function heatmap(x::GeoData, args...; field=:Topography, kwargs...)
+    @assert size(x.depth.val,3)==1
+
+    heatmap(x.lon.val[:,1], x.lat.val[1,:], ustrip.(x.fields[field][:,:,1]), args...; kwargs...)
+
+end
+
+"""
+    heatmap(x::CartData, args...; field=:Topography, kwargs...)
+heatmap for a 2D CartData object (surface)
+"""
+function heatmap(x::CartData, args...; field=:Topography, kwargs...)
+    @assert size(x.z.val,3)==1
+
+    heatmap(x.x.val[:,1], x.y.val[1,:], ustrip.(x.fields[field][:,:,1]), args...; kwargs...)
+
+end
+
+"""
+    heatmap!(x::GeoData, args...; field=:Topography, kwargs...)
+in-place heatmap for a 2D GeoData object (surface), 
+"""
+function heatmap!(x::GeoData, args...; field=:Topography, kwargs...)
+    @assert size(x.z.val,3)==1
+
+    heatmap!(x.lon.val[:,1], x.lat.val[1,:], ustrip.(x.fields[field][:,:,1]), args...; kwargs...)
+
+end
+
+"""
+    heatmap!(x::CartData, args...; field=:Topography, kwargs...)
+in-place heatmap for a 2D CartData object (surface)
+"""
+function heatmap!(x::CartData, args...; field=:Topography, kwargs...)
+    @assert size(x.z.val,3)==1
+    heatmap!(x.x.val[:,1], x.y.val[1,:], ustrip.(x.fields[field][:,:,1]), args...; kwargs...)
 end
 
 
