@@ -33,7 +33,7 @@ function cell_area(Topo::GeoData)
     Topo_cart = convert2CartData(Topo, proj)
     dx, dy = spacing(Topo_cart.x, Topo_cart.y)
 
-    area_m2 = dx.*dy*1e6
+    area_m2 = dx*dy*1e6
     return area_m2
 end
 
