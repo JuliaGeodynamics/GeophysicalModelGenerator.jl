@@ -73,6 +73,10 @@ end
 end
 
 
+@testset "Waterflow" begin
+    include("test_WaterFlow.jl")
+end
+
 # Cleanup
 foreach(rm, filter(endswith(".vts"), readdir()))
 foreach(rm, filter(endswith(".vtu"), readdir()))
