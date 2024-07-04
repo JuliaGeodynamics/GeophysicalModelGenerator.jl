@@ -8,6 +8,7 @@ Lon,Lat,Depth   =   lonlatdepth_grid(10:20,30:40,-50km);
 Data1           =   Depth*2;                # some data
 Vx1,Vy1,Vz1     =   Data1*3,Data1*4,Data1*5
 Data_set2D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data1,LonData1=Lon, Velocity=(Vx1,Vy1,Vz1)))  
+Data_set2D0     =   GeoData(Lon,Lat,Depth,(Depthdata=Data1,LonData1=Lon))  
 @test_throws ErrorException cross_section(Data_set2D, Depth_level=-10)
 
 # Test interpolation of depth to a given cartesian XY-plane
@@ -16,6 +17,16 @@ y = 31:39
 plane1 = interpolate_datafields_2D(Data_set2D, x, y)
 proj   = ProjectionPoint()
 plane2 = interpolate_datafields_2D(Data_set2D, proj, x, y)
+
+
+Lon1,Lat1,Depth1   =   lonlatdepth_grid(12:18,33:39,-50km);
+Data2           =   Depth1*2;                # some data
+Vx1,Vy1,Vz1     =   Data2*3,Data2*4,Data2*5
+Data_set2D_1    =   GeoData(Lon1,Lat1,Depth1,(Depthdata1=Data2,LonData2=Lon1))  
+
+plane3 = interpolate_datafields_2D(Data_set2D0, Data_set2D_1)
+@test sum(plane3.fields.Depthdata) ≈ -4900.0km
+
 
 @test plane1 == plane2
 @test all(==(-50e0), plane1)
