@@ -1,6 +1,8 @@
 export sea_level_files, SeaLevel, load_sea_level, curve_name
 
-const sea_level_path = joinpath(pwd(), "src/sea_level_data")
+pkg_dir = pkgdir(GeophysicalModelGenerator)
+
+const sea_level_path = joinpath(pkg_dir, joinpath("src","sea_level_data"))
 
 const sea_level_files = Dict(
     :Spratt_800ka => "Spratt2016-800ka.txt",
