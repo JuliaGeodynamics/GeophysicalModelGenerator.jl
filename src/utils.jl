@@ -1216,6 +1216,34 @@ function interpolate_datafields_2D(Original::CartData, New::CartData; Rotate=0.0
     return CartData(New.x.val,New.y.val,Znew, fields_new)
 end
 
+"""
+    interpolate_datafields_2D(Original::GeoData, New::GeoData; Rotate=0.0, Translate=(0,0,0), Scale=(1.0,1.0,1.0))
+
+Interpolates a data field `Original` on a 2D GeoData grid `New`.
+Typically used for horizontal surfaces.
+
+Note: `Original` should have orthogonal coordinates. If it has not, e.g., because it was rotated, you'll have to specify the angle `Rotate` that it was rotated by
+
+"""
+function interpolate_datafields_2D(Original::GeoData, New::GeoData; Rotate=0.0, Translate=(0.0,0.0,0.0), Scale=(1.0,1.0,1.0))
+    if (Rotate!=0.0) || any(Translate .!= (0,0,0)) || any(Scale .!= (1.0,1.0,1.0))
+        Original_r  = rotate_translate_scale(Original, Rotate = -1.0*Rotate, Translate = -1.0.*Translate, Scale=Scale);
+        New_r       = rotate_translate_scale(New, Rotate = -1.0*Rotate, Translate = -1.0.*Translate, Scale=Scale);
+    else
+        Original_r  = Original;
+        New_r       = New;
+    end
+
+    Lon_vec      =  Original_r.lon.val[:,1,1];
+    Lat_vec      =  Original_r.lat.val[1,:,1];
+
+    Lon_new = New_r.lon.val
+    Lat_new = New_r.lat.val
+    Znew, fields_new = GeophysicalModelGenerator.InterpolateDataFields2D_vecs(Lon_vec, Lat_vec, Original_r.depth, Original_r.fields, Lon_new, Lat_new)
+
+    return GeoData(New.lon.val,New.lat.val,Znew, fields_new)
+end
+
 """    
     Surf_interp = interpolate_datafields_2D(V::GeoData, x::AbstractRange, y::AbstractRange;  Lat::Number, Lon::Number)
 
