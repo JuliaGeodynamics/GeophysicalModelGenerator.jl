@@ -333,7 +333,7 @@ end
 in-place heatmap for a 2D GeoData object (surface), 
 """
 function heatmap!(x::GeoData, args...; field=:Topography, kwargs...)
-    @assert size(x.z.val,3)==1
+    @assert size(x.depth.val,3)==1
     @assert hasfield(typeof(x.fields), field)
 
     heatmap(x.lon.val[:,1], x.lat.val[1,:], ustrip.(x.fields[field][:,:,1]), args...; kwargs...)
@@ -345,7 +345,7 @@ end
 in-place heatmap for a 2D GeoData object (surface) with an array `a`. 
 """
 function heatmap!(x::GeoData, a::Array{_T,N}, args...; kwargs...) where{_T,N}
-    @assert size(x.z.val,3)==1
+    @assert size(x.depth.val,3)==1
 
     if N==3
         heatmap!(x.lon.val[:,1], x.lat.val[1,:], ustrip.(a[:,:,1]), args...; kwargs...)
@@ -356,14 +356,23 @@ function heatmap!(x::GeoData, a::Array{_T,N}, args...; kwargs...) where{_T,N}
 end
 
 """
-    heatmap!(x::CartData, args...; field=:Topography, kwargs...)
+    heatmap!(x::CartData, args...; field=:Topography, colorbar=false, kwargs...)
 in-place heatmap for a 2D CartData object (surface)
 """
-function heatmap!(x::CartData, args...; field=:Topography, kwargs...)
+function heatmap!(x::CartData, args...; field=:Topography, colorbar=false, kwargs...)
     @assert size(x.z.val,3)==1
     @assert hasfield(typeof(x.fields), field)
 
-    heatmap!(x.x.val[:,1], x.y.val[1,:], ustrip.(x.fields[field][:,:,1]), args...; kwargs...)
+    data = ustrip.(x.fields[field][:,:,1])
+
+    fig,ax,hm = heatmap!(x.x.val[:,1], x.y.val[1,:], data, args...; kwargs...)
+
+    cb = nothing
+    if colorbar
+        cb = Colorbar(fig[1,2], limits=extrema(filter(!isnan,x.fields[field])), label=field)
+    end
+    
+    return fig_out
 end
 
 """
