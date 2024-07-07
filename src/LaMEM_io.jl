@@ -1002,7 +1002,7 @@ function create_partitioning_file(LaMEM_input::String,NumProc::Int64; LaMEM_dir:
         for (i,file) in enumerate(files)
             time_modified[i] = stat(file).mtime
         end
-        id          = findall(time_modified.==maximum(time_modified))   # last modified
+        id          = time_modified .== maximum(time_modified)   # last modified
         PartFile    = files[id]
         if verbose==true
             println("Successfully generated PartitioningFile: $(PartFile[1])")

@@ -26,7 +26,7 @@ function cell_tags_from_gmsh(mesh)
     # create tags for cells
     tags = zeros(Int64,length(cell_entities))
     for (i,entity) in enumerate(cell_entities_unique)
-        id = findall(cell_entities.==entity)
+        id        = cell_entities .== entity
         tags[id] .= tag_unique[i]
     end
    

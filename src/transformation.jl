@@ -161,30 +161,27 @@ function project_FEData_CartData(data_cart::CartData, data_fe::FEData)
     for i = 1:size(data_fe.connectivity,2) # loop over tetrahedrons
         tetra = data_fe.connectivity[:,i]
 
-        a = data_fe.vertices[:,tetra[1]]
-        b = data_fe.vertices[:,tetra[2]]
-        c = data_fe.vertices[:,tetra[3]]
-        d = data_fe.vertices[:,tetra[4]]
+        a = data_fe.vertices[:, tetra[1]]
+        b = data_fe.vertices[:, tetra[2]]
+        c = data_fe.vertices[:, tetra[3]]
+        d = data_fe.vertices[:, tetra[4]]
 
-        xmin = min(a[1],b[1],c[1],d[1])
-        xmax = max(a[1],b[1],c[1],d[1])
-        ymin = min(a[2],b[2],c[2],d[2])
-        ymax = max(a[2],b[2],c[2],d[2])
-        zmin = min(a[3],b[3],c[3],d[3])
-        zmax = max(a[3],b[3],c[3],d[3])
-        
-        ind = findall(  data_cart.x.val .>= xmin .&& data_cart.x.val .<= xmax .&& 
-                        data_cart.y.val .>= ymin .&& data_cart.y.val .<= ymax .&& 
-                        data_cart.z.val .>= zmin .&& data_cart.z.val .<= zmax);
+        xmin, xmax = extrema((a[1],b[1],c[1],d[1]))
+        ymin, ymax = extrema((a[2],b[2],c[2],d[2]))
+        zmin, zmax = extrema((a[3],b[3],c[3],d[3]))
+
+        ind = findall(@. xmax ≥ data_cart.x.val ≥ xmin && 
+                         ymax ≥ data_cart.y.val ≥ ymin && 
+                         zmax ≥ data_cart.z.val ≥ zmin)
 
         for I in ind
-            x = data_cart.x.val[I]
-            y = data_cart.y.val[I]
-            z = data_cart.z.val[I]
-            p = [x,y,z]
-            if point_in_tetrahedron(p,a,b,c,d)
-                regions[I] = cellfields_regions[i]
-            end
+                x = data_cart.x.val[I]
+                y = data_cart.y.val[I]
+                z = data_cart.z.val[I]
+                p = [x,y,z]
+                if point_in_tetrahedron(p,a,b,c,d)
+                    regions[I] = cellfields_regions[i]
+                end
         end
 
     end

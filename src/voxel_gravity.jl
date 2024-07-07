@@ -46,7 +46,7 @@ function voxel_grav(X::Array{Float64, 3}, Y::Array{Float64, 3}, Z::Array{Float64
     z_vec  = Z[1,1,:]
 
     # cut everything above sea level
-    ind    = findall(x->x<=0, z_vec)
+    ind    = z_vec .≤ 0
     X      = X[:,:,ind]
     Y      = Y[:,:,ind]
     Z      = Z[:,:,ind]
@@ -60,12 +60,12 @@ function voxel_grav(X::Array{Float64, 3}, Y::Array{Float64, 3}, Z::Array{Float64
 
     # subtract reference model
     for i = 1 : nz
-        RHO[:,:,i] .= RHO[:,:,i] .- RefMod[i]
+        RHO[:,:,i] .-= RefMod[i]
     end
 
     # interpolate density grid to cell centers
     DRHO = RHO[1:end-1,1:end-1,1:end-1] .+ RHO[2:end,1:end-1,1:end-1] .+ RHO[2:end,2:end,1:end-1] .+ RHO[1:end-1,2:end,1:end-1] +
-            RHO[1:end-1,1:end-1,2:end]   .+ RHO[2:end,1:end-1,2:end]   .+ RHO[2:end,2:end,2:end]   .+ RHO[1:end-1,2:end,2:end]
+            RHO[1:end-1,1:end-1,2:end]  .+ RHO[2:end,1:end-1,2:end]   .+ RHO[2:end,2:end,2:end]   .+ RHO[1:end-1,2:end,2:end]
     DRHO = DRHO ./ 8
 
     # voxel volume
@@ -78,9 +78,9 @@ function voxel_grav(X::Array{Float64, 3}, Y::Array{Float64, 3}, Z::Array{Float64
     VG_vox = dV * G
 
     # coordinate vector of cell center grid
-    xCells = x_vec[1:end-1] .+ dx/2
-    yCells = y_vec[1:end-1] .+ dy/2
-    zCells = z_vec[1:end-1] .+ dz/2
+    xCells = @. x_vec[1:end-1] + dx / 2
+    yCells = @. y_vec[1:end-1] + dy / 2
+    zCells = @. z_vec[1:end-1] + dz / 2
 
     # precompute distances
     if printing
@@ -113,7 +113,7 @@ function voxel_grav(X::Array{Float64, 3}, Y::Array{Float64, 3}, Z::Array{Float64
     ###################################################
 
     ############## write info and output ##############
-    numRel = length(findall(x->abs(x)>rhoTol, DRHO))
+    numRel = count(x->abs(x)>rhoTol, DRHO)
     frac   = numRel/length(DRHO)
     coords = cat(X[:,:,1],Y[:,:,1],Topo,dims=4)
     coords = permutedims(coords,[4,1,2,3])

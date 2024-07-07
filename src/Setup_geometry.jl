@@ -85,7 +85,7 @@ function add_stripes!(Phase, Grid::AbstractGeneralGrid;                # require
     cell            =  false )                          # if true, Phase and Temp are defined on cell centers 
 
     # warnings
-    if stripeWidth >= stripeSpacing/2.0
+    if stripeWidth ≥ stripeSpacing/2.0
         print("WARNING: stripeWidth should be strictly < stripeSpacing/2.0, otherwise phase is overwritten by the stripePhase\n")
     elseif sum(stripAxes .== 0) == 3
         print("WARNING: at least one axis should be set to 1 e.g. stripAxes = (1,0,0), otherwise no stripes will be added\n")
@@ -106,20 +106,20 @@ function add_stripes!(Phase, Grid::AbstractGeneralGrid;                # require
 
     Rot3D!(Xrot,Yrot,Zrot, StrikeAngle, DipAngle)
 
-    ph_ind  = findall(Phase .== phase.phase);
+    ph_ind  = findall(Phase .== phase.phase)
 
     ind = Int64[]
     if stripAxes[1] == 1
-        indX     = findall( abs.(Xrot[ph_ind] .% stripeSpacing) .<= stripeWidth/2.0);
-        ind = vcat(ind,indX);
+        indX = findall( abs.(Xrot[ph_ind] .% stripeSpacing) .≤ stripeWidth / 2);
+        ind  = vcat(ind,indX);
     end
     if stripAxes[2] == 1
-        indY     = findall( abs.(Yrot[ph_ind] .% stripeSpacing) .<= stripeWidth/2.0);
-        ind = vcat(ind,indY);
+        indY = findall( abs.(Yrot[ph_ind] .% stripeSpacing) .≤ stripeWidth / 2);
+        ind  = vcat(ind,indY);
     end
     if stripAxes[3] == 1
-        indZ     = findall( abs.(Zrot[ph_ind] .% stripeSpacing) .<= stripeWidth/2.0);
-        ind = vcat(ind,indZ);
+        indZ = findall( abs.(Zrot[ph_ind] .% stripeSpacing) .≤ stripeWidth / 2);
+        ind  = vcat(ind,indZ);
     end
 
     Phase[ph_ind[ind]] .= stripePhase.phase;
@@ -227,9 +227,9 @@ function add_box!(Phase, Temp, Grid::AbstractGeneralGrid;       # required input
     # Set phase number & thermal structure in the full domain
     ztop = maximum(zlim) - Origin[3]
     zbot = minimum(zlim) - Origin[3]
-    ind = findall(  (Xrot .>= (minimum(xlim) - Origin[1])) .& (Xrot .<= (maximum(xlim) - Origin[1])) .&
-                    (Yrot .>= (minimum(ylim) - Origin[2])) .& (Yrot .<= (maximum(ylim) - Origin[2])) .&
-                    (Zrot .>= zbot) .& (Zrot .<= ztop)  )
+    ind  = ((maximum(xlim) - Origin[1]) .≥ Xrot .≥ (minimum(xlim) - Origin[1])) .&
+           ((maximum(ylim) - Origin[2]) .≥ Yrot .≥ (minimum(ylim) - Origin[2])) .&
+           (ztop .≥ Zrot .≥ zbot)
 
     # Compute thermal structure accordingly. See routines below for different options
     if T != nothing 
@@ -311,26 +311,24 @@ function add_layer!(Phase, Temp, Grid::AbstractGeneralGrid;     # required input
     X,Y,Z = coordinate_grids(Grid, cell=cell)
 
     # Limits of block
-    if isnothing(xlim)==isnothing(ylim)==isnothing(zlim)
+    if isnothing(xlim) && isnothing(ylim) && isnothing(zlim)
         error("You need to specify at least one of the limits (xlim, ylim, zlim)")
     end
 
     if isnothing(xlim)
-        xlim = (minimum(X), maximum(X))
+        xlim = extrema(X)
     end
     if isnothing(ylim)
-        ylim = (minimum(Y), maximum(Y))
+        ylim = extrema(Y)
     end
     if isnothing(zlim)
-        zlim = (minimum(Z), maximum(Z))
+        zlim = extrema(Z)
     end
 
     # Set phase number & thermal structure in the full domain
-    ind = findall(  (X .>= (xlim[1])) .& (X .<= (xlim[2])) .&
-                    (Y .>= (ylim[1])) .& (Y .<= (ylim[2])) .&
-                    (Z .>= (zlim[1])) .& (Z .<= (zlim[2]))
-                )
-
+    ind =   (X .≥ (xlim[1])) .& (X .≤ (xlim[2])) .&
+            (Y .≥ (ylim[1])) .& (Y .≤ (ylim[2])) .&
+            (Z .≥ (zlim[1])) .& (Z .≤ (zlim[2]))
 
     # Compute thermal structure accordingly. See routines below for different options
     if !isnothing(T)
@@ -342,10 +340,6 @@ function add_layer!(Phase, Temp, Grid::AbstractGeneralGrid;     # required input
 
     return nothing
 end
-
-
-
-
 
 """
     add_sphere!(Phase, Temp, Grid::AbstractGeneralGrid; cen=Tuple{3}, radius=Tuple{1},
@@ -398,7 +392,7 @@ function add_sphere!(Phase, Temp, Grid::AbstractGeneralGrid;    # required input
     X,Y,Z = coordinate_grids(Grid, cell=cell)
 
     # Set phase number & thermal structure in the full domain
-    ind = findall(((X .- cen[1]).^2 + (Y .- cen[2]).^2 + (Z .- cen[3]).^2).^0.5 .< radius)
+    ind = ((X .- cen[1]).^2 + (Y .- cen[2]).^2 + (Z .- cen[3]).^2).^0.5 .< radius
 
     # Compute thermal structure accordingly. See routines below for different options
     if T != nothing
@@ -470,9 +464,9 @@ function add_ellipsoid!(Phase, Temp, Grid::AbstractGeneralGrid;     # required i
     X,Y,Z = coordinate_grids(Grid, cell=cell)
 
     # Perform rotation of 3D coordinates:
-    Xrot = X .- Origin[1];
-    Yrot = Y .- Origin[2];
-    Zrot = Z .- Origin[3];
+    Xrot = X .- Origin[1]
+    Yrot = Y .- Origin[2]
+    Zrot = Z .- Origin[3]
 
     Rot3D!(Xrot,Yrot,Zrot, StrikeAngle, DipAngle)
 
@@ -481,11 +475,11 @@ function add_ellipsoid!(Phase, Temp, Grid::AbstractGeneralGrid;     # required i
     y2     = axes[2]^2
     z2     = axes[3]^2
     cenRot = cen .- Origin
-    ind = findall((((Xrot .- cenRot[1]).^2)./x2 + ((Yrot .- cenRot[2]).^2)./y2 +
-                   ((Zrot .- cenRot[3]).^2)./z2) .^0.5 .<= 1)
+    ind    = @. (((Xrot - cenRot[1])^2)/x2 + ((Yrot - cenRot[2])^2)/y2 +
+                ((Zrot - cenRot[3])^2)/z2)^0.5 ≤ 1
 
     # Compute thermal structure accordingly. See routines below for different options
-    if T != nothing
+    if !isnothing(T)
         Temp[ind] = compute_thermal_structure(Temp[ind], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind], T)
     end
 
@@ -564,10 +558,10 @@ function add_cylinder!(Phase, Temp, Grid::AbstractGeneralGrid;  # required input
     dz    = dz_b .- t.*axVec[3]
 
     # Set phase number & thermal structure in the full domain
-    ind = findall((t .>= 0.0) .& (t .<= 1.0) .& ((dx.^2 + dy.^2 + dz.^2).^0.5 .<= radius))
+    ind = (1 .≥ t .≥ 0) .& ((dx.^2 + dy.^2 + dz.^2).^0.5 .≤ radius)
 
     # Compute thermal structure accordingly. See routines below for different options
-    if T != nothing
+    if !isnothing(T)
         Temp[ind] = compute_thermal_structure(Temp[ind], X[ind], Y[ind], Z[ind], Phase[ind], T)
     end
 
@@ -646,7 +640,7 @@ ind_slice = zeros(Bool,size(X[:,1,:]))
 
 # find points within the polygon, only in 2D
 for i = 1:size(Y)[2]
-    if Y[1,i,1] >= ylim[1] && Y[1,i,1]<=ylim[2] 
+    if Y[1,i,1] ≥ ylim[1] && Y[1,i,1]≤ylim[2] 
         inpolygon!(ind_slice, xlim,zlim, X[:,i,:], Z[:,i,:])
         ind[:,i,:] = ind_slice
     else
@@ -860,9 +854,9 @@ function make_volc_topo(Grid::LaMEM_grid;
             error("Size of background must be ", string(nx), "x", string(ny))
         end
     end
-    ind     = findall(x->0.0<=x<1.0, pos)
+    ind     = @. 0 ≤ pos < 1
     H[ind] .= pos[ind] .* (height-base) .+ base
-    ind     = findall(x->x>= 1.0, pos)
+    ind     = pos .≥ 1
     H[ind] .= height
 
     # dimensionalize
@@ -1080,7 +1074,7 @@ end
 
 """
     LithosphericTemp(Tsurface=0.0, Tpot=1350.0, dTadi=0.5, 
-                        ubound="const", lbound="const, utbf = 50.0e-3, ltbf = 10.0e-3, 
+                        ubound="const", lbound="const, utbf = 50e-3, ltbf = 10e-3, 
                         age = 120.0, dtfac = 0.9, nz = 201, 
                         rheology = example_CLrheology() 
                     )
@@ -1111,8 +1105,8 @@ Parameters
     dTadi = 0.5         # adiabatic gradient in K/km
     ubound = "const"    # Upper thermal boundary condition
     lbound = "const"    # lower thermal boundary condition
-    utbf = 50.0e-3      # q [W/m^2]; if ubound = "flux"
-    ltbf = 10.0e-3      # q [W/m^2]; if lbound = "flux"
+    utbf = 50e-3        # q [W/m^2]; if ubound = "flux"
+    ltbf = 10e-3        # q [W/m^2]; if lbound = "flux"
     age = 120.0         # Lithospheric age [Ma]
     dtfac = 0.9         # Diffusion stability criterion
     nz = 201            
@@ -1150,17 +1144,17 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::LithosphericTemp)
 
     # Assign phase id from Phase to 1D phase array
     phaseid     =   (minimum(Phase):1:maximum(Phase))    
-    ztop        =   round(maximum(Z[findall(Phase .== phaseid[1])]))
+    ztop        =   round(maximum(Z[Phase .== phaseid[1]]))
     zlayer      =   zeros(length(phaseid))
     for i = 1:length(phaseid)
         # Calculate layer thickness from Phase array
-        zlayer[i]   =   round(minimum(Z[findall(Phase .== phaseid[i])]))
+        zlayer[i]   =   round(minimum(Z[Phase .== phaseid[i]]))
         zlayer[i]   =   zlayer[i]*1.0e3
     end
     for i = 1:length(phaseid)
         # Assign phase ids
-        ind         =   findall((z .>= zlayer[i]) .&  (z .<= ztop))    
-        phase[ind]  .=  phaseid[i]
+        ind         =  ztop .≥ z .≥ zlayer[i]
+        phase[ind] .=  phaseid[i]
         ztop        =   zlayer[i]
     end
 
@@ -1262,11 +1256,11 @@ function example_CLrheology(;
     ρUC=2.7e3,          # Density [ kg/m^3 ]
     CpUC=1.0e3,         # Specific heat capacity [ J/kg/K ]
     kUC=3.0,            # Thermal conductivity [ W/m/K ]
-    HUC=617.0e-12,      # Radiogenic heat source per mass [H] = W/kg; [H] = [Q/rho]
+    HUC=617e-12,      # Radiogenic heat source per mass [H] = W/kg; [H] = [Q/rho]
     ρLC=2.9e3,          # Density [ kg/m^3 ]
     CpLC=1.0e3,         # Specific heat capacity [ J/kg/K ]
     kLC=2.0,            # Thermal conductivity [ W/m/K ]
-    HLC=43.0e-12,       # Radiogenic heat source per mass [H] = W/kg; [H] = [Q/rho]
+    HLC=43e-12,       # Radiogenic heat source per mass [H] = W/kg; [H] = [Q/rho]
 )    
 
     rheology = (
@@ -1367,16 +1361,14 @@ function compute_phase(Phase, Temp, X, Y, Z, s::LithosphericPhases; Ztop=0)
 
     for i = 1 : length(Layers)
         Zbot        = Ztop-Layers[i]
-        ind         = findall( ( Z .>= Zbot) .&  (Z .<= Ztop) );
+        ind         = Ztop .≥ Z .≥ Zbot
         Phase[ind] .= Phases[i]
-
         Ztop        = Zbot
     end
 
     # set phase to mantle if requested
-    if Tlab != nothing
-        ind         = findall(Temp .> Tlab)
-        Phase[ind] .= Phases[end]
+    if !isnothing(Tlab)
+        Phase[Temp .> Tlab] .= Phases[end]
     end
 
     return Phase
@@ -1518,8 +1510,8 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::LinearWeightedTemper
     # Compute the weights
     weight = w_min .+(w_max-w_min) ./(crit_dist) .*(dist)
 
-    ind_1 = findall(weight .>w_max);
-    ind_2 = findall(weight .<w_min);
+    ind_1 = weight .> w_max
+    ind_2 = weight .< w_min
 
     # Change the weight 
     weight[ind_1] .= w_max; 
@@ -1576,7 +1568,7 @@ Parameters
     n_seg::Int64 = 50                          # number of segments in downdip direction
     Length:: Float64 = 400.0                   # length of the slab
     Thickness:: Float64 = 100.0                # thickness of the slab
-    Lb:: Float64 = 200.0                       # Length at which all the bending is happening (Lb<=Length)
+    Lb:: Float64 = 200.0                       # Length at which all the bending is happening (Lb≤Length)
     θ_max::Float64 = 45.0                      # max bending angle, (must be converted into radians)
     direction::Float64 = -1.0                  # Direction of the bending angle (-1= left to right or 1.0=right to left)
     d_decoupling:: Float64 = 100               # decoupling depth of the slab
@@ -1687,7 +1679,7 @@ function that computes the bending angle `θ` as a function of length along the 
 Parameters
 ===
 `θ_max` = maximum bending angle
-`Lb`    = length at which the function of bending is applied (Lb<=Length)
+`Lb`    = length at which the function of bending is applied (Lb≤Length)
 `l`     = current position within the slab
 `type`  = type of bending [`:Ribe`,`:Linear`]
 
@@ -1747,7 +1739,7 @@ function find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench::Trench)
         ymin,ymax = extrema(poly_y);
         zmin,zmax = extrema(poly_z);
 
-        ind_s = findall(0.0.<= Xrot.<= xb[1] .&& ymin .<= Yrot .<= ymax .&& zmin .<= Z .<= zmax);
+        ind_s = findall(0.0.≤ Xrot.≤ xb[1] .&& ymin .≤ Yrot .≤ ymax .&& zmin .≤ Z .≤ zmax)
 
         # Find the particles
         yp = Yrot[ind_s];
@@ -1762,9 +1754,9 @@ function find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench::Trench)
 
         # Loop over the chosen particles and interpolate the current value of L and D.
         for ip in ind_seg
-            point_ = (Yrot[ip], Z[ip]);
+            point_ = Yrot[ip], Z[ip]
             d[ip]  = -distance_to_linesegment(point_, pa, pd)
-            ls[ip]  = distance_to_linesegment(point_, pb, pa) + l
+            ls[ip] = distance_to_linesegment(point_, pb, pa) + l
         end
         
         #Update l
@@ -1852,15 +1844,15 @@ function add_slab!(Phase, Temp, Grid::AbstractGeneralGrid,  trench::Trench;     
     Top,Bottom, WeakZone = compute_slab_surface(trench); 
     
     # Find the distance to the slab (along & perpendicular)
-    d = fill(NaN,size(Grid));       # -> d = distance perpendicular to the slab 
+    d  = fill(NaN,size(Grid));       # -> d = distance perpendicular to the slab 
     ls = fill(NaN,size(Grid));      # -> l = length from the trench along the slab
     find_slab_distance!(ls, d, X,Y,Z, Top, Bottom, trench);  
 
     # Function to fill up the temperature and the phase. 
-    ind = findall((-trench.Thickness .<= d .<= 0.0));
+    ind = (-trench.Thickness .≤ d .≤ 0.0)
     
     if isa(T, LinearWeightedTemperature)
-        l_decouplingind = findall(Top[:,2].<=-trench.d_decoupling);
+        l_decouplingind = findfirst(x -> x ≤ -trench.d_decoupling, Top[:,2])
         if !isempty(l_decouplingind)
             l_decoupling = Top[l_decouplingind[1],1];
             T.crit_dist = abs(l_decoupling); 
@@ -1881,7 +1873,7 @@ function add_slab!(Phase, Temp, Grid::AbstractGeneralGrid,  trench::Trench;     
         ls_weakzone = fill(NaN,size(Grid));      # -> l = length from the trench along the slab
         find_slab_distance!(ls_weakzone, d_weakzone, X,Y,Z, WeakZone, Top, trench);  
 
-        ind = findall( (-trench.WeakzoneThickness .<= d_weakzone .<= 0.0) .& (Z .>-trench.d_decoupling) );
+        ind = (-trench.WeakzoneThickness .≤ d_weakzone .≤ 0.0) .& (Z .>-trench.d_decoupling) 
         Phase[ind] .= trench.WeakzonePhase
     end
 

@@ -163,11 +163,12 @@ function countmap(DataSet::GeoData,field::String,stepslon::Int64,stepslat::Int64
     end
 
     # count the ones in every control area
+    expr1 = expr[1]
     for i in eachindex(loncen)
         for j in eachindex(latcen)
-            indi          = findall((lon .>= lonstep[i]) .& (lon .<= lonstep[i+1]))
-            indj          = findall((lat .>= latstep[j]) .& (lat .<= latstep[j+1]))
-            dataint       = DataSet.fields[expr[1]][indi,indj,1]
+            indi          = @. lonstep[i+1] ≥ lon ≥ lonstep[i]
+            indj          = @. latstep[j+1] ≥ lat ≥ latstep[j]
+            dataint       = DataSet.fields[expr1][indi,indj,1]
             count         = sum(dataint)
             countmap[i,j] = count
         end

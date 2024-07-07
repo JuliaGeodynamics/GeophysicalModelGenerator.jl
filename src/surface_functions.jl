@@ -47,8 +47,9 @@ function remove_NaN_surface!(Z,X,Y)
     @assert size(Z) == size(X) == size(Y)
 
     # use nearest neighbour to interpolate data
-    id      = findall(isnan.(Z) .== false)
-    id_NaN  = findall(isnan.(Z))
+    bool_NaN  = isnan.(Z)
+    id      = findall(bool_NaN .== false)
+    id_NaN  = findall(bool_NaN)
 
     coord   =   [X[id]'; Y[id]'];
     kdtree  =   KDTree(coord; leafsize = 10);
@@ -77,8 +78,8 @@ function drape_on_topo(Topo::GeoData, Data::GeoData)
     # use nearest neighbour to interpolate data
     idx         =   nearest_point_indices(Lon,Lat, vec(Data.lon.val), vec(Data.lat.val) ); 
 
-    idx_out     =   findall(  (Lon .<  minimum(Data.lon.val)) .| (Lon .>  maximum(Data.lon.val)) .|
-                              (Lat .<  minimum(Data.lat.val)) .| (Lat .>  maximum(Data.lat.val)) )
+    idx_out     =   (Lon .<  minimum(Data.lon.val)) .| (Lon .>  maximum(Data.lon.val)) .|
+                    (Lat .<  minimum(Data.lat.val)) .| (Lat .>  maximum(Data.lat.val))
 
     fields_new  = Topo.fields;
     field_names = keys(Data.fields);
