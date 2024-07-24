@@ -70,7 +70,7 @@ addfield(V::GeoData,new_fields::NamedTuple) = GeoData(V.lon.val, V.lat.val, V.de
 
 Add `new_fields` fields to a `Q1Data` dataset; set `cellfield` to `true` if the field is a cell field; otherwise it is a vertex field
 """
-function addfield(V::Q1Data,new_fields::NamedTuple; cellfield=false) 
+function addfield(V::Q1Data,new_fields::NamedTuple; cellfield=false)
     if cellfield
         return Q1Data(V.x.val, V.y.val, V.z.val, V.fields, merge(V.cellfields, new_fields))
     else
@@ -122,7 +122,7 @@ end
 
 
 
-""" 
+"""
 cross_section_volume(Volume::AbstractGeneralGrid; dims=(100,100), Interpolate=false, Depth_level=nothing; Lat_level=nothing; Lon_level=nothing; Start=nothing, End=nothing, Depth_extent=nothing )
 
 Creates a cross-section through a volumetric (3D) `GeoData` object.
@@ -259,7 +259,7 @@ cross_section_surface(Surface::GeoData; dims=(100,), Interpolate=false, Depth_le
 Creates a cross-section through a surface (2D) `GeoData` object.
 
 - Cross-sections can be horizontal (map view at a given depth), if `Depth_level` is specified
-- They can also be vertical, either by specifying `Lon_level` or `Lat_level` (for a fixed lon/lat), or by defining both `Start=(lon,lat)` & `End=(lon,lat)` points.
+- They can also be vertical, either by specifying `Lon_level` or `Lat_level` (for a fixed lon/lat), or by defining both `Start=(lon,lat)` & `End=(lon,lat)` points. Start and End points will be in km!
 
 - IMPORTANT: The surface to be extracted has to be given as a gridded GeoData object. It may also contain NaNs where it is not defined. Any points lying outside of the defined surface will be considered NaN.
 
@@ -351,9 +351,14 @@ function cross_section_surface(S::AbstractGeneralGrid; dims=(100,), Interpolate=
 
     end
 
-    # create GeoData structure with the interpolated points
-    Data_profile = GeoData(Lon, Lat, depth_intp, (fields_new));
-
+    # create GeoData/CartData structure with the interpolated points
+    if isa(S,GeoData)
+        Data_profile = GeoData(Lon, Lat, depth_intp, fields_new);
+    elseif isa(S,CartData)
+        Data_profile = CartData(Lon, Lat, depth_intp, fields_new);
+    else
+        error("still to be implemented")
+    end
     return Data_profile
 end
 
@@ -545,9 +550,9 @@ Creates a cross-section through a `GeoData` object.
 julia> Lon,Lat,Depth   =   lonlatdepth_grid(10:20,30:40,(-300:25:0)km);
 julia> Data            =   Depth*2;                # some data
 julia> Vx,Vy,Vz        =   ustrip(Data*3),ustrip(Data*4),ustrip(Data*5);
-julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz))); 
-julia> Data_cross      =   cross_section(Data_set3D, Depth_level=-100km)  
-GeoData 
+julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)));
+julia> Data_cross      =   cross_section(Data_set3D, Depth_level=-100km)
+GeoData
   size  : (11, 11, 1)
   lon   ϵ [ 10.0 : 20.0]
   lat   ϵ [ 30.0 : 40.0]
@@ -601,7 +606,7 @@ CartData
 ```
 """
 function flatten_cross_section(V::CartData)
- 
+
     x_new = sqrt.((V.x.val.-V.x.val[1,1,1]).^2 .+ (V.y.val.-V.y.val[1,1,1]).^2) # NOTE: the result is in km, as V.x and V.y are stored in km
 
 
@@ -1244,11 +1249,11 @@ function interpolate_datafields_2D(Original::GeoData, New::GeoData; Rotate=0.0, 
     return GeoData(New.lon.val,New.lat.val,Znew, fields_new)
 end
 
-"""    
+"""
     Surf_interp = interpolate_datafields_2D(V::GeoData, x::AbstractRange, y::AbstractRange;  Lat::Number, Lon::Number)
 
 Interpolates a 3D data set `V` with a projection point `proj=(Lat, Lon)` on a plane defined by `x` and `y`, where `x` and `y` are uniformly spaced.
-Returns the 2D array `Surf_interp`. 
+Returns the 2D array `Surf_interp`.
 """
 function interpolate_datafields_2D(V::GeoData, x::AbstractRange, y::AbstractRange;  Lat=49.9929, Lon=8.2473)
     # Default: Lat=49.9929, Lon=8.2473 => Mainz (center of universe)
@@ -1340,7 +1345,7 @@ function InterpolateDataFields2D_vecs(EW_vec, NS_vec, depth, fields_new, EW, NS)
 
     return depth_new, fields_new
 end
-  
+
 # Extracts a sub-data set using indices
 function ExtractDataSets(V::AbstractGeneralGrid, iLon, iLat, iDepth)
 
