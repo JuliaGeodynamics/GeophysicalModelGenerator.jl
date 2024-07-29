@@ -47,13 +47,13 @@ Temp = fill(1350.0, nx, 1, nz);
 We will start with a simple subduction setup, which consists of a horizontal part:
 
 ```julia
-add_box!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = ConstantPhase(1));
+add_box!(Phases, Temp, Grid2D; xlim=(-800.0,0.0), zlim=(-80.0, 0.0), phase = ConstantPhase(1));
 ```
 
 And with the inclined part:
 
 ```julia
-add_box!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = ConstantPhase(1), DipAngle=30);
+add_box!(Phases, Temp, Grid2D; xlim=(0.0,300.0), zlim=(-80.0, 0.0), phase = ConstantPhase(1), DipAngle=30);
 ```
 
 Add them to the `CartData` dataset:
@@ -100,8 +100,8 @@ LithosphericPhases([15 55], [1 2], nothing)
 and set the slab again:
 
 ```julia
-add_box!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = lith);
-add_box!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = lith, DipAngle=30);
+add_box!(Phases, Temp, Grid2D; xlim=(-800.0,0.0), zlim=(-80.0, 0.0), phase = lith);
+add_box!(Phases, Temp, Grid2D; xlim=(0.0,300.0), zlim=(-80.0, 0.0), phase = lith, DipAngle=30);
 ```
 
 Which looks like:
@@ -124,8 +124,8 @@ We can do that by specifying a thermal structure. For example, we can use the ha
 
 ```julia
 therm = HalfspaceCoolingTemp(Age=40)
-add_box!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = lith, T=therm);
-add_box!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = lith, T = therm, DipAngle=30);
+add_box!(Phases, Temp, Grid2D; xlim=(-800.0,0.0), zlim=(-80.0, 0.0), phase = lith, T=therm);
+add_box!(Phases, Temp, Grid2D; xlim=(0.0,300.0), zlim=(-80.0, 0.0), phase = lith, T = therm, DipAngle=30);
 ```
 
 Which looks like:
@@ -159,13 +159,13 @@ a spreading velocity (note that this simply relates to the thermal structure and
 
 ```julia
 lith = LithosphericPhases(Layers=[15 55], Phases=[1 2], Tlab=1250)
-add_box!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
+add_box!(Phases, Temp, Grid2D; xlim=(-800.0,0.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
 ```
 
 For the subduction we use a thermal structure of a slab heated by hot asthenosphere
 
 ```julia
-add_box!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 0.0), phase = lith, T = McKenzie_subducting_slab(Tsurface=0,v_cm_yr=3), DipAngle=30);
+add_box!(Phases, Temp, Grid2D; xlim=(0.0,300.0), zlim=(-80.0, 0.0), phase = lith, T = McKenzie_subducting_slab(Tsurface=0,v_cm_yr=3), DipAngle=30);
 ```
 
 We can set the mantle lithosphere that is hotter > 1250 C to mantle:
@@ -186,25 +186,25 @@ Saved file: Grid2D_SubductionRidge.vts
 ![Mechanical2D_Tutorial_4](../assets/img/Mechanical2D_Tutorial_4.png)
 
 #### Overriding slab and weak layer
-Ok, lets add an overriding slab as well. For this, we use the `AddLayer!` function
+Ok, lets add an overriding slab as well. For this, we use the `add_layer!` function
 
 ```julia
 lith = LithosphericPhases(Layers=[15 20 55], Phases=[3 4 5], Tlab=1250)
-add_box!(Phases, Temp, Grid2D; xlim=(0,1000), zlim=(-80.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
+add_box!(Phases, Temp, Grid2D; xlim=(0.0,1000.0), zlim=(-80.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
 ```
 
 The oceanic plate is as before
 
 ```julia
 lith = LithosphericPhases(Layers=[15 55], Phases=[1 2], Tlab=1250)
-add_box!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
+add_box!(Phases, Temp, Grid2D; xlim=(-800.0,0.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
 ```
 
 For the inclined part, we set a layer above the slab (the "weak" layer to facilitate subduction initiation )
 
 ```julia
 lith = LithosphericPhases(Layers=[10 15 55], Phases=[6 1 2], Tlab=1250)
-add_box!(Phases, Temp, Grid2D; xlim=(0,300), zlim=(-80.0, 10.0), phase = lith, T = McKenzie_subducting_slab(Tsurface=0,v_cm_yr=3), DipAngle=30);
+add_box!(Phases, Temp, Grid2D; xlim=(0.0,300.0), zlim=(-80.0, 10.0), phase = lith, T = McKenzie_subducting_slab(Tsurface=0,v_cm_yr=3), DipAngle=30);
 ```
 
 Lithosphere-asthenosphere boundary:
@@ -236,7 +236,7 @@ z = range(-660,0,    nz);
 Grid2D = CartData(xyz_grid(x,0,z))
 Phases = zeros(Int64, nx, 1, nz);
 Temp = fill(1350.0, nx, 1, nz);
-add_box!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = ConstantPhase(1));
+add_box!(Phases, Temp, Grid2D; xlim=(-800.0,0.0), zlim=(-80.0, 0.0), phase = ConstantPhase(1));
 ```
 
 Next, we should define a `Trench` structure, which contains info about the trench which goes in 3D from `Start` - `End` coordinates (`x`,`y`)-coordinates respectively. As we are dealing with a 2D model, we set the `y`-coordinates to -100.0 and 100.0 respectively.
@@ -284,8 +284,8 @@ LithosphericPhases([15 20 55], [3 4 5], 1250)
 Lets start with defining the horizontal part of the overriding plate. Note that we define this twice with different thickness to deal with the bending subduction area:
 
 ```julia
-add_box!(Phases, Temp, Grid2D; xlim=(200,1000), zlim=(-150.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
-add_box!(Phases, Temp, Grid2D; xlim=(0,200), zlim=(-50.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
+add_box!(Phases, Temp, Grid2D; xlim=(200.0,1000.0), zlim=(-150.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
+add_box!(Phases, Temp, Grid2D; xlim=(0.0,200.0), zlim=(-50.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
 ```
 
 The horizontal part of the oceanic plate is as before:
@@ -293,7 +293,7 @@ The horizontal part of the oceanic plate is as before:
 ```julia
 v_spread_cm_yr = 3      #spreading velocity
 lith = LithosphericPhases(Layers=[15 55], Phases=[1 2], Tlab=1250)
-add_box!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-150.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=v_spread_cm_yr));
+add_box!(Phases, Temp, Grid2D; xlim=(-800.0,0.0), zlim=(-150.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=v_spread_cm_yr));
 ```
 
 Yet, now we add a trench as well. The starting thermal age at the trench is that of the horizontal part of the oceanic plate:

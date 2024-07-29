@@ -195,7 +195,7 @@ add_box!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0, 0.0)
 
 # inclined slab
 Temp    = ones(Float64,size(Cart))*1350;
-add_box!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0,0),StrikeAngle=0, DipAngle=45, phase = ConstantPhase(5), T=TsMK);
+add_box!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0,0.0),StrikeAngle=0, DipAngle=45, phase = ConstantPhase(5), T=TsMK);
 @test sum(Temp)  ≈ 3.5125017626287365e8
 
 
@@ -230,7 +230,7 @@ Temp    = ones(Float64,(length(x),length(y),length(z)))*1350;
 add_box!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0, 0.0), phase = ConstantPhase(5), T=T=ConstantTemp(120.0));
 
 # add accretionary prism 
-add_polygon!(Phase, Temp, Cart; xlim=[500.0, 200.0, 500.0],ylim=[100.0,400.0], zlim=[0.0,0.0,-60.0], phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30))
+add_polygon!(Phase, Temp, Cart; xlim=(500.0, 200.0, 500.0),ylim=(100.0,400.0), zlim=(0.0,0.0,-60.0), phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30))
 
 @test maximum(Phase) == 8
 @test minimum(Temp) == 21.40845070422536
@@ -284,6 +284,7 @@ TsHC = HalfspaceCoolingTemp(Tsurface=20.0, Tmantle=1350, Age=120, Adiabat=0.4)
 TsMK = McKenzie_subducting_slab(Tsurface = 20.0, Tmantle = 1350.0, v_cm_yr = 4.0, Adiabat = 0.0)
 T_slab = LinearWeightedTemperature(crit_dist=600, F1=TsHC, F2=TsMK);
 phase = LithosphericPhases(Layers=[5 7 88], Phases = [2 3 4], Tlab=nothing)
+
 t1 = Trench(Start = (400.0,400.0), End = (800.0,800.0),θ_max = 90.0, direction = 1.0, n_seg = 50, Length = 600.0, Thickness = 80.0, Lb = 500.0,d_decoupling = 100.0, type_bending =:Ribe,   WeakzoneThickness=10, WeakzonePhase=9)
 
 add_slab!(Phase,Temp,Cart, t1, phase=phase, T = T_slab)
@@ -298,7 +299,7 @@ z = range(-660,0,    nz);
 Grid2D = CartData(xyz_grid(x,0,z))
 Phases = zeros(Int64, nx, 1, nz);
 Temp = fill(1350.0, nx, 1, nz);
-add_box!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = ConstantPhase(1),  T=HalfspaceCoolingTemp(Age=40));    
+add_box!(Phases, Temp, Grid2D; xlim=(-800.0,0.0), zlim=(-80.0, 0.0), phase = ConstantPhase(1),  T=HalfspaceCoolingTemp(Age=40));    
 
 trench = Trench(Start=(0.0,-100.0), End=(0.0,100.0), Thickness=80.0, θ_max=30.0, Length=300, Lb=150);
 add_slab!(Phases, Temp, Grid2D, trench, phase = ConstantPhase(2), T=HalfspaceCoolingTemp(Age=40));
@@ -324,13 +325,13 @@ Temp = fill(1350.0, nx, 1, nz);
 lith = LithosphericPhases(Layers=[15 20 55], Phases=[3 4 5], Tlab=1250)
 
 # Lets add the overriding plate. Note that we add this twice with a different thickness to properly represent the transition around the trench
-add_box!(Phases, Temp, Grid2D; xlim=(200,1000), zlim=(-150.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
-add_box!(Phases, Temp, Grid2D; xlim=(0,200), zlim=(-60.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
+add_box!(Phases, Temp, Grid2D; xlim=(200.0,1000.0), zlim=(-150.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
+add_box!(Phases, Temp, Grid2D; xlim=(0.0,200.0), zlim=(-60.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
 
 # The horizontal part of the oceanic plate is as before
 v_spread_cm_yr = 3      #spreading velocity
 lith = LithosphericPhases(Layers=[15 55], Phases=[1 2], Tlab=1250)
-add_box!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-150.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=v_spread_cm_yr));
+add_box!(Phases, Temp, Grid2D; xlim=(-800.0,0.0), zlim=(-150.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=v_spread_cm_yr));
 
 # Yet, now we add a trench as well. 
 AgeTrench_Myrs = 800e3/(v_spread_cm_yr/1e2)/1e6    #plate age @ trench
