@@ -66,17 +66,17 @@ end
 
 # Transfer fields to a single array with NamedTuple entries
 function fields_to_namedtuple(fields::NamedTuple)
-    names   =   keys(Data.fields)
+    names   =   keys(fields)
     nfield  =   length(fields)
     ndim    =   length(size(fields[1]))
 
     s2      =   NamedTuple{names}(zeros(nfield))
     
-    material = Array{typeof(s2),ndim}(undef, size(Data.fields[1]))
+    material = Array{typeof(s2),ndim}(undef, size(fields[1]))
     for I in eachindex(material)
         data_local = []
         for ifield in 1:nfield
-           push!(data_local,Data.fields[ifield][I])
+           push!(data_local,fields[ifield][I])
         end
 
         local_tup = NamedTuple{names}(data_local)
