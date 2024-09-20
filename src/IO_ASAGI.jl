@@ -11,19 +11,30 @@ using NCDatasets: nc_create, NC_NETCDF4, NC_CLOBBER, NC_NOWRITE, nc_def_dim, nc_
 export write_ASAGI, read_ASAGI
 
 """
-    write_ASAGI(fname::String, Data::CartData)
+    write_ASAGI(fname::String, Data::CartData, 
+                selected_fields::Union{nothing, Tuple}=nothing;
+                km_to_m = false)
     
-Writes a CartData structure to an ASAGI file, which can be read by SeisSol or ExaHype.
+Writes a CartData structure `Data` to an ASAGI file, which can be read by SeisSol or ExaHype.
+You can optionally pass a tuple with fields to be written. Note that we can only write individual (scalar) fields to disk,
+so vector or tensor fields needs to be split first
 """
-function write_ASAGI(fname::String, Data::CartData)
+function write_ASAGI(fname::String, Data::CartData, 
+                        selected_fields::Union{Nothing, Tuple}=nothing;
+                        km_to_m=false)
     
     nx,ny,nz = size(Data.x)
     x = Data.x.val[:,1,1]
     y = Data.y.val[1,:,1]
     z = Data.z.val[1,1,:]
+    if km_to_m
+        x = x.*1000
+        y = y.*1000
+        z = z.*1000
+    end
 
     # Transfer data to a single array with NamedTuple entries
-    material = fields_to_namedtuple(Data.fields)
+    material = fields_to_namedtuple(Data.fields, selected_fields)
 
     fname_asagi = fname*"_ASAGI.nc"
     
@@ -68,9 +79,12 @@ end
 
 
 # Transfer fields to a single array with NamedTuple entries
-function fields_to_namedtuple(fields::NamedTuple)
+function fields_to_namedtuple(fields::NamedTuple, selected_fields)
     names   =   keys(fields)
-    nfield  =   length(fields)
+    if !isnothing(selected_fields)
+        names = selected_fields
+    end
+    nfield  =   length(names)
     ndim    =   length(size(fields[1]))
 
     s2      =   NamedTuple{names}(zeros(nfield))
@@ -79,7 +93,9 @@ function fields_to_namedtuple(fields::NamedTuple)
     for I in eachindex(material)
         data_local = []
         for ifield in 1:nfield
-           push!(data_local,fields[ifield][I])
+           #push!(data_local,fields[ifield][I])
+           push!(data_local,getproperty(fields,names[ifield])[I])
+           
         end
 
         local_tup = NamedTuple{names}(data_local)

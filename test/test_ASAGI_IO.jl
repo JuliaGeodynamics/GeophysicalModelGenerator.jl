@@ -5,7 +5,10 @@ Dat                 =   zeros(size(XYZ[1]));
 Rho                 =   ones(Float64, size(Dat))*3000;
 Phases              =   zeros(Int32,   size(Dat));
 Sxx                 =   XYZ[3]*10;
+Stress              =   (Sxx,Sxx,Sxx,Sxx,Sxx,Sxx,Sxx,Sxx,Sxx)
 Data                =   CartData(XYZ...,(Rho=Rho,Sxx=Sxx))   
+Data_tuple          =   CartData(XYZ...,(Rho=Rho,Sxx=Sxx, Stress=Stress))   
+
 
 fname_asagi = write_ASAGI("test", Data)
 @test fname_asagi == "test_ASAGI.nc"
@@ -19,6 +22,14 @@ Data_ASAGI = read_ASAGI(fname_asagi)
 Data_SeisSol = read_ASAGI("test_files/tpv34_rhomulambda-inner.nc")
 @test mean(Data_SeisSol.fields.rho) ≈ 2635.4805f0
 @test eltype(Data_SeisSol.fields.rho[10]) == Float32
+
+# test that specifying specific field works
+fname_asagi = write_ASAGI("test", Data, (:Sxx,))
+Data_ASAGI2 = read_ASAGI(fname_asagi)
+@test sum(Data_ASAGI2.fields.Sxx - Data.fields.Sxx) == 0
+
+
+fname_asagi = write_ASAGI("test", Data_tuple)
 
 
 # Cleanup
