@@ -145,9 +145,9 @@ function read_ASAGI(fname_asagi::String)
     data = Array{T2,3}(undef,nx,ny,nz)
     nc_get_var!(ds.ncid, varid, data)
     
-    # at this stage we have an array of NamedTuple with correct names & types
+    # At this stage, data is an array of NamedTuple with correct names & types
     #
-    # Now we need to split them into different fields.
+    # Now split them into seperate fields.
     read_fields_data = ()
     for ifield=1:numfields
         data_1 = zeros(types[ifield],nx,ny,nz)
