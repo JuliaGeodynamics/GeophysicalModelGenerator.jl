@@ -27,7 +27,8 @@ fname_asagi = write_ASAGI("test", Data, (:Sxx,))
 Data_ASAGI2 = read_ASAGI(fname_asagi)
 @test sum(Data_ASAGI2.fields.Sxx - Data.fields.Sxx) == 0
 
-fname_asagi = write_ASAGI("test", Data_tuple)
+# test that it errors if we use a tuple with non-scalar fields
+@test_throws "Field Stress is not an Array but instead a NTuple{9, Array{Float64, 3}}; only Arrays are supported" write_ASAGI("test", Data_tuple)
 
 # Cleanup
 foreach(rm, filter(endswith(".nc"), readdir()))

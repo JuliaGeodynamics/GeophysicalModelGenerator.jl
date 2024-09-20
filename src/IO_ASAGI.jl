@@ -88,12 +88,19 @@ function fields_to_namedtuple(fields::NamedTuple, selected_fields)
     ndim    =   length(size(fields[1]))
 
     s2      =   NamedTuple{names}(zeros(nfield))
-    
+
+    # check that they are all DiskArrays
+    for ifield in 1:nfield
+        if !isa(getproperty(fields,names[ifield]), Array)
+            @show typeof(getproperty(fields,names[ifield]))
+            error("Field $(names[ifield]) is not an Array but instead a $(typeof(getproperty(fields,names[ifield]))); only Arrays are supported")
+        end
+    end
+
     material = Array{typeof(s2),ndim}(undef, size(fields[1]))
     for I in eachindex(material)
         data_local = []
         for ifield in 1:nfield
-            
            push!(data_local,getproperty(fields,names[ifield])[I])
            
         end
@@ -167,6 +174,7 @@ function read_ASAGI(fname_asagi::String)
     read_fields_data = ()
     for ifield=1:numfields
         data_1 = zeros(types[ifield],nx,ny,nz)
+
         for I in CartesianIndices(data)
             loc = data[I]
             data_1[I] = getproperty(loc, cnames[ifield])
