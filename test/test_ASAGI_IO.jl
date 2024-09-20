@@ -9,7 +9,6 @@ Stress              =   (Sxx,Sxx,Sxx,Sxx,Sxx,Sxx,Sxx,Sxx,Sxx)
 Data                =   CartData(XYZ...,(Rho=Rho,Sxx=Sxx))   
 Data_tuple          =   CartData(XYZ...,(Rho=Rho,Sxx=Sxx, Stress=Stress))   
 
-
 fname_asagi = write_ASAGI("test", Data)
 @test fname_asagi == "test_ASAGI.nc"
 
@@ -28,9 +27,7 @@ fname_asagi = write_ASAGI("test", Data, (:Sxx,))
 Data_ASAGI2 = read_ASAGI(fname_asagi)
 @test sum(Data_ASAGI2.fields.Sxx - Data.fields.Sxx) == 0
 
-
 fname_asagi = write_ASAGI("test", Data_tuple)
-
 
 # Cleanup
 foreach(rm, filter(endswith(".nc"), readdir()))

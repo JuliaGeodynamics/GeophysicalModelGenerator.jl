@@ -93,7 +93,7 @@ function fields_to_namedtuple(fields::NamedTuple, selected_fields)
     for I in eachindex(material)
         data_local = []
         for ifield in 1:nfield
-           #push!(data_local,fields[ifield][I])
+            
            push!(data_local,getproperty(fields,names[ifield])[I])
            
         end
@@ -163,7 +163,7 @@ function read_ASAGI(fname_asagi::String)
     
     # At this stage, data is an array of NamedTuple with correct names & types
     #
-    # Now split them into seperate fields.
+    # Now split them into separate fields.
     read_fields_data = ()
     for ifield=1:numfields
         data_1 = zeros(types[ifield],nx,ny,nz)
