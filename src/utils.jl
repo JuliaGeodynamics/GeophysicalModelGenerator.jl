@@ -120,7 +120,6 @@ function removefield(V::AbstractGeneralGrid,field_name::Symbol)
     return V
 end
 
-
 """
     V = removefield(V::AbstractGeneralGrid,field_name::String)
 
@@ -129,6 +128,21 @@ Removes the field with name `field_name` from the GeoData or CartData dataset
 """
 function removefield(V::AbstractGeneralGrid,field_name::String)
     return removefield(V,Symbol(field_name))
+end
+
+"""
+    V = removefield(V::AbstractGeneralGrid,field_name::NTuple{N,Symbol})
+
+Removes the fields in the tuple `field_name` from the GeoData or CartData dataset
+
+"""
+function removefield(V::AbstractGeneralGrid,field_name::NTuple{N,Symbol})   where N
+    
+    for ifield=1:N
+        V = removefield(V,field_name[ifield])
+    end
+
+    return V
 end
 
 
@@ -1831,3 +1845,6 @@ function inpoly_fast(PolyX::Vector{T}, PolyY::Vector{T}, x::T, y::T) where T <: 
     end
     return inside
 end
+
+
+
