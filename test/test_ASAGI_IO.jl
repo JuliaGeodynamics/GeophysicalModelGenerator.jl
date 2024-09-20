@@ -23,9 +23,14 @@ Data_SeisSol = read_ASAGI("test_files/tpv34_rhomulambda-inner.nc")
 @test eltype(Data_SeisSol.fields.rho[10]) == Float32
 
 # test that specifying specific field works
-fname_asagi = write_ASAGI("test", Data, (:Sxx,))
+fname_asagi = write_ASAGI("test", Data, fields=(:Sxx,))
 Data_ASAGI2 = read_ASAGI(fname_asagi)
 @test sum(Data_ASAGI2.fields.Sxx - Data.fields.Sxx) == 0
+
+# test that converting to meters works
+fname_asagi = write_ASAGI("test3", Data, fields=(:Sxx,), km_to_m=true)
+Data_ASAGI3 = read_ASAGI(fname_asagi)
+@test Data_ASAGI3.x.val[1] ≈ 1000.0
 
 # test that it errors if we use a tuple with non-scalar fields
 @test_throws "Field Stress is not an Array but instead a NTuple{9, Array{Float64, 3}}; only Arrays are supported" write_ASAGI("test", Data_tuple)

@@ -11,30 +11,31 @@ using NCDatasets: nc_create, NC_NETCDF4, NC_CLOBBER, NC_NOWRITE, nc_def_dim, nc_
 export write_ASAGI, read_ASAGI
 
 """
-    write_ASAGI(fname::String, Data::CartData, 
-                selected_fields::Union{nothing, Tuple}=nothing;
-                km_to_m = false)
+    write_ASAGI(fname::String, Data::CartData; 
+                        fields::Union{Nothing, Tuple}=nothing, 
+                        km_to_m::Bool=false)
     
 Writes a CartData structure `Data` to an ASAGI file, which can be read by SeisSol or ExaHype.
 You can optionally pass a tuple with fields to be written. Note that we can only write individual (scalar) fields to disk,
 so vector or tensor fields needs to be split first
 """
-function write_ASAGI(fname::String, Data::CartData, 
-                        selected_fields::Union{Nothing, Tuple}=nothing;
-                        km_to_m=false)
+function write_ASAGI(fname::String, Data::CartData; 
+                        fields::Union{Nothing, Tuple}=nothing, 
+                        km_to_m::Bool=false)
     
     nx,ny,nz = size(Data.x)
     x = Data.x.val[:,1,1]
     y = Data.y.val[1,:,1]
     z = Data.z.val[1,1,:]
-    if km_to_m
+    if km_to_m==true
+        println("convert to meters")
         x = x.*1000
         y = y.*1000
         z = z.*1000
     end
 
     # Transfer data to a single array with NamedTuple entries
-    material = fields_to_namedtuple(Data.fields, selected_fields)
+    material = fields_to_namedtuple(Data.fields, fields)
 
     fname_asagi = fname*"_ASAGI.nc"
     
