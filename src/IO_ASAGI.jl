@@ -10,9 +10,9 @@ using NCDatasets: nc_create, NC_NETCDF4, NC_CLOBBER, NC_NOWRITE, nc_def_dim, nc_
 
 export write_ASAGI, read_ASAGI
 
-
 """
     write_ASAGI(fname::String, Data::CartData)
+    
 Writes a CartData structure to an ASAGI file, which can be read by SeisSol or ExaHype.
 """
 function write_ASAGI(fname::String, Data::CartData)
@@ -90,13 +90,11 @@ function fields_to_namedtuple(fields::NamedTuple)
     return material
 end
 
-module NCReconstructedTypes end
-
-
 """ 
     data::CartData = read_ASAGI(fname_asagi::String)
 
-This reads an ASAGI NetCDF file, which is used as input for a number of codes
+This reads a 3D ASAGI NetCDF file, which is used as input for a number of codes such as SeisSol.
+It returns a CartData dataset
 """
 function read_ASAGI(fname_asagi::String)
 
@@ -137,29 +135,19 @@ function read_ASAGI(fname_asagi::String)
         end
     end
 
-    reconname = Symbol(string(nc_inq_compound_name(ds.ncid,xtype)))
+    # Create a single NamedTuple with correct type and names
+    data_element = ();
+    for ifield=1:numfields
+        data_element = (data_element..., types[ifield](0.0))
+    end
 
-    # would be better if this would be able to directly read the NamdTuple,
-    # instead of creating a bogus struct
-    Core.eval(
-        NCReconstructedTypes,
-        Expr(:struct, false, reconname,
-             Expr(:block,
-                  Any[ Expr(Symbol("::"), cnames[i], types[i]) for i = 1:length(types) ]...,
-                  # suppress default constructors, plus a bogus `new()` call to make sure
-                  # initialized is zero.
-                  Expr(:if, false, Expr(:call, :new))
-                  )))
-
-    T2   = getfield(NCReconstructedTypes, reconname)
+    T2   = typeof(NamedTuple{(cnames...,)}(data_element))
     data = Array{T2,3}(undef,nx,ny,nz)
     nc_get_var!(ds.ncid, varid, data)
     
-    # at this stage we have an array with Main.NCReconstructedTypes
-    # with the correct names and types
+    # at this stage we have an array of NamedTuple with correct names & types
     #
     # Now we need to split them into different fields.
-
     read_fields_data = ()
     for ifield=1:numfields
         data_1 = zeros(types[ifield],nx,ny,nz)
