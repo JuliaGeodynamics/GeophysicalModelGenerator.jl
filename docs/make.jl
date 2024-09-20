@@ -113,6 +113,7 @@ makedocs(;
             "Data Structures" =>  "man/datastructures.md",
             "Data Import" =>  "man/dataimport.md",
             "Projection" =>  "man/projection.md",
+            "ASAGI" => "man/asagi_io.md",
             "Paraview output" => "man/paraview_output.md",
             "Paraview collection" => "man/paraview_collection.md",
             "Surfaces" =>  "man/surfaces.md",
