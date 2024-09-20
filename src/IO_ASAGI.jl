@@ -92,7 +92,15 @@ end
 
 module NCReconstructedTypes end
 
+
+""" 
+    data::CartData = read_ASAGI(fname_asagi::String)
+
+This reads an ASAGI NetCDF file, which is used as input for a number of codes
+"""
 function read_ASAGI(fname_asagi::String)
+
+    @assert fname_asagi[end-2:end]==".nc"
 
     ds = NCDataset(fname_asagi,"r")
 
@@ -100,7 +108,6 @@ function read_ASAGI(fname_asagi::String)
     y = ds["y"][:];
     z = ds["z"][:];
 
-    
     nx,ny,nz = length(x),length(y),length(z)
     
     data_set_names = keys(ds)
@@ -132,33 +139,40 @@ function read_ASAGI(fname_asagi::String)
 
     reconname = Symbol(string(nc_inq_compound_name(ds.ncid,xtype)))
 
+    # would be better if this would be able to directly read the NamdTuple,
+    # instead of creating a bogus struct
     Core.eval(
         NCReconstructedTypes,
         Expr(:struct, false, reconname,
              Expr(:block,
                   Any[ Expr(Symbol("::"), cnames[i], types[i]) for i = 1:length(types) ]...,
                   # suppress default constructors, plus a bogus `new()` call to make sure
-                  # ninitialized is zero.
+                  # initialized is zero.
                   Expr(:if, false, Expr(:call, :new))
                   )))
 
     T2   = getfield(NCReconstructedTypes, reconname)
-    data = Array{T2,3}(undef,nz,ny,nx)
+    data = Array{T2,3}(undef,nx,ny,nz)
     nc_get_var!(ds.ncid, varid, data)
     
     # at this stage we have an array with Main.NCReconstructedTypes
-    # that have the correct names and types
+    # with the correct names and types
     #
-    # Now we need to split them into different fields
+    # Now we need to split them into different fields.
 
-    data_1 = zeros(types[1],nx,ny,nz)
-    for I in eachindex(data)
-        loc = data[I]
-        val = getproperty(loc, cnames[1])
-
-        data_1[I] = val
+    read_fields_data = ()
+    for ifield=1:numfields
+        data_1 = zeros(types[ifield],nx,ny,nz)
+        for I in CartesianIndices(data)
+            loc = data[I]
+            data_1[I] = getproperty(loc, cnames[ifield])
+        end
+        
+        read_fields_data = (read_fields_data..., data_1)
     end
-
+    read_fields = NamedTuple{(cnames...,)}(read_fields_data)
 
     close(ds)
+
+    return CartData(xyz_grid(x,y,z)..., read_fields)
 end
