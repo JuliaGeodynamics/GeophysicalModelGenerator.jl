@@ -43,13 +43,13 @@ function write_ASAGI(fname::String, Data::CartData;
     ds = NCDataset(fname_asagi,"c", format=:netcdf4)
 
     # Write dimensions
-    x_dimid = nc_def_dim(ds.ncid, "nx", nx)
-    y_dimid = nc_def_dim(ds.ncid, "ny", ny)
-    z_dimid = nc_def_dim(ds.ncid, "nz", nz)
+    x_dimid = nc_def_dim(ds.ncid, "x", nx)
+    y_dimid = nc_def_dim(ds.ncid, "y", ny)
+    z_dimid = nc_def_dim(ds.ncid, "z", nz)
 
-    v_x = defVar(ds,"x",Float32,("nx",))
-    v_y = defVar(ds,"y",Float32,("ny",))
-    v_z = defVar(ds,"z",Float32,("nz",))
+    v_x = defVar(ds,"x",eltype(x),("x",))
+    v_y = defVar(ds,"y",eltype(x),("y",))
+    v_z = defVar(ds,"z",eltype(x),("z",))
     v_x[:] = x
     v_y[:] = y
     v_z[:] = z
