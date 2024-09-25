@@ -44,6 +44,16 @@ Data_set3D      =   addfield(Data_set3D,"Lat", Lat)
 Data_set3D      =   addfield(Data_set3D,(;Lat, Lon))
 @test keys(Data_set3D.fields) == (:Depthdata, :LonData, :Velocity, :Lat, :Lon)
 
+# test removefield
+Data_set3D_1    =   removefield(Data_set3D,"Lon")
+@test keys(Data_set3D_1.fields) == (:Depthdata, :LonData, :Velocity, :Lat)
+
+Data_set3D_2    =   removefield(Data_set3D,:Lon)
+@test keys(Data_set3D_2.fields) == (:Depthdata, :LonData, :Velocity, :Lat)
+
+Data_set3D_3    =   removefield(Data_set3D,(:Lon,:Lat))
+@test keys(Data_set3D_3.fields) == (:Depthdata, :LonData, :Velocity)
+
 # Create 3D cartesian dataset
 Data_setCart3D  =   CartData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)))
 

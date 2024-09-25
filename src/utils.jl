@@ -100,14 +100,14 @@ function dropnames(namedtuple::NamedTuple, names::Tuple{Vararg{Symbol}})
 end
 
 """
-    V = removefield(V::AbstractGeneralGrid,field_name::String)
+    V = removefield(V::AbstractGeneralGrid,field_name::Symbol)
 
 Removes the field with name `field_name` from the GeoData or CartData dataset
 
 """
-function removefield(V::AbstractGeneralGrid,field_name::String)
+function removefield(V::AbstractGeneralGrid,field_name::Symbol)
     fields_new  = V.fields;
-    fields_new  = dropnames(fields_new, (Symbol(field_name),))
+    fields_new  = dropnames(fields_new, (field_name,))
 
     if isa(V,GeoData)
         V = GeoData(V.lon.val,V.lat.val,V.depth.val,fields_new)
@@ -120,6 +120,30 @@ function removefield(V::AbstractGeneralGrid,field_name::String)
     return V
 end
 
+"""
+    V = removefield(V::AbstractGeneralGrid,field_name::String)
+
+Removes the field with name `field_name` from the GeoData or CartData dataset
+
+"""
+function removefield(V::AbstractGeneralGrid,field_name::String)
+    return removefield(V,Symbol(field_name))
+end
+
+"""
+    V = removefield(V::AbstractGeneralGrid,field_name::NTuple{N,Symbol})
+
+Removes the fields in the tuple `field_name` from the GeoData or CartData dataset
+
+"""
+function removefield(V::AbstractGeneralGrid,field_name::NTuple{N,Symbol})   where N
+    
+    for ifield=1:N
+        V = removefield(V,field_name[ifield])
+    end
+
+    return V
+end
 
 
 """
@@ -1821,3 +1845,6 @@ function inpoly_fast(PolyX::Vector{T}, PolyY::Vector{T}, x::T, y::T) where T <: 
     end
     return inside
 end
+
+
+
