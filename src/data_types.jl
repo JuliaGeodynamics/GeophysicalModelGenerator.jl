@@ -1095,8 +1095,8 @@ struct CartGrid{FT, D} <: AbstractGeneralGrid
     L           :: NTuple{D,FT}                 # Domain size
     min         :: NTuple{D,FT}                 # start of the grid in every direction
     max         :: NTuple{D,FT}                 # end of the grid in every direction
-    coord1D     :: NTuple{D,StepRangeLen{FT}}   # Tuple with 1D vectors in all directions
-    coord1D_cen :: NTuple{D,StepRangeLen{FT}}   # Tuple with 1D vectors of center points in all directions
+    coord1D     :: NTuple{D,Vector{FT}}   # Tuple with 1D vectors in all directions
+    coord1D_cen :: NTuple{D,Vector{FT}}   # Tuple with 1D vectors of center points in all directions
 end
 size(d::CartGrid) = d.N
 
@@ -1202,13 +1202,13 @@ function create_CartGrid(;
     # Generate 1D coordinate arrays of vertices in all directions
     coord1D=()
     for idim=1:dim
-        coord1D  = (coord1D...,   range(X₁[idim], Xₙ[idim]; length = N[idim]  ))
+        coord1D  = (coord1D...,   Vector(range(X₁[idim], Xₙ[idim]; length = N[idim]  )))
     end
 
     # Generate 1D coordinate arrays centers in all directionbs
     coord1D_cen=()
     for idim=1:dim
-        coord1D_cen  = (coord1D_cen...,   range(X₁[idim]+Δ[idim]/2, Xₙ[idim]-Δ[idim]/2; length = N[idim]-1  ))
+        coord1D_cen  = (coord1D_cen...,   Vector(range(X₁[idim]+Δ[idim]/2, Xₙ[idim]-Δ[idim]/2; length = N[idim]-1  )))
     end
 
     ConstantΔ   = true;
