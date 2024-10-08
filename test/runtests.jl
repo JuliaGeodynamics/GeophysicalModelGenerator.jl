@@ -80,7 +80,9 @@ using Test
     @testset "ASAGI_IO" begin
         include("test_ASAGI_IO.jl")
     end
-
+    @testset "Chmy" begin
+        include("test_Chmy.jl")
+    end
 end
 
 # Cleanup
