@@ -255,7 +255,7 @@ function add_box!(Phase, Temp, Grid::AbstractGeneralGrid;       # required input
         if isa(T,LithosphericTemp)
             Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], phase)
         end
-        Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind], T)
+        Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind_flat], T)
     end
 
     # Set the phase. Different routines are available for that - see below.    
@@ -354,7 +354,7 @@ function add_layer!(Phase, Temp, Grid::AbstractGeneralGrid;     # required input
 
     # Compute thermal structure accordingly. See routines below for different options
     if !isnothing(T)
-        Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], X[ind], Y[ind], Z[ind], Phase[ind], T)
+        Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], X[ind], Y[ind], Z[ind], Phase[ind_flat], T)
     end
 
     # Set the phase. Different routines are available for that - see below.
@@ -510,7 +510,7 @@ function add_ellipsoid!(Phase, Temp, Grid::AbstractGeneralGrid;     # required i
 
     # Compute thermal structure accordingly. See routines below for different options
     if T != nothing
-        Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind], T)
+        Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind_flat], T)
     end
 
     # Set the phase. Different routines are available for that - see below.
@@ -594,7 +594,7 @@ function add_cylinder!(Phase, Temp, Grid::AbstractGeneralGrid;  # required input
 
     # Compute thermal structure accordingly. See routines below for different options
     if !isnothing(T)
-        Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], X[ind], Y[ind], Z[ind], Phase[ind], T)
+        Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], X[ind], Y[ind], Z[ind], Phase[ind_flat], T)
     end
 
     # Set the phase. Different routines are available for that - see below.
