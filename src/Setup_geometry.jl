@@ -593,7 +593,7 @@ function add_cylinder!(Phase, Temp, Grid::AbstractGeneralGrid;  # required input
     ind_flat = flatten_index_dimensions(Phase, ind)
 
     # Compute thermal structure accordingly. See routines below for different options
-    if isnothing(T)
+    if !isnothing(T)
         Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], X[ind], Y[ind], Z[ind], Phase[ind], T)
     end
 
