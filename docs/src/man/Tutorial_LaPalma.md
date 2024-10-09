@@ -31,7 +31,7 @@ We have filtered them and prepared a file with earthquake locations up to early 
 Download that:
 
 ```julia
-#download_data("","EQ_events_all_info5_LaPalma_2021.dat")
+#download_data("https://zenodo.org/records/10738510/files/EQ_events_all_info5_LaPalma_2021.dat","EQ_events_all_info5_LaPalma_2021.dat")
 data_EQ = readdlm("EQ_events_all_info5_LaPalma_2021.dat")
 ```
 
@@ -155,4 +155,3 @@ The paraview statefile `/tutorials/LaPalma.pvsm` can be used to reproduce the fo
 ---
 
 *This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
-
