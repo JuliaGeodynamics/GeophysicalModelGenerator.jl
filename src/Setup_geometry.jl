@@ -601,7 +601,7 @@ function add_cylinder!(Phase, Temp, Grid::AbstractGeneralGrid;  # required input
     end
 
     # Set the phase. Different routines are available for that - see below.
-    Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], X[ind], Y[ind], Z[ind], phase)
+    @views Phase[ind_flat] .= compute_phase(Phase[ind_flat], Temp[ind_flat], X[ind], Y[ind], Z[ind], phase)
 
     return nothing
 end
