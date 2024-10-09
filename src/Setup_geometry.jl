@@ -255,7 +255,7 @@ function add_box!(Phase, Temp, Grid::AbstractGeneralGrid;       # required input
         if isa(T,LithosphericTemp)
             @views Phase[ind_flat] .= compute_phase(Phase[ind_flat], Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], phase)
         end
-        Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind_flat], T)
+        @views Temp[ind_flat] .= compute_thermal_structure(Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind_flat], T)
     end
 
     # Set the phase. Different routines are available for that - see below.    
