@@ -3,10 +3,11 @@ module Chmy_utils
 
 using Chmy, Chmy.Grids, Chmy.Fields
 
-import GeophysicalModelGenerator: create_CartGrid, CartGrid
+import GeophysicalModelGenerator: create_CartGrid, CartGrid, CartData
 import GeophysicalModelGenerator: add_box!, add_sphere!, add_ellipsoid!, add_cylinder!
 import GeophysicalModelGenerator: add_layer!, add_polygon!, add_slab!, add_stripes!, add_volcano!
-        
+import GeophysicalModelGenerator: above_surface, below_surface
+
 println("Loading Chmy-GMG tools")
 
 """
@@ -61,8 +62,36 @@ for fn in function_names
         end
     end
     
+end
 
 
+# all functions to be ported
+function_names = (:above_surface, :below_surface)
+
+for fn in function_names
+
+    @eval begin 
+        """
+            $($fn)( Grid::StructuredGrid, field::Field, DataSurface_Cart::CartData; kwargs...) 
+
+        Sets `$($fn)` function for `Chmy` grids and the field `field` whioch can be either on vertexes or centers           
+        """
+        function $fn( Grid::StructuredGrid,
+                      field::Field, 
+                      DataSurface_Cart::CartData;     
+                      kwargs...)  
+
+            CartGrid = create_CartGrid(Grid)
+            
+            cell = false
+            if all(location(field).==Center()) 
+                cell = true
+            end
+
+            return ($fn)(CartGrid, DataSurface_Cart; cell=cell, kwargs...)
+        end
+    end
+    
 end
 
 

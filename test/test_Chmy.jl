@@ -38,3 +38,19 @@ add_box!(Phases_C,Temp_C,grid, xlim=(0,1.0), zlim=(-2,0), phase=ConstantPhase(2)
 
 add_box!(Phases_V,Temp_V,grid, xlim=(0,1.0), zlim=(-2,0), phase=ConstantPhase(2))
 @test extrema(Phases_V) == (0,2)
+
+add_sphere!(Phases_V,Temp_V,grid,  cen=(0,0,-1), radius=2.5, phase=ConstantPhase(3), T=ConstantTemp(800))
+@test extrema(Phases_V) == (0,3)
+@test extrema(Temp_V) == (0.0,800.0)
+
+# test above/below surface intersection
+Topo_cart   =   CartData(xyz_grid(-6:.2:6,-12:.2:13,0));
+ind         =   above_surface(grid, Phases_V, Topo_cart);
+Phases_V[ind] .= 4;
+@test extrema(Phases_V) == (0,3)
+
+ind         =   above_surface(grid, Phases_C, Topo_cart);
+Phases_C[ind] .= 4;
+@test extrema(Phases_V) == (0,4)
+
+
