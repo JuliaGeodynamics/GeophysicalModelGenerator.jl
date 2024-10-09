@@ -147,11 +147,11 @@ end
 
 
 """
-    add_box!(Phase, Temp, Grid::AbstractGeneralGrid; xlim::NTuple{2, _T} = (20,100), [ylim::NTuple{2, _T} = (1,10)], zlim::NTuple{2, _T} = (10,80),
+    add_box!(Phase, Temp, Grid::AbstractGeneralGrid; xlim::Tuple = (20,100), [ylim::Tuple = (1,10)], zlim::Tuple = (10,80),
             Origin=nothing, StrikeAngle=0, DipAngle=0,
             phase = ConstantPhase(1),
             T=nothing,
-            cell=false ) where _T
+            cell=false ) 
 
 Adds a box with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
 
@@ -206,11 +206,11 @@ julia> write_paraview(Grid,"LaMEM_ModelSetup")  # Save model to paraview
 ```
 """
 function add_box!(Phase, Temp, Grid::AbstractGeneralGrid;       # required input
-                xlim::NTuple{2, _T} = (20,100), ylim=nothing, zlim::NTuple{2, _T} = (10,80),     # limits of the box
+                xlim::Tuple = (20,100), ylim=nothing, zlim::Tuple = (10,80),     # limits of the box
                 Origin=nothing, StrikeAngle=0, DipAngle=0,      # origin & dip/strike
                 phase = ConstantPhase(1),                       # Sets the phase number(s) in the box
                 T=nothing,                                      # Sets the thermal structure (various functions are available)
-                cell=false ) where _T                           # if true, Phase and Temp are defined on cell centers 
+                cell=false )                            # if true, Phase and Temp are defined on cell centers 
 
     # Retrieve 3D data arrays for the grid
     X,Y,Z = coordinate_grids(Grid, cell=cell)
@@ -266,9 +266,9 @@ end
 
 
 """
-    add_layer!(Phase, Temp, Grid::AbstractGeneralGrid; xlim::NTuple{2, _T} = (1,100), [ylim::NTuple{2, _T} = (0,20)], zlim::NTuple{2, _T} = (0,-100),
+    add_layer!(Phase, Temp, Grid::AbstractGeneralGrid; xlim::Tuple = (1,100), [ylim::Tuple = (0,20)], zlim::Tuple = (0,-100),
             phase = ConstantPhase(1),
-            T=nothing, cell=false ) where _T
+            T=nothing, cell=false ) 
 
 
 Adds a layer with phase & temperature structure to a 3D model setup. The most common use would be to add a lithospheric layer to a model setup.
@@ -414,7 +414,7 @@ julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
 function add_sphere!(Phase, Temp, Grid::AbstractGeneralGrid;    # required input
     cen::NTuple{3, _T} = (0,0,-1), radius::Number,              # center and radius of the sphere
     phase = ConstantPhase(1),                                   # Sets the phase number(s) in the sphere
-    T=nothing, cell=false )    where _T                         # Sets the thermal structure (various functions are available)
+    T=nothing, cell=false )  where _T                       # Sets the thermal structure (various functions are available)
 
     # Retrieve 3D data arrays for the grid
     X,Y,Z = coordinate_grids(Grid, cell=cell)
@@ -484,7 +484,7 @@ function add_ellipsoid!(Phase, Temp, Grid::AbstractGeneralGrid;     # required i
     cen::NTuple{3, _T} = (-1,-1,-1), axes::NTuple{3, _T} = (0.2,0.1,0.5),   # center and semi-axes of the ellpsoid
     Origin=nothing, StrikeAngle=0, DipAngle=0,                      # origin & dip/strike
     phase = ConstantPhase(1),                                       # Sets the phase number(s) in the box
-    T=nothing, cell=false )  where _T                               # Sets the thermal structure (various functions are available)
+    T=nothing, cell=false )   where _T                          # Sets the thermal structure (various functions are available)
 
     if Origin==nothing
         Origin = cen  # center
@@ -522,9 +522,9 @@ function add_ellipsoid!(Phase, Temp, Grid::AbstractGeneralGrid;     # required i
 end
 
 """
-    add_cylinder!(Phase, Temp, Grid::AbstractGeneralGrid; base::NTuple{3, _T} = (-1,-1,-1.5), cap::NTuple{3, _T} = (-1,-1,-0.5), radius::Number,
+    add_cylinder!(Phase, Temp, Grid::AbstractGeneralGrid; base::NTuple{3, } = (-1,-1,-1.5), cap::NTuple{3, } = (-1,-1,-0.5), radius::Number,
             phase = ConstantPhase(1),
-            T=nothing, cell=false ) where _T
+            T=nothing, cell=false ) 
 
 
 Adds a cylinder with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
@@ -566,9 +566,9 @@ julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
 ```
 """
 function add_cylinder!(Phase, Temp, Grid::AbstractGeneralGrid;  # required input
-    base::NTuple{3, _T} = (-1,-1,-1.5), cap::NTuple{3, _T} = (-1,-1,-0.5), radius::Number,    # center and radius of the sphere
+    base::NTuple{3, } = (-1,-1,-1.5), cap::NTuple{3, } = (-1,-1,-0.5), radius::Number,    # center and radius of the sphere
     phase = ConstantPhase(1),                                   # Sets the phase number(s) in the sphere
-    T=nothing, cell=false )   where _T                          # Sets the thermal structure (various functions are available)
+    T=nothing, cell=false )                             # Sets the thermal structure (various functions are available)
 
     # axis vector of cylinder
     axVec = cap .- base
@@ -622,7 +622,7 @@ end
 
 
 """
-        add_polygon!(Phase, Temp, Grid::AbstractGeneralGrid; xlim=(), ylim::NTuple{2, _T} = (0,0.8), zlim=(), phase = ConstantPhase(1), T=nothing, cell=false )   where _T
+        add_polygon!(Phase, Temp, Grid::AbstractGeneralGrid; xlim=(), ylim::Tuple = (0,0.8), zlim=(), phase = ConstantPhase(1), T=nothing, cell=false )   
 
 
 Adds a polygon with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
@@ -664,9 +664,9 @@ julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
 
 """
 function add_polygon!(Phase, Temp, Grid::AbstractGeneralGrid;   # required input
-    xlim=(), ylim::NTuple{2, _T} = (0,0.8), zlim=(),           # limits of the box
+    xlim=(), ylim::Tuple = (0,0.8), zlim=(),           # limits of the box
     phase = ConstantPhase(1),                                   # Sets the phase number(s) in the box
-    T=nothing, cell=false )  where _T                           # Sets the thermal structure (various functions are available)
+    T=nothing, cell=false )                             # Sets the thermal structure (various functions are available)
 
 
     xlim_ = Float64.(collect(xlim))

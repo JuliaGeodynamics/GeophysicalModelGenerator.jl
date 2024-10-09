@@ -26,7 +26,7 @@ CartGrid =  create_CartGrid(grid)
 @test sum.(CartGrid.coord1D) == (0.0, 0.0, 0.0)
 
 # test add_box! directly. Note that this requires you to specify a "cell" keyword for Center() locations 
-add_box!(Phases_C,Temp_C,CartGrid, xlim=(0,1.0), zlim=(-2,0), phase=ConstantPhase(3), cell=true)
+add_box!(Phases_C,Temp_C,CartGrid, xlim=(0.0,1.0), zlim=(-2,0), phase=ConstantPhase(3), cell=true)
 @test extrema(Phases_C) == (0,3)
 
 add_box!(Phases_V,Temp_V,CartGrid, xlim=(0,1.0), zlim=(-2,0), phase=ConstantPhase(3))
