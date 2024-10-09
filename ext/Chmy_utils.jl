@@ -74,7 +74,7 @@ for fn in function_names
         """
             $($fn)( Grid::StructuredGrid, field::Field, DataSurface_Cart::CartData; kwargs...) 
 
-        Sets `$($fn)` function for `Chmy` grids and the field `field` whioch can be either on vertexes or centers           
+        Sets `$($fn)` function for `Chmy` grids and the field `field` which can be either on vertices or centers           
         """
         function $fn( Grid::StructuredGrid,
                       field::Field, 
