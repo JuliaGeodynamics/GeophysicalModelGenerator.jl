@@ -68,4 +68,9 @@ grid   = UniformGrid(arch;
 Temp2D_C   =  Field(backend, grid, Center())
 Phases2D_C =  Field(backend, grid, Center(), Int32)
 
+# check
 add_box!(Phases2D_C,Temp2D_C,grid, xlim=(0,1.0), zlim=(-2,0), phase=ConstantPhase(2))
+@test extrema(Phases2D_C) == (0,2)
+
+add_sphere!(Phases2D_C,Temp2D_C,grid,  cen=(0,0,-1), radius=2.5, phase=ConstantPhase(3), T=ConstantTemp(800))
+@test extrema(Phases2D_C) == (0,3)
