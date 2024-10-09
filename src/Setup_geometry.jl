@@ -522,7 +522,7 @@ function add_ellipsoid!(Phase, Temp, Grid::AbstractGeneralGrid;     # required i
 end
 
 """
-    add_cylinder!(Phase, Temp, Grid::AbstractGeneralGrid; base::NTuple{3, } = (-1,-1,-1.5), cap::NTuple{3, } = (-1,-1,-0.5), radius::Number,
+    add_cylinder!(Phase, Temp, Grid::AbstractGeneralGrid; base::NTuple{3} = (-1,-1,-1.5), cap::NTuple{3} = (-1,-1,-0.5), radius::Number,
             phase = ConstantPhase(1),
             T=nothing, cell=false ) 
 
