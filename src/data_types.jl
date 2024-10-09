@@ -1089,14 +1089,14 @@ end
     Structure that holds data for an orthogonal cartesian grid, which can be described with 1D vectors
 """
 struct CartGrid{FT, D} <: AbstractGeneralGrid
-    ConstantΔ   :: Bool                         # Constant spacing (true in all cases for now)
-    N           :: NTuple{D,Int}                # Number of grid points in every direction
-    Δ           :: NTuple{D,FT}                 # (constant) spacing in every direction
-    L           :: NTuple{D,FT}                 # Domain size
-    min         :: NTuple{D,FT}                 # start of the grid in every direction
-    max         :: NTuple{D,FT}                 # end of the grid in every direction
-    coord1D     :: NTuple{D,Vector{FT}}   # Tuple with 1D vectors in all directions
-    coord1D_cen :: NTuple{D,Vector{FT}}   # Tuple with 1D vectors of center points in all directions
+    ConstantΔ   :: Bool                             # Constant spacing (true in all cases for now)
+    N           :: NTuple{D,Int}                    # Number of grid points in every direction
+    Δ           :: NTuple{D,FT}                     # (constant) spacing in every direction
+    L           :: NTuple{D,FT}                     # Domain size
+    min         :: NTuple{D,FT}                     # start of the grid in every direction
+    max         :: NTuple{D,FT}                     # end of the grid in every direction
+    coord1D     :: NTuple{D,AbstractVector{FT}}     # Tuple with 1D vectors in all directions
+    coord1D_cen :: NTuple{D,AbstractVector{FT}}     # Tuple with 1D vectors of center points in all directions
 end
 size(d::CartGrid) = d.N
 
