@@ -259,7 +259,7 @@ function add_box!(Phase, Temp, Grid::AbstractGeneralGrid;       # required input
     end
 
     # Set the phase. Different routines are available for that - see below.    
-    Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], phase)        
+    @views Phase[ind_flat] .= compute_phase(Phase[ind_flat], Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], phase)        
 
     return nothing
 end
