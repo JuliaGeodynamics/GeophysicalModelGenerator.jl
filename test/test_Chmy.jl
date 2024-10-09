@@ -47,10 +47,25 @@ add_sphere!(Phases_V,Temp_V,grid,  cen=(0,0,-1), radius=2.5, phase=ConstantPhase
 Topo_cart   =   CartData(xyz_grid(-6:.2:6,-12:.2:13,0));
 ind         =   above_surface(grid, Phases_V, Topo_cart);
 Phases_V[ind] .= 4;
-@test extrema(Phases_V) == (0,3)
+@test extrema(Phases_V) == (0,4)
 
 ind         =   above_surface(grid, Phases_C, Topo_cart);
 Phases_C[ind] .= 4;
 @test extrema(Phases_V) == (0,4)
 
 
+
+
+# 2D test
+lx,  lz  = 10.0, 12.0
+nx,  nz  = 10, 12
+grid   = UniformGrid(arch;
+                    origin=(-lx/2,  -lz/2),
+                    extent=(lx,  lz),
+                    dims=(nx, nz))
+
+# create field
+Temp2D_C   =  Field(backend, grid, Center())
+Phases2D_C =  Field(backend, grid, Center(), Int32)
+
+add_box!(Phases2D_C,Temp2D_C,grid, xlim=(0,1.0), zlim=(-2,0), phase=ConstantPhase(2))
