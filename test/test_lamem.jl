@@ -112,8 +112,8 @@ add_cylinder!(Phases,Temp,Grid, base=(0,0,-5), cap=(3,3,-2), radius=1.5, phase=C
 @test Temp[55,45,45]   == 800.0
 
 # for debugging:
-data = CartData(Grid, (;Phases, Temp));
-write_paraview(data,"test")
+#data = CartData(Grid, (;Phases, Temp));
+#write_paraview(data,"test")
 
 # test adding generic volcano topography
 Grid = read_LaMEM_inputfile("test_files/SaltModels.dat");
