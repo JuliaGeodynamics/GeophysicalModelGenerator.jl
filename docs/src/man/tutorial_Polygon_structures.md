@@ -25,8 +25,8 @@ z        = LinRange(-660,50,nz)
 Cart     = CartData(xyz_grid(x, y, z))
 
 # initialize phase and temperature matrix
-Phase   = ones(Int32,size(X))
-Temp    = ones(Float64,size(X))*1350
+Phase = fill(1,nx,ny,nz);
+Temp = fill(1350.0, nx,ny,nz);
 
 # add different phases: crust->2, Mantle Lithosphere->3 Mantle->1
 add_box!(Phase, Temp, Cart; xlim=(0.0,800.0),ylim=(0.0,800.0), zlim=(-800.0,0.0), phase = LithosphericPhases(Layers=[15 30 100 800], Phases=[2 3 1 5], Tlab=1300 ), T=LinearTemp(Ttop=20, Tbot=1600))
@@ -47,13 +47,13 @@ To include the geological structures of a passive margin into the model, we use 
 # unlimited number of points possible to create the polygon
 
 # add sediment basin 
-add_polygon!(Phase, Temp, Cart; xlim=[0.0,0.0, 160.0, 200.0],ylim=[100.0,300.0], zlim=[0.0,-10.0,-20.0,0.0], phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30));
+add_polygon!(Phase, Temp, Cart; xlim=(0.0,0.0, 160.0, 200.0),ylim=(100.0,300.0), zlim=(0.0,-10.0,-20.0,0.0), phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30));
 
 # add thinning of the continental crust attached to the slab and its thickness 
-add_polygon!(Phase, Temp, Cart; xlim=[0.0, 200.0, 0.0],ylim=[500.0,800.0], zlim=[-100.0,-150.0,-150.0], phase = ConstantPhase(5), T=LinearTemp(Ttop=1000, Tbot=1100));
+add_polygon!(Phase, Temp, Cart; xlim=(0.0, 200.0, 0.0),ylim=(500.0,800.0), zlim=(-100.0,-150.0,-150.0), phase = ConstantPhase(5), T=LinearTemp(Ttop=1000, Tbot=1100));
 
 # add accretionary prism 
-add_polygon!(Phase, Temp, Cart; xlim=[800.0, 600.0, 800.0],ylim=[100.0,800.0], zlim=[0.0,0.0,-60.0], phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30));
+add_polygon!(Phase, Temp, Cart; xlim=(800.0, 600.0, 800.0),ylim=(100.0,800.0), zlim=(0.0,0.0,-60.0), phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30));
 ```
 
 #### 3. Export final model setup to a paraview file
@@ -61,8 +61,8 @@ For visualisation and comparison to actual measured data, the mode setup is save
 
 ```julia
 # # Save data to paraview:
-Data_Final      =   CartData(X,Y,Z,(Phase=Phase,Temp=Temp)); 
-write_paraview(Data_Final, "Sedimentary_basin");
+Cart = addfield(Cart,(;Phase, Temp))
+write_paraview(Cart, "Sedimentary_basin");
 ```
 
 After importing and looking at the file to paraview, some unresolved areas might be visible as they are visible in this model. That is due to the resolution and shape of the polygon. To reduce those artefacts an increase in resolution or a change of the polygon angle might help.

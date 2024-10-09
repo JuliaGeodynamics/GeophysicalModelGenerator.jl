@@ -2,6 +2,8 @@
 MOR = "MOR"
 dum = "dum"
 Shepard = "Shepard"
+arange = "arange"
+iy = "iy"
 nin = "nin"
 
 [files]

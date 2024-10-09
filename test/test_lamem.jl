@@ -93,7 +93,7 @@ rm("test_topo.dat")
 Grid    = read_LaMEM_inputfile("test_files/GeometricPrimitives.dat")
 Phases  = zeros(Int32,size(Grid.X));
 Temp    = zeros(Float64,size(Grid.X));
-add_sphere!(Phases,Temp,Grid, cen=(0,0,-6), radius=2, phase=ConstantPhase(1), T=ConstantTemp(800))
+add_sphere!(Phases,Temp,Grid, cen=(0,0,-6), radius=2.0, phase=ConstantPhase(1), T=ConstantTemp(800))
 @test Phases[55,55,55] == 1
 @test Phases[56,56,56] == 0
 @test Temp[44,52,21]   == 800.0
