@@ -566,7 +566,7 @@ julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
 ```
 """
 function add_cylinder!(Phase, Temp, Grid::AbstractGeneralGrid;  # required input
-    base::NTuple{3, } = (-1,-1,-1.5), cap::NTuple{3, } = (-1,-1,-0.5), radius::Number,    # center and radius of the sphere
+    base::NTuple{3} = (-1,-1,-1.5), cap::NTuple{3} = (-1,-1,-0.5), radius::Number,    # center and radius of the sphere
     phase = ConstantPhase(1),                                   # Sets the phase number(s) in the sphere
     T=nothing, cell=false )                             # Sets the thermal structure (various functions are available)
 
