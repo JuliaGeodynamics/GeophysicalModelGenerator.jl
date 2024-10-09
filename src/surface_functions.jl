@@ -287,14 +287,18 @@ function above_surface(Data_Cart::Union{Q1Data,CartData}, DataSurface_Cart::Cart
 end
 
 """
-    Above = above_surface(Grid::CartGrid, DataSurface_Cart::CartData; above=true)
+    Above = above_surface(Grid::CartGrid, DataSurface_Cart::CartData; above=true, cell=false)
 
 Determines if points described by the `Grid` CartGrid structure are above the Cartesian surface `DataSurface_Cart`
 """
-function above_surface(Grid::CartGrid, DataSurface_Cart::CartData; above=true)
+function above_surface(Grid::CartGrid, DataSurface_Cart::CartData; above=true, cell=false)
 
-    X,Y,Z = xyz_grid(Grid.coord1D...)
-    Data = CartData(Grid,(Z=Z,))
+    if cell
+        X,Y,Z = xyz_grid(Grid.coord1D_cen...)
+    else
+        X,Y,Z = xyz_grid(Grid.coord1D...)
+    end
+    Data = CartData(X,Y,Z,(Z=Z,))
 
     return above_surface(Data, DataSurface_Cart; above=above)
 end

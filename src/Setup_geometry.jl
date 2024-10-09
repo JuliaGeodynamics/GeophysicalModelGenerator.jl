@@ -19,6 +19,23 @@ export  add_box!, add_sphere!, add_ellipsoid!, add_cylinder!, add_layer!, add_po
         Trench,
         compute_thermal_structure, compute_phase
 
+"""
+    ind2D = flatten_index_dimensions(Phase, ind_vec::Vector{CartesianIndex{3}})
+
+This converts the indices to purely 2D indices if the array `phase` is 2D
+"""
+function flatten_index_dimensions(Phase, ind_vec::Vector{CartesianIndex{3}})
+    if length(size(Phase))==2
+        ind2D = Vector{CartesianIndex{2}}(undef,length(ind_vec))
+        for (num, ind) in enumerate(ind_vec)
+            ind2D[num] = CartesianIndex(ind[1], ind[3])
+        end
+    else
+        ind2D = ind_vec
+    end
+    
+    return ind2D
+end
 
 """
     add_stripes!(Phase, Grid::AbstractGeneralGrid;
@@ -130,11 +147,11 @@ end
 
 
 """
-    add_box!(Phase, Temp, Grid::AbstractGeneralGrid; xlim::NTuple{2, _T} = (20,100), [ylim::NTuple{2, _T} = (1,10)], zlim::NTuple{2, _T} = (10,80),
+    add_box!(Phase, Temp, Grid::AbstractGeneralGrid; xlim::Tuple = (20,100), [ylim::Tuple = (1,10)], zlim::Tuple = (10,80),
             Origin=nothing, StrikeAngle=0, DipAngle=0,
             phase = ConstantPhase(1),
             T=nothing,
-            cell=false ) where _T
+            cell=false ) 
 
 Adds a box with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
 
@@ -189,17 +206,17 @@ julia> write_paraview(Grid,"LaMEM_ModelSetup")  # Save model to paraview
 ```
 """
 function add_box!(Phase, Temp, Grid::AbstractGeneralGrid;       # required input
-                xlim::NTuple{2, _T} = (20,100), ylim=nothing, zlim::NTuple{2, _T} = (10,80),     # limits of the box
+                xlim::Tuple = (20,100), ylim=nothing, zlim::Tuple = (10,80),     # limits of the box
                 Origin=nothing, StrikeAngle=0, DipAngle=0,      # origin & dip/strike
                 phase = ConstantPhase(1),                       # Sets the phase number(s) in the box
                 T=nothing,                                      # Sets the thermal structure (various functions are available)
-                cell=false ) where _T                           # if true, Phase and Temp are defined on cell centers 
+                cell=false )                            # if true, Phase and Temp are defined on cell centers 
 
     # Retrieve 3D data arrays for the grid
     X,Y,Z = coordinate_grids(Grid, cell=cell)
 
     # ensure that the input arrays have the correct size
-    @assert size(X) == size(Phase) == size(Temp)
+    #@assert size(X) == size(Phase) == size(Temp)
 
     # Limits of block
     if ylim==nothing
@@ -231,25 +248,27 @@ function add_box!(Phase, Temp, Grid::AbstractGeneralGrid;       # required input
                     (Yrot .>= (minimum(ylim) - Origin[2])) .& (Yrot .<= (maximum(ylim) - Origin[2])) .&
                     (Zrot .>= zbot) .& (Zrot .<= ztop)  )
 
+    ind_flat = flatten_index_dimensions(Phase, ind)
+
     # Compute thermal structure accordingly. See routines below for different options
     if T != nothing 
         if isa(T,LithosphericTemp)
-            Phase[ind] = compute_phase(Phase[ind], Temp[ind], Xrot[ind], Yrot[ind], Zrot[ind], phase)
+            Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], phase)
         end
-        Temp[ind] = compute_thermal_structure(Temp[ind], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind], T)
+        Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind_flat], T)
     end
 
     # Set the phase. Different routines are available for that - see below.    
-    Phase[ind] = compute_phase(Phase[ind], Temp[ind], Xrot[ind], Yrot[ind], Zrot[ind], phase)        
+    Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], phase)        
 
     return nothing
 end
 
 
 """
-    add_layer!(Phase, Temp, Grid::AbstractGeneralGrid; xlim::NTuple{2, _T} = (1,100), [ylim::NTuple{2, _T} = (0,20)], zlim::NTuple{2, _T} = (0,-100),
+    add_layer!(Phase, Temp, Grid::AbstractGeneralGrid; xlim::Tuple = (1,100), [ylim::Tuple = (0,20)], zlim::Tuple = (0,-100),
             phase = ConstantPhase(1),
-            T=nothing, cell=false ) where _T
+            T=nothing, cell=false ) 
 
 
 Adds a layer with phase & temperature structure to a 3D model setup. The most common use would be to add a lithospheric layer to a model setup.
@@ -332,14 +351,15 @@ function add_layer!(Phase, Temp, Grid::AbstractGeneralGrid;     # required input
                     (Z .>= (zlim[1])) .& (Z .<= (zlim[2]))
                 )
 
+    ind_flat = flatten_index_dimensions(Phase, ind)
 
     # Compute thermal structure accordingly. See routines below for different options
     if !isnothing(T)
-        Temp[ind] = compute_thermal_structure(Temp[ind], X[ind], Y[ind], Z[ind], Phase[ind], T)
+        Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], X[ind], Y[ind], Z[ind], Phase[ind_flat], T)
     end
 
     # Set the phase. Different routines are available for that - see below.
-    Phase[ind] = compute_phase(Phase[ind], Temp[ind], X[ind], Y[ind], Z[ind], phase)
+    Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], X[ind], Y[ind], Z[ind], phase)
 
     return nothing
 end
@@ -394,7 +414,7 @@ julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
 function add_sphere!(Phase, Temp, Grid::AbstractGeneralGrid;    # required input
     cen::NTuple{3, _T} = (0,0,-1), radius::Number,              # center and radius of the sphere
     phase = ConstantPhase(1),                                   # Sets the phase number(s) in the sphere
-    T=nothing, cell=false )    where _T                         # Sets the thermal structure (various functions are available)
+    T=nothing, cell=false )  where _T                       # Sets the thermal structure (various functions are available)
 
     # Retrieve 3D data arrays for the grid
     X,Y,Z = coordinate_grids(Grid, cell=cell)
@@ -402,13 +422,15 @@ function add_sphere!(Phase, Temp, Grid::AbstractGeneralGrid;    # required input
     # Set phase number & thermal structure in the full domain
     ind = findall(((X .- cen[1]).^2 + (Y .- cen[2]).^2 + (Z .- cen[3]).^2).^0.5 .< radius)
 
+    ind_flat = flatten_index_dimensions(Phase, ind)
+
     # Compute thermal structure accordingly. See routines below for different options
     if T != nothing
-        Temp[ind] = compute_thermal_structure(Temp[ind], X[ind], Y[ind], Z[ind], Phase[ind], T)
+        Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], X[ind], Y[ind], Z[ind], Phase[ind_flat], T)
     end
 
     # Set the phase. Different routines are available for that - see below.
-    Phase[ind] = compute_phase(Phase[ind], Temp[ind], X[ind], Y[ind], Z[ind], phase)
+    Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], X[ind], Y[ind], Z[ind], phase)
 
     return nothing
 end
@@ -462,7 +484,7 @@ function add_ellipsoid!(Phase, Temp, Grid::AbstractGeneralGrid;     # required i
     cen::NTuple{3, _T} = (-1,-1,-1), axes::NTuple{3, _T} = (0.2,0.1,0.5),   # center and semi-axes of the ellpsoid
     Origin=nothing, StrikeAngle=0, DipAngle=0,                      # origin & dip/strike
     phase = ConstantPhase(1),                                       # Sets the phase number(s) in the box
-    T=nothing, cell=false )  where _T                               # Sets the thermal structure (various functions are available)
+    T=nothing, cell=false )   where _T                          # Sets the thermal structure (various functions are available)
 
     if Origin==nothing
         Origin = cen  # center
@@ -486,21 +508,23 @@ function add_ellipsoid!(Phase, Temp, Grid::AbstractGeneralGrid;     # required i
     ind = findall((((Xrot .- cenRot[1]).^2)./x2 + ((Yrot .- cenRot[2]).^2)./y2 +
                    ((Zrot .- cenRot[3]).^2)./z2) .^0.5 .<= 1)
 
+    ind_flat = flatten_index_dimensions(Phase, ind)
+
     # Compute thermal structure accordingly. See routines below for different options
     if T != nothing
-        Temp[ind] = compute_thermal_structure(Temp[ind], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind], T)
+        Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind_flat], T)
     end
 
     # Set the phase. Different routines are available for that - see below.
-    Phase[ind] = compute_phase(Phase[ind], Temp[ind], Xrot[ind], Yrot[ind], Zrot[ind], phase)
+    Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], phase)
 
     return nothing
 end
 
 """
-    add_cylinder!(Phase, Temp, Grid::AbstractGeneralGrid; base::NTuple{3, _T} = (-1,-1,-1.5), cap::NTuple{3, _T} = (-1,-1,-0.5), radius::Number,
+    add_cylinder!(Phase, Temp, Grid::AbstractGeneralGrid; base::NTuple{3} = (-1,-1,-1.5), cap::NTuple{3} = (-1,-1,-0.5), radius::Number,
             phase = ConstantPhase(1),
-            T=nothing, cell=false ) where _T
+            T=nothing, cell=false ) 
 
 
 Adds a cylinder with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
@@ -542,9 +566,9 @@ julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
 ```
 """
 function add_cylinder!(Phase, Temp, Grid::AbstractGeneralGrid;  # required input
-    base::NTuple{3, _T} = (-1,-1,-1.5), cap::NTuple{3, _T} = (-1,-1,-0.5), radius::Number,    # center and radius of the sphere
+    base::NTuple{3} = (-1,-1,-1.5), cap::NTuple{3} = (-1,-1,-0.5), radius::Number,    # center and radius of the sphere
     phase = ConstantPhase(1),                                   # Sets the phase number(s) in the sphere
-    T=nothing, cell=false )   where _T                          # Sets the thermal structure (various functions are available)
+    T=nothing, cell=false )                             # Sets the thermal structure (various functions are available)
 
     # axis vector of cylinder
     axVec = cap .- base
@@ -569,13 +593,15 @@ function add_cylinder!(Phase, Temp, Grid::AbstractGeneralGrid;  # required input
     # Set phase number & thermal structure in the full domain
     ind = findall((t .>= 0.0) .& (t .<= 1.0) .& ((dx.^2 + dy.^2 + dz.^2).^0.5 .<= radius))
 
+    ind_flat = flatten_index_dimensions(Phase, ind)
+
     # Compute thermal structure accordingly. See routines below for different options
-    if T != nothing
-        Temp[ind] = compute_thermal_structure(Temp[ind], X[ind], Y[ind], Z[ind], Phase[ind], T)
+    if !isnothing(T)
+        Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], X[ind], Y[ind], Z[ind], Phase[ind_flat], T)
     end
 
     # Set the phase. Different routines are available for that - see below.
-    Phase[ind] = compute_phase(Phase[ind], Temp[ind], X[ind], Y[ind], Z[ind], phase)
+    Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], X[ind], Y[ind], Z[ind], phase)
 
     return nothing
 end
@@ -596,7 +622,7 @@ end
 
 
 """
-        add_polygon!(Phase, Temp, Grid::AbstractGeneralGrid; xlim=(), ylim::NTuple{2, _T} = (0,0.8), zlim=(), phase = ConstantPhase(1), T=nothing, cell=false )   where _T
+        add_polygon!(Phase, Temp, Grid::AbstractGeneralGrid; xlim=(), ylim::Tuple = (0.0,0.8), zlim=(), phase = ConstantPhase(1), T=nothing, cell=false )   
 
 
 Adds a polygon with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
@@ -638,9 +664,9 @@ julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
 
 """
 function add_polygon!(Phase, Temp, Grid::AbstractGeneralGrid;   # required input
-    xlim=(), ylim::NTuple{2, _T} = (0,0.8), zlim=(),           # limits of the box
+    xlim=(), ylim::Tuple = (0.0,0.8), zlim=(),           # limits of the box
     phase = ConstantPhase(1),                                   # Sets the phase number(s) in the box
-    T=nothing, cell=false )  where _T                           # Sets the thermal structure (various functions are available)
+    T=nothing, cell=false )                             # Sets the thermal structure (various functions are available)
 
 
     xlim_ = Float64.(collect(xlim))
@@ -766,8 +792,10 @@ function add_volcano!(
         end
     end
 
+    ind_flat = flatten_index_dimensions(Temp, ind)
+
     # @views Temp[ind .== false] .= 0.0
-    @views Temp[ind] .= compute_thermal_structure(Temp[ind], Grid.x.val[ind], Grid.y.val[ind], depth[ind], Phases[ind], T)
+    Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Grid.x.val[ind], Grid.y.val[ind], depth[ind], Phases[ind_flat], T)
     
     return nothing
 end

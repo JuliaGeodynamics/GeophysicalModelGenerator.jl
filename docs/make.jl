@@ -122,7 +122,8 @@ makedocs(;
             "Gravity code" => "man/gravity_code.md",
             "Numerical model setups" => "man/geodynamic_setups.md",
             "LaMEM" => "man/lamem.md",
-            "pTatin" => "man/lamem.md",
+            "pTatin" => "man/ptatin.md",
+            "Chmy" => "man/Tutorial_Chmy_MPI.md",
             "Profile Processing" => "man/profile_processing.md",
             "Gmsh" => "man/gmsh.md",
             "Movies" => "man/movies.md"            
