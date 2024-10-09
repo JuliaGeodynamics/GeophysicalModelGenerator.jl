@@ -19,6 +19,23 @@ export  add_box!, add_sphere!, add_ellipsoid!, add_cylinder!, add_layer!, add_po
         Trench,
         compute_thermal_structure, compute_phase
 
+"""
+    ind2D = flatten_index_dimensions(Phase, ind_vec::Vector{CartesianIndex{3}})
+
+This converts the indices to purely 2D indices if the array `phase` is 2D
+"""
+function flatten_index_dimensions(Phase, ind_vec::Vector{CartesianIndex{3}})
+    if length(size(Phase))==2
+        ind2D = Vector{CartesianIndex{2}}(undef,length(ind_vec))
+        for (num, ind) in enumerate(ind_vec)
+            ind2D[num] = CartesianIndex(ind[1], ind[3])
+        end
+    else
+        ind2D = ind_vec
+    end
+    
+    return ind2D
+end
 
 """
     add_stripes!(Phase, Grid::AbstractGeneralGrid;
@@ -199,7 +216,7 @@ function add_box!(Phase, Temp, Grid::AbstractGeneralGrid;       # required input
     X,Y,Z = coordinate_grids(Grid, cell=cell)
 
     # ensure that the input arrays have the correct size
-    @assert size(X) == size(Phase) == size(Temp)
+    #@assert size(X) == size(Phase) == size(Temp)
 
     # Limits of block
     if ylim==nothing
@@ -231,16 +248,18 @@ function add_box!(Phase, Temp, Grid::AbstractGeneralGrid;       # required input
                     (Yrot .>= (minimum(ylim) - Origin[2])) .& (Yrot .<= (maximum(ylim) - Origin[2])) .&
                     (Zrot .>= zbot) .& (Zrot .<= ztop)  )
 
+    ind_flat = flatten_index_dimensions(Phase, ind)
+
     # Compute thermal structure accordingly. See routines below for different options
     if T != nothing 
         if isa(T,LithosphericTemp)
-            Phase[ind] = compute_phase(Phase[ind], Temp[ind], Xrot[ind], Yrot[ind], Zrot[ind], phase)
+            Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], phase)
         end
-        Temp[ind] = compute_thermal_structure(Temp[ind], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind], T)
+        Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind], T)
     end
 
     # Set the phase. Different routines are available for that - see below.    
-    Phase[ind] = compute_phase(Phase[ind], Temp[ind], Xrot[ind], Yrot[ind], Zrot[ind], phase)        
+    Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], phase)        
 
     return nothing
 end

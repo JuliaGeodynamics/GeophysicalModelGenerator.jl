@@ -11,23 +11,33 @@ import GeophysicalModelGenerator: above_surface, below_surface
 println("Loading Chmy-GMG tools")
 
 """
-    CartGrid = create_CartGrid(grid::StructuredGrid)
+    CartGrid = create_CartGrid(grid::StructuredGrid; ylevel=0.0)
 
 Creates a GMG `CartGrid` data structure from a `Chmy` grid object
 """
-function create_CartGrid(grid::StructuredGrid)
+function create_CartGrid(grid::StructuredGrid; ylevel=0.0)
 
     coord1D     = Vector.(coords(grid, Vertex()))
     coord1D_cen = Vector.(coords(grid, Center()))
     N           = length.(coord1D)
     L           = extent(grid, Vertex())
     X₁          = origin(grid, Vertex())  
-    Xₙ          = X₁ .+ L
     Δ           = spacing(grid)
     ConstantΔ   = false;
-    if isa(typeof(grid), UniformGrid)
+    if isa(grid, UniformGrid)
         ConstantΔ = true
     end
+    if ndims(grid)==2
+        # we need a special treatment of this, as all GMG routines work with 3D coordinates
+        X₁  = (X₁[1], ylevel, X₁[2]) 
+        L   = (L[1], 0.0, L[2]) 
+        Δ   = (Δ[1], 0.0, Δ[2])
+        N   = (N[1],1,N[2])
+        coord1D = (coord1D[1], [0.0], coord1D[2])
+        coord1D_cen = (coord1D_cen[1], [0.0], coord1D_cen[2])
+    end
+    Xₙ          = X₁ .+ L
+    
 
     return CartGrid(ConstantΔ,N,Δ,L,X₁,Xₙ,coord1D, coord1D_cen)
 end
