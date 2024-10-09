@@ -355,7 +355,7 @@ function add_layer!(Phase, Temp, Grid::AbstractGeneralGrid;     # required input
 
     # Compute thermal structure accordingly. See routines below for different options
     if !isnothing(T)
-        Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], X[ind], Y[ind], Z[ind], Phase[ind_flat], T)
+        @views Temp[ind_flat] .= compute_thermal_structure(Temp[ind_flat], X[ind], Y[ind], Z[ind], Phase[ind_flat], T)
     end
 
     # Set the phase. Different routines are available for that - see below.
