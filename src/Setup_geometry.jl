@@ -350,14 +350,15 @@ function add_layer!(Phase, Temp, Grid::AbstractGeneralGrid;     # required input
                     (Z .>= (zlim[1])) .& (Z .<= (zlim[2]))
                 )
 
+    ind_flat = flatten_index_dimensions(Phase, ind)
 
     # Compute thermal structure accordingly. See routines below for different options
     if !isnothing(T)
-        Temp[ind] = compute_thermal_structure(Temp[ind], X[ind], Y[ind], Z[ind], Phase[ind], T)
+        Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], X[ind], Y[ind], Z[ind], Phase[ind], T)
     end
 
     # Set the phase. Different routines are available for that - see below.
-    Phase[ind] = compute_phase(Phase[ind], Temp[ind], X[ind], Y[ind], Z[ind], phase)
+    Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], X[ind], Y[ind], Z[ind], phase)
 
     return nothing
 end
@@ -503,13 +504,15 @@ function add_ellipsoid!(Phase, Temp, Grid::AbstractGeneralGrid;     # required i
     ind = findall((((Xrot .- cenRot[1]).^2)./x2 + ((Yrot .- cenRot[2]).^2)./y2 +
                    ((Zrot .- cenRot[3]).^2)./z2) .^0.5 .<= 1)
 
+    ind_flat = flatten_index_dimensions(Phase, ind)
+
     # Compute thermal structure accordingly. See routines below for different options
     if T != nothing
-        Temp[ind] = compute_thermal_structure(Temp[ind], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind], T)
+        Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind], T)
     end
 
     # Set the phase. Different routines are available for that - see below.
-    Phase[ind] = compute_phase(Phase[ind], Temp[ind], Xrot[ind], Yrot[ind], Zrot[ind], phase)
+    Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], phase)
 
     return nothing
 end
@@ -585,13 +588,15 @@ function add_cylinder!(Phase, Temp, Grid::AbstractGeneralGrid;  # required input
     # Set phase number & thermal structure in the full domain
     ind = findall((t .>= 0.0) .& (t .<= 1.0) .& ((dx.^2 + dy.^2 + dz.^2).^0.5 .<= radius))
 
+    ind_flat = flatten_index_dimensions(Phase, ind)
+
     # Compute thermal structure accordingly. See routines below for different options
-    if T != nothing
-        Temp[ind] = compute_thermal_structure(Temp[ind], X[ind], Y[ind], Z[ind], Phase[ind], T)
+    if isnothing(T)
+        Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], X[ind], Y[ind], Z[ind], Phase[ind], T)
     end
 
     # Set the phase. Different routines are available for that - see below.
-    Phase[ind] = compute_phase(Phase[ind], Temp[ind], X[ind], Y[ind], Z[ind], phase)
+    Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], X[ind], Y[ind], Z[ind], phase)
 
     return nothing
 end
@@ -775,8 +780,10 @@ function add_volcano!(
         end
     end
 
+    ind_flat = flatten_index_dimensions(Temp, ind)
+
     # @views Temp[ind .== false] .= 0.0
-    @views Temp[ind] .= compute_thermal_structure(Temp[ind], Grid.x.val[ind], Grid.y.val[ind], depth[ind], Phases[ind], T)
+    @views Temp[ind_flat] .= compute_thermal_structure(Temp[ind_flat], Grid.x.val[ind], Grid.y.val[ind], depth[ind], Phases[ind_flat], T)
     
     return nothing
 end
