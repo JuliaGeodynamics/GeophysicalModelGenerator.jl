@@ -70,7 +70,7 @@ addfield(V::GeoData,new_fields::NamedTuple) = GeoData(V.lon.val, V.lat.val, V.de
 
 Add `new_fields` fields to a `Q1Data` dataset; set `cellfield` to `true` if the field is a cell field; otherwise it is a vertex field
 """
-function addfield(V::Q1Data,new_fields::NamedTuple; cellfield=false) 
+function addfield(V::Q1Data,new_fields::NamedTuple; cellfield=false)
     if cellfield
         return Q1Data(V.x.val, V.y.val, V.z.val, V.fields, merge(V.cellfields, new_fields))
     else
@@ -100,14 +100,14 @@ function dropnames(namedtuple::NamedTuple, names::Tuple{Vararg{Symbol}})
 end
 
 """
-    V = removefield(V::AbstractGeneralGrid,field_name::String)
+    V = removefield(V::AbstractGeneralGrid,field_name::Symbol)
 
 Removes the field with name `field_name` from the GeoData or CartData dataset
 
 """
-function removefield(V::AbstractGeneralGrid,field_name::String)
+function removefield(V::AbstractGeneralGrid,field_name::Symbol)
     fields_new  = V.fields;
-    fields_new  = dropnames(fields_new, (Symbol(field_name),))
+    fields_new  = dropnames(fields_new, (field_name,))
 
     if isa(V,GeoData)
         V = GeoData(V.lon.val,V.lat.val,V.depth.val,fields_new)
@@ -120,9 +120,33 @@ function removefield(V::AbstractGeneralGrid,field_name::String)
     return V
 end
 
+"""
+    V = removefield(V::AbstractGeneralGrid,field_name::String)
+
+Removes the field with name `field_name` from the GeoData or CartData dataset
+
+"""
+function removefield(V::AbstractGeneralGrid,field_name::String)
+    return removefield(V,Symbol(field_name))
+end
+
+"""
+    V = removefield(V::AbstractGeneralGrid,field_name::NTuple{N,Symbol})
+
+Removes the fields in the tuple `field_name` from the GeoData or CartData dataset
+
+"""
+function removefield(V::AbstractGeneralGrid,field_name::NTuple{N,Symbol})   where N
+    
+    for ifield=1:N
+        V = removefield(V,field_name[ifield])
+    end
+
+    return V
+end
 
 
-""" 
+"""
 cross_section_volume(Volume::AbstractGeneralGrid; dims=(100,100), Interpolate=false, Depth_level=nothing; Lat_level=nothing; Lon_level=nothing; Start=nothing, End=nothing, Depth_extent=nothing )
 
 Creates a cross-section through a volumetric (3D) `GeoData` object.
@@ -259,7 +283,7 @@ cross_section_surface(Surface::GeoData; dims=(100,), Interpolate=false, Depth_le
 Creates a cross-section through a surface (2D) `GeoData` object.
 
 - Cross-sections can be horizontal (map view at a given depth), if `Depth_level` is specified
-- They can also be vertical, either by specifying `Lon_level` or `Lat_level` (for a fixed lon/lat), or by defining both `Start=(lon,lat)` & `End=(lon,lat)` points.
+- They can also be vertical, either by specifying `Lon_level` or `Lat_level` (for a fixed lon/lat), or by defining both `Start=(lon,lat)` & `End=(lon,lat)` points. Start and End points will be in km!
 
 - IMPORTANT: The surface to be extracted has to be given as a gridded GeoData object. It may also contain NaNs where it is not defined. Any points lying outside of the defined surface will be considered NaN.
 
@@ -351,9 +375,14 @@ function cross_section_surface(S::AbstractGeneralGrid; dims=(100,), Interpolate=
 
     end
 
-    # create GeoData structure with the interpolated points
-    Data_profile = GeoData(Lon, Lat, depth_intp, (fields_new));
-
+    # create GeoData/CartData structure with the interpolated points
+    if isa(S,GeoData)
+        Data_profile = GeoData(Lon, Lat, depth_intp, fields_new);
+    elseif isa(S,CartData)
+        Data_profile = CartData(Lon, Lat, depth_intp, fields_new);
+    else
+        error("still to be implemented")
+    end
     return Data_profile
 end
 
@@ -545,9 +574,9 @@ Creates a cross-section through a `GeoData` object.
 julia> Lon,Lat,Depth   =   lonlatdepth_grid(10:20,30:40,(-300:25:0)km);
 julia> Data            =   Depth*2;                # some data
 julia> Vx,Vy,Vz        =   ustrip(Data*3),ustrip(Data*4),ustrip(Data*5);
-julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz))); 
-julia> Data_cross      =   cross_section(Data_set3D, Depth_level=-100km)  
-GeoData 
+julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon, Velocity=(Vx,Vy,Vz)));
+julia> Data_cross      =   cross_section(Data_set3D, Depth_level=-100km)
+GeoData
   size  : (11, 11, 1)
   lon   ϵ [ 10.0 : 20.0]
   lat   ϵ [ 30.0 : 40.0]
@@ -601,7 +630,7 @@ CartData
 ```
 """
 function flatten_cross_section(V::CartData)
- 
+
     x_new = sqrt.((V.x.val.-V.x.val[1,1,1]).^2 .+ (V.y.val.-V.y.val[1,1,1]).^2) # NOTE: the result is in km, as V.x and V.y are stored in km
 
 
@@ -1216,11 +1245,39 @@ function interpolate_datafields_2D(Original::CartData, New::CartData; Rotate=0.0
     return CartData(New.x.val,New.y.val,Znew, fields_new)
 end
 
-"""    
+"""
+    interpolate_datafields_2D(Original::GeoData, New::GeoData; Rotate=0.0, Translate=(0,0,0), Scale=(1.0,1.0,1.0))
+
+Interpolates a data field `Original` on a 2D GeoData grid `New`.
+Typically used for horizontal surfaces.
+
+Note: `Original` should have orthogonal coordinates. If it has not, e.g., because it was rotated, you'll have to specify the angle `Rotate` that it was rotated by
+
+"""
+function interpolate_datafields_2D(Original::GeoData, New::GeoData; Rotate=0.0, Translate=(0.0,0.0,0.0), Scale=(1.0,1.0,1.0))
+    if (Rotate!=0.0) || any(Translate .!= (0,0,0)) || any(Scale .!= (1.0,1.0,1.0))
+        Original_r  = rotate_translate_scale(Original, Rotate = -1.0*Rotate, Translate = -1.0.*Translate, Scale=Scale);
+        New_r       = rotate_translate_scale(New, Rotate = -1.0*Rotate, Translate = -1.0.*Translate, Scale=Scale);
+    else
+        Original_r  = Original;
+        New_r       = New;
+    end
+
+    Lon_vec      =  Original_r.lon.val[:,1,1];
+    Lat_vec      =  Original_r.lat.val[1,:,1];
+
+    Lon_new = New_r.lon.val
+    Lat_new = New_r.lat.val
+    Znew, fields_new = GeophysicalModelGenerator.InterpolateDataFields2D_vecs(Lon_vec, Lat_vec, Original_r.depth, Original_r.fields, Lon_new, Lat_new)
+
+    return GeoData(New.lon.val,New.lat.val,Znew, fields_new)
+end
+
+"""
     Surf_interp = interpolate_datafields_2D(V::GeoData, x::AbstractRange, y::AbstractRange;  Lat::Number, Lon::Number)
 
 Interpolates a 3D data set `V` with a projection point `proj=(Lat, Lon)` on a plane defined by `x` and `y`, where `x` and `y` are uniformly spaced.
-Returns the 2D array `Surf_interp`. 
+Returns the 2D array `Surf_interp`.
 """
 function interpolate_datafields_2D(V::GeoData, x::AbstractRange, y::AbstractRange;  Lat=49.9929, Lon=8.2473)
     # Default: Lat=49.9929, Lon=8.2473 => Mainz (center of universe)
@@ -1312,7 +1369,7 @@ function InterpolateDataFields2D_vecs(EW_vec, NS_vec, depth, fields_new, EW, NS)
 
     return depth_new, fields_new
 end
-  
+
 # Extracts a sub-data set using indices
 function ExtractDataSets(V::AbstractGeneralGrid, iLon, iLat, iDepth)
 
@@ -1788,3 +1845,6 @@ function inpoly_fast(PolyX::Vector{T}, PolyY::Vector{T}, x::T, y::T) where T <: 
     end
     return inside
 end
+
+
+

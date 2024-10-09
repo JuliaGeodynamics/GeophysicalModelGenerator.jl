@@ -11,7 +11,7 @@ import Base: show
 # These are routines that help to create input geometries, such as slabs with a given angle
 #
 
-export  add_box!, add_sphere!, add_ellipsoid!, add_cylinder!, add_layer!, add_polygon!, add_slab!, add_stripes!,
+export  add_box!, add_sphere!, add_ellipsoid!, add_cylinder!, add_layer!, add_polygon!, add_slab!, add_stripes!, add_volcano!,
         make_volc_topo,
         ConstantTemp, LinearTemp, HalfspaceCoolingTemp, SpreadingRateTemp, LithosphericTemp, LinearWeightedTemperature,
         McKenzie_subducting_slab,
@@ -695,7 +695,82 @@ function Rot3D(X::_T,Y::_T,Z::_T, cosStrikeAngle::_T, sindStrikeAngle::_T, cosDi
     return CoordRot[1], CoordRot[2], CoordRot[3]
 end
 
+"""
+add_volcano!(
+    Phases, Temp, Grid::CartData;
+    volcanic_phase,
+    center,
+    height,
+    radius,
+    crater,
+    base,
+    background,
+    T,
+)
 
+Adds a volcano topography (cones and truncated cones)
+
+Parameters
+====
+- Phases - Phase array (consistent with Grid)
+- Temp - Temperature array (consistent with Grid)
+- Grid - CartData
+
+Optional Parameters
+====
+- volcanic_phase - phase number of the volcano,
+- center - x- and -coordinates of center of volcano
+- height - height of volcano
+- radius - radius of volcano
+- T - temperature structure of the volcano
+- crater - this will create a truncated cone and the option defines the radius of the flat top
+- base - this sets the flat topography around the volcano
+- background - this allows loading in a topography and only adding the volcano on top (also allows stacking of several cones to get a volcano with different slopes)
+"""
+function add_volcano!(
+    Phases, 
+    Temp, 
+    Grid::CartData;
+    volcanic_phase = 1,
+    center         = (0,0,0),
+    height         = 0.0,
+    radius         = 0.0,
+    crater         = 0.0,
+    base           = 0.0,
+    background     = nothing,
+    T              = HalfspaceCoolingTemp(Age=0)
+)
+    H = make_volc_topo(Grid;
+        center     = center,
+        height     = height,
+        radius     = radius,
+        crater     = crater,
+        base       = base,
+        background = background
+    )
+
+    ni    = size(Grid.x)
+    ind   = fill(false, ni...)
+    depth = similar(Grid.z.val)
+
+    for k in axes(ind, 3)
+        for j in axes(ind, 2), i in axes(ind, 1)
+            depth[i, j, k] = max(H[i, j] - Grid.z.val[i, j, k], 0) 
+
+            if Grid.z.val[i, j, k] < H[i, j] && Grid.z.val[i, j, k] ≥ base
+                Phases[i, j, k] = volcanic_phase
+            end
+            if Phases[i, j, k] > 0
+                ind[i, j, k] = true
+            end
+        end
+    end
+
+    # @views Temp[ind .== false] .= 0.0
+    @views Temp[ind] .= compute_thermal_structure(Temp[ind], Grid.x.val[ind], Grid.y.val[ind], depth[ind], Phases[ind], T)
+    
+    return nothing
+end
 
 """
 make_volc_topo(Grid::LaMEM_grid; center::Array{Float64, 1}, height::Float64, radius::Float64, crater::Float64,
@@ -807,6 +882,61 @@ function make_volc_topo(Grid::LaMEM_grid;
     return CartData(reshape(X,nx,ny,1), reshape(Y,nx,ny,1), reshape(Topo,nx,ny,1), (Topography=reshape(Topo,nx,ny,1),))
 end
 
+function make_volc_topo(Grid::CartData;
+    center         = (0,0,0),
+    height         = 0.0,
+    radius         = 0.0,
+    crater         = 0.0,
+    base           = 0.0,
+    background     = nothing
+)
+    # get node grid
+    X    = @views Grid.x.val[:,:,1]
+    Y    = @views Grid.y.val[:,:,1]
+    nx   = size(X, 1)
+    ny   = size(X, 2)
+    pos  = similar(X)
+
+    for i in eachindex(pos)
+        # compute radial distance to volcano center
+        DX   = X[i] - center[1]
+        DY   = Y[i] - center[2]
+        RD   = √(DX^2 + DY^2)
+
+        # get radial distance from crater rim
+        RD  -= crater
+
+        # find position relative to crater rim
+        dr   = radius - crater
+        pos[i]  = -RD / dr + 1
+    end
+
+    ## assign topography
+    H    = zeros(nx,ny)
+    # check if there is a background supplied
+    if background === nothing
+        H     .= base
+    else
+        # background = nondimensionalize(background, CharUnits)
+        if size(background) == size(X)
+            H .= background
+        elseif size(background) == size(reshape(X,nx,ny,1))
+            H .= @views background[:,:,1]
+        else
+            error("Size of background must be ", nx, "x", ny)
+        end
+    end
+
+    for i in eachindex(pos)
+        if 0 ≤ pos[i] < 1
+            H[i] = pos[i] * (height - base) + base
+        elseif pos[i] ≥ 1
+            H[i] = height
+        end
+    end
+
+    return H
+end
 
 abstract type AbstractThermalStructure end
 

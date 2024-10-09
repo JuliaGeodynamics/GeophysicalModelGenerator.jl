@@ -29,7 +29,7 @@ using GeophysicalModelGenerator, GMT
 When loading both packages, several `GMT` routines within `GMG` will be loaded. One of these routines is the function `import_topo`, where one simply has to provide the region for which to download the topographic data and the data source.
 
 ```julia
-Topo = import_topo([4,20,37,50], file="@earth_relief_01m.grd")
+Topo = import_topo([4,20,37,50], file="@earth_relief_01m")
 ```
 
 The data is available in different resolutions; see [here](http://gmt.soest.hawaii.edu/doc/latest/grdimage.html) for an overview. Generally, it is advisable to not use the largest resolution if you have a large area, as the files become very large.

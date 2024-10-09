@@ -18,7 +18,7 @@ using GeophysicalModelGenerator, GMT
 Download the topography with:
 
 ```julia
-Topo = import_topo(lat=[45.5,47.7], lon=[5, 8.1], file="@earth_relief_03s.grd")
+Topo = import_topo(lat=[45.5,47.7], lon=[5, 8.1], file="@earth_relief_03s")
 ```
 
 Next, we drape the geological map on top of the geological map.
