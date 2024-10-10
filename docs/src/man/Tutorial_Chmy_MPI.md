@@ -150,7 +150,9 @@ If you want to run this on multiple cores, you will need to setup the [MPI.jl]()
 such that `mpiexecjl` is created on the command line.
 
 You can than run it with:
+```
 mpiexecjl -n 4 --project=. julia Tutorial_Chmy_MPI.jl
+```
 
 The full file can be downloaded [here](../../../tutorials/Tutorial_Chmy_MPI.jl)
 
