@@ -7,7 +7,8 @@ EditURL = "../../../tutorials/Tutorial_Chmy_MPI.jl"
 ## Aim
 In this tutorial, your will learn how to use [Chmy](https://github.com/PTsolvers/Chmy.jl) to perform a 2D diffusion simulation
 on one or multiple CPU's or GPU's.
-`Chmy` is a package that allows you to specify grids and fields and create finite difference simulations
+`Chmy` is a package that allows you to specify grids and fields and create finite difference simulations, by
+applying stencil-based kernels in an efficient manner.
 
 ## 1. Load Chmy and required packages
 
@@ -46,7 +47,7 @@ You need to specify compute kernel for the gradients:
 end
 ```
 
-You need to specify compute kernel to update the concentration
+You need to specify a compute kernel to update the concentration
 
 ```julia
 @kernel inbounds = true function update_C!(C, q, Δt, g::StructuredGrid, O)
@@ -56,7 +57,7 @@ You need to specify compute kernel to update the concentration
 end
 ```
 
-And a main function is required:
+And the main function is:
 
 ```julia
 @views function main(backend=CPU(); nxy_l=(126, 126))
@@ -121,7 +122,8 @@ In the code above, the part that calls `GMG` is:
 ```julia
 add_box!(P,C,grid,  xlim=(-1.0,1.0), zlim=(-1.0,1.0), phase=ConstantPhase(4), T=ConstantTemp(400))
 ```
-which works just like any of the other GMG function.
+which works just like any of the other GMG function, except that you pass Chmy Scalar Fields and a Chmy grid object.
+Note that this also works in MPI-parallel.
 
 ## 3. Run the simulation on one CPU machine or GPU card:
 
