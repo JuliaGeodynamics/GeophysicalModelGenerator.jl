@@ -792,7 +792,7 @@ function add_volcano!(
         end
     end
 
-    ind_flat = flatten_index_dimensions(Temp, ind)
+    ind_flat = flatten_index_dimensions(Phase, ind)
 
     # @views Temp[ind .== false] .= 0.0
     Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Grid.x.val[ind], Grid.y.val[ind], depth[ind], Phases[ind_flat], T)
