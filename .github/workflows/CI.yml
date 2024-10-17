@@ -26,11 +26,23 @@ jobs:
           - 'nightly'
         os:
           - ubuntu-latest
-          - macOS-latest
-          - macos-14
+          - macos-13
           - windows-latest
         arch:
           - x64
+        include:
+          - os: macOS-latest
+            arch: aarch64
+            version: '1.9'           
+          - os: macOS-latest
+            arch: aarch64
+            version: '1.10'
+          - os: macOS-latest
+            arch: aarch64
+            version: '1.11'
+          - os: macOS-latest
+            arch: aarch64
+            version: 'nightly'          
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
