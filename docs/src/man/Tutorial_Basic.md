@@ -21,7 +21,7 @@ Tomo_Alps_full = load_GMG("https://zenodo.org/records/10738510/files/Paffrath_20
 ```
 
 ````
-GeoData 
+GeoData
   size      : (162, 130, 42)
   lon       ϵ [ -13.3019 : 35.3019]
   lat       ϵ [ 30.7638 : 61.2362]
@@ -49,7 +49,7 @@ Topo_Alps = load_GMG("https://zenodo.org/records/10738510/files/AlpsTopo.jld2?do
 ```
 
 ````
-GeoData 
+GeoData
   size      : (961, 841, 1)
   lon       ϵ [ 4.0 : 20.0]
   lat       ϵ [ 36.0 : 50.0]
@@ -70,9 +70,17 @@ Saved file: Topo_Alps.vts
 
 ````
 
-If we open both datasets in Paraview, we see this (after giving some color to the topography):
+If we open both datasets in Paraview, and changing both files from outline/solid colors to the corresponding data field, we see:
+![Basic_Tutorial_1](../assets/img/Basic_Tutorial_Paraview_1.png)
+Now we can change the colormap on the right side, marked by a red square. For topography we use the `Oleron` colormap, which you can download [here](https://www.fabiocrameri.ch/colourmaps/).
+For the tomography we use the `Roma` scientific colormap. You will now see a blue'ish box of the tomography, this is not the best color to visualise the data. Let's invert the colormap by clicking on the item marked by the blue arrow.
+Now we see the tomography in a more intuitive way, but the topography is not visible anymore. We can change the opacity of the tomography by setting a value in the `Opacity` field marked by the red square.
+Note that you will need to adapt the range of the topography colormap as the change in color is not at 0.0. By clicking on the item marked by the black arrow, you can set your desired range.
+
+![Basic_Tutorial_1](../assets/img/Basic_Tutorial_Paraview_2.png)
+
+Now you should see something like this:
 ![Basic_Tutorial_1](../assets/img/Basic_Tutorial_1.png)
-Note that I use the `Oleron` scientific colormap for the tomography which you can download [here](https://www.fabiocrameri.ch/colourmaps/)
 
 ### 2. Extract subset of data
 As you can see the tomographic data covers a much larger area than the Alps itself, and in most of that area there is no data.
@@ -89,7 +97,7 @@ Saved file: Tomo_Alps.vts
 
 ````
 
-Which looks like:
+After loading the new data again in paraview, switching to the proper data field and adjusting the colormap, you should see something like this:
 ![Basic_Tutorial_2](../assets/img/Basic_Tutorial_2.png)
 
 ### 3. Create cross sections
@@ -102,7 +110,7 @@ data_200km = cross_section(Tomo_Alps, Depth_level=-200)
 ```
 
 ````
-GeoData 
+GeoData
   size      : (54, 60, 1)
   lon       ϵ [ 3.9057 : 19.9057]
   lat       ϵ [ 35.9606 : 49.8976]
@@ -118,7 +126,7 @@ data_200km_exact = cross_section(Tomo_Alps, Depth_level=-200, Interpolate=true)
 ```
 
 ````
-GeoData 
+GeoData
   size      : (100, 100, 1)
   lon       ϵ [ 3.9057 : 19.9057]
   lat       ϵ [ 35.9606 : 49.8976]
@@ -128,7 +136,7 @@ GeoData
 ````
 
 In general, you can get help info for all functions with `?`:
-```julia
+```julia-repl
 help?> cross_section
 search: cross_section cross_section_volume cross_section_points cross_section_surface flatten_cross_section
 
@@ -176,7 +184,7 @@ Cross_vert = cross_section(Tomo_Alps, Start=(5,47), End=(15,44))
 ```
 
 ````
-GeoData 
+GeoData
   size      : (100, 100, 1)
   lon       ϵ [ 5.0 : 15.0]
   lat       ϵ [ 47.0 : 44.0]
@@ -198,8 +206,12 @@ Saved file: data_200km.vts
 
 ````
 
+After loading the data in Paraview, you can use the `Clip` tool on the topography to only show the topography above sealevel and make it 60% transparent. Also adjust the colormap of the tomography to 5.0 and -5.0
+
+![Basic_Tutorial_3](../assets/img/Basic_Tutorial_Paraview_3.png)
+
+After doing all these steps, you should see something like this:
 ![Basic_Tutorial_3](../assets/img/Basic_Tutorial_3.png)
-In creating this image, I used the `Clip` tool of Paraview to only show topography above sealevel and made it 50% transparent.
 
 ### 4. Cartesian data
 As you can see, the curvature or the Earth is taken into account here. Yet, for many applications it is more convenient to work in Cartesian coordinates (kilometers) rather then in geographic coordinates.
@@ -213,7 +225,7 @@ Topo_cart = convert2CartData(Topo_Alps, proj)
 ```
 
 ````
-CartData 
+CartData
     size    : (961, 841, 1)
     x       ϵ [ -748.7493528015041 : 695.3491277129204]
     y       ϵ [ -781.2344794653393 : 831.6826244089501]
@@ -229,7 +241,7 @@ Tomo_cart = convert2CartData(Tomo_Alps, proj)
 ```
 
 ````
-CartData 
+CartData
     size    : (54, 60, 39)
     x       ϵ [ -757.8031278236692 : 687.0608438357591]
     y       ϵ [ -785.601866956207 : 821.3433749818317]
@@ -269,7 +281,7 @@ Tomo_rect = project_CartData(Tomo_rect, Tomo_Alps, proj)
 ```
 
 ````
-CartData 
+CartData
     size    : (116, 121, 117)
     x       ϵ [ -550.0 : 600.0]
     y       ϵ [ -500.0 : 700.0]
@@ -286,7 +298,7 @@ Topo_rect = project_CartData(Topo_rect, Topo_Alps, proj)
 ```
 
 ````
-CartData 
+CartData
     size    : (1151, 1201, 1)
     x       ϵ [ -550.0 : 600.0]
     y       ϵ [ -500.0 : 700.0]
@@ -315,4 +327,3 @@ At this stage, the data can directly be used to generate cartesian numerical mod
 ---
 
 *This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
-

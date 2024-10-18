@@ -3,8 +3,8 @@
 # ## Aim
 # In this tutorial, your will learn how to use [Chmy](https://github.com/PTsolvers/Chmy.jl) to perform a 2D diffusion simulation
 # on one or multiple CPU's or GPU's.
-# `Chmy` is a package that allows you to specify grids and fields and create finite difference simulations, by 
-# applying stencil-based kernels in an efficient manner.   
+# `Chmy` is a package that allows you to specify grids and fields and create finite difference simulations, by
+# applying stencil-based kernels in an efficient manner.
 #
 # ## 1. Load Chmy and required packages
 using Chmy, Chmy.Architectures, Chmy.Grids, Chmy.Fields, Chmy.BoundaryConditions, Chmy.GridOperators, Chmy.KernelLaunch
@@ -54,7 +54,7 @@ end
     dims_g = dims_l .* dims(topo)
     grid   = UniformGrid(arch; origin=(-2, -2), extent=(4, 4), dims=dims_g)
     launch = Launcher(arch, grid, outer_width=(16, 8))
-    
+
     ##@info "mpi" me grid
 
     nx, ny = dims_g
@@ -65,17 +65,17 @@ end
     ## allocate fields
     C = Field(backend, grid, Center())
     P = Field(backend, grid, Center(), Int32)   # phases
-    
+
     q = VectorField(backend, grid)
     C_v = (me==0) ? KernelAbstractions.zeros(CPU(), Float64, size(interior(C)) .* dims(topo)) : nothing
-    
-    ## Use the `GeophysicalModelGenerator` to set the initial conditions. Note that 
+
+    ## Use the `GeophysicalModelGenerator` to set the initial conditions. Note that
     ## you have to call this for a `Phases` and a `Temp` grid, which we call `C` here.
     add_box!(P,C,grid,  xlim=(-1.0,1.0), zlim=(-1.0,1.0), phase=ConstantPhase(4), T=ConstantTemp(400))
 
     ## set BC's and updates the halo:
     bc!(arch, grid, C => Neumann(); exchange=C)
-    
+
     ## visualisation
     fig = Figure(; size=(400, 320))
     ax  = Axis(fig[1, 1]; aspect=DataAspect(), xlabel="x", ylabel="y", title="it = 0")
@@ -102,7 +102,7 @@ end
 
 # In the code above, the part that calls `GMG` is:
 
-# ```julia 
+# ```julia
 # add_box!(P,C,grid,  xlim=(-1.0,1.0), zlim=(-1.0,1.0), phase=ConstantPhase(4), T=ConstantTemp(400))
 # ```
 # which works just like any of the other GMG function, except that you pass Chmy Scalar Fields and a Chmy grid object.
@@ -131,7 +131,7 @@ MPI.Finalize()
 # mpiexecjl -n 4 --project=. julia Tutorial_Chmy_MPI.jl
 # ```
 
-# The full file can be downloaded [here](../../../tutorials/Tutorial_Chmy_MPI.jl)
+# The full file can be downloaded [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/main/tutorials/Tutorial_Chmy_MPI.jl)
 
 #src Note: The markdown page is generated using:
 #src Literate.markdown("tutorials/Tutorial_Chmy_MPI.jl","docs/src/man",keepcomments=true, execute=false, codefence = "```julia" => "```")
