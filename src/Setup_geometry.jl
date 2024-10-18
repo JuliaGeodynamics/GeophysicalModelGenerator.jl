@@ -16,7 +16,7 @@ export  add_box!, add_sphere!, add_ellipsoid!, add_cylinder!, add_layer!, add_po
         ConstantTemp, LinearTemp, HalfspaceCoolingTemp, SpreadingRateTemp, LithosphericTemp, LinearWeightedTemperature,
         McKenzie_subducting_slab,
         ConstantPhase, LithosphericPhases,
-        Trench, compute_slab_surface
+        Trench, compute_slab_surface,
         compute_thermal_structure, compute_phase
 
 """
