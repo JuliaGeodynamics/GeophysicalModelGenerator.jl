@@ -17,12 +17,12 @@ function is_surface(surf::AbstractGeneralGrid)
     return issurf
 end
 
-function  +(a::_T, b::_T) where _T<:AbstractGeneralGrid 
+function  +(a::_T, b::_T) where _T<:AbstractGeneralGrid
     @assert size(a) == size(b)
     return _addSurfaces(a,b)
 end
 
-function  -(a::_T, b::_T) where _T<:AbstractGeneralGrid 
+function  -(a::_T, b::_T) where _T<:AbstractGeneralGrid
     @assert size(a) == size(b)
     return _subtractSurfaces(a,b)
 end
@@ -71,11 +71,11 @@ This drapes fields of a data set `Data` on the topography `Topo`
 function drape_on_topo(Topo::GeoData, Data::GeoData)
     @assert is_surface(Topo)
     @assert is_surface(Data)
-   
+
     Lon,Lat,_   =   lonlatdepth_grid( Topo.lon.val[:,1,1], Topo.lat.val[1,:,1],Topo.depth.val[1,1,:]);
 
     # use nearest neighbour to interpolate data
-    idx         =   nearest_point_indices(Lon,Lat, vec(Data.lon.val), vec(Data.lat.val) ); 
+    idx         =   nearest_point_indices(Lon,Lat, vec(Data.lon.val), vec(Data.lat.val) );
 
     idx_out     =   findall(  (Lon .<  minimum(Data.lon.val)) .| (Lon .>  maximum(Data.lon.val)) .|
                               (Lat .<  minimum(Data.lat.val)) .| (Lat .>  maximum(Data.lat.val)) )
@@ -137,7 +137,7 @@ Drapes Cartesian Data on topography
 function drape_on_topo(Topo::CartData, Data::CartData)
     @assert is_surface(Topo)
     @assert is_surface(Data)
-    
+
     Topo_lonlat = GeoData(ustrip.(Topo.x.val),ustrip.(Topo.y.val), ustrip.(Topo.z.val), Topo.fields )
     Data_lonlat = GeoData(ustrip.(Data.x.val),ustrip.(Data.y.val), ustrip.(Data.z.val), Data.fields )
 
@@ -152,12 +152,12 @@ end
 """
     surf_new = fit_surface_to_points(surf::GeoData, lon_pt::Vector, lat_pt::Vector, depth_pt::Vector)
 
-This fits the `depth` values of the surface `surf` to the `depth` value of the closest-by-points in (`lon_pt`,`lat_pt`, `depth_pt`) 
+This fits the `depth` values of the surface `surf` to the `depth` value of the closest-by-points in (`lon_pt`,`lat_pt`, `depth_pt`)
 
 """
 function fit_surface_to_points(surf::GeoData, lon_pt::Vector, lat_pt::Vector, depth_pt::Vector)
     @assert is_surface(surf)
-    
+
     idx = nearest_point_indices(NumValue(surf.lon),NumValue(surf.lat),  lon_pt, lat_pt);
     depth = NumValue(surf.depth)
     depth[idx] .= depth_pt[idx];
@@ -171,12 +171,12 @@ end
 """
     surf_new = fit_surface_to_points(surf::CartData, lon_pt::Vector, lat_pt::Vector, depth_pt::Vector)
 
-This fits the `depth` values of the surface `surf` to the `depth` value of the closest-by-points in (`lon_pt`,`lat_pt`, `depth_pt`) 
+This fits the `depth` values of the surface `surf` to the `depth` value of the closest-by-points in (`lon_pt`,`lat_pt`, `depth_pt`)
 
 """
 function fit_surface_to_points(surf::CartData, X_pt::Vector, Y_pt::Vector, Z_pt::Vector)
     @assert is_surface(surf)
-    
+
     idx = nearest_point_indices(NumValue(surf.x),NumValue(surf.y),  X_pt[:], Y_pt[:]);
     depth = NumValue(surf.z)
     depth = Z_pt[idx]
@@ -197,7 +197,7 @@ This can be used, for example, to mask points above/below the Moho in a volumetr
 
 # Example
 First we create a 3D data set and a 2D surface:
-```julia
+```julia-repl
 julia> Lon,Lat,Depth   =   lonlatdepth_grid(10:20,30:40,(-300:25:0)km);
 julia> Data            =   Depth*2;
 julia> Data_set3D      =   GeoData(Lon,Lat,Depth,(Depthdata=Data,LonData=Lon))
@@ -217,7 +217,7 @@ julia> Data_Moho       =   GeoData(Lon,Lat,Depth+Lon*km, (MohoDepth=Depth,))
     fields: (:MohoDepth,)
 ```
 Next, we intersect the surface with the data set:
-```julia
+```julia-repl
 julia> Above       =   above_surface(Data_set3D, Data_Moho);
 ```
 Now, `Above` is a boolean array that is true for points above the surface and false for points below and at the surface.
@@ -337,7 +337,7 @@ end
 
 Interpolates a 3D data set `V` on a surface defined by `Surf`.
 # Example
-```julia
+```julia-repl
 julia> Data
 ParaviewData
   size  : (33, 33, 33)

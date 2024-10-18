@@ -70,9 +70,17 @@ Saved file: Topo_Alps.vts
 
 ````
 
-If we open both datasets in Paraview, we see this (after giving some color to the topography):
+If we open both datasets in Paraview, and changing both files from outline/solid colors to the corresponing data field, we see:
+![Basic_Tutorial_1](../assets/img/Basic_Tutorial_Paraview_1.png)
+Now we can change the colormap on the right side, marked by a red square. For topography we use the `Oleron` colormap, which you can download [here](https://www.fabiocrameri.ch/colourmaps/).
+For the tomography we use the `Roma` scientific colormap. You will now see a blue'ish box of the tomography, this is not the best color to visualise the data. Let's invert the colormap by clicking on the item marked by the blue arrow.
+Now we see the tomography in a more intuitive way, but the topography is not visible anymore. We can change the opacity of the tomography by setting a value in the `Opacity` field marked by the red square.
+Note that you will need to adapt the range of the topography colormap as the change in color is not at 0.0. By clicking on the item marked by the black arrow, you can set your desired range.
+
+![Basic_Tutorial_1](../assets/img/Basic_Tutorial_Paraview_2.png)
+
+Now you should see somthing like this:
 ![Basic_Tutorial_1](../assets/img/Basic_Tutorial_1.png)
-Note that I use the `Oleron` scientific colormap for the tomography which you can download [here](https://www.fabiocrameri.ch/colourmaps/)
 
 ### 2. Extract subset of data
 As you can see the tomographic data covers a much larger area than the Alps itself, and in most of that area there is no data.
@@ -89,7 +97,7 @@ Saved file: Tomo_Alps.vts
 
 ````
 
-Which looks like:
+After loading the new data again in paraview, switching to the proper data field and adjusting the colormap, you should see somthing like this:
 ![Basic_Tutorial_2](../assets/img/Basic_Tutorial_2.png)
 
 ### 3. Create cross sections
@@ -128,7 +136,7 @@ GeoData
 ````
 
 In general, you can get help info for all functions with `?`:
-```julia
+```julia-repl
 help?> cross_section
 search: cross_section cross_section_volume cross_section_points cross_section_surface flatten_cross_section
 
@@ -198,8 +206,12 @@ Saved file: data_200km.vts
 
 ````
 
+After loading the data in Paraview, you can use the `Clip` tool on the topography to only show the topography above sealevel and make it 60% transparent. Also adjust the colormap of the tomography to 5.0 and -5.0
+
+![Basic_Tutorial_3](../assets/img/Basic_Tutorial_Paraview_3.png)
+
+After doing all these steps, you should see something like this:
 ![Basic_Tutorial_3](../assets/img/Basic_Tutorial_3.png)
-In creating this image, I used the `Clip` tool of Paraview to only show topography above sealevel and made it 50% transparent.
 
 ### 4. Cartesian data
 As you can see, the curvature or the Earth is taken into account here. Yet, for many applications it is more convenient to work in Cartesian coordinates (kilometers) rather then in geographic coordinates.

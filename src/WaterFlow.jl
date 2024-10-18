@@ -19,7 +19,7 @@ function spacing(lon,lat)
      dlat[:,2:end-1] = (lat.val[:,3:end,1] - lat.val[:,1:end-2,1])/2
      dlat[:,1] = dlat[:,2]
      dlat[:,end] = dlat[:,end-1]
-    
+
     return dlon, dlat
 end
 
@@ -39,26 +39,26 @@ end
 
 
 """
-    Topo_water, sinks, pits, bnds  = waterflows(Topo::GeoData; 
+    Topo_water, sinks, pits, bnds  = waterflows(Topo::GeoData;
         flowdir_fn=WhereTheWaterFlows.d8dir_feature, feedback_fn=nothing, drain_pits=true, bnd_as_sink=true,
         rainfall = nothing,
         minsize=300)
 
 Takes a GMG GeoData object of a topographic map and routes water through the grid. Optionally,
-you can specify `rainfall` in which case we accumulate the rain as specified in this 2D array instead of the cellarea. 
+you can specify `rainfall` in which case we accumulate the rain as specified in this 2D array instead of the cellarea.
 This allows you to, for example, sum, up water if you have variable rainfall in the area.
 The other options are as in the `waterflows` function of the package `WhereTheWaterFlows`.
 
 Example
 ===
-```julia
+```julia-repl
 # Download some topographic data
 julia> Topo = import_topo([6.5,7.3,50.2,50.6], file="@earth_relief_03s");
 
 # Flow the water through the area:
 julia> Topo_water, sinks, pits, bnds  = waterflows(Topo)
 julia> Topo_water
-GeoData 
+GeoData
   size      : (961, 481, 1)
   lon       ϵ [ 6.5 : 7.3]
   lat       ϵ [ 50.2 : 50.59999999999999]
@@ -68,7 +68,7 @@ GeoData
 ```
 
 """
-function waterflows(Topo::GeoData, flowdir_fn= WhereTheWaterFlows.d8dir_feature; feedback_fn=nothing, drain_pits=true, bnd_as_sink=true, rainfall=nothing, minsize=300) 
+function waterflows(Topo::GeoData, flowdir_fn= WhereTheWaterFlows.d8dir_feature; feedback_fn=nothing, drain_pits=true, bnd_as_sink=true, rainfall=nothing, minsize=300)
 
     cellarea = cell_area(Topo)
     cellarea_m2 = cellarea
@@ -96,10 +96,10 @@ function waterflows(Topo::GeoData, flowdir_fn= WhereTheWaterFlows.d8dir_feature;
     largest_catchment = catchment_large .== catchment_large[id_max]
     largest_area = copy(area)
     largest_area[.!largest_catchment] .= NaN
-    
+
     log10_area = log10.(area)
     log10_largest_area = log10.(largest_area)
 
-    Topo_water =  addfield(Topo,(;area, slen, dir, nout, nin, c, cellarea_m2, catchment_large, log10_area, largest_catchment, largest_area, log10_largest_area))                        
-    return Topo_water, sinks, pits, bnds 
+    Topo_water =  addfield(Topo,(;area, slen, dir, nout, nin, c, cellarea_m2, catchment_large, log10_area, largest_catchment, largest_area, log10_largest_area))
+    return Topo_water, sinks, pits, bnds
 end
