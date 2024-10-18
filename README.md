@@ -10,7 +10,7 @@
 
 Creating consistent 3D images of geophysical and geological datasets and turning that into an input model for geodynamic simulations is often challenging. The aim of this package is to help with this, by providing a number of routines to easily import data and create a consistent 3D visualisation from it in the VTK-toolkit format, which can for example be viewed with [Paraview](https://www.paraview.org). In addition, we provide a range of tools that helps to generate input models to perform geodynamic simulations and import the results of such simulations back into julia.
 
-A short summary of the package and its features are given below. For a detailed description of the package and to learn how to use it, have a look at the [documentation](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev/). 
+A short summary of the package and its features are given below. For a detailed description of the package and to learn how to use it, have a look at the [documentation](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev/).
 
 ![README_img](./docs/src/assets/img/Readme_pic.png)
 ### Contents
@@ -43,17 +43,17 @@ The best way to learn how to use this is to install the package (see below) and 
 ## Installation
 First, you need to install julia on your machine. We recommend to use the binaries from [https://julialang.org](https://julialang.org).
 Next, start julia and switch to the julia package manager using `]`, after which you can add the package.
-```julia
+```julia-repl
 julia> ]
-(@v1.10) pkg> add GeophysicalModelGenerator
+(@1.11) pkg> add GeophysicalModelGenerator
 ```
 You can test whether it works on your system with
-```julia
+```julia-repl
 julia> ]
-(@v1.10) pkg> test GeophysicalModelGenerator
+(@1.11) pkg> test GeophysicalModelGenerator
 ```
 and use it with
-```julia
+```julia-repl
 julia> using GeophysicalModelGenerator
 ```
 
