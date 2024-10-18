@@ -21,7 +21,7 @@ Topo_Alps = load_GMG("https://zenodo.org/records/10738510/files/AlpsTopo.jld2?do
 # We can write this to disk as well
 write_paraview(Topo_Alps,"Topo_Alps")
 
-# If we open both datasets in Paraview, and changing both files from outline/solid colors to the corresponing data field, we see:
+# If we open both datasets in Paraview, and changing both files from outline/solid colors to the corresponding data field, we see:
 # ![Basic_Tutorial_1](../assets/img/Basic_Tutorial_Paraview_1.png)
 # Now we can change the colormap on the right side, marked by a red square. For topography we use the `Oleron` colormap, which you can download [here](https://www.fabiocrameri.ch/colourmaps/).
 # For the tomography we use the `Roma` scientific colormap. You will now see a blue'ish box of the tomography, this is not the best color to visualise the data. Let's invert the colormap by clicking on the item marked by the blue arrow.
@@ -30,7 +30,7 @@ write_paraview(Topo_Alps,"Topo_Alps")
 
 # ![Basic_Tutorial_1](../assets/img/Basic_Tutorial_Paraview_2.png)
 
-# Now you should see somthing like this:
+# Now you should see something like this:
 # ![Basic_Tutorial_1](../assets/img/Basic_Tutorial_1.png)
 #
 # ### 2. Extract subset of data
@@ -40,7 +40,7 @@ Tomo_Alps = extract_subvolume(Tomo_Alps_full,Lon_level=(4,20),Lat_level=(36,50),
 
 write_paraview(Tomo_Alps,"Tomo_Alps");
 
-# After loading the new data again in paraview, switching to the proper data field and adjusting the colormap, you should see somthing like this:
+# After loading the new data again in paraview, switching to the proper data field and adjusting the colormap, you should see something like this:
 # ![Basic_Tutorial_2](../assets/img/Basic_Tutorial_2.png)
 
 # ### 3. Create cross sections
