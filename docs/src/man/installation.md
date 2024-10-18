@@ -30,7 +30,7 @@ julia>
 
 From the julia prompt, you start the package manager by typing `]`:
 ```julia-repl
-(@1.11) pkg>
+(@1.6) pkg>
 ```
 And you return to the command line with a backspace.
 
@@ -97,7 +97,7 @@ This will automatically install various other packages it relies on (using the c
 If you want, you can test if it works on your machine by running the test suite in the package manager:
 ```julia-repl
 julia> ]
-(@1.11) pkg> test GeophysicalModelGenerator
+(@1.6) pkg> test GeophysicalModelGenerator
 ```
 Note that we run these tests automatically on Windows, Linux and Mac every time we add a new feature to GeophysicalModelGenerator (using different julia versions). This Continuous Integration (CI) ensures that new features do not break others in the package. The results can be seen [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/actions).
 
@@ -106,7 +106,7 @@ The installation of `GMG` only needs to be done once, and will precompile the pa
 If you, at a later stage, want to upgrade to the latest version of `GMG`, you can type:
 ```julia-repl
 julia> ]
-(@1.11) pkg> update GeophysicalModelGenerator
+(@1.6) pkg> update GeophysicalModelGenerator
 ```
 
 You can load GeophysicalModelGenerator, for example to create cross-sections, with:
