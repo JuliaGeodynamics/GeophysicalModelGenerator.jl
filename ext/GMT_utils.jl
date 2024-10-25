@@ -88,9 +88,7 @@ function import_topo(limits; file::String="@earth_relief_01m", maxattempts=5)
     end
     attempt += 1
   end
-  if isempty(G)
-    error("Could not download GMT topography data")
-  end
+  (@isdefined G) || error("Could not download GMT topography data")
 
   # Transfer to GeoData
   nx, ny              = size(G.z,2), size(G.z,1)
