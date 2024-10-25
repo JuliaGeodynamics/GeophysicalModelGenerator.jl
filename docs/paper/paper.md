@@ -22,7 +22,7 @@ authors:
     affiliation: 3
   - name: Luca de Siena
     orcid: 0000-0002-3615-5923
-    affiliation: 4
+    affiliation: 4,1
   - name: Jacob Frasukiewicz
     orcid: 0009-0002-5049-4259
     affiliation: 1
@@ -49,7 +49,7 @@ authors:
     affiliation: 2
 
 affiliations:
- - name: Johannes Gutenberg University Mainz, Germany
+ - name: Johannes Gutenberg-University Mainz, Germany
    index: 1
  - name: University of Bayreuth, Germany
    index: 2
