@@ -22,7 +22,7 @@ authors:
     affiliation: 3
   - name: Luca de Siena
     orcid: 0000-0002-3615-5923
-    affiliation: 4,1
+    affiliation: "4,1"
   - name: Jacob Frasukiewicz
     orcid: 0009-0002-5049-4259
     affiliation: 1
@@ -42,7 +42,7 @@ authors:
     orcid: 0009-0004-9873-9774
     affiliation: 1
   - name: Arne Spang
-    orcid: 0000-0002-6107-0403
+    orcid: 
     affiliation: 2
   - name: Tatjana Weiler
     #orcid: 0000-0002-6107-0403
