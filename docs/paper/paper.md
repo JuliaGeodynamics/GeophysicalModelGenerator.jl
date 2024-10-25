@@ -176,7 +176,7 @@ julia> Tomo_rect = project_CartData(Tomo_rect, Tomo_Alps, proj);
 julia> write_paraview(Tomo_rect,"Tomo_rect");
 julia> write_paraview(Topo_rect,"Topo_rect");
 ```
-We can now use the built-in tools of Paraview to visualise the data (see \autoref{fig:basic} b), and use this as inspiration to create an initial numerical model setup. It is also possible to interpolate other seismic tomography datasets to the same grid and subsequently compute a _votemap_ to count in how many tomographic models a specific seismic anomaly is present [see, e.g., @Shephard_Matthews_Hosseini_Domeier_2017].
+We can now use the built-in tools of Paraview to visualise the data (see \autoref{fig:basic} b), and use this as inspiration to create an initial numerical model setup. It is also possible to interpolate other seismic tomography datasets to the same grid and subsequently compute a _votemap_ to count how many tomographic models contain a specific seismic anomaly [see, e.g., @Shephard_Matthews_Hosseini_Domeier_2017].
 
 # Examples of usage
 `GeophysicalModelGenerator.jl` comes with build-in (CI/CD) tests and [tutorials](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev) that explain the most important use cases, from importing data to generating input model setups for numerical simulations. In the following, we present a number of examples that illustrate various aspects of the package. Many additional tutorials are available in the online documentation.
@@ -208,6 +208,6 @@ In `Tutorial_NumericalModel_3D.jl`, users learn how to generate a 3D geodynamic 
 ![Example of a geodynamic setup of a subducting oceanic plate beneath a continental lithosphere with a smoothly bending slab. \label{fig:slab3d}](../src/assets/img/Mechanical3D_Tutorial_2.png){ width=100% }
 
 # Acknowledgements
-We acknowledge funding from ERC Consolidator Grant 771143 (MAGMA) by the German Ministry of Science and Education (BMBF) as part of project DEGREE, by the CHEESE-2p Center of Excellence (co-funded by both EuroHPC-JU and the BMBF), by the German Research Foundation (DFG grants TH2076/7-1 and KA3367/10-1) as  part of the SPP 2017 4DMB project project, and by DFG Emmy Noether grant TH2076/8-1.
+We acknowledge funding by 1) the European Research Council as part of Consolidator Grant 771143 (MAGMA), 2) the German Research Foundation through DFG grants KA3367/10-1, TH2076/7-1 (both part of the SPP 2017 4D-MB project) and Emmy Noether grant TH2076/8-1, 3) the German Ministry of Science and Education (BMBF) through project DEGREE, and 4) by the CHEESE-2p Center of Excellence, co-funded by both EuroHPC-JU and the BMBF. 
 
 # References
