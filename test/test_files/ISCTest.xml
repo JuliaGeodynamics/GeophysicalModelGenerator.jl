@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<q:quakeml xmlns:q="http://quakeml.org/xmlns/quakeml/1.2" xmlns="http://quakeml.org/xmlns/bed/1.2">
+  <eventParameters publicID="smi:ISCEHB/bulletin">
+    <creationInfo>
+      <agencyID>ISC</agencyID>
+      <creationTime>2024-03-19T09:56:26</creationTime>
+    </creationInfo>
+    <description>ISC-EHB Bulletin</description>
+    <event publicID="smi:ISCEHB/evid=610803926">
+      <preferredOriginID>smi:ISCEHB/origid=608918847</preferredOriginID>
+      <description>
+        <text>Sicily</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <type>earthquake</type>
+      <typeCertainty>known</typeCertainty>
+      <creationInfo>
+        <agencyID>ISC-EHB</agencyID>
+        <author>ISC-EHB</author>
+      </creationInfo>
+      <origin publicID="smi:ISCEHB/origid=608918847">
+        <time>
+          <value>2002-09-06T01:21:29.08Z</value>
+        </time>
+        <latitude>
+          <value>38.3200</value>
+        </latitude>
+        <longitude>
+          <value>13.7240</value>
+        </longitude>
+        <depth>
+          <value>13000.0</value>
+        </depth>
+        <depthType>operator assigned</depthType>
+        <quality>
+          <usedPhaseCount>769</usedPhaseCount>
+          <associatedStationCount>743</associatedStationCount>
+          <standardError>0.9500</standardError>
+        </quality>
+        <creationInfo>
+          <author>ISC-EHB</author>
+          <agencyID>ISC-EHB</agencyID>
+        </creationInfo>
+        <evaluationMode>manual</evaluationMode>
+        <evaluationStatus>reviewed</evaluationStatus>
+        <originUncertainty>
+          <preferredDescription>uncertainty ellipse</preferredDescription>
+          <minHorizontalUncertainty>1700</minHorizontalUncertainty>
+          <maxHorizontalUncertainty>2600</maxHorizontalUncertainty>
+          <azimuthMaxHorizontalUncertainty>20.0</azimuthMaxHorizontalUncertainty>
+        </originUncertainty>
+      </origin>
+      <magnitude publicID="smi:ISCEHB/magid=5498826">
+        <mag>
+          <value>5.80</value>
+        </mag>
+        <type>mb</type>
+        <originID>smi:ISCEHB/origid=608918847</originID>
+        <stationCount>118</stationCount>
+        <creationInfo>
+          <author>ISC</author>
+        </creationInfo>
+      </magnitude>
+      <magnitude publicID="smi:ISCEHB/magid=5498827">
+        <mag>
+          <value>5.50</value>
+        </mag>
+        <type>MS</type>
+        <originID>smi:ISCEHB/origid=608918847</originID>
+        <stationCount>123</stationCount>
+        <creationInfo>
+          <author>ISC</author>
+        </creationInfo>
+      </magnitude>
+      <magnitude publicID="smi:ISCEHB/magid=3622904">
+        <mag>
+          <value>5.93</value>
+        </mag>
+        <type>MW</type>
+        <originID>smi:ISCEHB/origid=608918847</originID>
+        <stationCount>27</stationCount>
+        <creationInfo>
+          <author>HRVD</author>
+        </creationInfo>
+      </magnitude>
+      <preferredMagnitudeID>smi:ISCEHB/magid=5498827</preferredMagnitudeID>
+    </event>
+  </eventParameters>
+</q:quakeml>

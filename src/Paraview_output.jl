@@ -194,4 +194,174 @@ function movie_paraview(; name="Movie", pvd=nothing, Finalize::Bool=false, Initi
 end
 
     
-   
+"""
+    write_paraview(DataSet::Q1Data, filename="test"; directory=nothing, pvd=nothing, time=nothing, verbose=true)
+Writes a `Q1Data` dataset to disk, which has cell and vertex field
+"""
+function write_paraview(DataSet::Q1Data, filename="test"; directory=nothing, pvd=nothing, time=nothing, verbose=true)
+
+    # Error checking
+    if !(length(size(DataSet.x))==length(size(DataSet.y))==length(size(DataSet.z)))
+        error("The X/Y/Z should be 3 dimensional")
+    end
+
+    # Create directory if required
+    if !isnothing(directory)
+        mkpath(directory)
+        filename = joinpath(directory, filename);   # add directory name to pathname
+    end
+
+    # Create VT* file 
+    vtkfile =   vtk_grid(filename, ustrip.(DataSet.x.val), ustrip.(DataSet.y.val), ustrip.(DataSet.z.val)) 
+ 
+    # Add vertex data fields to VT* file
+    names       =   String.(collect(keys(DataSet.fields))); # this is how to retrieve the names of the data fields
+    for (index, name) in enumerate(names)
+    
+        if typeof(DataSet.fields[index])<: Tuple
+            # if we do a tuple of velocities, it appears difficult to deal with units
+            # This will require some more work
+            unit_name = ""
+            Data       =    DataSet.fields[index]  
+            if unit(Data[1][1])!=NoUnits
+                error("potential error as vector data fields have units; please save them with no units!")
+            end
+        else
+            unit_name = unit(DataSet.fields[index][1])
+            Data      = ustrip.(DataSet.fields[index])
+        end
+    
+        name_with_units             = join([name,"  [$(unit_name)]"]); # add units to the name of the field
+        #if PointsData    
+        #    vtkfile[name_with_units, VTKPointData()]    = Data[:];                        
+        #else
+            vtkfile[name_with_units]    = Data;                        
+        #end
+    end
+
+    # Add cell data fields to VT* file
+    names       =   String.(collect(keys(DataSet.cellfields))); # this is how to retrieve the names of the data fields
+    for (index, name) in enumerate(names)
+
+        if typeof(DataSet.cellfields[index])<: Tuple
+            # if we do a tuple of velocities, it appears difficult to deal with units
+            # This will require some more work
+            unit_name = ""
+            Data       =    DataSet.cellfields[index]  
+            if unit(Data[1][1])!=NoUnits
+                error("potential error as vector data fields have units; please save them with no units!")
+            end
+        else
+            unit_name = unit(DataSet.cellfields[index][1])
+            Data      = ustrip.(DataSet.cellfields[index])
+        end
+
+        name_with_units             = join([name,"  [$(unit_name)]"]); # add units to the name of the field
+        vtkfile[name_with_units, VTKCellData()]    = Data[:];                        
+        
+    end
+
+
+    outfiles = vtk_save(vtkfile);
+    if verbose
+        println("Saved file: $(outfiles[1])")
+    end
+    if !isnothing(pvd)
+        # Write movie 
+        pvd[time] = vtkfile
+    end
+
+    return pvd
+end
+
+
+
+
+"""
+    write_paraview(DataSet::FEData, filename="test"; directory=nothing, pvd=nothing, time=nothing, verbose=true)
+Writes a `FEData` dataset (general finite element) to disk, which has cell and vertex field
+"""
+function write_paraview(DataSet::FEData, filename="test"; directory=nothing, pvd=nothing, time=nothing, verbose=true)
+
+    # Create directory if required
+    if !isnothing(directory)
+        mkpath(directory)
+        filename = joinpath(directory, filename);   # add directory name to pathname
+    end
+    
+    connectivity = DataSet.connectivity
+    if size(DataSet.connectivity,1) == 4
+        celltype = VTKCellTypes.VTK_TETRA
+
+    elseif size(DataSet.connectivity,1) == 8
+        celltype = VTKCellTypes.VTK_HEXAHEDRON
+
+        # we need to reorder this as pTatin uses a different ordering than VTK
+        id_reorder = [1,2,4,3,5,6,8,7]
+        connectivity = connectivity[id_reorder,:]
+    else
+        error("This element is not yet implemented")
+    end
+    
+    # Create VTU file 
+    points = DataSet.vertices
+    cells  = MeshCell[];
+    for i = 1: size(connectivity,2)
+        push!(cells, MeshCell(celltype, connectivity[:,i]))
+    end
+
+    vtkfile = vtk_grid(filename, points, cells)
+
+    # Add vertex data fields to VT* file
+    names       =   String.(collect(keys(DataSet.fields))); # this is how to retrieve the names of the data fields
+    for (index, name) in enumerate(names)
+     
+        if typeof(DataSet.fields[index])<: Tuple
+            # if we do a tuple of velocities, it appears difficult to deal with units
+            # This will require some more work
+            unit_name = ""
+            Data       =    DataSet.fields[index]  
+            if unit(Data[1][1])!=NoUnits
+                error("potential error as vector data fields have units; please save them with no units!")
+            end
+        else
+            unit_name = unit(DataSet.fields[index][1])
+            Data      = ustrip.(DataSet.fields[index])
+        end
+     
+        name_with_units             = join([name,"  [$(unit_name)]"]); # add units to the name of the field
+        vtkfile[name_with_units]    = Data;                        
+    end
+
+    # Add cell data fields to VT* file
+    names       =   String.(collect(keys(DataSet.cellfields))); # this is how to retrieve the names of the data fields
+    for (index, name) in enumerate(names)
+
+        if typeof(DataSet.cellfields[index])<: Tuple
+            # if we do a tuple of velocities, it appears difficult to deal with units
+            # This will require some more work
+            unit_name = ""
+            Data       =    DataSet.cellfields[index]  
+            if unit(Data[1][1])!=NoUnits
+                error("potential error as vector data fields have units; please save them with no units!")
+            end
+        else
+            unit_name = unit(DataSet.cellfields[index][1])
+            Data      = ustrip.(DataSet.cellfields[index])
+        end
+
+        name_with_units             = join([name,"  [$(unit_name)]"]); # add units to the name of the field
+        vtkfile[name_with_units, VTKCellData()]    = Data[:];                        
+    end
+
+    outfiles = vtk_save(vtkfile);
+    if verbose
+        println("Saved file: $(outfiles[1])")
+    end
+    if !isnothing(pvd)
+        # Write movie 
+        pvd[time] = vtkfile
+    end
+
+    return pvd
+end

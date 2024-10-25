@@ -15,7 +15,7 @@ The nice thing about GMT is that it automatically downloads data for you for a c
 
 ```julia
 julia> using GeophysicalModelGenerator, GMT
-julia> Topo = import_topo([4,20,37,49], file="@earth_relief_01m.grd")
+julia> Topo = import_topo([4,20,37,49], file="@earth_relief_01m")
 GeoData 
   size  : (960, 720, 1)
   lon   ϵ [ 4.0 : 19.983333333333334]
@@ -23,7 +23,9 @@ GeoData
   depth ϵ [ -3.8725 km : 4.2495 km]
   fields: (:Topography,)
 ```
+
 The data is available in different resolutions:
+
 | Dataset                 |   Resolution |   Description                                               |
 |:----------------        | ------------ | ----------------------------------------------------------- |
 | "@earth\_relief\_01s" |	1 arc sec 	 | SRTM tiles (14297 tiles, land only, 60S-60N) [NASA/USGS]    |

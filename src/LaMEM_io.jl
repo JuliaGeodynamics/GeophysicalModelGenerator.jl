@@ -3,6 +3,8 @@ using Printf
 using Glob
 using Interpolations
 
+import Base: show, size
+
 # LaMEM I/O
 #
 # These are routines that help to create a LaMEM marker files from a ParaviewData structure, which can be used to perform geodynamic simulations
@@ -53,6 +55,7 @@ struct LaMEM_grid <: AbstractGeneralGrid
     Yn
     Zn
 end
+size(d::LaMEM_grid) = (d.nump_x,d.nump_y,d.nump_z)
 
 """
     ParaviewData(Grid::LaMEM_grid, fields::NamedTuple)
@@ -94,12 +97,12 @@ Extracts a certain `keyword` from a LaMEM input `file` and convert it to a certa
 Optionally, you can also pass command-line arguments which will override the value read from the input file.
 
 # Example 1:
-```julia
+```julia-repl
 julia> nmark_z = ParseValue_LaMEM_InputFile("SaltModels.dat","nmark_z",Int64)
 ```
 
 # Example 2:
-```julia
+```julia-repl
 julia> nmark_z = ParseValue_LaMEM_InputFile("SaltModels.dat","nmark_z",Int64, args="-nel_x 128 -coord_x -4,4")
 ```
 
@@ -170,7 +173,7 @@ Parses a LaMEM input file and stores grid information in the `Grid` structure.
 Optionally, you can pass LaMEM command-line arguments as well.
 
 # Example 1
-```julia
+```julia-repl
 julia> Grid = read_LaMEM_inputfile("SaltModels.dat")
 LaMEM Grid:
 nel         : (32, 32, 32)
@@ -182,7 +185,7 @@ z           ϵ [-2.0 : 0.0]
 ```
 
 # Example 2 (with command-line arguments)
-```julia
+```julia-repl
 julia> Grid = read_LaMEM_inputfile("SaltModels.dat", args="-nel_x 64 -coord_x -4,4")
 LaMEM Grid:
   nel         : (64, 32, 32)
@@ -820,7 +823,7 @@ end
 Reads a parallel, rectilinear, `*.vts` file with the name `fname` and located in `dir` and create a 3D `Data` struct from it.
 
 # Example
-```julia
+```julia-repl
 julia> Data = read_data_PVTR("Haaksbergen.pvtr", "./Timestep_00000005_3.35780500e-01/")
 ParaviewData
   size  : (33, 33, 33)
@@ -1013,11 +1016,15 @@ function create_partitioning_file(LaMEM_input::String,NumProc::Int64; LaMEM_dir:
 end
 
 """
-    X,Y,Z = coordinate_grids(Data::LaMEM_grid)
+    X,Y,Z = coordinate_grids(Data::LaMEM_grid; cell=false)
 
 Returns 3D coordinate arrays
 """
-function coordinate_grids(Data::LaMEM_grid)
+function coordinate_grids(Data::LaMEM_grid; cell=false)
+    X,Y,Z = Data.X, Data.Y, Data.Z
+    if cell
+        X,Y,Z = average_q1(X),average_q1(Y), average_q1(Z)
+    end
 
-    return Data.X, Data.Y, Data.Z
+    return X,Y,Z
 end

@@ -15,7 +15,7 @@ Cart     = CartData(X,Y,Z, (Data=Z,))
 
 # initialize phase and temperature matrix
 Phase   = ones(Int32,size(X))
-Temp    = ones(Float64,size(X))*1350
+Temp    = ones(Float64,size(X)) * 1350
 
 # add different phases: crust->2, Mantle Lithosphere->3 Mantle->1
 add_box!(Phase, Temp, Cart; xlim=(0.0,800.0),ylim=(0.0,800.0), zlim=(-800.0,0.0), phase = LithosphericPhases(Layers=[15 30 100 800], Phases=[2 3 1 5], Tlab=1300 ), T=LinearTemp(Ttop=20, Tbot=1600) )#T=HalfspaceCoolingTemp(Tsurface=20.0, Tmantle=1350, Age=120, Adiabat=0.4)

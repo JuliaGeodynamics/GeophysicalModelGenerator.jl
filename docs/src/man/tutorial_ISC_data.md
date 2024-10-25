@@ -10,7 +10,7 @@ You can get data from the ISC catalogue here:
 The catalogue will give you an on screen CSV output that will then have to be copied to a file of your choice (here we will call it `ISC1.dat`). Do that and start julia from the directory where it was downloaded.
 
 #### 2. Read data into Julia
-The main data-file, `ISC1.dat`, has 23 lines of comments (indicated with `#`), after which the data starts. We can use the julia package [https://github.com/JuliaData/CSV.jl](CSV.jl) to read in the data, and tell it that the data is separated by `,`.
+The main data-file, `ISC1.dat`, has 23 lines of comments (indicated with `#`), after which the data starts. We can use the julia package [CSV.jl](https://github.com/JuliaData/CSV.jl) to read in the data, and tell it that the data is separated by `,`.
 ```julia-repl
 julia> using CSV, GeophysicalModelGenerator
 julia> data_file = CSV.File("ISC1.dat",datarow=24,header=false,delim=',')
