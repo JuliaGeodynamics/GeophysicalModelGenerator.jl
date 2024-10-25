@@ -68,8 +68,8 @@ julia> write_paraview(Topo,"Topo_Alps")
 function import_topo(limits; file::String="@earth_relief_01m", maxattempts=5)
 
   # Correct if negative values are given (longitude coordinates that are west)
-  ind = limits[1:2] .< 0
-    
+  ind = findall(limits[1:2] .< 0); 
+
   if (limits[1] < 0) && (limits[2] < 0)
       limits[ind] .= 360 .+ limits[ind]
       limits[1:2]  = sort(limits[1:2])   
@@ -88,9 +88,7 @@ function import_topo(limits; file::String="@earth_relief_01m", maxattempts=5)
     end
     attempt += 1
   end
-  if isempty(G)
-    error("Could not download GMT topography data")
-  end
+  (@isdefined G) || error("Could not download GMT topography data")
 
   # Transfer to GeoData
   nx, ny              = size(G.z,2), size(G.z,1)

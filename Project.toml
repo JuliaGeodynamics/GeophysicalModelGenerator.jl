@@ -40,8 +40,8 @@ GridapGmsh = "3025c34a-b394-11e9-2a55-3fee550c04c8"
 [extensions]
 Chmy_utils = "Chmy"
 GLMakie_Visualisation = "GLMakie"
-GMT_utils = "GMT"
 Gmsh_utils = "GridapGmsh"
+GMT_utils = "GMT"
 
 [compat]
 Chmy = "0.1.20"
@@ -51,19 +51,19 @@ FFMPEG = "0.4"
 FileIO = "1"
 GDAL_jll = "300.900.0 - 301.901.0"
 GLMakie = "0.8, 0.9, 0.10"
-GMT = "1.0 - 1.14"
 GeoParams = "0.2 - 0.6"
 Geodesy = "1"
 GeometryBasics = "0.1 - 0.4"
 Glob = "1.2 - 1.3"
+GMT = "1"
 GridapGmsh = "0.5 - 0.7"
 ImageIO = "0.1 - 0.6"
 Interpolations = "0.14, 0.15"
 JLD2 = "0.4, 0.5"
 LightXML = "0.8, 0.9"
 MeshIO = "0.1 - 0.4"
-NearestNeighbors = "0.2 - 0.4"
 NCDatasets = "0.14"
+NearestNeighbors = "0.2 - 0.4"
 Parameters = "0.9 - 0.12"
 SpecialFunctions = "1.0, 2"
 StaticArrays = "1"
@@ -74,10 +74,9 @@ julia = "1.9"
 [extras]
 Chmy = "33a72cf0-4690-46d7-b987-06506c2248b9"
 GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
-GMT = "5752ebe1-31b9-557e-87aa-f909b540aa54"
 KernelAbstractions = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
 StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "GMT", "StableRNGs", "GridapGmsh", "Chmy","KernelAbstractions"]
+test = ["Test", "GMT", "StableRNGs", "GridapGmsh", "Chmy", "KernelAbstractions"]
