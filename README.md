@@ -77,7 +77,7 @@ If you want your data be included here as well, give us an email (or even better
 You are very welcome to request new features and point out bugs by opening an issue. You can also help by adding features and creating a pull request.
 
 ## Citing
-If you find this package useful, please cite out paper on this work:
+If you find this package useful, please cite this paper:
 
 Kaus B.J.P., Thielmann M., Aellig P., De Montserrat A., De Siena L., Frasunkiewicz J., Fuchs L., Piccolo A., Ranocha H., Riel N., Schuler C., Spang A., Weiler T. (2024).  GeophysicalModelGenerator.jl: A Julia package to visualise geoscientific data and create numerical model setups. *Journal of Open Source Software*. 9(102), 6763. https://doi.org/10.21105/joss.06763.
 
