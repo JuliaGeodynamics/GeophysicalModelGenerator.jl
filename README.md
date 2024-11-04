@@ -5,6 +5,7 @@
 [![Build Status](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/workflows/CI/badge.svg)](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/actions)
 [![codecov](https://codecov.io/gh/JuliaGeodynamics/GeophysicalModelGenerator.jl/graph/badge.svg?token=2gEdE0nfSh)](https://codecov.io/gh/JuliaGeodynamics/GeophysicalModelGenerator.jl)
 [![DOI](https://zenodo.org/badge/366377223.svg)](https://zenodo.org/doi/10.5281/zenodo.8074345)
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.06763/status.svg)](https://doi.org/10.21105/joss.06763)
 
 <p align="center"><img src="./assets/GMG_Logo_new.png" alt="GeophysicalModelGenerator.jl" width="400"></p>
 
@@ -74,6 +75,12 @@ If you want your data be included here as well, give us an email (or even better
 
 ## Contributing
 You are very welcome to request new features and point out bugs by opening an issue. You can also help by adding features and creating a pull request.
+
+## Citing
+If you find this package useful, please cite out paper on this work:
+
+Kaus B.J.P., Thielmann M., Aellig P., De Montserrat A., De Siena L., Frasunkiewicz J., Fuchs L., Piccolo A., Ranocha H., Riel N., Schuler C., Spang A., Weiler T. (2024).  GeophysicalModelGenerator.jl: A Julia package to visualise geoscientific data and create numerical model setups. *Journal of Open Source Software*. 9(102), 6763. https://doi.org/10.21105/joss.06763.
+
 
 ## Funding
 Development of this software package was funded by the German Research Foundation (DFG grants TH2076/7-1 and KA3367/10-1), which are part of the [SPP 2017 4DMB project](http://www.spp-mountainbuilding.de) project, the DFG Emmy Noether grant TH 2076/8-1, by the European Research Council under grant ERC CoG #771143 - [MAGMA](https://magma.uni-mainz.de) and by the German Ministry of Science and Education (BMBF) as part of project DEGREE. The project was initiated at a [Terrestrial Magmatic Systems - TeMaS](https://temas.uni-mainz.de) workshop with researchers from Frankfurt and Mainz where we realized that it is way too time-consuming to collect and visualise available data of a certain region.
