@@ -11,7 +11,7 @@ El-Sharkawy et al. (2020), *The Slab Puzzle of the Alpine‐Mediterranean Region
 The data is can be downloaded from [https://ds.iris.edu/files/products/emc/emc-files/El-Sharkawy-etal-G3.2020-MeRE2020-Mediterranean-0.0.nc](https://ds.iris.edu/files/products/emc/emc-files/El-Sharkawy-etal-G3.2020-MeRE2020-Mediterranean-0.0.nc). Do that and start julia from the directory where it was downloaded.
 
 #### 2. Read data into Julia
-The main data-file, `El-Sharkawy-etal-G3.2020-MeRE2020-Mediterranean-0.0.nc`, is given as netCDF file. To read in data of this type, it is necessary to load an appropriate package. Here, we will use the [https://github.com/JuliaGeo/NetCDF.jl](NetCDF.jl) package. Download and install the package with:
+The main data-file, `El-Sharkawy-etal-G3.2020-MeRE2020-Mediterranean-0.0.nc`, is given as netCDF file. To read in data of this type, it is necessary to load an appropriate package. Here, we will use the [NetCDF.jl](https://github.com/JuliaGeo/NetCDF.jl) package. Download and install the package with:
  ```julia
 julia> using Pkg
 julia> Pkg.add("NetCDF")

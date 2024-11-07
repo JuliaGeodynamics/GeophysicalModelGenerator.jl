@@ -16,7 +16,7 @@ export  add_box!, add_sphere!, add_ellipsoid!, add_cylinder!, add_layer!, add_po
         ConstantTemp, LinearTemp, HalfspaceCoolingTemp, SpreadingRateTemp, LithosphericTemp, LinearWeightedTemperature,
         McKenzie_subducting_slab,
         ConstantPhase, LithosphericPhases,
-        Trench,
+        Trench, compute_slab_surface,
         compute_thermal_structure, compute_phase
 
 """
@@ -71,7 +71,7 @@ Example
 ========
 
 Example: Box with striped phase and constant temperature & a dip angle of 10 degrees:
-```julia
+```julia-repl
 julia> Grid = read_LaMEM_inputfile("test_files/SaltModels.dat")
 LaMEM Grid:
   nel         : (32, 32, 32)
@@ -175,7 +175,7 @@ Examples
 ========
 
 Example 1) Box with constant phase and temperature & a dip angle of 10 degrees:
-```julia
+```julia-repl
 julia> Grid = read_LaMEM_inputfile("test_files/SaltModels.dat")
 LaMEM Grid:
   nel         : (32, 32, 32)
@@ -194,7 +194,7 @@ julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
 ```
 
 Example 2) Box with halfspace cooling profile
-```julia
+```julia-repl
 julia> Grid = CartData(xyz_grid(-1000:10:1000,0,-660:10:0))
 julia> Phases = zeros(Int32,   size(Grid));
 julia> Temp   = zeros(Float64, size(Grid));
@@ -291,7 +291,7 @@ Examples
 ========
 
 Example 1) Layer with constant phase and temperature
-```julia
+```julia-repl
 julia> Grid = read_LaMEM_inputfile("test_files/SaltModels.dat")
 LaMEM Grid:
   nel         : (32, 32, 32)
@@ -310,7 +310,7 @@ julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
 ```
 
 Example 2) Box with halfspace cooling profile
-```julia
+```julia-repl
 julia> Grid = read_LaMEM_inputfile("test_files/SaltModels.dat")
 julia> Phases = zeros(Int32,   size(Grid.X));
 julia> Temp   = zeros(Float64, size(Grid.X));
@@ -393,7 +393,7 @@ Example
 ========
 
 Sphere with constant phase and temperature:
-```julia
+```julia-repl
 julia> Grid = read_LaMEM_inputfile("test_files/SaltModels.dat")
 LaMEM Grid:
   nel         : (32, 32, 32)
@@ -462,7 +462,7 @@ Example
 ========
 
 Ellipsoid with constant phase and temperature, rotated 90 degrees and tilted by 45 degrees:
-```julia
+```julia-repl
 julia> Grid = read_LaMEM_inputfile("test_files/SaltModels.dat")
 LaMEM Grid:
   nel         : (32, 32, 32)
@@ -534,7 +534,7 @@ Parameters
 ====
 - `Phase` - Phase array (consistent with Grid)
 - `Temp`  - Temperature array (consistent with Grid)
-- `Grid` - Grid structure (usually obtained with read_LaMEM_inputfile)
+- `Grid` - Grid structure (usually obtained with `read_LaMEM_inputfile`)
 - `base` - center coordinate of bottom of cylinder
 - `cap` - center coordinate of top of cylinder
 - `radius` - radius of the cylinder
@@ -547,7 +547,7 @@ Example
 ========
 
 Cylinder with constant phase and temperature:
-```julia
+```julia-repl
 julia> Grid = read_LaMEM_inputfile("test_files/SaltModels.dat")
 LaMEM Grid:
   nel         : (32, 32, 32)
@@ -644,7 +644,7 @@ Example
 
 Polygon with constant phase and temperature:
 
-```julia
+```julia-repl
 julia> Grid = read_LaMEM_inputfile("test_files/SaltModels.dat")
 LaMEM Grid:
   nel         : (32, 32, 32)
@@ -825,7 +825,7 @@ Example
 ========
 
 Cylinder with constant phase and temperature:
-```julia
+```julia-repl
 julia> Grid = read_LaMEM_inputfile("test_files/SaltModels.dat")
 LaMEM Grid:
   nel         : (32, 32, 32)
@@ -1431,12 +1431,12 @@ Thermal structure by McKenzie for a subducted slab that is fully embedded in the
 
 Parameters
 ===
-- Tsurface:     Top T [C]
-- Tmantle:      Bottom T [C]
-- Adiabat:      Adiabatic gradient in K/km
-- v_cm_yr:      Subduction velocity [cm/yr]
-- κ:            Thermal diffusivity [m2/s]
-- it:           Number iterations employed in the harmonic summation
+- `Tsurface`:     Top T [C]
+- `Tmantle`:      Bottom T [C]
+- `Adiabat`:      Adiabatic gradient in K/km
+- `v_cm_yr`:      Subduction velocity [cm/yr]
+- `κ`:            Thermal diffusivity [m2/s]
+- `it`:           Number iterations employed in the harmonic summation
 
 """
 @with_kw_noshow mutable struct McKenzie_subducting_slab <: AbstractThermalStructure
@@ -1458,12 +1458,12 @@ that the bottom of the slab is the coordinate Z=0. Internally the function shift
 Parameters
 
 =============================
-Temp Temperature array
-- `X`    X Array
-- `Y`    Y Array
-- `Z`    Z Array
-- `Phase` Phase array
-- `s`    McKenzie_subducting_slab
+- `Temp`:  Temperature array
+- `X`:    X Array
+- `Y`:    Y Array
+- `Z`:    Z Array
+- `Phase`: Phase array
+- `s`:    `McKenzie_subducting_slab`
 """
 function compute_thermal_structure(Temp, X, Y, Z,Phase, s::McKenzie_subducting_slab)
     @unpack Tsurface, Tmantle, Adiabat, v_cm_yr, κ, it = s
@@ -1525,15 +1525,19 @@ end
     compute_thermal_structure(Temp, X, Y, Z, Phase, s::LinearWeightedTemperature)
 
 Weight average along distance
+
 Do a weight average between two field along a specified direction
-Given a distance {could be any array, from X,Y} -> it increase from the origin the weight of
-F1, while F2 decreases.
-This function has been conceived for averaging the solution of Mckenzie and half space cooling model, but in
+
+Given a distance (could be any array, from X,Y) -> the weight of F1 increase from the origin, while F2 decreases.
+
+This function has been conceived for averaging the solution of McKenzie and half space cooling models, but it
 can be used to smooth the temperature field from continent ocean:
--> Select the boundary to apply;
--> transform the coordinate such that dist represent the perpendicular direction along which you want to apply
-this smoothening and in a such way that 0.0 is the point in which the weight of F1 is equal to 0.0;
--> Select the points that belongs to this area -> compute the thermal fields {F1} {F2} -> then modify F.
+- Select the boundary to apply;
+- transform the coordinate such that dist represent the perpendicular direction along which you want to apply this smoothening
+  and in a such way that 0.0 is the point in which the weight of F1 is equal to 0.0;
+- Select the points that belongs to this area
+- compute the thermal fields {F1} {F2}
+- then modify F.
 """
 function compute_thermal_structure(Temp, X, Y, Z, Phase, s::LinearWeightedTemperature)
     @unpack w_min, w_max, crit_dist,dir = s;
@@ -1864,7 +1868,7 @@ Examples
 ========
 
 Example 1) Slab
-```julia
+```julia-repl
 julia> x     = LinRange(0.0,1200.0,128);
 julia> y     = LinRange(0.0,1200.0,128);
 julia> z     = LinRange(-660,50,128);

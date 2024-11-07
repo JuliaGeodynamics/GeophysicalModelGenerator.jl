@@ -87,6 +87,9 @@ using Test
     end
 end
 
+# Include tutorials
+include("test_tutorials.jl")
+
 # Cleanup
 foreach(rm, filter(endswith(".vts"), readdir()))
 foreach(rm, filter(endswith(".vtu"), readdir()))

@@ -7,4 +7,4 @@ iy = "iy"
 nin = "nin"
 
 [files]
-extend-exclude = ["tutorials/*.pvsm"]
+extend-exclude = ["tutorials/*.pvsm","docs/paper/paper.bib"]
