@@ -1986,10 +1986,10 @@ add_fault!(Phase, Temp, Grid;
 ```
 """
 function add_fault!(
-    Phase, 
-    Temp, 
+    Phase,
+    Temp,
     Grid::AbstractGeneralGrid;
-    Start=(20,100), 
+    Start=(20,100),
     End=(10,80),
     Fault_thickness=10.0,
     Depth_extent=nothing,
@@ -2014,18 +2014,16 @@ function add_fault!(
    fault_mask = falses(size(X))
 
     for k in 1:size(Z, 3), j in 1:size(Y, 2), i in 1:size(X, 1)
-                # Rotate the point using the dip angle
-                x_rot, y_rot, z_rot = Rot3D(X[i, j, k], Y[i, j, k], Z[i, j, k], 1.0, 0.0, cosd(DipAngle), sind(DipAngle))
+        # Rotate the point using the dip angle
+        x_rot, y_rot, z_rot = Rot3D(X[i, j, k], Y[i, j, k], Z[i, j, k], 1.0, 0.0, cosd(DipAngle), sind(DipAngle))
 
-                # Calculate the projection of the rotated point onto the fault line
-                projection_length = (x_rot - Start[1]) * unit_direction[1] + (y_rot - Start[2]) * unit_direction[2]
-                if 0 ≤ projection_length ≤ length
-                    # Calculate the perpendicular distance to the fault line
-                    perpendicular_distance = abs((x_rot - Start[1]) * unit_direction[2] - (y_rot - Start[2]) * unit_direction[1])
-                    if perpendicular_distance ≤ fault_half_thickness
-                        fault_mask[i, j, k] = true
-                    end
-                end
+        # Calculate the projection of the rotated point onto the fault line
+        projection_length = (x_rot - Start[1]) * unit_direction[1] + (y_rot - Start[2]) * unit_direction[2]
+        if 0 ≤ projection_length ≤ length
+            # Calculate the perpendicular distance to the fault line
+            perpendicular_distance = abs((x_rot - Start[1]) * unit_direction[2] - (y_rot - Start[2]) * unit_direction[1])
+            if perpendicular_distance ≤ fault_half_thickness
+                fault_mask[i, j, k] = true
             end
         end
     end
