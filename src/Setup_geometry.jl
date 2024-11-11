@@ -42,8 +42,8 @@ end
 
 This converts the indices to purely 2D indices if the array `phase` is 2D
 """
-function flatten_index_dimensions(Phase, ind_vec::Array{Bool, 3})
-    if length(size(Phase))==2
+function flatten_index_dimensions(Phase::AbstractArray{T, N}, ind_vec::Array{Bool, 3}) where {T,N}
+    if N==2
         ind2D = Vector{CartesianIndex{2}}(undef,length(ind_vec))
         for (num, ind) in enumerate(ind_vec)
             ind2D[num] = CartesianIndex(ind[1], ind[3])
@@ -1985,14 +1985,19 @@ add_fault!(Phase, Temp, Grid;
         )
 ```
 """
-function add_fault!(Phase, Temp, Grid::AbstractGeneralGrid;
-    Start=(20,100), End=(10,80),
+function add_fault!(
+    Phase, 
+    Temp, 
+    Grid::AbstractGeneralGrid;
+    Start=(20,100), 
+    End=(10,80),
     Fault_thickness=10.0,
     Depth_extent=nothing,
     DipAngle=0e0,
     phase=ConstantPhase(1),
     T=nothing,
-    cell=false)
+    cell=false
+)
 
    # Extract the coordinates
    X, Y, Z = coordinate_grids(Grid, cell=cell)
@@ -2000,26 +2005,24 @@ function add_fault!(Phase, Temp, Grid::AbstractGeneralGrid;
    # Calculate the direction vector from Start to End
    direction = (End[1] - Start[1], End[2] - Start[2])
    length = sqrt(direction[1]^2 + direction[2]^2)
-   unit_direction = (direction[1] / length, direction[2] / length)
+   unit_direction = (direction[1], direction[2]) ./ length
 
    # Calculate the fault region based on fault thickness and length
-   fault_half_thickness = Fault_thickness / 2.0
+   fault_half_thickness = Fault_thickness / 2
 
    # Create a mask for the fault region
    fault_mask = falses(size(X))
 
-    for i in 1:size(X, 1)
-        for j in 1:size(Y, 2)
-            for k in 1:size(Z, 3)
+    for k in 1:size(Z, 3), j in 1:size(Y, 2), i in 1:size(X, 1)
                 # Rotate the point using the dip angle
                 x_rot, y_rot, z_rot = Rot3D(X[i, j, k], Y[i, j, k], Z[i, j, k], 1.0, 0.0, cosd(DipAngle), sind(DipAngle))
 
                 # Calculate the projection of the rotated point onto the fault line
                 projection_length = (x_rot - Start[1]) * unit_direction[1] + (y_rot - Start[2]) * unit_direction[2]
-                if projection_length >= 0 && projection_length <= length
+                if 0 ≤ projection_length ≤ length
                     # Calculate the perpendicular distance to the fault line
                     perpendicular_distance = abs((x_rot - Start[1]) * unit_direction[2] - (y_rot - Start[2]) * unit_direction[1])
-                    if perpendicular_distance <= fault_half_thickness
+                    if perpendicular_distance ≤ fault_half_thickness
                         fault_mask[i, j, k] = true
                     end
                 end
@@ -2031,7 +2034,7 @@ function add_fault!(Phase, Temp, Grid::AbstractGeneralGrid;
 
    # Apply depth extent if provided
    if !isnothing(Depth_extent)
-       ind = ind[Z[ind] .>= Depth_extent[1] .&& Z[ind] .<= Depth_extent[2]]
+       ind = ind[Z[ind] .≥ Depth_extent[1] .&& Z[ind] .≤ Depth_extent[2]]
    end
 
    ind_flat = flatten_index_dimensions(Phase, ind)
