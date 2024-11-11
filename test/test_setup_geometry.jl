@@ -6,7 +6,7 @@ Lon3D,Lat3D,Depth3D =   lonlatdepth_grid(1.0:1:10.0, 11.0:1:20.0, (-20:1:-10)*km
 Data                =   zeros(size(Lon3D));
 Temp                =   ones(Float64, size(Data))*1350;
 Phases              =   zeros(Int32,   size(Data));
-Grid                =   GeoData(Lon3D,Lat3D,Depth3D,(DataFieldName=Data,))   
+Grid                =   GeoData(Lon3D,Lat3D,Depth3D,(DataFieldName=Data,))
 
 add_box!(Phases,Temp,Grid, xlim=(2,4), zlim=(-15,-10), phase=ConstantPhase(3), DipAngle=10, T=LinearTemp(Tbot=1350, Ttop=200))
 @test sum(Temp[1,1,:]) ≈ 14850.0
@@ -16,12 +16,12 @@ add_ellipsoid!(Phases,Temp,Grid, cen=(4,15,-17), axes=(1,2,3), StrikeAngle=90, D
 
 
 
-# CartData 
+# CartData
 X,Y,Z               =   xyz_grid(1.0:1:10.0, 11.0:1:20.0, -20:1:-10);
 Data                =   zeros(size(X));
 Temp                =   ones(Float64, size(Data))*1350;
 Phases              =   zeros(Int32,   size(Data));
-Grid                =   CartData(X,Y,Z,(DataFieldName=Data,))   
+Grid                =   CartData(X,Y,Z,(DataFieldName=Data,))
 
 add_box!(Phases,Temp,Grid, xlim=(2,4), zlim=(-15,-10), phase=ConstantPhase(3), DipAngle=10, T=LinearTemp(Tbot=1350, Ttop=200))
 @test sum(Temp[1,1,:]) ≈ 14850.0
@@ -93,7 +93,7 @@ Phases      =   zeros(Int64,  Grid.N...);
 
 # 1) horizontally layer lithosphere; UpperCrust,LowerCrust,Mantle
 add_box!(Phases,Temp,Grid, xlim=(-100,100), zlim=(-100,0), Origin=(0.0,0.0,0.0),
-    phase=LithosphericPhases(Layers=[20 15 65], Phases = [1 2 3], Tlab=nothing), 
+    phase=LithosphericPhases(Layers=[20 15 65], Phases = [1 2 3], Tlab=nothing),
     DipAngle=0.0, T=LithosphericTemp(nz=201))
 
 @test sum(Temp[Int64(nel/2),Int64(nel/2),:]) ≈ 36131.638045729735
@@ -103,7 +103,7 @@ Temp    =   zeros(Float64, Grid.N...);
 Phases  =   zeros(Int64,  Grid.N...);
 
 add_box!(Phases,Temp,Grid, xlim=(-100,100), zlim=(-100,0), Origin=(0.0,0.0,0.0),
-    phase=LithosphericPhases(Layers=[20 15 65], Phases = [1 2 3], Tlab=nothing), 
+    phase=LithosphericPhases(Layers=[20 15 65], Phases = [1 2 3], Tlab=nothing),
     DipAngle=30.0, T=LithosphericTemp(nz=201))
 
 @test sum(Temp[Int64(nel/2),Int64(nel/2),:]) ≈ 41912.18172533137
@@ -113,7 +113,7 @@ Temp    =   zeros(Float64, Grid.N...);
 Phases  =   zeros(Int64,  Grid.N...);
 
 add_box!(Phases,Temp,Grid, xlim=(-100,100), zlim=(-100,0),
-    phase=LithosphericPhases(Layers=[20 15 65], Phases = [1 2 3], Tlab=nothing), 
+    phase=LithosphericPhases(Layers=[20 15 65], Phases = [1 2 3], Tlab=nothing),
     DipAngle=30.0, T=LithosphericTemp(nz=201))
 
 @test sum(Temp[Int64(nel/2),Int64(nel/2),:]) ≈ 41316.11499878003
@@ -151,7 +151,7 @@ rheology = (
     );
 
 add_box!(Phases,Temp,Grid, xlim=(-100,100), zlim=(-100,0),
-    phase=LithosphericPhases(Layers=[20 80], Phases = [1 2], Tlab=nothing), 
+    phase=LithosphericPhases(Layers=[20 80], Phases = [1 2], Tlab=nothing),
     DipAngle=30.0, T=LithosphericTemp(rheology=rheology,nz=201))
 
 @test sum(Temp[Int64(nel/2),Int64(nel/2),:]) ≈ 40513.969831615716
@@ -161,7 +161,7 @@ Temp    =   zeros(Float64, Grid.N...);
 Phases  =   zeros(Int64,  Grid.N...);
 
 add_box!(Phases,Temp,Grid, xlim=(-100,100), zlim=(-100,0),
-    phase=LithosphericPhases(Layers=[20 15 65], Phases = [1 2 3], Tlab=nothing), 
+    phase=LithosphericPhases(Layers=[20 15 65], Phases = [1 2 3], Tlab=nothing),
     DipAngle=30.0, T=LithosphericTemp(lbound="flux",nz=201))
 
 @test sum(Temp[Int64(nel/2),Int64(nel/2),:]) ≈ 37359.648604722104
@@ -188,7 +188,7 @@ TsMK = McKenzie_subducting_slab(Tsurface = 20.0, Tmantle = 1350.0, v_cm_yr = 4.0
 
 # Add a box with a McKenzie thermal structure
 
-# horizontal 
+# horizontal
 Temp    = ones(Float64,size(Cart))*1350;
 add_box!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0, 0.0), phase = ConstantPhase(5), T=TsMK);
 @test sum(Temp)  ≈ 3.518172093383281e8
@@ -229,7 +229,7 @@ Temp    = ones(Float64,(length(x),length(y),length(z)))*1350;
 
 add_box!(Phase, Temp, Cart; xlim=(0.0,600.0),ylim=(0.0,600.0), zlim=(-80.0, 0.0), phase = ConstantPhase(5), T=T=ConstantTemp(120.0));
 
-# add accretionary prism 
+# add accretionary prism
 add_polygon!(Phase, Temp, Cart; xlim=(500.0, 200.0, 500.0),ylim=(100.0,400.0), zlim=(0.0,0.0,-60.0), phase = ConstantPhase(8), T=LinearTemp(Ttop=20, Tbot=30))
 
 @test maximum(Phase) == 8
@@ -270,13 +270,13 @@ Temp    = fill(1350.0,size(Cart));
 add_slab!(Phase,Temp,Cart, t1, phase=phase, T = TsHC)
 @test extrema(Phase) == (1, 9)
 
-#Data_Final      =   CartData(X,Y,Z,(Phase=Phase,Temp=Temp)) 
+#Data_Final      =   CartData(X,Y,Z,(Phase=Phase,Temp=Temp))
 #write_paraview(Data_Final, "Data_Final");
 
 Phase = ones(Int32,size(Cart));
 Temp = fill(1350.0,size(Cart));
 TsMK = McKenzie_subducting_slab(Tsurface = 20.0, Tmantle = 1350.0, v_cm_yr = 4.0, Adiabat = 0.0)
-temp = TsMK 
+temp = TsMK
 
 Phase = ones(Int32,size(Cart));
 Temp = fill(1350.0,size(Cart));
@@ -290,7 +290,7 @@ t1 = Trench(Start = (400.0,400.0), End = (800.0,800.0),θ_max = 90.0, direction 
 add_slab!(Phase,Temp,Cart, t1, phase=phase, T = T_slab)
 @test Temp[84,84,110]  ≈ 624.6682008876219
 
-Data_Final      =   CartData(X,Y,Z,(Phase=Phase,Temp=Temp)) 
+Data_Final      =   CartData(X,Y,Z,(Phase=Phase,Temp=Temp))
 
 # 2D slab:
 nx,nz = 512,128
@@ -299,7 +299,7 @@ z = range(-660,0,    nz);
 Grid2D = CartData(xyz_grid(x,0,z))
 Phases = zeros(Int64, nx, 1, nz);
 Temp = fill(1350.0, nx, 1, nz);
-add_box!(Phases, Temp, Grid2D; xlim=(-800.0,0.0), zlim=(-80.0, 0.0), phase = ConstantPhase(1),  T=HalfspaceCoolingTemp(Age=40));    
+add_box!(Phases, Temp, Grid2D; xlim=(-800.0,0.0), zlim=(-80.0, 0.0), phase = ConstantPhase(1),  T=HalfspaceCoolingTemp(Age=40));
 
 trench = Trench(Start=(0.0,-100.0), End=(0.0,100.0), Thickness=80.0, θ_max=30.0, Length=300, Lb=150);
 add_slab!(Phases, Temp, Grid2D, trench, phase = ConstantPhase(2), T=HalfspaceCoolingTemp(Age=40));
@@ -333,14 +333,14 @@ v_spread_cm_yr = 3      #spreading velocity
 lith = LithosphericPhases(Layers=[15 55], Phases=[1 2], Tlab=1250)
 add_box!(Phases, Temp, Grid2D; xlim=(-800.0,0.0), zlim=(-150.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=v_spread_cm_yr));
 
-# Yet, now we add a trench as well. 
+# Yet, now we add a trench as well.
 AgeTrench_Myrs = 800e3/(v_spread_cm_yr/1e2)/1e6    #plate age @ trench
 
 # We want to add a smooth transition from a halfspace cooling thermal profile to a slab that is heated by the surrounding mantle below a decoupling depth `d_decoupling`.
 T_slab = LinearWeightedTemperature( F1=HalfspaceCoolingTemp(Age=AgeTrench_Myrs), F2=McKenzie_subducting_slab(Tsurface=0,v_cm_yr=v_spread_cm_yr, Adiabat = 0.0), crit_dist=600)
 
-# # in this case, we have a more reasonable slab thickness: 
-trench = Trench(Start=(0.0,-100.0), End=(0.0,100.0), Thickness=90.0, θ_max=30.0, Length=600, Lb=200, 
+# # in this case, we have a more reasonable slab thickness:
+trench = Trench(Start=(0.0,-100.0), End=(0.0,100.0), Thickness=90.0, θ_max=30.0, Length=600, Lb=200,
                  WeakzoneThickness=15, WeakzonePhase=6, d_decoupling=125);
 add_slab!(Phases, Temp, Grid2D, trench, phase = lith, T=T_slab);
 
@@ -348,17 +348,88 @@ add_slab!(Phases, Temp, Grid2D, trench, phase = lith, T=T_slab);
 ind = findall(Temp .> 1250 .&& (Phases.==2 .|| Phases.==5));
 Phases[ind] .= 0;
 
-@test sum(Temp) ≈ 8.292000736425713e7  
+@test sum(Temp) ≈ 8.292000736425713e7
 @test extrema(Phases) == (0, 6)
 #Grid2D = CartData(Grid2D.x.val,Grid2D.y.val,Grid2D.z.val, (;Phases, Temp))
 #write_paraview(Grid2D,"Grid2D_SubductionCurvedOverriding");
 
+# 2D volcano
+nx,nz = 512,128
+x = range(-100e0,100e0, nx);
+z = range(-60e0,5e0,    nz);
+Grid2D = CartData(xyz_grid(x,0,z))
+Phases = zeros(Int64, nx, 1, nz);
+Temp = fill(1350.0, nx, 1, nz);
+lith = LithosphericPhases(Layers=[15 20 55], Phases=[3 4 5], Tlab=1250)
 
+add_box!(Phases, Temp, Grid2D; xlim=(-100.0,100.0), zlim=(-60e0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
 
+add_volcano!(Phases, Temp, Grid2D;
+volcanic_phase  = 1,
+center          = (mean(Grid2D.x.val), 0.0),
+height          = 3,
+radius          = 5,
+base            = 0.0,
+background      = nothing,
+T               = HalfspaceCoolingTemp(Age=20)
+)
 
+@test any(Phases[256,1,:] .== 1) == true
 
-# Q1Data 
-Grid                =   Q1Data(xyz_grid(1.0:1:10.0, 11.0:1:20.0, -20:1:-10))   
+# 3D volcano
+# Create CartGrid struct
+x        = LinRange(0.0,100.0,64);
+y        = LinRange(0.0,100.0,64);
+z        = LinRange(-60,5e0,64);
+Cart     = CartData(xyz_grid(x, y, z));
+
+# initialize phase and temperature matrix
+Phase   = zeros(Int32,size(Cart));
+Temp    = fill(1350.0,size(Cart));
+lith    = LithosphericPhases(Layers=[15 20 55], Phases=[3 4 5], Tlab=1250)
+
+add_box!(Phase, Temp, Cart; xlim=(0.0,100.0),ylim=(0.0,100.0), zlim=(-60.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
+
+add_volcano!(Phase, Temp, Cart;
+    volcanic_phase  = 1,
+    center          = (mean(Cart.x.val), mean(Cart.y.val), 0.0),
+    height          = 3,
+    radius          = 5,
+    base            = 0.0,
+    background      = nothing,
+    T               = HalfspaceCoolingTemp(Age=20)
+)
+
+@test any(Phase[32,32,:] .== 1) == true
+
+#3D fault
+# Create CartGrid struct
+x        = LinRange(0.0,100.0,64);
+y        = LinRange(0.0,100.0,64);
+z        = LinRange(-60,5e0,64);
+Cart     = CartData(xyz_grid(x, y, z));
+
+# initialize phase and temperature matrix
+Phase   = zeros(Int32,size(Cart));
+Temp    = fill(1350.0,size(Cart));
+lith    = LithosphericPhases(Layers=[15 20 55], Phases=[3 4 5], Tlab=1250)
+
+add_box!(Phase, Temp, Cart; xlim=(0.0,100.0),ylim=(0.0,100.0), zlim=(-60.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
+
+add_fault!(Phase, Temp, Cart;
+    Start=(0.0,0.0), End=(100,100),
+    Fault_thickness=1.0,
+    Depth_extent=(-30.0, 0.0),
+    DipAngle=-10e0,
+    phase=ConstantPhase(1),
+    T=ConstantTemp(1200),
+)
+
+@test any(Phase[32,32,:] .== 1) == true
+@test any(Temp[32,32,:] .== 1200) == true
+
+# Q1Data
+Grid                =   Q1Data(xyz_grid(1.0:1:10.0, 11.0:1:20.0, -20:1:-10))
 PhasesC             =   zeros(Int64,size(Grid));  # at cell
 TempC               =   ones(Float64, size(Grid))*1350;
 PhasesV             =   zeros(Int64,size(Grid.x));  # at vertex
