@@ -718,7 +718,7 @@ function add_polygon!(Phase, Temp, Grid::AbstractGeneralGrid;   # required input
         end
     end
 
-    if !isempty(ind_flat)
+    if !isempty(ind)
         # Compute thermal structure accordingly. See routines below for different options
         if T != nothing
         Temp[ind] = compute_thermal_structure(Temp[ind], X[ind], Y[ind], Z[ind], Phase[ind], T)
