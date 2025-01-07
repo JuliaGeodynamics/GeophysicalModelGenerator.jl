@@ -227,7 +227,8 @@ function add_box!(Phase, Temp, Grid::AbstractGeneralGrid;       # required input
                 xlim::Tuple = (20,100), ylim=nothing, zlim::Tuple = (10,80),     # limits of the box
                 Origin=nothing, StrikeAngle=0, DipAngle=0,      # origin & dip/strike
                 phase = ConstantPhase(1),                       # Sets the phase number(s) in the box
-                T=nothing,                                      # Sets the thermal structure (various functions are available)
+                T=nothing,           
+                segments=nothing,                           # Sets the thermal structure (various functions are available)
                 cell=false )                            # if true, Phase and Temp are defined on cell centers
 
     # Retrieve 3D data arrays for the grid
@@ -270,20 +271,28 @@ function add_box!(Phase, Temp, Grid::AbstractGeneralGrid;       # required input
 
     if !isempty(ind_flat)
      # Compute thermal structure accordingly. See routines below for different options
+       # if T != nothing
+       #     if isa(T,LithosphericTemp)
+       #         Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], phase)
+       #     end
+      #      Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind_flat], T)
+      #  end
         if T != nothing
-            if isa(T,LithosphericTemp)
+            if isa(T, LithosphericTemp)
                 Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], phase)
             end
-            Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind_flat], T)
+            if segments !== nothing
+                Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], X[ind], Y[ind], Z[ind], Phase[ind_flat], T, segments)
+            else
+                Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind_flat], T)
+            end
         end
-
         # Set the phase. Different routines are available for that - see below.
         Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], phase)
     end
 
     return nothing
 end
-
 
 """
     add_layer!(Phase, Temp, Grid::AbstractGeneralGrid; xlim::Tuple = (1,100), [ylim::Tuple = (0,20)], zlim::Tuple = (0,-100),
@@ -1106,7 +1115,7 @@ Note: the thermal age at the mid oceanic ridge is set to 1 year to avoid divisio
     Adiabat = 0        # Adiabatic gradient in K/km
     MORside = "left"   # side of box where the MOR is located
     SpreadingVel = 3   # spreading velocity [cm/yr]
-    AgeRidge = 0       # Age of the ridge [Myrs]
+    AgeRidge = 0       # Age of the ridge [Myrs
     maxAge  = 60       # maximum thermal age of plate [Myrs]
 end
 
@@ -1118,7 +1127,7 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp)
     dz          =   Z[end]-Z[1];
 
     MantleAdiabaticT    =   Tmantle .+ Adiabat*abs.(Z);   # Adiabatic temperature of mantle
-
+           
     if MORside=="left"
         Distance = X .- X[1,1,1];
     elseif MORside=="right"
@@ -1130,21 +1139,157 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp)
     else
         error("unknown side")
     end
-
+        
     for i in eachindex(Temp)
         ThermalAge    =   abs(Distance[i]*1e3*1e2)/SpreadingVel + AgeRidge*1e6;   # Thermal age in years
         if ThermalAge>maxAge*1e6
             ThermalAge = maxAge*1e6
         end
-
+            
         ThermalAge    =   ThermalAge*SecYear;
         if ThermalAge==0
             ThermalAge = 1e-6   # doesn't like zero
         end
-
+            
         Temp[i] = (Tsurface .- Tmantle)*erfc((abs.(Z[i])*1e3)./(2*sqrt(kappa*ThermalAge))) + MantleAdiabaticT[i];
     end
+        
     return Temp
+end
+
+# Multi-segment implementation
+
+#Case 2: Multi-segment using tuple
+"""
+
+"""
+function compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp, segments::Vector{Tuple{Tuple{Float64, Float64}, Tuple{Float64, Float64}}})
+    @unpack Tsurface, Tmantle, Adiabat, SpreadingVel, AgeRidge, maxAge = s
+    @show "T STRUct with segments", SpreadingVel
+    kappa = 1e-6;
+    SecYear = 3600 * 24 * 365
+    dz = Z[end]-Z[1];
+
+    MantleAdiabaticT = Tmantle .+ Adiabat * abs.(Z)
+
+    #Create delimiters
+    @show segments
+    delimiters = [(segments[i][2], segments[i + 1][1]) for i in 1:length(segments) - 1]
+    @show delimiters
+
+    for I in eachindex(X)
+        px, py, pz = X[I], Y[I], Z[I]
+
+        # Print the coordinates for debugging
+        #@show px, py, pz  # This will print the current point's coordinates
+
+        # Determine region of point
+        region = determine_region(px, py, delimiters, segments)
+
+        # Select the corresponding segment
+        x1, y1 = segments[region][1]
+        x2, y2 = segments[region][2]
+
+        # Calculate distance to segment
+        Distance = distance_to_line(px, py, x1, y1, x2, y2)
+
+        # Calculate thermal age
+        #ThermalAge = abs(Distance * 1e3 * 1e2) / SpreadingVel + AgeRidge * 1e6
+        #ThermalAge = min(ThermalAge, maxAge * 1e6) * SecYear
+
+        ThermalAge = abs(Distance * 1e3 * 1e2) / SpreadingVel + AgeRidge * 1e6  # Thermal age in years
+        if ThermalAge > maxAge * 1e6
+            ThermalAge = maxAge * 1e6
+        end
+
+        ThermalAge = ThermalAge * SecYear  # Convert to seconds
+        if ThermalAge == 0
+            ThermalAge = 1e-6  # Avoid zero
+        end
+
+        # Calculate temperature
+        Temp[I] = (Tsurface - Tmantle) * erfc(abs(pz) * 1e3 / (2 * sqrt(kappa * ThermalAge))) + MantleAdiabaticT[I]
+    end
+
+    return Temp
+
+end
+
+################3
+# Case 3: Multiple segments with different parameters
+
+#function compute_thermal_structure(Temp, X, Y, Z, Phase, s::Vector{SpreadingRateTemp}, segments::Vector{Tuple{Tuple{Float64, Float64}, Tuple{Float64, Float64}}})
+#    kappa = 1e-6
+#    SecYear = 3600 * 24 * 365
+
+#    for i in eachindex(Temp)
+#        px, py = X[i], Y[i]
+
+#        for (idx, segment) in enumerate(segments)
+#            x1, y1 = segment[1]
+#            x2, y2 = segment[2]
+#            params = s[idx]  
+
+#            @unpack Tsurface, Tmantle, Adiabat, SpreadingVel, AgeRidge, maxAge = params
+#            MantleAdiabaticT = Tmantle .+ Adiabat * abs.(Z)
+
+            # Calculate the distance to the ridge
+#            distance = distance_to_line(px, py, x1, y1, x2, y2)
+
+            # Calculate the thermal age
+#            ThermalAge = abs(distance * 1e3 * 1e2) / SpreadingVel + AgeRidge * 1e6
+#            ThermalAge = min(ThermalAge, maxAge * 1e6) * SecYear
+#            ThermalAge = max(ThermalAge, 1e-6)
+
+            # Calculate the temperature
+#            Temp[i] = (Tsurface - Tmantle) * erfc((abs(Z[i]) * 1e3) / (2 * sqrt(kappa * ThermalAge))) + MantleAdiabaticT[i]
+#        end
+#    end
+
+#    return Temp
+#end
+
+# Supporting functions for multi-segment ridge functionality
+
+# Function to calculate the perpendicular distance from a point to a line segment
+function distance_to_line(x, y, x1, y1, x2, y2)
+    num = abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1)
+    den = sqrt((y2 - y1)^2 + (x2 - x1)^2)
+    return num / den
+end
+
+# Function to determine the side of a point with respect to a line (adjusted for segment direction)
+function side_of_line(x, y, x1, y1, x2, y2, direction)
+    side = (x2 - x1) * (y - y1) - (y2 - y1) * (x - x1)
+    #@show "Side of line check: point ($x, $y) with segment (($x1, $y1), ($x2, $y2))"
+    if direction == :left
+        return side > 0
+    else
+        return side < 0
+    end
+end
+
+# Function to determine in which region a point lies (based on delimiters)
+function determine_region(px, py, delimiters, segments)
+    for i in 1:length(delimiters)
+        x1, y1 = delimiters[i][1]
+        x2, y2 = delimiters[i][2]
+
+        # Determine the direction of the segments
+        if x2 < x1
+            direction = :left  # Shift left
+        else
+            direction = :right  # Shift to the right
+        end
+
+        # Check the side of the line considering the direction
+        if side_of_line(px, py, x1, y1, x2, y2, direction)
+            #@show "Region determined" i
+            return i  # Region corresponding to segment i
+        end
+    end
+    #@show "Region not found, returning last" length(segments)
+    return length(segments)  # Last region
 end
 
 """
