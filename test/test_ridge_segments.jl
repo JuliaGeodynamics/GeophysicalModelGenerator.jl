@@ -3,7 +3,7 @@ using Test
 
 @testset "Ridge Thermal Structure Tests" begin
     # Grid parameters
-    nx, ny, nz = 128, 128, 57
+    nx, ny, nz = 512, 512, 128
     x = range(-1000, 1000, length=nx)
     y = range(-1000, 1000, length=ny)
     z = range(-660, 0, length=nz)
