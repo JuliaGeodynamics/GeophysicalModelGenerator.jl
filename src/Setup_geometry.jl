@@ -169,6 +169,7 @@ end
             Origin=nothing, StrikeAngle=0, DipAngle=0,
             phase = ConstantPhase(1),
             T=nothing,
+            segments=nothing,
             cell=false )
 
 Adds a box with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
@@ -187,6 +188,7 @@ Parameters
 - `DipAngle` - dip angle of slab
 - `phase` - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
 - `T` - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`,`LithosphericTemp()`
+- `segments` - optional parameter to define multiple ridge segments within the box
 - `cell` - if true, `Phase` and `Temp` are defined on centers
 
 Examples
@@ -222,13 +224,31 @@ julia> write_paraview(Grid,"LaMEM_ModelSetup")  # Save model to paraview
 1-element Vector{String}:
  "LaMEM_ModelSetup.vts"
 ```
+
+Example 3) Box with ridge thermal structure
+```julia-repl
+julia> Grid = CartData(xyz_grid(-1000:10:1000, -1000:10:1000, -660:5:0))
+julia> Phases = fill(2, size(Grid));
+julia> Temp   = fill(1350.0, size(Grid));
+julia> segments = [((-500.0, -1000.0), (-500.0, 0.0)),
+                    ((-250.0, 0.0), (-250.0, 200.0)),
+                    ((-750.0, 200.0), (-750.0, 1000.0))];
+julia> lith = LithosphericPhases(Layers=[15 55], Phases=[1 2], Tlab=1250);
+julia> add_box!(Phases, Temp, Grid; xlim=(-1000.0, 0.0), ylim=(-500.0, 500.0), 
+                zlim=(-80.0, 0.0), phase=lith, 
+                T=SpreadingRateTemp(SpreadingVel=3), segments=segments)
+julia> Grid = addfield(Grid, (; Phases, Temp));       # Add to Cartesian model
+julia> write_paraview(Grid, "Ridge_Thermal_Structure")  # Save model to Paraview
+1-element Vector{String}:
+ "Ridge_Thermal_Structure.vts"
 """
+
 function add_box!(Phase, Temp, Grid::AbstractGeneralGrid;       # required input
                 xlim::Tuple = (20,100), ylim=nothing, zlim::Tuple = (10,80),     # limits of the box
                 Origin=nothing, StrikeAngle=0, DipAngle=0,      # origin & dip/strike
                 phase = ConstantPhase(1),                       # Sets the phase number(s) in the box
-                T=nothing,           
-                segments=nothing,                           # Sets the thermal structure (various functions are available)
+                T=nothing,                              # Sets the thermal structure (various functions are available)
+                segments=nothing,                       # Allows defining multiple ridge segments  
                 cell=false )                            # if true, Phase and Temp are defined on cell centers
 
     # Retrieve 3D data arrays for the grid
@@ -271,12 +291,6 @@ function add_box!(Phase, Temp, Grid::AbstractGeneralGrid;       # required input
 
     if !isempty(ind_flat)
      # Compute thermal structure accordingly. See routines below for different options
-       # if T != nothing
-       #     if isa(T,LithosphericTemp)
-       #         Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], phase)
-       #     end
-      #      Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind_flat], T)
-      #  end
         if T != nothing
             if isa(T, LithosphericTemp)
                 Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], phase)
@@ -1157,15 +1171,33 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp)
     return Temp
 end
 
-# Multi-segment implementation
+"""
+    SpreadingRateTemp(Temp, X, Y, Z, Phase, s::SpreadingRateTemp, segments)
 
-#Case 2: Multi-segment using tuple
+Calculates the temperature distribution across the plate considering multiple ridge segments.
+
+This function computes the thermal structure based on the perpendicular distance from each point to its corresponding ridge segment, and applies a thermal model using a spreading velocity and thermal age.
+
+Parameters
+==========
+- Temp     : Temperature field to be updated (array)
+- X, Y, Z  : Coordinates of the points (arrays)
+- Phase    : Phase of the material (unused in this version)
+- s        : SpreadingRateTemp object containing the thermal and spreading parameters
+- segments : List of ridge segments, where each segment is defined by two tuples representing the start and end coordinates (x1, y1) and (x2, y2) for each segment.
+
+Note
+====
+The temperature at each point is calculated using the thermal age, which is determined by the distance from the point to the nearest ridge segment and the spreading velocity.
+
+The function works in the context of one or more segments. The key difference from the previous function is that the ridge can now be placed at any position within the box, not just at the boundary.
+
+The thermal age is capped at `maxAge` years, and the temperature is adjusted based on the distance to the ridge and the corresponding thermal gradient.
+
 """
 
-"""
 function compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp, segments::Vector{Tuple{Tuple{Float64, Float64}, Tuple{Float64, Float64}}})
     @unpack Tsurface, Tmantle, Adiabat, SpreadingVel, AgeRidge, maxAge = s
-    @show "T STRUct with segments", SpreadingVel
     kappa = 1e-6;
     SecYear = 3600 * 24 * 365
     dz = Z[end]-Z[1];
@@ -1173,15 +1205,10 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp, s
     MantleAdiabaticT = Tmantle .+ Adiabat * abs.(Z)
 
     #Create delimiters
-    @show segments
-    delimiters = [(segments[i][2], segments[i + 1][1]) for i in 1:length(segments) - 1]
-    @show delimiters
+    delimiters = [(segments[i][2], segments[i + 1][1]) for i in 1:length(segments) - 1] 
 
     for I in eachindex(X)
         px, py, pz = X[I], Y[I], Z[I]
-
-        # Print the coordinates for debugging
-        #@show px, py, pz  # This will print the current point's coordinates
 
         # Determine region of point
         region = determine_region(px, py, delimiters, segments)
@@ -1191,12 +1218,9 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp, s
         x2, y2 = segments[region][2]
 
         # Calculate distance to segment
-        Distance = distance_to_line(px, py, x1, y1, x2, y2)
+        Distance = perpendicular_distance_to_segment(px, py, x1, y1, x2, y2)
 
         # Calculate thermal age
-        #ThermalAge = abs(Distance * 1e3 * 1e2) / SpreadingVel + AgeRidge * 1e6
-        #ThermalAge = min(ThermalAge, maxAge * 1e6) * SecYear
-
         ThermalAge = abs(Distance * 1e3 * 1e2) / SpreadingVel + AgeRidge * 1e6  # Thermal age in years
         if ThermalAge > maxAge * 1e6
             ThermalAge = maxAge * 1e6
@@ -1218,41 +1242,10 @@ end
 ################3
 # Case 3: Multiple segments with different parameters
 
-#function compute_thermal_structure(Temp, X, Y, Z, Phase, s::Vector{SpreadingRateTemp}, segments::Vector{Tuple{Tuple{Float64, Float64}, Tuple{Float64, Float64}}})
-#    kappa = 1e-6
-#    SecYear = 3600 * 24 * 365
-
-#    for i in eachindex(Temp)
-#        px, py = X[i], Y[i]
-
-#        for (idx, segment) in enumerate(segments)
-#            x1, y1 = segment[1]
-#            x2, y2 = segment[2]
-#            params = s[idx]  
-
-#            @unpack Tsurface, Tmantle, Adiabat, SpreadingVel, AgeRidge, maxAge = params
-#            MantleAdiabaticT = Tmantle .+ Adiabat * abs.(Z)
-
-            # Calculate the distance to the ridge
-#            distance = distance_to_line(px, py, x1, y1, x2, y2)
-
-            # Calculate the thermal age
-#            ThermalAge = abs(distance * 1e3 * 1e2) / SpreadingVel + AgeRidge * 1e6
-#            ThermalAge = min(ThermalAge, maxAge * 1e6) * SecYear
-#            ThermalAge = max(ThermalAge, 1e-6)
-
-            # Calculate the temperature
-#            Temp[i] = (Tsurface - Tmantle) * erfc((abs(Z[i]) * 1e3) / (2 * sqrt(kappa * ThermalAge))) + MantleAdiabaticT[i]
-#        end
-#    end
-
-#    return Temp
-#end
-
 # Supporting functions for multi-segment ridge functionality
 
 # Function to calculate the perpendicular distance from a point to a line segment
-function distance_to_line(x, y, x1, y1, x2, y2)
+function perpendicular_distance_to_segment(x, y, x1, y1, x2, y2)
     num = abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1)
     den = sqrt((y2 - y1)^2 + (x2 - x1)^2)
     return num / den
@@ -1261,7 +1254,6 @@ end
 # Function to determine the side of a point with respect to a line (adjusted for segment direction)
 function side_of_line(x, y, x1, y1, x2, y2, direction)
     side = (x2 - x1) * (y - y1) - (y2 - y1) * (x - x1)
-    #@show "Side of line check: point ($x, $y) with segment (($x1, $y1), ($x2, $y2))"
     if direction == :left
         return side > 0
     else
@@ -1284,11 +1276,9 @@ function determine_region(px, py, delimiters, segments)
 
         # Check the side of the line considering the direction
         if side_of_line(px, py, x1, y1, x2, y2, direction)
-            #@show "Region determined" i
             return i  # Region corresponding to segment i
         end
     end
-    #@show "Region not found, returning last" length(segments)
     return length(segments)  # Last region
 end
 
