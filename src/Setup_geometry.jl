@@ -1239,12 +1239,9 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp, s
 
 end
 
-################3
-# Case 3: Multiple segments with different parameters
-
 # Supporting functions for multi-segment ridge functionality
 
-# Function to calculate the perpendicular distance from a point to a line segment
+# Function to calculate the perpendicular distance from a point to a segment
 function perpendicular_distance_to_segment(x, y, x1, y1, x2, y2)
     num = abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1)
     den = sqrt((y2 - y1)^2 + (x2 - x1)^2)
