@@ -26,9 +26,9 @@ using Test
 
     # Add and save results
     Grid = addfield(Grid, (; Phases, Temp))
-    #write_paraview(Grid, "Ridge_Thermal_Structure_test_2")
+    write_paraview(Grid, "Ridge_Thermal_Structure_test_2")
 
-    # Test verifications
+    @test mean(Temp) ≈  1339.4833869172212
     @test minimum(Temp) >= 0.0  # Minimum temperature
     @test maximum(Temp) <= 1350.0  # Maximum temperature
     @test all(Temp .>= 0.0)  # Ensure no negative temperatures
