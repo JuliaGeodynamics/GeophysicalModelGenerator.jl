@@ -30,10 +30,10 @@ using Test
 
     @test minimum(Temp) >= 0.0  # Minimum temperature
     @test maximum(Temp) <= 1350.0  # Maximum temperature
-    @test all(Temp .>= 0.0)  # Ensure no negative temperatures
-    @test all(Temp .<= 1350.0)  # Ensure no temperatures above max
+    @test all(≥(0),    Temp) # Ensure no negative temperatures
+    @test all(≤(1350), Temp) # Ensure no temperatures above max
 
     # Check if phases are correctly assigned in expected regions
-    @test Phases[1, 1, 1] == 2  # Example: Verify a point's phase
-    @test Phases[end, end, end] == 2  # Example: Verify another point's phase
+    @test first(Phases) == 2  # Example: Verify a point's phase
+    @test last(Phases)  == 2  # Example: Verify another point's phase
 end

@@ -1221,7 +1221,7 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp, s
         Distance = perpendicular_distance_to_segment(px, py, x1, y1, x2, y2)
 
         # Calculate thermal age
-        ThermalAge = abs(Distance * 1e3 * 1e2) / SpreadingVel + AgeRidge * 1e6  # Thermal age in years
+        ThermalAge = abs(Distance * 1e5) / SpreadingVel + AgeRidge * 1e6  # Thermal age in years
         if ThermalAge > maxAge * 1e6
             ThermalAge = maxAge * 1e6
         end
@@ -1251,11 +1251,7 @@ end
 # Function to determine the side of a point with respect to a line (adjusted for segment direction)
 function side_of_line(x, y, x1, y1, x2, y2, direction)
     side = (x2 - x1) * (y - y1) - (y2 - y1) * (x - x1)
-    if direction == :left
-        return side > 0
-    else
-        return side < 0
-    end
+    direction == :left ? side > 0 : side < 0
 end
 
 # Function to determine in which region a point lies (based on delimiters)
@@ -1265,11 +1261,7 @@ function determine_region(px, py, delimiters, segments)
         x2, y2 = delimiters[i][2]
 
         # Determine the direction of the segments
-        if x2 < x1
-            direction = :left  # Shift left
-        else
-            direction = :right  # Shift to the right
-        end
+        direction = x2 < x1 ? :left : :right
 
         # Check the side of the line considering the direction
         if side_of_line(px, py, x1, y1, x2, y2, direction)
