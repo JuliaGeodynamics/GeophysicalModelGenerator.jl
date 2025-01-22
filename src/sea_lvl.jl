@@ -2,7 +2,7 @@ export sea_level_files, SeaLevel, load_sea_level, curve_name
 
 pkg_dir = pkgdir(GeophysicalModelGenerator)
 
-const sea_level_path = joinpath(pkg_dir, joinpath("src","sea_level_data"))
+const sea_level_path = joinpath(pkg_dir, joinpath("src", "sea_level_data"))
 
 const sea_level_files = Dict(
     :Spratt_800ka => "Spratt2016-800ka.txt",
@@ -22,11 +22,11 @@ struct SeaLevel{T}
 
     function SeaLevel(name::Symbol; flip_elevation = false, flip_age = false)
         age, elevation = load_sea_level(
-            name; 
+            name;
             flip_age = flip_age,
             flip_elevation = flip_elevation
         )
-        new{eltype(age)}(age, elevation, name)
+        return new{eltype(age)}(age, elevation, name)
     end
 end
 
@@ -40,9 +40,9 @@ Base.length(x::SeaLevel) = length(x.elevation)
 curve_name(x::SeaLevel) = x.name
 
 function load_sea_level(name::Symbol; flip_elevation = false, flip_age = false)
-    fname   = sea_level_files[name]
-    data    = readdlm(joinpath(sea_level_path, fname))
-    age, h  = data[:, 1], data[:, 2]
+    fname = sea_level_files[name]
+    data = readdlm(joinpath(sea_level_path, fname))
+    age, h = data[:, 1], data[:, 2]
     flip_elevation && reverse!(h)
     flip_age && reverse!(age)
     return h, age

@@ -3,10 +3,10 @@
 
 import Base: show, size, extrema
 
-export  GeoData, ParaviewData, UTMData, CartData, Q1Data, FEData,
-        lonlatdepth_grid, xyz_grid, velocity_spherical_to_cartesian!,
-        convert2UTMzone, convert2CartData, convert2FEData, ProjectionPoint,
-        coordinate_grids, create_CartGrid, CartGrid, flip
+export GeoData, ParaviewData, UTMData, CartData, Q1Data, FEData,
+    lonlatdepth_grid, xyz_grid, velocity_spherical_to_cartesian!,
+    convert2UTMzone, convert2CartData, convert2FEData, ProjectionPoint,
+    coordinate_grids, create_CartGrid, CartGrid, flip
 
 
 """
@@ -22,12 +22,12 @@ export  GeoData, ParaviewData, UTMData, CartData, Q1Data, FEData,
 Structure that holds the coordinates of a point that is used to project a data set from Lon/Lat to a Cartesian grid and vice-versa.
 """
 struct ProjectionPoint
-    Lat     :: Float64
-    Lon     :: Float64
-    EW      :: Float64
-    NS      :: Float64
-    zone    :: Int64
-    isnorth :: Bool
+    Lat::Float64
+    Lon::Float64
+    EW::Float64
+    NS::Float64
+    zone::Int64
+    isnorth::Bool
 end
 
 """
@@ -35,12 +35,12 @@ end
 
 Defines a projection point used for map projections, by specifying latitude and longitude
 """
-function ProjectionPoint(; Lat=49.9929, Lon=8.2473)
+function ProjectionPoint(; Lat = 49.9929, Lon = 8.2473)
     # Default = Mainz (center of universe)
-    x_lla = LLA(Lat, Lon, 0.0);    # Lat/Lon/Alt of geodesy package
+    x_lla = LLA(Lat, Lon, 0.0)     # Lat/Lon/Alt of geodesy package
     x_utmz = UTMZ(x_lla, wgs84)    # UTMZ of
 
-    ProjectionPoint(Lat, Lon, x_utmz.x, x_utmz.y, Int64(x_utmz.zone), x_utmz.isnorth)
+    return ProjectionPoint(Lat, Lon, x_utmz.x, x_utmz.y, Int64(x_utmz.zone), x_utmz.isnorth)
 end
 
 """
@@ -51,10 +51,10 @@ Defines a projection point used for map projections, by specifying UTM coordinat
 """
 function ProjectionPoint(EW::Float64, NS::Float64, Zone::Int64, isnorth::Bool)
 
-    x_utmz = UTMZ(EW,NS,0.0,Zone, isnorth)    # UTMZ of
-    x_lla = LLA(x_utmz, wgs84);    # Lat/Lon/Alt of geodesy package
+    x_utmz = UTMZ(EW, NS, 0.0, Zone, isnorth)    # UTMZ of
+    x_lla = LLA(x_utmz, wgs84)     # Lat/Lon/Alt of geodesy package
 
-    ProjectionPoint(x_lla.lat, x_lla.lon, EW, NS, Zone, isnorth)
+    return ProjectionPoint(x_lla.lat, x_lla.lon, EW, NS, Zone, isnorth)
 end
 
 
@@ -145,59 +145,59 @@ GeoData
 ```
 """
 struct GeoData <: AbstractGeneralGrid
-    lon     ::  GeoUnit
-    lat     ::  GeoUnit
-    depth   ::  GeoUnit
-    fields  ::  NamedTuple
-    atts    ::  Dict
+    lon::GeoUnit
+    lat::GeoUnit
+    depth::GeoUnit
+    fields::NamedTuple
+    atts::Dict
 
     # Ensure that the data is of the correct format
-    function GeoData(lon,lat,depth,fields,atts=nothing)
+    function GeoData(lon, lat, depth, fields, atts = nothing)
 
         # check depth & convert it to units of km in case no units are given or it has different length units
-        if unit.(depth[1])==NoUnits
-            depth = depth*km                # in case depth has no dimensions
+        if unit.(depth[1]) == NoUnits
+            depth = depth * km                # in case depth has no dimensions
         end
-        depth = uconvert.(km,depth)         # convert to km
+        depth = uconvert.(km, depth)         # convert to km
         depth = GeoUnit(depth)              # convert to GeoUnit structure with units of km
 
         if isa(lat, StepRangeLen)
-            lat = Vector(lat);
+            lat = Vector(lat)
         end
 
         if isa(lon, StepRangeLen)
-            lon = Vector(lon);
+            lon = Vector(lon)
         end
-        
+
         # Check ordering of the arrays in case of 3D -- the check is not bullet proof for now
-        if sum(size(lon).>1)==3
-           if maximum(abs.(diff(lon,dims=2)))>maximum(abs.(diff(lon,dims=1))) || maximum(abs.(diff(lon,dims=3)))>maximum(abs.(diff(lon,dims=1)))
-            @warn ("It appears that the lon array has a wrong ordering")
-           end
-           if maximum(abs.(diff(lat,dims=1)))>maximum(abs.(diff(lat,dims=2))) || maximum(abs.(diff(lat,dims=3)))>maximum(abs.(diff(lat,dims=2)))
-            @warn ("It appears that the lat array has a wrong ordering")
-           end
+        if sum(size(lon) .> 1) == 3
+            if maximum(abs.(diff(lon, dims = 2))) > maximum(abs.(diff(lon, dims = 1))) || maximum(abs.(diff(lon, dims = 3))) > maximum(abs.(diff(lon, dims = 1)))
+                @warn ("It appears that the lon array has a wrong ordering")
+            end
+            if maximum(abs.(diff(lat, dims = 1))) > maximum(abs.(diff(lat, dims = 2))) || maximum(abs.(diff(lat, dims = 3))) > maximum(abs.(diff(lat, dims = 2)))
+                @warn ("It appears that the lat array has a wrong ordering")
+            end
         end
 
         # fields should be a NamedTuple. In case we simply provide an array, lets transfer it accordingly
-        if !(typeof(fields)<: NamedTuple)
-            if (typeof(fields)<: Tuple)
-                if length(fields)==1
-                    fields = (DataSet1=first(fields),)  # The field is a tuple; create a NamedTuple from it
+        if !(typeof(fields) <: NamedTuple)
+            if (typeof(fields) <: Tuple)
+                if length(fields) == 1
+                    fields = (DataSet1 = first(fields),)  # The field is a tuple; create a NamedTuple from it
                 else
                     error("Please employ a NamedTuple as input, rather than  a Tuple")  # out of luck
                 end
             else
-                fields = (DataSet1=fields,)
+                fields = (DataSet1 = fields,)
             end
         end
 
-        DataField = fields[1];
-        if typeof(DataField)<: Tuple
-            DataField = DataField[1];           # in case we have velocity vectors as input
+        DataField = fields[1]
+        if typeof(DataField) <: Tuple
+            DataField = DataField[1]            # in case we have velocity vectors as input
         end
 
-        if !(size(lon)==size(lat)==size(depth)==size(DataField))
+        if !(size(lon) == size(lat) == size(depth) == size(DataField))
             error("The size of Lon/Lat/Depth and the Fields should all be the same!")
         end
 
@@ -206,14 +206,14 @@ struct GeoData <: AbstractGeneralGrid
             atts = Dict("note" => "No attributes were given to this dataset")
         else
             # check if a dict was given
-            if !(typeof(atts)<: Dict)
+            if !(typeof(atts) <: Dict)
                 error("Attributes should be given as Dict!")
             end
         end
 
-        return new(lon,lat,depth,fields,atts)
+        return new(lon, lat, depth, fields, atts)
 
-     end
+    end
 
 end
 size(d::GeoData) = size(d.lon.val)
@@ -221,29 +221,29 @@ extrema(d::GeoData) = [extrema(d.lon); extrema(d.lat); extrema(d.depth)]
 
 # Print an overview of the Geodata struct:
 function Base.show(io::IO, d::GeoData)
-    println(io,"GeoData ")
-    println(io,"  size      : $(size(d.lon))")
-    println(io,"  lon       ϵ [ $(first(d.lon.val)) : $(last(d.lon.val))]")
-    println(io,"  lat       ϵ [ $(first(d.lat.val)) : $(last(d.lat.val))]")
-    if  any(isnan.(NumValue(d.depth)))
-        z_vals = extrema(d.depth.val[isnan.(d.depth.val).==false])
-        println(io,"  depth     ϵ [ $(z_vals[1]) : $(z_vals[2])]; has NaN's")
+    println(io, "GeoData ")
+    println(io, "  size      : $(size(d.lon))")
+    println(io, "  lon       ϵ [ $(first(d.lon.val)) : $(last(d.lon.val))]")
+    println(io, "  lat       ϵ [ $(first(d.lat.val)) : $(last(d.lat.val))]")
+    if any(isnan.(NumValue(d.depth)))
+        z_vals = extrema(d.depth.val[isnan.(d.depth.val) .== false])
+        println(io, "  depth     ϵ [ $(z_vals[1]) : $(z_vals[2])]; has NaN's")
     else
         z_vals = extrema(d.depth.val)
-        println(io,"  depth     ϵ [ $(z_vals[1]) : $(z_vals[2])]")
+        println(io, "  depth     ϵ [ $(z_vals[1]) : $(z_vals[2])]")
     end
-    println(io,"  fields    : $(keys(d.fields))")
+    println(io, "  fields    : $(keys(d.fields))")
 
     # Only print attributes if we have non-default attributes
-    if any( propertynames(d) .== :atts)
+    return if any(propertynames(d) .== :atts)
         show_atts = true
-        if haskey(d.atts,"note")
-            if d.atts["note"]=="No attributes were given to this dataset"
+        if haskey(d.atts, "note")
+            if d.atts["note"] == "No attributes were given to this dataset"
                 show_atts = false
             end
         end
         if show_atts
-         println(io,"  attributes: $(keys(d.atts))")
+            println(io, "  attributes: $(keys(d.atts))")
         end
     end
 end
@@ -264,7 +264,7 @@ GeoData
   fields    : (:Z,)
 ```
 """
-GeoData(lld::Tuple) = GeoData(lld[1],lld[2],lld[3],(Z=lld[3],))
+GeoData(lld::Tuple) = GeoData(lld[1], lld[2], lld[3], (Z = lld[3],))
 
 
 """
@@ -279,39 +279,39 @@ julia> Data_cart = convert(ParaviewData, Data_set)
 ```
 """
 mutable struct ParaviewData <: AbstractGeneralGrid
-    x       ::  GeoUnit
-    y       ::  GeoUnit
-    z       ::  GeoUnit
-    fields  ::  NamedTuple
+    x::GeoUnit
+    y::GeoUnit
+    z::GeoUnit
+    fields::NamedTuple
 end
 size(d::ParaviewData) = size(d.x.val)
 
 # Print an overview of the ParaviewData struct:
 function Base.show(io::IO, d::ParaviewData)
-    println(io,"ParaviewData ")
-    println(io,"  size  : $(size(d.x))")
-    println(io,"  x     ϵ [ $(first(d.x.val)) : $(last(d.x.val))]")
-    println(io,"  y     ϵ [ $(first(d.y.val)) : $(last(d.y.val))]")
-    if  any(isnan.(NumValue(d.z)))
-        z_vals = extrema(d.z.val[isnan.(d.z.val).==false])
-        println(io,"  z     ϵ [ $(z_vals[1]) : $(z_vals[2])]; has NaN's")
+    println(io, "ParaviewData ")
+    println(io, "  size  : $(size(d.x))")
+    println(io, "  x     ϵ [ $(first(d.x.val)) : $(last(d.x.val))]")
+    println(io, "  y     ϵ [ $(first(d.y.val)) : $(last(d.y.val))]")
+    if any(isnan.(NumValue(d.z)))
+        z_vals = extrema(d.z.val[isnan.(d.z.val) .== false])
+        println(io, "  z     ϵ [ $(z_vals[1]) : $(z_vals[2])]; has NaN's")
     else
         z_vals = extrema(d.z.val)
-        println(io,"  z     ϵ [ $(z_vals[1]) : $(z_vals[2])]")
+        println(io, "  z     ϵ [ $(z_vals[1]) : $(z_vals[2])]")
     end
 
-    println(io,"  fields: $(keys(d.fields))")
+    println(io, "  fields: $(keys(d.fields))")
 
     # Only print attributes if we have non-default attributes
-    if any( propertynames(d) .== :atts)
+    return if any(propertynames(d) .== :atts)
         show_atts = true
-        if haskey(d.atts,"note")
-            if d.atts["note"]=="No attributes were given to this dataset"
+        if haskey(d.atts, "note")
+            if d.atts["note"] == "No attributes were given to this dataset"
                 show_atts = false
             end
         end
         if show_atts
-         println(io,"  attributes: $(keys(d.atts))")
+            println(io, "  attributes: $(keys(d.atts))")
         end
     end
 
@@ -321,17 +321,17 @@ end
 function Base.convert(::Type{ParaviewData}, d::GeoData)
 
     # Utilize the Geodesy.jl package & use the Cartesian Earth-Centered-Earth-Fixed (ECEF) coordinate system
-    lon         =   Array(ustrip.(d.lon.val));
-    lat         =   Array(ustrip.(d.lat.val));
-    LLA_Data    =   LLA.(lat,lon, Array(ustrip.(d.depth.val))*1000);            # convert to LLA from Geodesy package
-    X,Y,Z       =   zeros(size(lon)), zeros(size(lon)), zeros(size(lon));
+    lon = Array(ustrip.(d.lon.val))
+    lat = Array(ustrip.(d.lat.val))
+    LLA_Data = LLA.(lat, lon, Array(ustrip.(d.depth.val)) * 1000)             # convert to LLA from Geodesy package
+    X, Y, Z = zeros(size(lon)), zeros(size(lon)), zeros(size(lon))
 
     # convert to cartesian ECEF reference frame. Note that we use kilometers and the wgs84
     for i in eachindex(X)
         data_xyz = ECEF(LLA_Data[i], wgs84)
-        X[i] = data_xyz.x/1e3;
-        Y[i] = data_xyz.y/1e3;
-        Z[i] = data_xyz.z/1e3;
+        X[i] = data_xyz.x / 1.0e3
+        Y[i] = data_xyz.y / 1.0e3
+        Z[i] = data_xyz.z / 1.0e3
     end
 
 
@@ -342,7 +342,7 @@ function Base.convert(::Type{ParaviewData}, d::GeoData)
 
     # In case any of the fields in the tuple has length 3, it is assumed to be a vector, so transfer it
     field_names = keys(d.fields)
-    for i=1:length(d.fields)
+    for i in 1:length(d.fields)
         if typeof(d.fields[i]) <: Tuple
             if length(d.fields[i]) == 3
                 # the tuple has length 3, which is therefore assumed to be a velocity vector
@@ -357,10 +357,8 @@ function Base.convert(::Type{ParaviewData}, d::GeoData)
     end
 
 
-
-    return ParaviewData(GeoUnit(X),GeoUnit(Y),GeoUnit(Z),d.fields)
+    return ParaviewData(GeoUnit(X), GeoUnit(Y), GeoUnit(Z), d.fields)
 end
-
 
 
 """
@@ -413,59 +411,59 @@ julia> write_paraview(Data_set1, "Data_set1")
 ```
 """
 struct UTMData <: AbstractGeneralGrid
-    EW       ::  GeoUnit
-    NS       ::  GeoUnit
-    depth    ::  GeoUnit
-    zone     ::  Any
-    northern ::  Any
-    fields   ::  NamedTuple
-    atts     ::  Dict
+    EW::GeoUnit
+    NS::GeoUnit
+    depth::GeoUnit
+    zone::Any
+    northern::Any
+    fields::NamedTuple
+    atts::Dict
 
     # Ensure that the data is of the correct format
-    function UTMData(EW,NS,depth,zone,northern,fields,atts=nothing)
+    function UTMData(EW, NS, depth, zone, northern, fields, atts = nothing)
 
         # check depth & convert it to units of km in case no units are given or it has different length units
-        if unit.(depth)[1]==NoUnits
-            depth = depth*m                # in case depth has no dimensions
+        if unit.(depth)[1] == NoUnits
+            depth = depth * m                # in case depth has no dimensions
         end
-        depth = uconvert.(m,depth)         # convert to meters
+        depth = uconvert.(m, depth)         # convert to meters
         depth = GeoUnit(depth)             # convert to GeoUnit structure with units of meters
 
         # Check ordering of the arrays in case of 3D
-        if sum(size(EW).>1)==3
-            if maximum(abs.(diff(EW,dims=2)))>maximum(abs.(diff(EW,dims=1))) || maximum(abs.(diff(EW,dims=3)))>maximum(abs.(diff(EW,dims=1)))
+        if sum(size(EW) .> 1) == 3
+            if maximum(abs.(diff(EW, dims = 2))) > maximum(abs.(diff(EW, dims = 1))) || maximum(abs.(diff(EW, dims = 3))) > maximum(abs.(diff(EW, dims = 1)))
                 @warn "It appears that the EW array has a wrong ordering"
             end
-            if maximum(abs.(diff(NS,dims=1)))>maximum(abs.(diff(NS,dims=2))) || maximum(abs.(diff(NS,dims=3)))>maximum(abs.(diff(NS,dims=2)))
+            if maximum(abs.(diff(NS, dims = 1))) > maximum(abs.(diff(NS, dims = 2))) || maximum(abs.(diff(NS, dims = 3))) > maximum(abs.(diff(NS, dims = 2)))
                 @warn "It appears that the NS array has a wrong ordering"
             end
         end
 
         # fields should be a NamedTuple. In case we simply provide an array, lets transfer it accordingly
-        if !(typeof(fields)<: NamedTuple)
-            if (typeof(fields)<: Tuple)
-                if length(fields)==1
-                    fields = (DataSet1=first(fields),)  # The field is a tuple; create a NamedTuple from it
+        if !(typeof(fields) <: NamedTuple)
+            if (typeof(fields) <: Tuple)
+                if length(fields) == 1
+                    fields = (DataSet1 = first(fields),)  # The field is a tuple; create a NamedTuple from it
                 else
                     error("Please employ a NamedTuple as input, rather than  a Tuple")  # out of luck
                 end
             else
-                fields = (DataSet1=fields,)
+                fields = (DataSet1 = fields,)
             end
         end
 
-        DataField = fields[1];
-        if typeof(DataField)<: Tuple
-            DataField = DataField[1];           # in case we have velocity vectors as input
+        DataField = fields[1]
+        if typeof(DataField) <: Tuple
+            DataField = DataField[1]            # in case we have velocity vectors as input
         end
 
-        if !(size(EW)==size(NS)==size(depth)==size(DataField))
+        if !(size(EW) == size(NS) == size(depth) == size(DataField))
             error("The size of EW/NS/Depth and the Fields should all be the same!")
         end
 
-        if length(zone)==1
-            zone = ones(Int64,size(EW))*zone
-            northern = ones(Bool,size(EW))*northern
+        if length(zone) == 1
+            zone = ones(Int64, size(EW)) * zone
+            northern = ones(Bool, size(EW)) * northern
         end
 
         # take care of attributes
@@ -474,14 +472,14 @@ struct UTMData <: AbstractGeneralGrid
             atts = Dict("note" => "No attributes were given to this dataset")
         else
             # check if a dict was given
-            if !(typeof(atts)<: Dict)
+            if !(typeof(atts) <: Dict)
                 error("Attributes should be given as Dict!")
             end
         end
 
-        return new(EW,NS,depth,zone,northern, fields,atts)
+        return new(EW, NS, depth, zone, northern, fields, atts)
 
-     end
+    end
 
 end
 size(d::UTMData) = size(d.EW.val)
@@ -489,36 +487,36 @@ extrema(d::UTMData) = [extrema(d.EW.val); extrema(d.NS.val); extrema(d.depth.val
 
 # Print an overview of the UTMData struct:
 function Base.show(io::IO, d::UTMData)
-    println(io,"UTMData ")
+    println(io, "UTMData ")
     if d.northern[1]
-        println(io,"  UTM zone : $(minimum(d.zone))-$(maximum(d.zone)) North")
+        println(io, "  UTM zone : $(minimum(d.zone))-$(maximum(d.zone)) North")
     else
-        println(io,"  UTM zone : $(minimum(d.zone))-$(maximum(d.zone)) South")
+        println(io, "  UTM zone : $(minimum(d.zone))-$(maximum(d.zone)) South")
     end
-    println(io,"    size    : $(size(d.EW))")
-    println(io,"    EW      ϵ [ $(first(d.EW.val)) : $(last(d.EW.val))]")
-    println(io,"    NS      ϵ [ $(first(d.NS.val)) : $(last(d.NS.val))]")
+    println(io, "    size    : $(size(d.EW))")
+    println(io, "    EW      ϵ [ $(first(d.EW.val)) : $(last(d.EW.val))]")
+    println(io, "    NS      ϵ [ $(first(d.NS.val)) : $(last(d.NS.val))]")
 
-    if  any(isnan.(NumValue(d.depth)))
-        z_vals = extrema(d.depth.val[isnan.(d.depth.val).==false])
-        println(io,"  depth     ϵ [ $(z_vals[1]) : $(z_vals[2])]; has NaNs")
+    if any(isnan.(NumValue(d.depth)))
+        z_vals = extrema(d.depth.val[isnan.(d.depth.val) .== false])
+        println(io, "  depth     ϵ [ $(z_vals[1]) : $(z_vals[2])]; has NaNs")
     else
         z_vals = extrema(d.depth.val)
-        println(io,"  depth     ϵ [ $(z_vals[1]) : $(z_vals[2])]")
+        println(io, "  depth     ϵ [ $(z_vals[1]) : $(z_vals[2])]")
     end
 
-    println(io,"    fields  : $(keys(d.fields))")
+    println(io, "    fields  : $(keys(d.fields))")
 
     # Only print attributes if we have non-default attributes
-    if any( propertynames(d) .== :atts)
+    return if any(propertynames(d) .== :atts)
         show_atts = true
-        if haskey(d.atts,"note")
-            if d.atts["note"]=="No attributes were given to this dataset"
+        if haskey(d.atts, "note")
+            if d.atts["note"] == "No attributes were given to this dataset"
                 show_atts = false
             end
         end
         if show_atts
-         println(io,"  attributes: $(keys(d.atts))")
+            println(io, "  attributes: $(keys(d.atts))")
         end
     end
 end
@@ -528,33 +526,33 @@ Converts a `UTMData` structure to a `GeoData` structure
 """
 function Base.convert(::Type{GeoData}, d::UTMData)
 
-    Lat = zeros(size(d.EW));
-    Lon = zeros(size(d.EW));
+    Lat = zeros(size(d.EW))
+    Lon = zeros(size(d.EW))
     for i in eachindex(d.EW.val)
 
         # Use functions of the Geodesy package to convert to LLA
-        utmz_i  = UTMZ(d.EW.val[i],d.NS.val[i],Float64(ustrip.(d.depth.val[i])),d.zone[i],d.northern[i])
-        lla_i   = LLA(utmz_i,wgs84)
-        lon = lla_i.lon;
-       # if lon<0; lon = 360+lon; end # as GMT expects this
+        utmz_i = UTMZ(d.EW.val[i], d.NS.val[i], Float64(ustrip.(d.depth.val[i])), d.zone[i], d.northern[i])
+        lla_i = LLA(utmz_i, wgs84)
+        lon = lla_i.lon
+        # if lon<0; lon = 360+lon; end # as GMT expects this
 
         Lat[i] = lla_i.lat
         Lon[i] = lon
     end
 
     # handle the case where an old GeoData structure is converted
-    if any( propertynames(d) .== :atts)
-        atts = d.atts;
+    if any(propertynames(d) .== :atts)
+        atts = d.atts
     else
         atts = Dict("note" => "No attributes were given to this dataset") # assign the default
     end
 
     depth = d.depth.val
-    if d.depth[1].unit==m
-        depth = depth/1000
+    if d.depth[1].unit == m
+        depth = depth / 1000
     end
 
-    return GeoData(Lon,Lat,depth,d.fields,atts)
+    return GeoData(Lon, Lat, depth, d.fields, atts)
 
 end
 
@@ -563,32 +561,32 @@ Converts a `GeoData` structure to a `UTMData` structure
 """
 function Base.convert(::Type{UTMData}, d::GeoData)
 
-    EW = zeros(size(d.lon));
-    NS = zeros(size(d.lon));
-    depth = zeros(size(d.lon));
-    zone = zeros(Int64,size(d.lon));
-    northern = zeros(Bool,size(d.lon));
+    EW = zeros(size(d.lon))
+    NS = zeros(size(d.lon))
+    depth = zeros(size(d.lon))
+    zone = zeros(Int64, size(d.lon))
+    northern = zeros(Bool, size(d.lon))
     for i in eachindex(d.lon.val)
 
         # Use functions of the Geodesy package to convert to LLA
-        lla_i   = LLA(d.lat.val[i],d.lon.val[i],Float64(ustrip.(d.depth.val[i])*1e3))
-        utmz_i  = UTMZ(lla_i, wgs84)
+        lla_i = LLA(d.lat.val[i], d.lon.val[i], Float64(ustrip.(d.depth.val[i]) * 1.0e3))
+        utmz_i = UTMZ(lla_i, wgs84)
 
         EW[i] = utmz_i.x
         NS[i] = utmz_i.y
         depth[i] = utmz_i.z
-        zone[i] = utmz_i.zone;
+        zone[i] = utmz_i.zone
         northern[i] = utmz_i.isnorth
     end
 
     # handle the case where an old GeoData structure is converted
-    if any( propertynames(d) .== :atts)
-        atts = d.atts;
+    if any(propertynames(d) .== :atts)
+        atts = d.atts
     else
         atts = Dict("note" => "No attributes were given to this dataset") # assign the default
     end
 
-    return UTMData(EW,NS,depth,zone, northern, d.fields, atts)
+    return UTMData(EW, NS, depth, zone, northern, d.fields, atts)
 
 end
 
@@ -598,21 +596,21 @@ end
 
 This flips the data in the structure in a certain dimension (default is z [3])
 """
-function flip(Data::GeoData, dimension=3)
+function flip(Data::GeoData, dimension = 3)
 
-    depth = reverse(Data.depth.val,dims=dimension)*Data.depth.unit  # flip depth
-    lon   = reverse(Data.lon.val,dims=dimension)*Data.lon.unit      # flip
-    lat   = reverse(Data.lat.val,dims=dimension)*Data.lat.unit      # flip
+    depth = reverse(Data.depth.val, dims = dimension) * Data.depth.unit  # flip depth
+    lon = reverse(Data.lon.val, dims = dimension) * Data.lon.unit      # flip
+    lat = reverse(Data.lat.val, dims = dimension) * Data.lat.unit      # flip
 
     # flip fields
-    fields = Data.fields;
-    name_keys  = keys(fields)
-    for ifield = 1:length(fields)
-        dat = reverse(fields[ifield],dims=dimension);               # flip direction
+    fields = Data.fields
+    name_keys = keys(fields)
+    for ifield in 1:length(fields)
+        dat = reverse(fields[ifield], dims = dimension)                # flip direction
         fields = merge(fields, [name_keys[ifield] => dat])  # replace in existing NTuple
     end
 
-    return GeoData(lon,lat,depth, fields)
+    return GeoData(lon, lat, depth, fields)
 end
 
 
@@ -626,34 +624,33 @@ Converts a `GeoData` structure to fixed UTM zone, around a given `ProjectionPoin
 """
 function convert2UTMzone(d::GeoData, proj::ProjectionPoint)
 
-    EW = zeros(size(d.lon));
-    NS  = zeros(size(d.lon));
-    zone        = zeros(Int64,size(d.lon));
-    northern    = zeros(Bool,size(d.lon));
-    trans       = UTMfromLLA(proj.zone, proj.isnorth, wgs84)
+    EW = zeros(size(d.lon))
+    NS = zeros(size(d.lon))
+    zone = zeros(Int64, size(d.lon))
+    northern = zeros(Bool, size(d.lon))
+    trans = UTMfromLLA(proj.zone, proj.isnorth, wgs84)
     for i in eachindex(d.lon.val)
 
         # Use functions of the Geodesy package to convert to LLA
-        lla_i  =   LLA(d.lat.val[i],d.lon.val[i],Float64(ustrip.(d.depth.val[i])*1e3))
-        utm_i  =   trans(lla_i)
+        lla_i = LLA(d.lat.val[i], d.lon.val[i], Float64(ustrip.(d.depth.val[i]) * 1.0e3))
+        utm_i = trans(lla_i)
 
         EW[i] = utm_i.x
         NS[i] = utm_i.y
-        zone[i] = proj.zone;
+        zone[i] = proj.zone
         northern[i] = proj.isnorth
     end
 
     # handle the case where an old GeoData structure is converted
-    if any( propertynames(d) .== :atts)
-        atts = d.atts;
+    if any(propertynames(d) .== :atts)
+        atts = d.atts
     else
         atts = Dict("note" => "No attributes were given to this dataset") # assign the default
     end
 
-    return UTMData(EW,NS,d.depth.val,zone, northern, d.fields,atts)
+    return UTMData(EW, NS, d.depth.val, zone, northern, d.fields, atts)
 
 end
-
 
 
 """
@@ -708,49 +705,49 @@ which would allow visualizing this in paraview in the usual manner:
 
 """
 struct CartData <: AbstractGeneralGrid
-    x       ::  GeoUnit
-    y       ::  GeoUnit
-    z       ::  GeoUnit
-    fields  ::  NamedTuple
-    atts    ::  Dict
+    x::GeoUnit
+    y::GeoUnit
+    z::GeoUnit
+    fields::NamedTuple
+    atts::Dict
 
     # Ensure that the data is of the correct format
-    function CartData(x,y,z,fields,atts=nothing)
+    function CartData(x, y, z, fields, atts = nothing)
 
         # Check ordering of the arrays in case of 3D
-        if sum(size(x).>1)==3
-            if maximum(abs.(diff(x,dims=2)))>maximum(abs.(diff(x,dims=1))) || maximum(abs.(diff(x,dims=3)))>maximum(abs.(diff(x,dims=1)))
+        if sum(size(x) .> 1) == 3
+            if maximum(abs.(diff(x, dims = 2))) > maximum(abs.(diff(x, dims = 1))) || maximum(abs.(diff(x, dims = 3))) > maximum(abs.(diff(x, dims = 1)))
                 @warn "It appears that the x-array has a wrong ordering"
             end
-            if maximum(abs.(diff(y,dims=1)))>maximum(abs.(diff(y,dims=2))) || maximum(abs.(diff(y,dims=3)))>maximum(abs.(diff(y,dims=2)))
+            if maximum(abs.(diff(y, dims = 1))) > maximum(abs.(diff(y, dims = 2))) || maximum(abs.(diff(y, dims = 3))) > maximum(abs.(diff(y, dims = 2)))
                 @warn "It appears that the y-array has a wrong ordering"
             end
         end
 
         # check depth & convert it to units of km in case no units are given or it has different length units
-        x = convert!(x,km)
-        y = convert!(y,km)
-        z = convert!(z,km)
+        x = convert!(x, km)
+        y = convert!(y, km)
+        z = convert!(z, km)
 
         # fields should be a NamedTuple. In case we simply provide an array, lets transfer it accordingly
-        if !(typeof(fields)<: NamedTuple)
-            if (typeof(fields)<: Tuple)
-                if length(fields)==1
-                    fields = (DataSet1=first(fields),)  # The field is a tuple; create a NamedTuple from it
+        if !(typeof(fields) <: NamedTuple)
+            if (typeof(fields) <: Tuple)
+                if length(fields) == 1
+                    fields = (DataSet1 = first(fields),)  # The field is a tuple; create a NamedTuple from it
                 else
                     error("Please employ a NamedTuple as input, rather than a Tuple")  # out of luck
                 end
             else
-                fields = (DataSet1=fields,)
+                fields = (DataSet1 = fields,)
             end
         end
 
-        DataField = fields[1];
-        if typeof(DataField)<: Tuple
-            DataField = DataField[1];           # in case we have velocity vectors as input
+        DataField = fields[1]
+        if typeof(DataField) <: Tuple
+            DataField = DataField[1]            # in case we have velocity vectors as input
         end
 
-        if !(size(x)==size(y)==size(z)==size(DataField))
+        if !(size(x) == size(y) == size(z) == size(DataField))
             error("The size of x/y/z and the Fields should all be the same!")
         end
 
@@ -760,14 +757,14 @@ struct CartData <: AbstractGeneralGrid
             atts = Dict("note" => "No attributes were given to this dataset")
         else
             # check if a dict was given
-            if !(typeof(atts)<: Dict)
+            if !(typeof(atts) <: Dict)
                 error("Attributes should be given as Dict!")
             end
         end
 
-        return new(x,y,z,fields,atts)
+        return new(x, y, z, fields, atts)
 
-     end
+    end
 
 end
 size(d::CartData) = size(d.x.val)
@@ -775,32 +772,32 @@ extrema(d::CartData) = [extrema(d.x.val); extrema(d.y.val); extrema(d.z.val)]
 
 # Print an overview of the UTMData struct:
 function Base.show(io::IO, d::CartData)
-    println(io,"CartData ")
-    println(io,"    size    : $(size(d.x))")
-    println(io,"    x       ϵ [ $(minimum(d.x.val)) : $(maximum(d.x.val))]")
-    println(io,"    y       ϵ [ $(minimum(d.y.val)) : $(maximum(d.y.val))]")
+    println(io, "CartData ")
+    println(io, "    size    : $(size(d.x))")
+    println(io, "    x       ϵ [ $(minimum(d.x.val)) : $(maximum(d.x.val))]")
+    println(io, "    y       ϵ [ $(minimum(d.y.val)) : $(maximum(d.y.val))]")
 
-    if  any(isnan.(NumValue(d.z)))
-        z_vals = extrema(d.z.val[isnan.(d.z.val).==false])
-        println(io,"    z       ϵ [ $(z_vals[1]) : $(z_vals[2])]; has NaN's")
+    if any(isnan.(NumValue(d.z)))
+        z_vals = extrema(d.z.val[isnan.(d.z.val) .== false])
+        println(io, "    z       ϵ [ $(z_vals[1]) : $(z_vals[2])]; has NaN's")
     else
         z_vals = extrema(d.z.val)
-        println(io,"    z       ϵ [ $(z_vals[1]) : $(z_vals[2])]")
+        println(io, "    z       ϵ [ $(z_vals[1]) : $(z_vals[2])]")
     end
 
 
-    println(io,"    fields  : $(keys(d.fields))")
+    println(io, "    fields  : $(keys(d.fields))")
 
     # Only print attributes if we have non-default attributes
-    if any( propertynames(d) .== :atts)
+    return if any(propertynames(d) .== :atts)
         show_atts = true
-        if haskey(d.atts,"note")
-            if d.atts["note"]=="No attributes were given to this dataset"
+        if haskey(d.atts, "note")
+            if d.atts["note"] == "No attributes were given to this dataset"
                 show_atts = false
             end
         end
         if show_atts
-        println(io,"  attributes: $(keys(d.atts))")
+            println(io, "  attributes: $(keys(d.atts))")
         end
     end
 end
@@ -821,8 +818,7 @@ CartData
   attributes: ["note"]
 ```
 """
-CartData(xyz::Tuple) = CartData(xyz[1],xyz[2],xyz[3],(Z=xyz[3],))
-
+CartData(xyz::Tuple) = CartData(xyz[1], xyz[2], xyz[3], (Z = xyz[3],))
 
 
 """
@@ -832,8 +828,10 @@ This transfers a `CartData` dataset to a `UTMData` dataset, that has a single UT
 """
 function convert2UTMzone(d::CartData, proj::ProjectionPoint)
 
-    return UTMData(ustrip.(d.x.val).*1e3 .+ proj.EW,ustrip.(d.y.val).*1e3 .+ proj.NS,
-                   ustrip.(d.z.val).*1e3,proj.zone, proj.isnorth, d.fields, d.atts)
+    return UTMData(
+        ustrip.(d.x.val) .* 1.0e3 .+ proj.EW, ustrip.(d.y.val) .* 1.0e3 .+ proj.NS,
+        ustrip.(d.z.val) .* 1.0e3, proj.zone, proj.isnorth, d.fields, d.atts
+    )
 
 end
 
@@ -843,15 +841,17 @@ Converts a `UTMData` structure to a `CartData` structure, which essentially tran
 """
 function convert2CartData(d::UTMData, proj::ProjectionPoint)
 
-        # handle the case where an old structure is converted
-        if any( propertynames(d) .== :atts)
-            atts = d.atts;
-        else
-            atts = Dict("note" => "No attributes were given to this dataset") # assign the default
-        end
+    # handle the case where an old structure is converted
+    if any(propertynames(d) .== :atts)
+        atts = d.atts
+    else
+        atts = Dict("note" => "No attributes were given to this dataset") # assign the default
+    end
 
-    return CartData( (ustrip.(d.EW.val) .- proj.EW)./1e3, (ustrip.(d.NS.val) .- proj.NS)./1e3,
-                     ustrip.(d.depth.val)./1e3, d.fields,atts)
+    return CartData(
+        (ustrip.(d.EW.val) .- proj.EW) ./ 1.0e3, (ustrip.(d.NS.val) .- proj.NS) ./ 1.0e3,
+        ustrip.(d.depth.val) ./ 1.0e3, d.fields, atts
+    )
 end
 
 
@@ -861,9 +861,11 @@ Converts a `GeoData` structure to a `CartData` structure, which essentially tran
 """
 function convert2CartData(d::GeoData, proj::ProjectionPoint)
 
-    d_UTM = convert2UTMzone(d,proj)
-    return CartData( (ustrip.(d_UTM.EW.val) .- proj.EW)./1e3, (ustrip.(d_UTM.NS.val) .- proj.NS)./1e3,
-                     ustrip.(d_UTM.depth.val), d_UTM.fields,d_UTM.atts)
+    d_UTM = convert2UTMzone(d, proj)
+    return CartData(
+        (ustrip.(d_UTM.EW.val) .- proj.EW) ./ 1.0e3, (ustrip.(d_UTM.NS.val) .- proj.NS) ./ 1.0e3,
+        ustrip.(d_UTM.depth.val), d_UTM.fields, d_UTM.atts
+    )
 end
 
 """
@@ -901,35 +903,35 @@ julia> size(Lon)
 """
 function lonlatdepth_grid(Lon::Any, Lat::Any, Depth::Any)
 
-    nLon    = length(Lon)
-    nLat    = length(Lat)
-    nDepth  = length(Depth)
+    nLon = length(Lon)
+    nLat = length(Lat)
+    nDepth = length(Depth)
 
-    if nLon==nLat==nDepth==1
+    if nLon == nLat == nDepth == 1
         error("Cannot use this routine for a 3D point (no need to create a grid in that case")
     end
-    if maximum([length(size(Lon)), length(size(Lat)), length(size(Depth))])>1
+    if maximum([length(size(Lon)), length(size(Lat)), length(size(Depth))]) > 1
         error("You can only give 1D vectors or numbers as input")
     end
 
-    Lon3D   =   zeros(nLon,nLat,nDepth);
-    Lat3D   =   zeros(nLon,nLat,nDepth);
-    Depth3D =   zeros(nLon,nLat,nDepth);
+    Lon3D = zeros(nLon, nLat, nDepth)
+    Lat3D = zeros(nLon, nLat, nDepth)
+    Depth3D = zeros(nLon, nLat, nDepth)
 
-    for i=1:nLon
-        for j=1:nLat
-            for k=1:nDepth
-                Lon3D[i,j,k]    =   ustrip.(Lon[i]);
-                Lat3D[i,j,k]    =   ustrip.(Lat[j]);
-                Depth3D[i,j,k]  =   ustrip.(Depth[k]);
+    for i in 1:nLon
+        for j in 1:nLat
+            for k in 1:nDepth
+                Lon3D[i, j, k] = ustrip.(Lon[i])
+                Lat3D[i, j, k] = ustrip.(Lat[j])
+                Depth3D[i, j, k] = ustrip.(Depth[k])
             end
         end
     end
 
     # Add dimensions back
-    Lon3D   =   Lon3D*unit(  Lon[1])
-    Lat3D   =   Lat3D*unit(  Lat[1])
-    Depth3D = Depth3D*unit(Depth[1])
+    Lon3D = Lon3D * unit(Lon[1])
+    Lat3D = Lat3D * unit(Lat[1])
+    Depth3D = Depth3D * unit(Depth[1])
 
     return Lon3D, Lat3D, Depth3D
 end
@@ -949,7 +951,7 @@ julia> size(X)
 See `lonlatdepth_grid` for more examples.
 """
 function xyz_grid(X_vec::Any, Y_vec::Any, Z_vec::Any)
-    return X,Y,Z = lonlatdepth_grid(X_vec,Y_vec,Z_vec)
+    return X, Y, Z = lonlatdepth_grid(X_vec, Y_vec, Z_vec)
 end
 
 
@@ -967,35 +969,38 @@ function velocity_spherical_to_cartesian!(Data::GeoData, Velocity::Tuple)
     # Note: This is partly based on scripts originally written by Tobias Baumann, Uni Mainz
 
     for i in eachindex(Data.lat.val)
-        az  =   Data.lon.val[i];
-        el  =   Data.lat.val[i];
+        az = Data.lon.val[i]
+        el = Data.lat.val[i]
 
-        R           = [-sind(az) -sind(el)*cosd(az) cosd(el)*cosd(az);
-                        cosd(az) -sind(el)*sind(az) cosd(el)*sind(az);
-                        0.0       cosd(el)          sind(el)            ];
+        R = [
+            -sind(az) -sind(el) * cosd(az) cosd(el) * cosd(az);
+            cosd(az) -sind(el) * sind(az) cosd(el) * sind(az);
+            0.0       cosd(el)          sind(el)
+        ]
 
-        V_sph       =   [Velocity[1][i]; Velocity[2][i]; Velocity[3][i] ];
+        V_sph = [Velocity[1][i]; Velocity[2][i]; Velocity[3][i] ]
 
         # Normalize spherical velocity
-        V_mag       =  sum(sqrt.(V_sph.^2));        # magnitude
-        V_norm      =  V_sph/V_mag
+        V_mag = sum(sqrt.(V_sph .^ 2))         # magnitude
+        V_norm = V_sph / V_mag
 
-        V_xyz_norm  =  R*V_norm;
-        V_xyz       =  V_xyz_norm.*V_mag;          # scale with magnitude
+        V_xyz_norm = R * V_norm
+        V_xyz = V_xyz_norm .* V_mag           # scale with magnitude
 
         # in-place saving of rotated velocity
-        Velocity[1][i] = V_xyz[1];
-        Velocity[2][i] = V_xyz[2];
-        Velocity[3][i] = V_xyz[3];
+        Velocity[1][i] = V_xyz[1]
+        Velocity[2][i] = V_xyz[2]
+        Velocity[3][i] = V_xyz[3]
     end
+    return
 end
 
 # Internal function that converts arrays to a GeoUnit with certain units
-function convert!(d,u)
-    if unit.(d)[1]==NoUnits
-        d = d*u                # in case it has no dimensions
+function convert!(d, u)
+    if unit.(d)[1] == NoUnits
+        d = d * u                # in case it has no dimensions
     end
-    d = uconvert.(u,d)         # convert to u
+    d = uconvert.(u, d)         # convert to u
     d = GeoUnit(d)             # convert to GeoUnit structure with units of u
 
     return d
@@ -1005,38 +1010,38 @@ end
     out = average_q1(d::Array) 
 3D linear averaging of a 3D array
 """
-function average_q1(d::Array) 
+function average_q1(d::Array)
 
     # we are using multidimensional iterations in julia here following https://julialang.org/blog/2016/02/iteration/
-    out = zeros(eltype(d),size(d) .- 1)
+    out = zeros(eltype(d), size(d) .- 1)
     R = CartesianIndices(out)
     Ifirst, Ilast = first(R), last(R)
     I1 = oneunit(Ifirst)
     for I in R
         n, s = 0, zero(eltype(out))
-        for J in max(Ifirst, I):min(Ilast + I1, I+I1)
+        for J in max(Ifirst, I):min(Ilast + I1, I + I1)
             s += d[J]
             n += 1
         end
-        out[I] = s/n
+        out[I] = s / n
     end
 
     return out
-end    
+end
 
 """
     X,Y,Z = coordinate_grids(Data::CartData; cell=false)
 
 Returns 3D coordinate arrays
 """
-function coordinate_grids(Data::CartData; cell=false)
-    X,Y,Z = NumValue(Data.x), NumValue(Data.y), NumValue(Data.z)
+function coordinate_grids(Data::CartData; cell = false)
+    X, Y, Z = NumValue(Data.x), NumValue(Data.y), NumValue(Data.z)
 
     if cell
-        X,Y,Z = average_q1(X),average_q1(Y), average_q1(Z)
+        X, Y, Z = average_q1(X), average_q1(Y), average_q1(Z)
     end
 
-    return X,Y,Z
+    return X, Y, Z
 end
 
 """
@@ -1044,14 +1049,14 @@ end
 
 Returns 3D coordinate arrays
 """
-function coordinate_grids(Data::GeoData; cell=false)
-    X,Y,Z = NumValue(Data.lon), NumValue(Data.lat), NumValue(Data.depth)
+function coordinate_grids(Data::GeoData; cell = false)
+    X, Y, Z = NumValue(Data.lon), NumValue(Data.lat), NumValue(Data.depth)
 
     if cell
-        X,Y,Z = average_q1(X),average_q1(Y), average_q1(Z)
+        X, Y, Z = average_q1(X), average_q1(Y), average_q1(Z)
     end
 
-    return X,Y,Z
+    return X, Y, Z
 end
 
 """
@@ -1059,15 +1064,15 @@ end
 
 Returns 3D coordinate arrays
 """
-function coordinate_grids(Data::UTMData; cell=false)
+function coordinate_grids(Data::UTMData; cell = false)
 
-    X,Y,Z =  NumValue(Data.EW), NumValue(Data.NS), NumValue(Data.depth)
+    X, Y, Z = NumValue(Data.EW), NumValue(Data.NS), NumValue(Data.depth)
 
     if cell
-        X,Y,Z = average_q1(X),average_q1(Y), average_q1(Z)
+        X, Y, Z = average_q1(X), average_q1(Y), average_q1(Z)
     end
 
-    return X,Y,Z
+    return X, Y, Z
 end
 
 """
@@ -1075,13 +1080,13 @@ end
 
 Returns 3D coordinate arrays
 """
-function coordinate_grids(Data::ParaviewData; cell=false)
-    X,Y,Z = xyz_grid(NumValue(Data.x), NumValue(Data.y), NumValue(Data.z))
+function coordinate_grids(Data::ParaviewData; cell = false)
+    X, Y, Z = xyz_grid(NumValue(Data.x), NumValue(Data.y), NumValue(Data.z))
     if cell
-        X,Y,Z = average_q1(X),average_q1(Y), average_q1(Z)
+        X, Y, Z = average_q1(X), average_q1(Y), average_q1(Z)
     end
-    
-    return X,Y,Z
+
+    return X, Y, Z
 end
 
 
@@ -1089,14 +1094,14 @@ end
     Structure that holds data for an orthogonal cartesian grid, which can be described with 1D vectors
 """
 struct CartGrid{FT, D} <: AbstractGeneralGrid
-    ConstantΔ   :: Bool                         # Constant spacing (true in all cases for now)
-    N           :: NTuple{D,Int}                # Number of grid points in every direction
-    Δ           :: NTuple{D,FT}                 # (constant) spacing in every direction
-    L           :: NTuple{D,FT}                 # Domain size
-    min         :: NTuple{D,FT}                 # start of the grid in every direction
-    max         :: NTuple{D,FT}                 # end of the grid in every direction
-    coord1D     :: NTuple{D,Vector{FT}}   # Tuple with 1D vectors in all directions
-    coord1D_cen :: NTuple{D,Vector{FT}}   # Tuple with 1D vectors of center points in all directions
+    ConstantΔ::Bool                         # Constant spacing (true in all cases for now)
+    N::NTuple{D, Int}                # Number of grid points in every direction
+    Δ::NTuple{D, FT}                 # (constant) spacing in every direction
+    L::NTuple{D, FT}                 # Domain size
+    min::NTuple{D, FT}                 # start of the grid in every direction
+    max::NTuple{D, FT}                 # end of the grid in every direction
+    coord1D::NTuple{D, Vector{FT}}   # Tuple with 1D vectors in all directions
+    coord1D_cen::NTuple{D, Vector{FT}}   # Tuple with 1D vectors of center points in all directions
 end
 size(d::CartGrid) = d.N
 
@@ -1143,11 +1148,11 @@ CartGrid{Float64, 2}
 
 """
 function create_CartGrid(;
-    size=(),
-     x = nothing, z = nothing, y = nothing,
-     extent = nothing,
-     CharDim = nothing
-)
+        size = (),
+        x = nothing, z = nothing, y = nothing,
+        extent = nothing,
+        CharDim = nothing
+    )
 
     if isa(size, Number)
         size = (size,)  # transfer to tuple
@@ -1156,74 +1161,76 @@ function create_CartGrid(;
         extent = (extent,)
     end
     N = size
-    dim =   length(N)
+    dim = length(N)
 
     # Specify domain by length in every direction
     if !isnothing(extent)
-        x,y,z = nothing, nothing, nothing
-        x = (0., extent[1])
-        if dim>1
-            z =  (-extent[2], 0.0)       # vertical direction (negative)
+        x, y, z = nothing, nothing, nothing
+        x = (0.0, extent[1])
+        if dim > 1
+            z = (-extent[2], 0.0)       # vertical direction (negative)
         end
-        if dim>2
-            y = (0., extent[3])
+        if dim > 2
+            y = (0.0, extent[3])
         end
     end
 
     FT = typeof(x[1])
-    if      dim==1
+    if dim == 1
         x = FT.(x)
         L = (x[2] - x[1],)
-        X₁= (x[1], )
-    elseif  dim==2
-        x,z = FT.(x), FT.(z)
+        X₁ = (x[1],)
+    elseif dim == 2
+        x, z = FT.(x), FT.(z)
         L = (x[2] - x[1], z[2] - z[1])
-        X₁= (x[1], z[1])
+        X₁ = (x[1], z[1])
     else
-        x,y,z = FT.(x), FT.(y), FT.(z)
+        x, y, z = FT.(x), FT.(y), FT.(z)
         L = (x[2] - x[1], y[2] - y[1], z[2] - z[1])
-        X₁= (x[1], y[1], z[1])
+        X₁ = (x[1], y[1], z[1])
     end
-    Xₙ  = X₁ .+ L
-    Δ   = L ./ (N .- 1)
+    Xₙ = X₁ .+ L
+    Δ = L ./ (N .- 1)
 
     # nondimensionalize
     if !isnothing(CharDim)
-        X₁, Xₙ, Δ, L    = GeoUnit.(X₁), GeoUnit.(Xₙ), GeoUnit.(Δ),  GeoUnit.(L)
+        X₁, Xₙ, Δ, L = GeoUnit.(X₁), GeoUnit.(Xₙ), GeoUnit.(Δ), GeoUnit.(L)
 
-        X₁              = ntuple( i -> nondimensionalize(X₁[i], CharDim), dim)
-        Xₙ              = ntuple( i -> nondimensionalize(Xₙ[i], CharDim), dim)
-        Δ               = ntuple( i -> nondimensionalize(Δ[i],  CharDim), dim)
-        L               = ntuple( i -> nondimensionalize(L[i],  CharDim), dim)
+        X₁ = ntuple(i -> nondimensionalize(X₁[i], CharDim), dim)
+        Xₙ = ntuple(i -> nondimensionalize(Xₙ[i], CharDim), dim)
+        Δ = ntuple(i -> nondimensionalize(Δ[i], CharDim), dim)
+        L = ntuple(i -> nondimensionalize(L[i], CharDim), dim)
 
-        X₁, Xₙ, Δ, L    = NumValue.(X₁), NumValue.(Xₙ), NumValue.(Δ), NumValue.(L)
+        X₁, Xₙ, Δ, L = NumValue.(X₁), NumValue.(Xₙ), NumValue.(Δ), NumValue.(L)
     end
 
     # Generate 1D coordinate arrays of vertices in all directions
-    coord1D=()
-    for idim=1:dim
-        coord1D  = (coord1D...,   Vector(range(X₁[idim], Xₙ[idim]; length = N[idim]  )))
+    coord1D = ()
+    for idim in 1:dim
+        coord1D = (coord1D..., Vector(range(X₁[idim], Xₙ[idim]; length = N[idim])))
     end
 
     # Generate 1D coordinate arrays centers in all directionbs
-    coord1D_cen=()
-    for idim=1:dim
-        coord1D_cen  = (coord1D_cen...,   Vector(range(X₁[idim]+Δ[idim]/2, Xₙ[idim]-Δ[idim]/2; length = N[idim]-1  )))
+    coord1D_cen = ()
+    for idim in 1:dim
+        coord1D_cen = (coord1D_cen..., Vector(range(X₁[idim] + Δ[idim] / 2, Xₙ[idim] - Δ[idim] / 2; length = N[idim] - 1)))
     end
 
-    ConstantΔ   = true;
-    return CartGrid(ConstantΔ,N,Δ,L,X₁,Xₙ,coord1D, coord1D_cen)
+    ConstantΔ = true
+    return CartGrid(ConstantΔ, N, Δ, L, X₁, Xₙ, coord1D, coord1D_cen)
 
 end
 
 # view grid object
 function show(io::IO, g::CartGrid{FT, DIM}) where {FT, DIM}
 
-    print(io, "CartGrid{$FT, $DIM} \n",
-              "           size: $(g.N) \n",
-              "         length: $(g.L) \n",
-              "         domain: $(domain_string(g)) \n",
-              " grid spacing Δ: $(g.Δ) \n")
+    return print(
+        io, "CartGrid{$FT, $DIM} \n",
+        "           size: $(g.N) \n",
+        "         length: $(g.L) \n",
+        "         domain: $(domain_string(g)) \n",
+        " grid spacing Δ: $(g.Δ) \n"
+    )
 
 end
 
@@ -1231,17 +1238,17 @@ end
 function domain_string(grid::CartGrid{FT, DIM}) where {FT, DIM}
 
     xₗ, xᵣ = grid.coord1D[1][1], grid.coord1D[1][end]
-    if DIM>1
+    if DIM > 1
         yₗ, yᵣ = grid.coord1D[2][1], grid.coord1D[2][end]
     end
-    if DIM>2
+    if DIM > 2
         zₗ, zᵣ = grid.coord1D[3][1], grid.coord1D[3][end]
     end
-    if DIM==1
+    if DIM == 1
         return "x ∈ [$xₗ, $xᵣ]"
-    elseif DIM==2
+    elseif DIM == 2
         return "x ∈ [$xₗ, $xᵣ], z ∈ [$yₗ, $yᵣ]"
-    elseif DIM==3
+    elseif DIM == 3
         return "x ∈ [$xₗ, $xᵣ], y ∈ [$yₗ, $yᵣ], z ∈ [$zₗ, $zᵣ]"
     end
 end
@@ -1252,23 +1259,23 @@ end
 
 Returns 3D coordinate arrays
 """
-function coordinate_grids(Data::CartGrid; cell=false)
+function coordinate_grids(Data::CartGrid; cell = false)
 
     x_vec = NumValue(Data.coord1D[1])
     y_vec = NumValue(Data.coord1D[2])
     z_vec = NumValue(Data.coord1D[3])
 
     if cell
-        x_vec = (x_vec[2:end] + x_vec[1:end-1])/2
-        z_vec = (z_vec[2:end] + z_vec[1:end-1])/2
-        if length(y_vec)>1
-            y_vec = (y_vec[2:end] + y_vec[1:end-1])/2
+        x_vec = (x_vec[2:end] + x_vec[1:(end - 1)]) / 2
+        z_vec = (z_vec[2:end] + z_vec[1:(end - 1)]) / 2
+        if length(y_vec) > 1
+            y_vec = (y_vec[2:end] + y_vec[1:(end - 1)]) / 2
         end
     end
-    
-    X,Y,Z = xyz_grid(x_vec, y_vec, z_vec)
 
-    return X,Y,Z
+    X, Y, Z = xyz_grid(x_vec, y_vec, z_vec)
+
+    return X, Y, Z
 end
 
 """
@@ -1276,25 +1283,23 @@ end
 
 Returns a CartData set given a cartesian grid `Grid` and `fields` defined on that grid.
 """
-function CartData(Grid::CartGrid, fields::NamedTuple; y_val=0.0)
-    if length(Grid.N)==3
-        X,Y,Z = xyz_grid(Grid.coord1D[1], Grid.coord1D[2], Grid.coord1D[3])  # 3D grid
-    elseif length(Grid.N)==2
-        X,Y,Z = xyz_grid(Grid.coord1D[1], y_val, Grid.coord1D[2])  # 2D grid
+function CartData(Grid::CartGrid, fields::NamedTuple; y_val = 0.0)
+    if length(Grid.N) == 3
+        X, Y, Z = xyz_grid(Grid.coord1D[1], Grid.coord1D[2], Grid.coord1D[3])  # 3D grid
+    elseif length(Grid.N) == 2
+        X, Y, Z = xyz_grid(Grid.coord1D[1], y_val, Grid.coord1D[2])  # 2D grid
 
         # the fields need to be reshaped from 2D to 3D arrays; we replace them in the NamedTuple as follows
         names = keys(fields)
-        for ifield = 1:length(names)
-            dat = reshape(fields[ifield],Grid.N[1],1,Grid.N[2]);    # reshape into 3D form
+        for ifield in 1:length(names)
+            dat = reshape(fields[ifield], Grid.N[1], 1, Grid.N[2])     # reshape into 3D form
             fields = merge(fields, [names[ifield] => dat])
         end
 
     end
 
-    return CartData(X,Y,Z, fields)
+    return CartData(X, Y, Z, fields)
 end
-
-
 
 
 """
@@ -1302,50 +1307,50 @@ end
 Holds a Q1 Finite Element Data set with vertex and cell data. The specified coordinates are the ones of the vertices.
 """
 struct Q1Data <: AbstractGeneralGrid
-    x           ::  GeoUnit
-    y           ::  GeoUnit
-    z           ::  GeoUnit
-    fields      ::  NamedTuple
-    cellfields  ::  NamedTuple
-    atts        ::  Dict
+    x::GeoUnit
+    y::GeoUnit
+    z::GeoUnit
+    fields::NamedTuple
+    cellfields::NamedTuple
+    atts::Dict
 
     # Ensure that the data is of the correct format
-    function Q1Data(x,y,z,fields,cellfields, atts=nothing)
+    function Q1Data(x, y, z, fields, cellfields, atts = nothing)
 
         # Check ordering of the arrays in case of 3D
-        if sum(size(x).>1)==3
-            if maximum(abs.(diff(x,dims=2)))>maximum(abs.(diff(x,dims=1))) || maximum(abs.(diff(x,dims=3)))>maximum(abs.(diff(x,dims=1)))
+        if sum(size(x) .> 1) == 3
+            if maximum(abs.(diff(x, dims = 2))) > maximum(abs.(diff(x, dims = 1))) || maximum(abs.(diff(x, dims = 3))) > maximum(abs.(diff(x, dims = 1)))
                 @warn "It appears that the x-array has a wrong ordering"
             end
-            if maximum(abs.(diff(y,dims=1)))>maximum(abs.(diff(y,dims=2))) || maximum(abs.(diff(y,dims=3)))>maximum(abs.(diff(y,dims=2)))
+            if maximum(abs.(diff(y, dims = 1))) > maximum(abs.(diff(y, dims = 2))) || maximum(abs.(diff(y, dims = 3))) > maximum(abs.(diff(y, dims = 2)))
                 @warn "It appears that the y-array has a wrong ordering"
             end
         end
 
         # check depth & convert it to units of km in case no units are given or it has different length units
-        x = convert!(x,km)
-        y = convert!(y,km)
-        z = convert!(z,km)
+        x = convert!(x, km)
+        y = convert!(y, km)
+        z = convert!(z, km)
 
         # fields should be a NamedTuple. In case we simply provide an array, lets transfer it accordingly
-        if !(typeof(fields)<: NamedTuple)
-            if (typeof(fields)<: Tuple)
-                if length(fields)==1
-                    fields = (DataSet1=first(fields),)  # The field is a tuple; create a NamedTuple from it
+        if !(typeof(fields) <: NamedTuple)
+            if (typeof(fields) <: Tuple)
+                if length(fields) == 1
+                    fields = (DataSet1 = first(fields),)  # The field is a tuple; create a NamedTuple from it
                 else
                     error("Please employ a NamedTuple as input, rather than a Tuple")  # out of luck
                 end
             else
-                fields = (DataSet1=fields,)
+                fields = (DataSet1 = fields,)
             end
         end
 
-        DataField = fields[1];
-        if typeof(DataField)<: Tuple
-            DataField = DataField[1];           # in case we have velocity vectors as input
+        DataField = fields[1]
+        if typeof(DataField) <: Tuple
+            DataField = DataField[1]            # in case we have velocity vectors as input
         end
 
-        if !(size(x)==size(y)==size(z)==size(DataField))
+        if !(size(x) == size(y) == size(z) == size(DataField))
             error("The size of x/y/z and the vertex fields should all be the same!")
         end
 
@@ -1355,14 +1360,14 @@ struct Q1Data <: AbstractGeneralGrid
             atts = Dict("note" => "No attributes were given to this dataset")
         else
             # check if a dict was given
-            if !(typeof(atts)<: Dict)
+            if !(typeof(atts) <: Dict)
                 error("Attributes should be given as Dict!")
             end
         end
 
-        return new(x,y,z,fields,cellfields,atts)
+        return new(x, y, z, fields, cellfields, atts)
 
-     end
+    end
 
 end
 size(d::Q1Data) = size(d.x.val) .- 1 # size of mesh
@@ -1370,31 +1375,31 @@ extrema(d::Q1Data) = [extrema(d.x.val); extrema(d.y.val); extrema(d.z.val)]
 
 # Print an overview of the Q1Data struct:
 function Base.show(io::IO, d::Q1Data)
-    println(io,"Q1Data ")
-    println(io,"      size    : $(size(d))")
-    println(io,"      x       ϵ [ $(minimum(d.x.val)) : $(maximum(d.x.val))]")
-    println(io,"      y       ϵ [ $(minimum(d.y.val)) : $(maximum(d.y.val))]")
+    println(io, "Q1Data ")
+    println(io, "      size    : $(size(d))")
+    println(io, "      x       ϵ [ $(minimum(d.x.val)) : $(maximum(d.x.val))]")
+    println(io, "      y       ϵ [ $(minimum(d.y.val)) : $(maximum(d.y.val))]")
 
-    if  any(isnan.(NumValue(d.z)))
-        z_vals = extrema(d.z.val[isnan.(d.z.val).==false])
-        println(io,"      z       ϵ [ $(z_vals[1]) : $(z_vals[2])]; has NaN's")
+    if any(isnan.(NumValue(d.z)))
+        z_vals = extrema(d.z.val[isnan.(d.z.val) .== false])
+        println(io, "      z       ϵ [ $(z_vals[1]) : $(z_vals[2])]; has NaN's")
     else
         z_vals = extrema(d.z.val)
-        println(io,"      z       ϵ [ $(z_vals[1]) : $(z_vals[2])]")
+        println(io, "      z       ϵ [ $(z_vals[1]) : $(z_vals[2])]")
     end
-    println(io,"      fields  : $(keys(d.fields))")
-    println(io,"  cellfields  : $(keys(d.cellfields))")
+    println(io, "      fields  : $(keys(d.fields))")
+    println(io, "  cellfields  : $(keys(d.cellfields))")
 
     # Only print attributes if we have non-default attributes
-    if any( propertynames(d) .== :atts)
+    return if any(propertynames(d) .== :atts)
         show_atts = true
-        if haskey(d.atts,"note")
-            if d.atts["note"]=="No attributes were given to this dataset"
+        if haskey(d.atts, "note")
+            if d.atts["note"] == "No attributes were given to this dataset"
                 show_atts = false
             end
         end
         if show_atts
-        println(io,"  attributes: $(keys(d.atts))")
+            println(io, "  attributes: $(keys(d.atts))")
         end
     end
 end
@@ -1416,7 +1421,7 @@ CartData
   attributes: ["note"]
 ```
 """
-Q1Data(xyz::Tuple) = Q1Data(xyz[1],xyz[2],xyz[3],(Z=xyz[3],),NamedTuple())
+Q1Data(xyz::Tuple) = Q1Data(xyz[1], xyz[2], xyz[3], (Z = xyz[3],), NamedTuple())
 
 
 """
@@ -1432,58 +1437,62 @@ Parameters
 - `cellfields` with the fields of the cells
 
 """
-struct FEData{dim, points_per_cell} 
-    vertices     :: Array{Float64}
-    connectivity :: Array{Int64}
-    fields       :: NamedTuple
-    cellfields   :: NamedTuple
+struct FEData{dim, points_per_cell}
+    vertices::Array{Float64}
+    connectivity::Array{Int64}
+    fields::NamedTuple
+    cellfields::NamedTuple
 
     # Ensure that the data is of the correct format
-    function FEData(vertices,connectivity,fields=nothing,cellfields=nothing)
-        if isnothing(fields);       fields = NamedTuple();      end
-        if isnothing(cellfields);   cellfields = NamedTuple();  end
+    function FEData(vertices, connectivity, fields = nothing, cellfields = nothing)
+        if isnothing(fields)
+            fields = NamedTuple()
+        end
+        if isnothing(cellfields)
+            cellfields = NamedTuple()
+        end
 
-        dim = size(vertices,1)
-        points_per_cell = size(connectivity,1)
-        if points_per_cell>size(connectivity,2)
+        dim = size(vertices, 1)
+        points_per_cell = size(connectivity, 1)
+        if points_per_cell > size(connectivity, 2)
             println("# of points_per_cell > size(connectivity,2). Are you sure the ordering is ok?")
         end
-        if dim>size(vertices,2)
+        if dim > size(vertices, 2)
             println("# of dims > size(vertices,2). Are you sure the ordering is ok?")
         end
-        
-        return new{dim,points_per_cell}(vertices,connectivity,fields,cellfields)
-     end
+
+        return new{dim, points_per_cell}(vertices, connectivity, fields, cellfields)
+    end
 
 end
 
 
 # Print an overview of the FEData struct:
 function Base.show(io::IO, d::FEData{dim, points_per_cell}) where {dim, points_per_cell}
-    println(io,"FEData{$dim,$points_per_cell} ")
-    println(io,"    elements : $(size(d.connectivity,2))")
-    println(io,"    vertices : $(size(d.vertices,2))")
-    println(io,"     x       ϵ [ $(minimum(d.vertices,dims=2)[1]) : $(maximum(d.vertices,dims=2)[1])]")
-    println(io,"     y       ϵ [ $(minimum(d.vertices,dims=2)[2]) : $(maximum(d.vertices,dims=2)[2])]")
-    println(io,"     z       ϵ [ $(minimum(d.vertices,dims=2)[3]) : $(maximum(d.vertices,dims=2)[3])]")
-    println(io,"      fields : $(keys(d.fields))")
-    println(io,"  cellfields : $(keys(d.cellfields))")
+    println(io, "FEData{$dim,$points_per_cell} ")
+    println(io, "    elements : $(size(d.connectivity, 2))")
+    println(io, "    vertices : $(size(d.vertices, 2))")
+    println(io, "     x       ϵ [ $(minimum(d.vertices, dims = 2)[1]) : $(maximum(d.vertices, dims = 2)[1])]")
+    println(io, "     y       ϵ [ $(minimum(d.vertices, dims = 2)[2]) : $(maximum(d.vertices, dims = 2)[2])]")
+    println(io, "     z       ϵ [ $(minimum(d.vertices, dims = 2)[3]) : $(maximum(d.vertices, dims = 2)[3])]")
+    println(io, "      fields : $(keys(d.fields))")
+    return println(io, "  cellfields : $(keys(d.cellfields))")
 end
 
-extrema(d::FEData) = extrema(d.vertices, dims=2)
-size(d::FEData) = size(d.connectivity,2)
+extrema(d::FEData) = extrema(d.vertices, dims = 2)
+size(d::FEData) = size(d.connectivity, 2)
 
 """
     X,Y,Z = coordinate_grids(Data::Q1Data; cell=false)
 
 Returns 3D coordinate arrays
 """
-function coordinate_grids(Data::Q1Data; cell=false)
-    X,Y,Z = NumValue(Data.x), NumValue(Data.y), NumValue(Data.z)
+function coordinate_grids(Data::Q1Data; cell = false)
+    X, Y, Z = NumValue(Data.x), NumValue(Data.y), NumValue(Data.z)
     if cell
-        X,Y,Z = average_q1(X),average_q1(Y), average_q1(Z)
+        X, Y, Z = average_q1(X), average_q1(Y), average_q1(Z)
     end
-    return X,Y,Z
+    return X, Y, Z
 end
 
 
@@ -1494,42 +1503,44 @@ Creates a Q1 FEM mesh from the `Q1Data` data which holds the vertex coordinates 
 """
 function convert2FEData(data::Q1Data)
 
-    X,Y,Z = coordinate_grids(data);
-        
+    X, Y, Z = coordinate_grids(data)
+
     # Unique number of all vertices
-    el_num = zeros(Int64,size(X))
-    num = 1;
+    el_num = zeros(Int64, size(X))
+    num = 1
     for I in eachindex(el_num)
-        el_num[I]  = num;
-        num += 1;
+        el_num[I] = num
+        num += 1
     end
-    
+
     # Coordinates of all vertices
     vertices = [X[:]'; Y[:]'; Z[:]']
-    
+
     # Connectivity of all cells
-    nelx,nely,nelz = size(X) .- 1
-    connectivity = zeros(Int64, 8, nelx*nely*nelz)
-    n = 1;
-    for k=1:nelz
-        for j=1:nely
-            for i=1:nelx
-               connectivity[:,n] = [el_num[i,j,k  ], el_num[i+1,j,k  ], el_num[i,j+1,k  ], el_num[i+1,j+1,k  ],
-                                    el_num[i,j,k+1], el_num[i+1,j,k+1], el_num[i,j+1,k+1], el_num[i+1,j+1,k+1]]
-                n += 1                                    
+    nelx, nely, nelz = size(X) .- 1
+    connectivity = zeros(Int64, 8, nelx * nely * nelz)
+    n = 1
+    for k in 1:nelz
+        for j in 1:nely
+            for i in 1:nelx
+                connectivity[:, n] = [
+                    el_num[i, j, k], el_num[i + 1, j, k], el_num[i, j + 1, k], el_num[i + 1, j + 1, k],
+                    el_num[i, j, k + 1], el_num[i + 1, j, k + 1], el_num[i, j + 1, k + 1], el_num[i + 1, j + 1, k + 1],
+                ]
+                n += 1
             end
         end
     end
 
-    data_fields=()
+    data_fields = ()
     for f in data.fields
         data_fields = (data_fields..., f[:])
     end
 
-    data_cellfields=()
+    data_cellfields = ()
     for f in data.cellfields
         data_cellfields = (data_cellfields..., f[:])
     end
 
-    return FEData(vertices,connectivity,  NamedTuple{keys(data.fields)}(data_fields),  NamedTuple{keys(data.cellfields)}(data_cellfields))
+    return FEData(vertices, connectivity, NamedTuple{keys(data.fields)}(data_fields), NamedTuple{keys(data.cellfields)}(data_cellfields))
 end

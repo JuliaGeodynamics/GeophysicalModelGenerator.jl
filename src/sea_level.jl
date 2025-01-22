@@ -20,11 +20,11 @@ struct SeaLevel{T}
 
     function SeaLevel(name::Symbol; flip_elevation = false, flip_age = false)
         age, elevation = load_sea_level(
-            name; 
+            name;
             flip_age = flip_age,
             flip_elevation = flip_elevation
         )
-        new{eltype(age)}(age, elevation, name)
+        return new{eltype(age)}(age, elevation, name)
     end
 end
 
