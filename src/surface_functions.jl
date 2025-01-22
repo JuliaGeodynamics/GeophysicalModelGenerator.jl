@@ -1,7 +1,7 @@
 # This contains a number of routines that deal with surfaces
 export remove_NaN_surface!, drape_on_topo, is_surface, fit_surface_to_points
 export above_surface, below_surface, interpolate_data_surface
-import Base: +,-
+import Base: +, -
 
 """
     issurf = is_surface(surf::AbstractGeneralGrid)
@@ -17,44 +17,44 @@ function is_surface(surf::AbstractGeneralGrid)
     return issurf
 end
 
-function  +(a::_T, b::_T) where _T<:AbstractGeneralGrid
+function +(a::_T, b::_T) where {_T <: AbstractGeneralGrid}
     @assert size(a) == size(b)
-    return _addSurfaces(a,b)
+    return _addSurfaces(a, b)
 end
 
-function  -(a::_T, b::_T) where _T<:AbstractGeneralGrid
+function -(a::_T, b::_T) where {_T <: AbstractGeneralGrid}
     @assert size(a) == size(b)
-    return _subtractSurfaces(a,b)
+    return _subtractSurfaces(a, b)
 end
 
 # Internal routines
-_addSurfaces(a::_T, b::_T) where _T<:GeoData        = GeoData(a.lon.val, a.lat.val, a.depth.val + b.depth.val, merge(a.fields,b.fields))
-_addSurfaces(a::_T, b::_T) where _T<:UTMData        = UTMData(a.EW.val, a.NS.val, a.depth.val + b.depth.val, merge(a.fields,b.fields))
-_addSurfaces(a::_T, b::_T) where _T<:CartData       = CartData(a.x.val, a.y.val, a.z.val + b.z.val, merge(a.fields,b.fields))
-_addSurfaces(a::_T, b::_T) where _T<:ParaviewData   = ParaviewData(a.x.val, a.y.val, a.z.val + b.z.val, merge(a.fields,b.fields))
+_addSurfaces(a::_T, b::_T) where {_T <: GeoData} = GeoData(a.lon.val, a.lat.val, a.depth.val + b.depth.val, merge(a.fields, b.fields))
+_addSurfaces(a::_T, b::_T) where {_T <: UTMData} = UTMData(a.EW.val, a.NS.val, a.depth.val + b.depth.val, merge(a.fields, b.fields))
+_addSurfaces(a::_T, b::_T) where {_T <: CartData} = CartData(a.x.val, a.y.val, a.z.val + b.z.val, merge(a.fields, b.fields))
+_addSurfaces(a::_T, b::_T) where {_T <: ParaviewData} = ParaviewData(a.x.val, a.y.val, a.z.val + b.z.val, merge(a.fields, b.fields))
 
-_subtractSurfaces(a::_T, b::_T) where _T<:GeoData        = GeoData(a.lon.val, a.lat.val, a.depth.val - b.depth.val, merge(a.fields,b.fields))
-_subtractSurfaces(a::_T, b::_T) where _T<:UTMData        = UTMData(a.EW.val, a.NS.val, a.depth.val - b.depth.val, merge(a.fields,b.fields))
-_subtractSurfaces(a::_T, b::_T) where _T<:CartData       = CartData(a.x.val, a.y.val, a.z.val - b.z.val, merge(a.fields,b.fields))
-_subtractSurfaces(a::_T, b::_T) where _T<:ParaviewData   = ParaviewData(a.x.val, a.y.val, a.z.val - b.z.val, merge(a.fields,b.fields))
+_subtractSurfaces(a::_T, b::_T) where {_T <: GeoData} = GeoData(a.lon.val, a.lat.val, a.depth.val - b.depth.val, merge(a.fields, b.fields))
+_subtractSurfaces(a::_T, b::_T) where {_T <: UTMData} = UTMData(a.EW.val, a.NS.val, a.depth.val - b.depth.val, merge(a.fields, b.fields))
+_subtractSurfaces(a::_T, b::_T) where {_T <: CartData} = CartData(a.x.val, a.y.val, a.z.val - b.z.val, merge(a.fields, b.fields))
+_subtractSurfaces(a::_T, b::_T) where {_T <: ParaviewData} = ParaviewData(a.x.val, a.y.val, a.z.val - b.z.val, merge(a.fields, b.fields))
 
 """
     remove_NaN_surface!(Z::Array,X::Array,Y::Array)
 
 Removes NaN's from a grid `Z` by taking the closest points as specified by `X` and `Y`.
 """
-function remove_NaN_surface!(Z,X,Y)
+function remove_NaN_surface!(Z, X, Y)
     @assert size(Z) == size(X) == size(Y)
 
     # use nearest neighbour to interpolate data
-    id      = findall(isnan.(Z) .== false)
-    id_NaN  = findall(isnan.(Z))
+    id = findall(isnan.(Z) .== false)
+    id_NaN = findall(isnan.(Z))
 
-    coord   =   [X[id]'; Y[id]'];
-    kdtree  =   KDTree(coord; leafsize = 10);
+    coord = [X[id]'; Y[id]']
+    kdtree = KDTree(coord; leafsize = 10)
 
-    points    = [X[id_NaN]'; Y[id_NaN]'];
-    idx,dist  = nn(kdtree, points);
+    points = [X[id_NaN]'; Y[id_NaN]']
+    idx, dist = nn(kdtree, points)
 
     Z[id_NaN] = Z[id[idx]]
 
@@ -72,58 +72,60 @@ function drape_on_topo(Topo::GeoData, Data::GeoData)
     @assert is_surface(Topo)
     @assert is_surface(Data)
 
-    Lon,Lat,_   =   lonlatdepth_grid( Topo.lon.val[:,1,1], Topo.lat.val[1,:,1],Topo.depth.val[1,1,:]);
+    Lon, Lat, _ = lonlatdepth_grid(Topo.lon.val[:, 1, 1], Topo.lat.val[1, :, 1], Topo.depth.val[1, 1, :])
 
     # use nearest neighbour to interpolate data
-    idx         =   nearest_point_indices(Lon,Lat, vec(Data.lon.val), vec(Data.lat.val) );
+    idx = nearest_point_indices(Lon, Lat, vec(Data.lon.val), vec(Data.lat.val))
 
-    idx_out     =   findall(  (Lon .<  minimum(Data.lon.val)) .| (Lon .>  maximum(Data.lon.val)) .|
-                              (Lat .<  minimum(Data.lat.val)) .| (Lat .>  maximum(Data.lat.val)) )
+    idx_out = findall(
+        (Lon .< minimum(Data.lon.val)) .| (Lon .> maximum(Data.lon.val)) .|
+            (Lat .< minimum(Data.lat.val)) .| (Lat .> maximum(Data.lat.val))
+    )
 
-    fields_new  = Topo.fields;
-    field_names = keys(Data.fields);
+    fields_new = Topo.fields
+    field_names = keys(Data.fields)
 
-    for i = 1:length(Data.fields)
+    for i in 1:length(Data.fields)
 
         if typeof(Data.fields[i]) <: Tuple
 
             # vector or anything that contains more than 1 field
             data_tuple = Data.fields[i]      # we have a tuple (likely a vector field), so we have to loop
 
-            data_array = zeros(typeof(data_tuple[1][1]),size(Topo.lon.val,1),size(Topo.lon.val,2),size(Topo.lon.val,3),length(Data.fields[i]));     # create a 3D array that holds the 2D interpolated values
-            unit_array = zeros(size(data_array));
+            data_array = zeros(typeof(data_tuple[1][1]), size(Topo.lon.val, 1), size(Topo.lon.val, 2), size(Topo.lon.val, 3), length(Data.fields[i]))      # create a 3D array that holds the 2D interpolated values
+            unit_array = zeros(size(data_array))
 
-            for j=1:length(data_tuple)
-                data_field           =   data_tuple[j];
-                tmp                  =   data_array[:,:,:,1];
-                tmp                  =   data_field[idx]
-                data_array[:,:,:,j]  =   tmp
+            for j in 1:length(data_tuple)
+                data_field = data_tuple[j]
+                tmp = data_array[:, :, :, 1]
+                tmp = data_field[idx]
+                data_array[:, :, :, j] = tmp
             end
 
-            data_new    = tuple([data_array[:,:,:,c] for c in 1:size(data_array,4)]...)       # transform 4D matrix to tuple
+            data_new = tuple([data_array[:, :, :, c] for c in 1:size(data_array, 4)]...)       # transform 4D matrix to tuple
 
             # remove points outside domain
-            for j=1:length(data_tuple)
-                tmp           =   data_new[j];
+            for j in 1:length(data_tuple)
+                tmp = data_new[j]
                 tmp[idx_out] .= NaN
-                data_array[:,:,:,j]  =   tmp
+                data_array[:, :, :, j] = tmp
             end
-            data_new    = tuple([data_array[:,:,:,c] for c in 1:size(data_array,4)]...)       # transform 4D matrix to tuple
+            data_new = tuple([data_array[:, :, :, c] for c in 1:size(data_array, 4)]...)       # transform 4D matrix to tuple
 
         else
             # scalar field
-            data_new        =   zeros(typeof(Data.fields[i][1]), size(Topo.lon.val,1),size(Topo.lon.val,2),size(Topo.lon.val,3));
-            data_new        =   Data.fields[i][idx]                                 # interpolate data field
+            data_new = zeros(typeof(Data.fields[i][1]), size(Topo.lon.val, 1), size(Topo.lon.val, 2), size(Topo.lon.val, 3))
+            data_new = Data.fields[i][idx]                                 # interpolate data field
 
         end
 
         # replace the one
-        new_field   =   NamedTuple{(field_names[i],)}((data_new,))                          # Create a tuple with same name
-        fields_new  =   merge(fields_new, new_field);                                       # replace the field in fields_new
+        new_field = NamedTuple{(field_names[i],)}((data_new,))                          # Create a tuple with same name
+        fields_new = merge(fields_new, new_field)                                        # replace the field in fields_new
 
     end
 
-    Topo_new        =   GeoData(Topo.lon.val,Topo.lat.val,Topo.depth.val, fields_new)
+    Topo_new = GeoData(Topo.lon.val, Topo.lat.val, Topo.depth.val, fields_new)
 
     return Topo_new
 end
@@ -138,8 +140,8 @@ function drape_on_topo(Topo::CartData, Data::CartData)
     @assert is_surface(Topo)
     @assert is_surface(Data)
 
-    Topo_lonlat = GeoData(ustrip.(Topo.x.val),ustrip.(Topo.y.val), ustrip.(Topo.z.val), Topo.fields )
-    Data_lonlat = GeoData(ustrip.(Data.x.val),ustrip.(Data.y.val), ustrip.(Data.z.val), Data.fields )
+    Topo_lonlat = GeoData(ustrip.(Topo.x.val), ustrip.(Topo.y.val), ustrip.(Topo.z.val), Topo.fields)
+    Data_lonlat = GeoData(ustrip.(Data.x.val), ustrip.(Data.y.val), ustrip.(Data.z.val), Data.fields)
 
     Topo_new_lonlat = drape_on_topo(Topo_lonlat, Data_lonlat)
 
@@ -158,9 +160,9 @@ This fits the `depth` values of the surface `surf` to the `depth` value of the c
 function fit_surface_to_points(surf::GeoData, lon_pt::Vector, lat_pt::Vector, depth_pt::Vector)
     @assert is_surface(surf)
 
-    idx = nearest_point_indices(NumValue(surf.lon),NumValue(surf.lat),  lon_pt, lat_pt);
+    idx = nearest_point_indices(NumValue(surf.lon), NumValue(surf.lat), lon_pt, lat_pt)
     depth = NumValue(surf.depth)
-    depth[idx] .= depth_pt[idx];
+    depth[idx] .= depth_pt[idx]
 
     surf_new = surf
     surf_new.depth .= depth
@@ -177,7 +179,7 @@ This fits the `depth` values of the surface `surf` to the `depth` value of the c
 function fit_surface_to_points(surf::CartData, X_pt::Vector, Y_pt::Vector, Z_pt::Vector)
     @assert is_surface(surf)
 
-    idx = nearest_point_indices(NumValue(surf.x),NumValue(surf.y),  X_pt[:], Y_pt[:]);
+    idx = nearest_point_indices(NumValue(surf.x), NumValue(surf.y), X_pt[:], Y_pt[:])
     depth = NumValue(surf.z)
     depth = Z_pt[idx]
 
@@ -185,7 +187,6 @@ function fit_surface_to_points(surf::CartData, X_pt::Vector, Y_pt::Vector, Z_pt:
     surf_new.z.val .= depth
     return surf_new
 end
-
 
 
 """
@@ -223,24 +224,24 @@ julia> Above       =   above_surface(Data_set3D, Data_Moho);
 Now, `Above` is a boolean array that is true for points above the surface and false for points below and at the surface.
 
 """
-function above_surface(Data::GeoData, DataSurface::GeoData; above=true)
+function above_surface(Data::GeoData, DataSurface::GeoData; above = true)
 
-    if size(DataSurface.lon)[3]!=1
+    if size(DataSurface.lon)[3] != 1
         error("It seems that DataSurface is not a surface")
     end
 
     # Create interpolation object for surface
-    Lon_vec     =  DataSurface.lon.val[:,1,1];
-    Lat_vec     =  DataSurface.lat.val[1,:,1];
-    interpol    =  linear_interpolation((Lon_vec, Lat_vec), ustrip.(DataSurface.depth.val[:,:,1]));            # create interpolation object
+    Lon_vec = DataSurface.lon.val[:, 1, 1]
+    Lat_vec = DataSurface.lat.val[1, :, 1]
+    interpol = linear_interpolation((Lon_vec, Lat_vec), ustrip.(DataSurface.depth.val[:, :, 1]))             # create interpolation object
 
-    DepthSurface = interpol.(Data.lon.val,Data.lat.val);
-    DepthSurface = DepthSurface*unit(DataSurface.depth.val[1])
+    DepthSurface = interpol.(Data.lon.val, Data.lat.val)
+    DepthSurface = DepthSurface * unit(DataSurface.depth.val[1])
 
     if above
-        Above    =   Data.depth.val .> DepthSurface;
+        Above = Data.depth.val .> DepthSurface
     else
-        Above    =   Data.depth.val .< DepthSurface;
+        Above = Data.depth.val .< DepthSurface
     end
 
     return Above
@@ -252,7 +253,7 @@ end
 Determines if points within the 3D `Data` structure are below the GeoData surface `DataSurface`
 """
 function below_surface(Data::GeoData, DataSurface::GeoData)
-    return above_surface(Data::GeoData, DataSurface::GeoData; above=false)
+    return above_surface(Data::GeoData, DataSurface::GeoData; above = false)
 end
 
 """
@@ -260,12 +261,12 @@ end
 
 Determines if points within the 3D `Data_Cart` structure are above the Cartesian surface `DataSurface_Cart`
 """
-function above_surface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData; above=true)
+function above_surface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData; above = true)
 
-    Data            =   GeoData(ustrip.(Data_Cart.x.val),       ustrip.(Data_Cart.y.val),        ustrip.(Data_Cart.z.val), Data_Cart.fields)
-    DataSurface     =   GeoData(ustrip.(DataSurface_Cart.x.val),ustrip.(DataSurface_Cart.y.val), ustrip.(DataSurface_Cart.z.val), DataSurface_Cart.fields )
+    Data = GeoData(ustrip.(Data_Cart.x.val), ustrip.(Data_Cart.y.val), ustrip.(Data_Cart.z.val), Data_Cart.fields)
+    DataSurface = GeoData(ustrip.(DataSurface_Cart.x.val), ustrip.(DataSurface_Cart.y.val), ustrip.(DataSurface_Cart.z.val), DataSurface_Cart.fields)
 
-    return Above    =   above_surface(Data, DataSurface; above=above)
+    return Above = above_surface(Data, DataSurface; above = above)
 end
 
 """
@@ -273,17 +274,17 @@ end
 
 Determines if points within the 3D `Data_Cart` structure are above the Cartesian surface `DataSurface_Cart`
 """
-function above_surface(Data_Cart::Union{Q1Data,CartData}, DataSurface_Cart::CartData; above=true, cell=false)
+function above_surface(Data_Cart::Union{Q1Data, CartData}, DataSurface_Cart::CartData; above = true, cell = false)
 
-    X,Y,Z           =   coordinate_grids(Data_Cart, cell=cell)
+    X, Y, Z = coordinate_grids(Data_Cart, cell = cell)
     if cell
-        Data        =   GeoData(ustrip.(X),       ustrip.(Y),        ustrip.(Z), Data_Cart.cellfields)
+        Data = GeoData(ustrip.(X), ustrip.(Y), ustrip.(Z), Data_Cart.cellfields)
     else
-        Data        =   GeoData(ustrip.(X),       ustrip.(Y),        ustrip.(Z), Data_Cart.fields)
+        Data = GeoData(ustrip.(X), ustrip.(Y), ustrip.(Z), Data_Cart.fields)
     end
-    DataSurface     =   GeoData(ustrip.(DataSurface_Cart.x.val),ustrip.(DataSurface_Cart.y.val), ustrip.(DataSurface_Cart.z.val), DataSurface_Cart.fields )
+    DataSurface = GeoData(ustrip.(DataSurface_Cart.x.val), ustrip.(DataSurface_Cart.y.val), ustrip.(DataSurface_Cart.z.val), DataSurface_Cart.fields)
 
-    return Above    =   above_surface(Data, DataSurface; above=above)
+    return Above = above_surface(Data, DataSurface; above = above)
 end
 
 """
@@ -291,16 +292,16 @@ end
 
 Determines if points described by the `Grid` CartGrid structure are above the Cartesian surface `DataSurface_Cart`
 """
-function above_surface(Grid::CartGrid, DataSurface_Cart::CartData; above=true, cell=false)
+function above_surface(Grid::CartGrid, DataSurface_Cart::CartData; above = true, cell = false)
 
     if cell
-        X,Y,Z = xyz_grid(Grid.coord1D_cen...)
+        X, Y, Z = xyz_grid(Grid.coord1D_cen...)
     else
-        X,Y,Z = xyz_grid(Grid.coord1D...)
+        X, Y, Z = xyz_grid(Grid.coord1D...)
     end
-    Data = CartData(X,Y,Z,(Z=Z,))
+    Data = CartData(X, Y, Z, (Z = Z,))
 
-    return above_surface(Data, DataSurface_Cart; above=above)
+    return above_surface(Data, DataSurface_Cart; above = above)
 end
 
 
@@ -310,7 +311,7 @@ end
     Determines if points described by the `Grid` CartGrid structure are above the Cartesian surface `DataSurface_Cart`
 """
 function below_surface(Grid::CartGrid, DataSurface_Cart::CartData)
-    return above_surface(Grid, DataSurface_Cart; above=false)
+    return above_surface(Grid, DataSurface_Cart; above = false)
 end
 
 
@@ -320,7 +321,7 @@ end
 Determines if points within the 3D Data_Cart structure are below the Cartesian surface DataSurface_Cart
 """
 function below_surface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData)
-    return above_surface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData; above=false)
+    return above_surface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData; above = false)
 end
 
 """
@@ -328,8 +329,8 @@ end
 
 Determines if points within the 3D `Data_Cart` structure are below the Cartesian surface `DataSurface_Cart`
 """
-function below_surface(Data_Cart::Union{CartData,Q1Data}, DataSurface_Cart::CartData, cell=false)
-    return above_surface(Data_Cart, DataSurface_Cart; above=false, cell=cell)
+function below_surface(Data_Cart::Union{CartData, Q1Data}, DataSurface_Cart::CartData, cell = false)
+    return above_surface(Data_Cart, DataSurface_Cart; above = false, cell = cell)
 end
 
 """
@@ -364,14 +365,14 @@ julia> Surf_interp = interpolate_data_surface(Data, surf)
 function interpolate_data_surface(V::ParaviewData, Surf::ParaviewData)
 
     # Create GeoData structure:
-    V_geo               =   GeoData(V.x.val, V.y.val, V.z.val, V.fields)
-    V_geo.depth.val     =   ustrip(V_geo.depth.val);
+    V_geo = GeoData(V.x.val, V.y.val, V.z.val, V.fields)
+    V_geo.depth.val = ustrip(V_geo.depth.val)
 
-    Surf_geo            =   GeoData(Surf.x.val, Surf.y.val, Surf.z.val, Surf.fields)
-    Surf_geo.depth.val  =   ustrip(Surf_geo.depth.val);
+    Surf_geo = GeoData(Surf.x.val, Surf.y.val, Surf.z.val, Surf.fields)
+    Surf_geo.depth.val = ustrip(Surf_geo.depth.val)
 
-    Surf_interp_geo     =   interpolate_data_surface(V_geo, Surf_geo)
-    Surf_interp         =   ParaviewData(Surf_interp_geo.lon.val, Surf_interp_geo.lat.val, ustrip.(Surf_interp_geo.depth.val), Surf_interp_geo.fields)
+    Surf_interp_geo = interpolate_data_surface(V_geo, Surf_geo)
+    Surf_interp = ParaviewData(Surf_interp_geo.lon.val, Surf_interp_geo.lat.val, ustrip.(Surf_interp_geo.depth.val), Surf_interp_geo.fields)
 
     return Surf_interp
 
@@ -380,14 +381,14 @@ end
 function interpolate_data_surface(V::CartData, Surf::CartData)
 
     # Create GeoData structure:
-    V_geo               =   GeoData(V.x.val, V.y.val, V.z.val, V.fields)
-    V_geo.depth.val     =   ustrip(V_geo.depth.val);
+    V_geo = GeoData(V.x.val, V.y.val, V.z.val, V.fields)
+    V_geo.depth.val = ustrip(V_geo.depth.val)
 
-    Surf_geo            =   GeoData(Surf.x.val, Surf.y.val, Surf.z.val, Surf.fields)
-    Surf_geo.depth.val  =   ustrip(Surf_geo.depth.val);
+    Surf_geo = GeoData(Surf.x.val, Surf.y.val, Surf.z.val, Surf.fields)
+    Surf_geo.depth.val = ustrip(Surf_geo.depth.val)
 
-    Surf_interp_geo     =   interpolate_data_surface(V_geo, Surf_geo)
-    Surf_interp         =   CartData(Surf_interp_geo.lon.val, Surf_interp_geo.lat.val, ustrip.(Surf_interp_geo.depth.val), Surf_interp_geo.fields)
+    Surf_interp_geo = interpolate_data_surface(V_geo, Surf_geo)
+    Surf_interp = CartData(Surf_interp_geo.lon.val, Surf_interp_geo.lat.val, ustrip.(Surf_interp_geo.depth.val), Surf_interp_geo.fields)
 
     return Surf_interp
 

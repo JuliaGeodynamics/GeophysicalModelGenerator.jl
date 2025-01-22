@@ -15,12 +15,12 @@ julia> Data_set    =   GeophysicalModelGenerator.GeoData(Lon3D,Lat3D,Depth3D,(Da
 julia> save_GMG("test",Data_set)
 ```
 """
-function save_GMG(filename::String, data::Union{GeoData, CartData, UTMData}; dir=pwd())
-    file_ext = joinpath(dir,filename*".jld2")
+function save_GMG(filename::String, data::Union{GeoData, CartData, UTMData}; dir = pwd())
+    file_ext = joinpath(dir, filename * ".jld2")
     jldsave(file_ext; data)
 
     return nothing
-end 
+end
 
 """
     load_GMG(filename::String, dir=pwd(); maxattempts=5)
@@ -57,28 +57,26 @@ GeoData
 ```
 
 """
-function load_GMG(filename::String, dir=pwd(); maxattempts=5)
+function load_GMG(filename::String, dir = pwd(); maxattempts = 5)
 
     local_filename = "download_GMG_temp.jld2"
-    if contains(filename,"http")
-        file_ext = download_data(filename, local_filename, dir=dir, maxattempts=maxattempts)
+    if contains(filename, "http")
+        file_ext = download_data(filename, local_filename, dir = dir, maxattempts = maxattempts)
     else
         # local file
-        file_ext = joinpath(dir,filename*".jld2")
+        file_ext = joinpath(dir, filename * ".jld2")
     end
 
     # load data:
-    data =  load_object(file_ext)
+    data = load_object(file_ext)
 
     # remove local temporary file
-    if contains(filename,"http")
+    if contains(filename, "http")
         rm(local_filename)
     end
 
     return data
-end 
-
-
+end
 
 
 """
@@ -96,27 +94,27 @@ julia> download_data(url)
 ```
 
 """
-function download_data(url::String, local_filename="temp.dat"; dir=pwd(), maxattempts=5)
+function download_data(url::String, local_filename = "temp.dat"; dir = pwd(), maxattempts = 5)
 
-    if !contains(url,"http")
+    if !contains(url, "http")
         @warn "the url does not contain http; please double check that it worked"
     end
 
     #download remote file to a local temporary directory
-    file_ext = [];
+    file_ext = []
     attempt = 0
-    while attempt<maxattempts
-      try
-        file_ext = Downloads.download(url, joinpath(dir,local_filename))
-        break
-      catch
-        @warn "Failed downloading data on attempt $attempt/$maxattempts"
-        sleep(5)  # wait a few sec
-      end
-      attempt += 1
+    while attempt < maxattempts
+        try
+            file_ext = Downloads.download(url, joinpath(dir, local_filename))
+            break
+        catch
+            @warn "Failed downloading data on attempt $attempt/$maxattempts"
+            sleep(5)  # wait a few sec
+        end
+        attempt += 1
     end
     if isempty(file_ext)
-      error("Could not download GMT topography data")
+        error("Could not download GMT topography data")
     end
 
     return file_ext

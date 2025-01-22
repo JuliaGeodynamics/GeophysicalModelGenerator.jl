@@ -17,7 +17,7 @@ Optional options
 - `file_extension`:  file extension of the vtk files. Default is `.vts` but all `vt*` work.
 - `time`:  Vector of the timesteps; if not specified, pseudo time steps are assigned.
 """
-function make_paraview_collection(; dir=pwd(), pvd_name=nothing, files=nothing, file_extension = ".vts", time = nothing)
+function make_paraview_collection(; dir = pwd(), pvd_name = nothing, files = nothing, file_extension = ".vts", time = nothing)
 
     # if no files are given, use all vtm files in the directory
     curdir = pwd()
