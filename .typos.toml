@@ -5,6 +5,7 @@ Shepard = "Shepard"
 arange = "arange"
 iy = "iy"
 nin = "nin"
+tect = "tect"
 
 [files]
 extend-exclude = ["tutorials/*.pvsm","docs/paper/paper.bib"]

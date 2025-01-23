@@ -13,15 +13,15 @@ The search radius is `R=radius_factor*(Δx² + Δy² + Δz²)^(1/3)`
 
 `Grid_counts` is `Grid` but with an additional field `Count` that has the number of hits
 """
-function point_to_nearest_grid(Point::CartData, Grid::CartData; radius_factor=1)
+function point_to_nearest_grid(Point::CartData, Grid::CartData; radius_factor = 1)
 
     @assert length(size(Point.x)) == 1
 
     # call routine
-    Count = point_to_nearest_grid(NumValue(Point.x),NumValue(Point.y), NumValue(Point.z), NumValue(Grid.x),NumValue(Grid.y),NumValue(Grid.z); radius_factor=radius_factor)
+    Count = point_to_nearest_grid(NumValue(Point.x), NumValue(Point.y), NumValue(Point.z), NumValue(Grid.x), NumValue(Grid.y), NumValue(Grid.z); radius_factor = radius_factor)
 
     # return CartGrid with added field
-    return  addfield(Grid,"Count",Count);
+    return addfield(Grid, "Count", Count)
 end
 
 
@@ -33,13 +33,13 @@ vicinity of 3D `CartGrid` specified by `Grid`. The search radius is `R=radius_fa
 
 `Grid_counts` is `Grid` but with an additional field `Count` that has the number of hits
 """
-function point_to_nearest_grid(pt_x,pt_y,pt_z, Grid::CartData; radius_factor=1)
+function point_to_nearest_grid(pt_x, pt_y, pt_z, Grid::CartData; radius_factor = 1)
 
     # call routine
-    Count = point_to_nearest_grid(pt_x,pt_y,pt_z, NumValue(Grid.x),NumValue(Grid.y),NumValue(Grid.z); radius_factor=radius_factor)
+    Count = point_to_nearest_grid(pt_x, pt_y, pt_z, NumValue(Grid.x), NumValue(Grid.y), NumValue(Grid.z); radius_factor = radius_factor)
 
     # return CartGrid with added field
-    return  addfield(Grid,"Count",Count);
+    return addfield(Grid, "Count", Count)
 end
 
 
@@ -53,15 +53,15 @@ The search radius is `R=radius_factor*(Δx² + Δy² + Δz²)^(1/3)`
 
 `Grid_counts` is `Grid` but with an additional field `Count` that has the number of hits
 """
-function point_to_nearest_grid(Point::GeoData, Grid::GeoData; radius_factor=1)
+function point_to_nearest_grid(Point::GeoData, Grid::GeoData; radius_factor = 1)
 
     @assert length(size(Point.lon)) == 1
 
     # call routine
-    Count = point_to_nearest_grid(NumValue(Point.lon),NumValue(Point.lat), NumValue(Point.depth), NumValue(Grid.lon),NumValue(Grid.lat),NumValue(Grid.depth); radius_factor=radius_factor)
+    Count = point_to_nearest_grid(NumValue(Point.lon), NumValue(Point.lat), NumValue(Point.depth), NumValue(Grid.lon), NumValue(Grid.lat), NumValue(Grid.depth); radius_factor = radius_factor)
 
     # return CartGrid with added field
-    return  addfield(Grid,"Count",Count);
+    return addfield(Grid, "Count", Count)
 end
 
 
@@ -73,13 +73,13 @@ vicinity of 3D `GeoData` specified by `Grid`. The search radius is `R=radius_fac
 
 `Grid_counts` is `Grid` but with an additional field `Count` that has the number of hits
 """
-function point_to_nearest_grid(pt_x,pt_y,pt_z, Grid::GeoData; radius_factor=1)
+function point_to_nearest_grid(pt_x, pt_y, pt_z, Grid::GeoData; radius_factor = 1)
 
     # call routine
-    Count = point_to_nearest_grid(pt_x,pt_y,pt_z, NumValue(Grid.lon),NumValue(Grid.lat),NumValue(Grid.depth); radius_factor=radius_factor)
+    Count = point_to_nearest_grid(pt_x, pt_y, pt_z, NumValue(Grid.lon), NumValue(Grid.lat), NumValue(Grid.depth); radius_factor = radius_factor)
 
     # return CartGrid with added field
-    return  addfield(Grid,"Count",Count);
+    return addfield(Grid, "Count", Count)
 end
 
 """
@@ -90,23 +90,23 @@ vicinity of 3D grid point specified by `X`,`Y`,`Z` 3D coordinate arrays, with re
 The search radius is `R=radius_factor*(Δx² + Δy² + Δz²)^(1/3)`
 
 """
-function point_to_nearest_grid(pt_x,pt_y,pt_z, X,Y,Z; radius_factor=1)
-    
-    data = zeros(3,length(pt_x));
-    data[1,:],data[2,:],data[3,:] = pt_x[:], pt_y[:], pt_z[:]
+function point_to_nearest_grid(pt_x, pt_y, pt_z, X, Y, Z; radius_factor = 1)
+
+    data = zeros(3, length(pt_x))
+    data[1, :], data[2, :], data[3, :] = pt_x[:], pt_y[:], pt_z[:]
     tree = BallTree(data)                               # Generate tree with EQ data
-    
+
     # Grid spacing
-    Δx,Δy,Δz = X[2,1,1]-X[1], Y[1,2,1]-Y[1], Z[1,1,2]-Z[1]
+    Δx, Δy, Δz = X[2, 1, 1] - X[1], Y[1, 2, 1] - Y[1], Z[1, 1, 2] - Z[1]
 
-    points     = zeros(3,length(X));
-    points[1,:],points[2,:],points[3,:] = X[:], Y[:], Z[:]
- 
-    radius  =   radius_factor*(Δx^2 + Δy^2 + Δz^2)^(1/3)  # search radius
-    idxs    =   inrange(tree, points, radius)           # find points (NearestNeighbors package)
-    le      =   length.(idxs)                           # number of points
+    points = zeros(3, length(X))
+    points[1, :], points[2, :], points[3, :] = X[:], Y[:], Z[:]
 
-    count = zeros(Int64,size(X));
+    radius = radius_factor * (Δx^2 + Δy^2 + Δz^2)^(1 / 3)  # search radius
+    idxs = inrange(tree, points, radius)           # find points (NearestNeighbors package)
+    le = length.(idxs)                           # number of points
+
+    count = zeros(Int64, size(X))
     for i in eachindex(X)
         count[i] = le[i]
     end
@@ -143,33 +143,33 @@ GeoData
 ```julia
 
 """
-function countmap(DataSet::GeoData,field::String,stepslon::Int64,stepslat::Int64)
+function countmap(DataSet::GeoData, field::String, stepslon::Int64, stepslat::Int64)
 
-    lon      = unique(DataSet.lon.val)
-    lat      = unique(DataSet.lat.val)
+    lon = unique(DataSet.lon.val)
+    lat = unique(DataSet.lat.val)
 
     # create new lon/lat arrays which hold the boundaries of the control areas
-    lonstep  = LinRange(lon[1],lon[end],stepslon)
-    latstep  = LinRange(lat[1],lat[end],stepslat)
-    dlon     = abs(lonstep[2]-lonstep[1])
-    dlat     = abs(latstep[2]-latstep[1])
-    loncen   = lonstep[1]+dlon/2:dlon:lonstep[end]-dlon/2
-    latcen   = latstep[1]+dlat/2:dlat:latstep[end]-dlat/2
-    countmap = zeros(length(loncen),length(latcen))
+    lonstep = LinRange(lon[1], lon[end], stepslon)
+    latstep = LinRange(lat[1], lat[end], stepslat)
+    dlon = abs(lonstep[2] - lonstep[1])
+    dlat = abs(latstep[2] - latstep[1])
+    loncen = (lonstep[1] + dlon / 2):dlon:(lonstep[end] - dlon / 2)
+    latcen = (latstep[1] + dlat / 2):dlat:(latstep[end] - dlat / 2)
+    countmap = zeros(length(loncen), length(latcen))
 
-    expr =   Meta.parse(field)
-    if !haskey(DataSet.fields,expr[1])
+    expr = Meta.parse(field)
+    if !haskey(DataSet.fields, expr[1])
         error("The GeoData set does not have the field: $(expr[1])")
     end
 
     # count the ones in every control area
     for i in eachindex(loncen)
         for j in eachindex(latcen)
-            indi          = findall((lon .>= lonstep[i]) .& (lon .<= lonstep[i+1]))
-            indj          = findall((lat .>= latstep[j]) .& (lat .<= latstep[j+1]))
-            dataint       = DataSet.fields[expr[1]][indi,indj,1]
-            count         = sum(dataint)
-            countmap[i,j] = count
+            indi = findall((lon .>= lonstep[i]) .& (lon .<= lonstep[i + 1]))
+            indj = findall((lat .>= latstep[j]) .& (lat .<= latstep[j + 1]))
+            dataint = DataSet.fields[expr[1]][indi, indj, 1]
+            count = sum(dataint)
+            countmap[i, j] = count
         end
     end
 
@@ -178,9 +178,9 @@ function countmap(DataSet::GeoData,field::String,stepslon::Int64,stepslat::Int64
     countmap = countmap ./ maxcount
 
     # create new GeoData
-    Lon3D,Lat3D, Data = lonlatdepth_grid(loncen,latcen,0);
-    Data[:,:,1]       .= countmap
-    DatasetcountMap   = GeoData(Lon3D,Lat3D,Data,(countmap=Data,))
+    Lon3D, Lat3D, Data = lonlatdepth_grid(loncen, latcen, 0)
+    Data[:, :, 1] .= countmap
+    DatasetcountMap = GeoData(Lon3D, Lat3D, Data, (countmap = Data,))
 
     return DatasetcountMap
 end
