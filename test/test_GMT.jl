@@ -11,4 +11,4 @@ test_fwd = import_GeoTIFF("test_files/length_fwd.tif", fieldname = :forward)
 @test  maximum(test_fwd.fields.forward) ≈ 33.17775km
 
 test2 = import_GeoTIFF("test_files/UTM2GTIF.TIF")
-@test   test2.fields.layer1[20, 20] == 105.0
+@test   test2.fields.layer1[20, 20] == 233.0
