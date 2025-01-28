@@ -74,6 +74,10 @@ using Test
         include("test_sea_level.jl")
     end
 
+    @testset "Ridge Thermal Structure Tests" begin
+    	include("test_ridge_segments.jl")
+    end
+
     @testset "Waterflow" begin
         include("test_WaterFlow.jl")
     end
