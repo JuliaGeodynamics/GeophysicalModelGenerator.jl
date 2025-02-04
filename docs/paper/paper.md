@@ -42,10 +42,10 @@ authors:
     orcid: 0009-0004-9873-9774
     affiliation: 1
   - name: Arne Spang
-    orcid: 
+    orcid: 0000-0002-6107-0403
     affiliation: 2
   - name: Tatjana Weiler
-    #orcid: 0000-0002-6107-0403
+    orcid: 0009-0005-8182-0565
     affiliation: 2
 
 affiliations:
