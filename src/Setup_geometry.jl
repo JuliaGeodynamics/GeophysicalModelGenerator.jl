@@ -235,21 +235,23 @@ julia> segments = [((-500.0, -1000.0), (-500.0, 0.0)),
                     ((-250.0, 0.0), (-250.0, 200.0)),
                     ((-750.0, 200.0), (-750.0, 1000.0))];
 julia> lith = LithosphericPhases(Layers=[15 55], Phases=[1 2], Tlab=1250);
-julia> add_box!(Phases, Temp, Grid; xlim=(-1000.0, 0.0), ylim=(-500.0, 500.0), 
-                zlim=(-80.0, 0.0), phase=lith, 
+julia> add_box!(Phases, Temp, Grid; xlim=(-1000.0, 0.0), ylim=(-500.0, 500.0),
+                zlim=(-80.0, 0.0), phase=lith,
                 T=SpreadingRateTemp(SpreadingVel=3), segments=segments)
 julia> Grid = addfield(Grid, (; Phases, Temp));       # Add to Cartesian model
 julia> write_paraview(Grid, "Ridge_Thermal_Structure")  # Save model to Paraview
 1-element Vector{String}:
  "Ridge_Thermal_Structure.vts"
 """
-function add_box!(Phase, Temp, Grid::AbstractGeneralGrid;       # required input
-        xlim::Tuple = (20,100), ylim=nothing, zlim::Tuple = (10,80),     # limits of the box
-        Origin=nothing, StrikeAngle=0, DipAngle=0,      # origin & dip/strike
+function add_box!(
+        Phase, Temp, Grid::AbstractGeneralGrid;       # required input
+        xlim::Tuple = (20, 100), ylim = nothing, zlim::Tuple = (10, 80),     # limits of the box
+        Origin = nothing, StrikeAngle = 0, DipAngle = 0,      # origin & dip/strike
         phase = ConstantPhase(1),                       # Sets the phase number(s) in the box
-        T=nothing,                              # Sets the thermal structure (various functions are available)
-        segments=nothing,                       # Allows defining multiple ridge segments  
-        cell=false )                            # if true, Phase and Temp are defined on cell centers
+        T = nothing,                              # Sets the thermal structure (various functions are available)
+        segments = nothing,                       # Allows defining multiple ridge segments
+        cell = false
+    )                            # if true, Phase and Temp are defined on cell centers
 
 
     # Retrieve 3D data arrays for the grid
@@ -804,12 +806,12 @@ julia> segments = [
            ((-750.0, 200.0), (-750.0, 1000.0))  # Segment 3
        ]
 julia> lith = LithosphericPhases(Layers=[15 55], Phases=[1 2], Tlab=1250)
-julia> add_plate!(Phases, Temp, Grid; 
-           xlim=(-1000.0, -750.0, -250.0, 0.0, -250.0, -750.0), 
-           ylim=(0.0, 500.0, 500.0, 0.0, -500.0, -500.0), 
-           zlim=(-150.0, 0.0), 
-           phase=lith, 
-           T=SpreadingRateTemp(SpreadingVel=3), 
+julia> add_plate!(Phases, Temp, Grid;
+           xlim=(-1000.0, -750.0, -250.0, 0.0, -250.0, -750.0),
+           ylim=(0.0, 500.0, 500.0, 0.0, -500.0, -500.0),
+           zlim=(-150.0, 0.0),
+           phase=lith,
+           T=SpreadingRateTemp(SpreadingVel=3),
            segments=segments)
 julia> Grid = addfield(Grid, (; Phases, Temp))  # Add fields
 julia> write_paraview(Grid, "Plate")  # Save model to Paraview
@@ -817,20 +819,22 @@ julia> write_paraview(Grid, "Plate")  # Save model to Paraview
  "Plate.vts"
 """
 
-function add_plate!(Phase, Temp, Grid::AbstractGeneralGrid;   
-    xlim=(), ylim=(), zlim::Tuple = (0.0,0.8),           
-    phase = ConstantPhase(1),                                   
-    T=nothing, segments=nothing, cell=false )                            
+function add_plate!(
+        Phase, Temp, Grid::AbstractGeneralGrid;
+        xlim = (), ylim = (), zlim::Tuple = (0.0, 0.8),
+        phase = ConstantPhase(1),
+        T = nothing, segments = nothing, cell = false
+    )
 
     xlim_ = collect(xlim)
     ylim_ = collect(ylim)
     zlim_ = collect(zlim)
 
-    X, Y, Z = coordinate_grids(Grid, cell=cell)
+    X, Y, Z = coordinate_grids(Grid, cell = cell)
     ind = zeros(Bool, size(X))
     ind_slice = zeros(Bool, size(X[:, :, 1]))
 
-    for k = 1:size(Z, 3)
+    for k in 1:size(Z, 3)
         if zlim_[1] <= Z[1, 1, k] <= zlim_[2]
             inpolygon!(ind_slice, xlim_, ylim_, X[:, :, k], Y[:, :, k])
             @views ind[:, :, k] = ind_slice
@@ -948,7 +952,9 @@ function add_volcano!(
 
     # @views Temp[ind .== false] .= 0.0
     if !isempty(ind_flat)
-        Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Grid.x.val[ind], Grid.y.val[ind], depth[ind], Phases[ind_flat], T)
+        if !isnothing(T)
+            Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Grid.x.val[ind], Grid.y.val[ind], depth[ind], Phases[ind_flat], T)
+        end
     end
 
     return nothing
@@ -1233,31 +1239,31 @@ Note: the thermal age at the mid oceanic ridge is set to 1 year to avoid divisio
     MORside = "left"   # side of box where the MOR is located
     SpreadingVel = 3   # spreading velocity [cm/yr]
     AgeRidge = 0       # Age of the ridge [Myrs]
-    maxAge  = 60       # maximum thermal age of plate [Myrs]
+    maxAge = 60       # maximum thermal age of plate [Myrs]
 end
 
 function compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp)
-    @unpack Tsurface, Tmantle, Adiabat, MORside, SpreadingVel, AgeRidge, maxAge  = s
+    @unpack Tsurface, Tmantle, Adiabat, MORside, SpreadingVel, AgeRidge, maxAge = s
 
-    kappa       =   1e-6;
-    SecYear     =   3600*24*365
-    dz          =   Z[end]-Z[1];
+    kappa = 1.0e-6
+    SecYear = 3600 * 24 * 365
+    dz = Z[end] - Z[1]
 
-    MantleAdiabaticT    =   Tmantle .+ Adiabat*abs.(Z);   # Adiabatic temperature of mantle
-           
-    if MORside=="left"
-        Distance = X .- X[1,1,1];
-    elseif MORside=="right"
-        Distance = X[end,1,1] .- X;
-    elseif MORside=="front"
-        Distance = Y .- Y[1,1,1];
-    elseif MORside=="back"
-        Distance = Y[1,end,1] .- Y;
+    MantleAdiabaticT = Tmantle .+ Adiabat * abs.(Z)    # Adiabatic temperature of mantle
+
+    if MORside == "left"
+        Distance = X .- X[1, 1, 1]
+    elseif MORside == "right"
+        Distance = X[end, 1, 1] .- X
+    elseif MORside == "front"
+        Distance = Y .- Y[1, 1, 1]
+    elseif MORside == "back"
+        Distance = Y[1, end, 1] .- Y
 
     else
         error("unknown side")
     end
-        
+
     for i in eachindex(Temp)
         ThermalAge = abs(Distance[i] * 1.0e3 * 1.0e2) / SpreadingVel + AgeRidge * 1.0e6    # Thermal age in years
         if ThermalAge > maxAge * 1.0e6
@@ -1272,7 +1278,7 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp)
         Temp[i] = (Tsurface .- Tmantle) * erfc((abs.(Z[i]) * 1.0e3) ./ (2 * sqrt(kappa * ThermalAge))) + MantleAdiabaticT[i]
 
     end
-        
+
     return Temp
 end
 
@@ -1303,14 +1309,14 @@ The thermal age is capped at `maxAge` years, and the temperature is adjusted bas
 
 function compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp, segments::Vector{Tuple{Tuple{Float64, Float64}, Tuple{Float64, Float64}}})
     @unpack Tsurface, Tmantle, Adiabat, SpreadingVel, AgeRidge, maxAge = s
-    kappa = 1e-6;
+    kappa = 1.0e-6
     SecYear = 3600 * 24 * 365
-    dz = Z[end]-Z[1];
+    dz = Z[end] - Z[1]
 
     MantleAdiabaticT = Tmantle .+ Adiabat * abs.(Z)
 
     #Create delimiters
-    delimiters = [(segments[i][2], segments[i + 1][1]) for i in 1:length(segments) - 1] 
+    delimiters = [(segments[i][2], segments[i + 1][1]) for i in 1:(length(segments) - 1)]
 
     for I in eachindex(X)
         px, py, pz = X[I], Y[I], Z[I]
@@ -1326,18 +1332,18 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp, s
         Distance = perpendicular_distance_to_segment(px, py, x1, y1, x2, y2)
 
         # Calculate thermal age
-        ThermalAge = abs(Distance * 1e5) / SpreadingVel + AgeRidge * 1e6  # Thermal age in years
-        if ThermalAge > maxAge * 1e6
-            ThermalAge = maxAge * 1e6
+        ThermalAge = abs(Distance * 1.0e5) / SpreadingVel + AgeRidge * 1.0e6  # Thermal age in years
+        if ThermalAge > maxAge * 1.0e6
+            ThermalAge = maxAge * 1.0e6
         end
 
         ThermalAge = ThermalAge * SecYear  # Convert to seconds
         if ThermalAge == 0
-            ThermalAge = 1e-6  # Avoid zero
+            ThermalAge = 1.0e-6  # Avoid zero
         end
 
         # Calculate temperature
-        Temp[I] = (Tsurface - Tmantle) * erfc(abs(pz) * 1e3 / (2 * sqrt(kappa * ThermalAge))) + MantleAdiabaticT[I]
+        Temp[I] = (Tsurface - Tmantle) * erfc(abs(pz) * 1.0e3 / (2 * sqrt(kappa * ThermalAge))) + MantleAdiabaticT[I]
     end
 
     return Temp
@@ -1356,7 +1362,7 @@ end
 # Function to determine the side of a point with respect to a line (adjusted for segment direction)
 function side_of_line(x, y, x1, y1, x2, y2, direction)
     side = (x2 - x1) * (y - y1) - (y2 - y1) * (x - x1)
-    direction == :left ? side > 0 : side < 0
+    return direction == :left ? side > 0 : side < 0
 end
 
 # Function to determine in which region a point lies (based on delimiters)
