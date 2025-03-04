@@ -235,8 +235,8 @@ julia> segments = [((-500.0, -1000.0), (-500.0, 0.0)),
                     ((-250.0, 0.0), (-250.0, 200.0)),
                     ((-750.0, 200.0), (-750.0, 1000.0))];
 julia> lith = LithosphericPhases(Layers=[15 55], Phases=[1 2], Tlab=1250);
-julia> add_box!(Phases, Temp, Grid; xlim=(-1000.0, 0.0), ylim=(-500.0, 500.0), 
-                zlim=(-80.0, 0.0), phase=lith, 
+julia> add_box!(Phases, Temp, Grid; xlim=(-1000.0, 0.0), ylim=(-500.0, 500.0),
+                zlim=(-80.0, 0.0), phase=lith,
                 T=SpreadingRateTemp(SpreadingVel=3), segments=segments)
 julia> Grid = addfield(Grid, (; Phases, Temp));       # Add to Cartesian model
 julia> write_paraview(Grid, "Ridge_Thermal_Structure")  # Save model to Paraview
@@ -248,7 +248,7 @@ function add_box!(Phase, Temp, Grid::AbstractGeneralGrid;       # required input
         Origin=nothing, StrikeAngle=0, DipAngle=0,      # origin & dip/strike
         phase = ConstantPhase(1),                       # Sets the phase number(s) in the box
         T=nothing,                              # Sets the thermal structure (various functions are available)
-        segments=nothing,                       # Allows defining multiple ridge segments  
+        segments=nothing,                       # Allows defining multiple ridge segments
         cell=false )                            # if true, Phase and Temp are defined on cell centers
 
 
@@ -804,12 +804,12 @@ julia> segments = [
            ((-750.0, 200.0), (-750.0, 1000.0))  # Segment 3
        ]
 julia> lith = LithosphericPhases(Layers=[15 55], Phases=[1 2], Tlab=1250)
-julia> add_plate!(Phases, Temp, Grid; 
-           xlim=(-1000.0, -750.0, -250.0, 0.0, -250.0, -750.0), 
-           ylim=(0.0, 500.0, 500.0, 0.0, -500.0, -500.0), 
-           zlim=(-150.0, 0.0), 
-           phase=lith, 
-           T=SpreadingRateTemp(SpreadingVel=3), 
+julia> add_plate!(Phases, Temp, Grid;
+           xlim=(-1000.0, -750.0, -250.0, 0.0, -250.0, -750.0),
+           ylim=(0.0, 500.0, 500.0, 0.0, -500.0, -500.0),
+           zlim=(-150.0, 0.0),
+           phase=lith,
+           T=SpreadingRateTemp(SpreadingVel=3),
            segments=segments)
 julia> Grid = addfield(Grid, (; Phases, Temp))  # Add fields
 julia> write_paraview(Grid, "Plate")  # Save model to Paraview
@@ -817,10 +817,10 @@ julia> write_paraview(Grid, "Plate")  # Save model to Paraview
  "Plate.vts"
 """
 
-function add_plate!(Phase, Temp, Grid::AbstractGeneralGrid;   
-    xlim=(), ylim=(), zlim::Tuple = (0.0,0.8),           
-    phase = ConstantPhase(1),                                   
-    T=nothing, segments=nothing, cell=false )                            
+function add_plate!(Phase, Temp, Grid::AbstractGeneralGrid;
+    xlim=(), ylim=(), zlim::Tuple = (0.0,0.8),
+    phase = ConstantPhase(1),
+    T=nothing, segments=nothing, cell=false )
 
     xlim_ = collect(xlim)
     ylim_ = collect(ylim)
@@ -948,7 +948,9 @@ function add_volcano!(
 
     # @views Temp[ind .== false] .= 0.0
     if !isempty(ind_flat)
+        if !isnothing(T)
         Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Grid.x.val[ind], Grid.y.val[ind], depth[ind], Phases[ind_flat], T)
+        end
     end
 
     return nothing
@@ -1244,7 +1246,7 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp)
     dz          =   Z[end]-Z[1];
 
     MantleAdiabaticT    =   Tmantle .+ Adiabat*abs.(Z);   # Adiabatic temperature of mantle
-           
+
     if MORside=="left"
         Distance = X .- X[1,1,1];
     elseif MORside=="right"
@@ -1257,7 +1259,7 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp)
     else
         error("unknown side")
     end
-        
+
     for i in eachindex(Temp)
         ThermalAge = abs(Distance[i] * 1.0e3 * 1.0e2) / SpreadingVel + AgeRidge * 1.0e6    # Thermal age in years
         if ThermalAge > maxAge * 1.0e6
@@ -1272,7 +1274,7 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp)
         Temp[i] = (Tsurface .- Tmantle) * erfc((abs.(Z[i]) * 1.0e3) ./ (2 * sqrt(kappa * ThermalAge))) + MantleAdiabaticT[i]
 
     end
-        
+
     return Temp
 end
 
@@ -1310,7 +1312,7 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp, s
     MantleAdiabaticT = Tmantle .+ Adiabat * abs.(Z)
 
     #Create delimiters
-    delimiters = [(segments[i][2], segments[i + 1][1]) for i in 1:length(segments) - 1] 
+    delimiters = [(segments[i][2], segments[i + 1][1]) for i in 1:length(segments) - 1]
 
     for I in eachindex(X)
         px, py, pz = X[I], Y[I], Z[I]
