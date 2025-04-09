@@ -13,6 +13,41 @@ import Base: show, size
 export LaMEM_grid, read_LaMEM_inputfile
 export save_LaMEM_markers_parallel, save_LaMEM_topography
 export get_processor_partitioning, read_data_VTR, read_data_PVTR, create_partitioning_file
+export crop_bounds, get_proc_bound, get_proc_grid, get_particles_distribution, get_LaMEM_grid_info, get_processor_partitioning_info, check_markers_directory, setup_model_domain, LaMEM_partitioning_info
+
+"""
+Structure that holds information about the LaMEM partitioning
+"""
+struct LaMEM_partitioning_info <: AbstractGeneralGrid
+
+    # Number of processors in each direction
+    nProcX::Int64
+    nProcY::Int64
+    nProcZ::Int64
+    # Number of nodes in each direction
+    nNodeX::Int64
+    nNodeY::Int64
+    nNodeZ::Int64
+    # Coordinates of the nodes end of each processor
+    xc
+    yc
+    zc
+
+end
+
+"""
+Structure that holds information about the LaMEM particles distribution for partitioning
+"""
+struct particles_distribution <: AbstractGeneralGrid
+
+    x_start
+    x_end
+    y_start
+    y_end
+    z_start
+    z_end
+
+end
 
 """
 Structure that holds information about the LaMEM grid (usually read from an input file).
@@ -460,7 +495,9 @@ function save_LaMEM_markers_parallel(Grid::CartData; PartitioningFile = empty, d
         part_phs = Phases[x_start[n]:x_end[n], y_start[n]:y_end[n], z_start[n]:z_end[n]]
         part_T = Temp[x_start[n]:x_end[n], y_start[n]:y_end[n], z_start[n]:z_end[n]]
         num_particles = size(part_x, 1) * size(part_x, 2) * size(part_x, 3)
-
+        println("x_start[n]= $x_start[n]","x_end[n]= $x_end[n]","y_start[n]= $y_start[n]","y_end[n]= $y_end[n]","z_start[n]= $z_start[n]","z_end[n]= $z_end[n]")
+        println("size(part_x) = $(size(part_x))","size(part_y) = $(size(part_y))","size(part_z) = $(size(part_z))","size(part_phs) = $(size(part_phs))","size(part_T) = $(size(part_T))")
+ 
         # Information vector per processor
         num_prop = 5       # number of properties we save [x/y/z/phase/T]
         lvec_info = num_particles
@@ -512,6 +549,30 @@ function get_ind(x, xc, Nprocx)
 
 
     return xi, ix_start, ix_end
+end
+
+# Same as get_ind but without the need for the x vector
+function get_ind2(dx,xc,Nprocx)
+
+    if Nprocx == 1
+
+        xi       = [xc[end] - xc[1]]/dx;
+        ix_start = [1];
+        ix_end   = [xc[end] - xc[1]]/dx;
+
+    else
+        xi = zeros(Int64, Nprocx)
+        for k = 1:Nprocx
+            xi[k] = round((xc[k+1] - xc[k])/dx);
+        end
+
+        ix_start = cumsum([0; xi[1:(end - 1)]]) .+ 1
+        ix_end = cumsum(xi[1:end])
+
+    end
+
+    return xi,ix_start,ix_end
+
 end
 
 # Internal routine
@@ -1036,4 +1097,464 @@ function coordinate_grids(Data::LaMEM_grid; cell = false)
     end
 
     return X, Y, Z
+end
+
+function Base.show(io::IO, d::LaMEM_partitioning_info)
+
+    println(io, "LaMEM Partitioning info: ")
+    println(io, "  nProcX : $(d.nProcX)")
+    println(io, "  nProcY : $(d.nProcY)")
+    println(io, "  nProcZ : $(d.nProcZ)")
+    println(io, "  nNodeX : $(d.nNodeX)")
+    println(io, "  nNodeY : $(d.nNodeY)")
+    println(io, "  nNodeZ : $(d.nNodeZ)")
+    println(io, "  xc     : $(d.xc)")
+    println(io, "  yc     : $(d.yc)")
+
+    return println(io, "  zc     : $(d.zc)")
+
+end
+
+function check_markers_directory(directory)
+
+    if !isdir(directory)
+        mkdir(directory)
+    end
+
+end
+
+function get_LaMEM_grid_info(file; args::Union{String, Nothing} = nothing)
+
+    # read information from file
+    nmark_x = GeophysicalModelGenerator.ParseValue_LaMEM_InputFile(file, "nmark_x", Int64, args = args)
+    nmark_y = GeophysicalModelGenerator.ParseValue_LaMEM_InputFile(file, "nmark_y", Int64, args = args)
+    nmark_z = GeophysicalModelGenerator.ParseValue_LaMEM_InputFile(file, "nmark_z", Int64, args = args)
+
+    nel_x = GeophysicalModelGenerator.ParseValue_LaMEM_InputFile(file, "nel_x", Int64, args = args)
+    nel_y = GeophysicalModelGenerator.ParseValue_LaMEM_InputFile(file, "nel_y", Int64, args = args)
+    nel_z = GeophysicalModelGenerator.ParseValue_LaMEM_InputFile(file, "nel_z", Int64, args = args)
+
+    parsed_x = GeophysicalModelGenerator.ParseValue_LaMEM_InputFile(file, "coord_x", Float64, args = args)
+    parsed_y = GeophysicalModelGenerator.ParseValue_LaMEM_InputFile(file, "coord_y", Float64, args = args)
+    parsed_z = GeophysicalModelGenerator.ParseValue_LaMEM_InputFile(file, "coord_z", Float64, args = args)
+
+    # compute information from file
+    W = parsed_x[end] - parsed_x[1]
+    L = parsed_y[end] - parsed_y[1]
+    H = parsed_z[end] - parsed_z[1]
+
+    nel_x_tot = sum(nel_x)
+    nel_y_tot = sum(nel_y)
+    nel_z_tot = sum(nel_z)
+
+    nump_x = nel_x_tot * nmark_x
+    nump_y = nel_y_tot * nmark_y
+    nump_z = nel_z_tot * nmark_z
+
+    # finish Grid
+    Grid = LaMEM_grid(
+        nmark_x, nmark_y, nmark_z,
+        nump_x, nump_y, nump_z,
+        nel_x,   nel_y,   nel_z,
+        W, L, H,
+        parsed_x, parsed_y, parsed_z,
+        [],[],[],
+        [],[],[],
+        [],[],[],
+        [],[],[]
+    )
+
+    return Grid
+
+end
+
+
+"""
+    p_dist = get_particles_distribution(Grid, P)
+ Get the distribution of particles in the grid
+    Grid: LaMEM_grid
+    P:    LaMEM_partitioning_info
+ Returns a LaMEM_partitioning_info object with the distribution of particles in the grid
+"""
+function get_particles_distribution(Grid,P)
+
+    # get number of processors and processor coordnate bounds
+    nProcX = P.nProcX;
+    nProcY = P.nProcY;
+    nProcZ = P.nProcZ;
+    xc     = P.xc;
+    yc     = P.yc;
+    zc     = P.zc;
+
+    (num, num_i, num_j, num_k) = get_numscheme(nProcX, nProcY, nProcZ);
+
+    dx     = Grid.W/Grid.nump_x;
+    dy     = Grid.L/Grid.nump_y;
+    dz     = Grid.H/Grid.nump_z;
+
+    # % Get particles of respective procs
+    # % xi - amount of particles in x direction in each core
+    # % ix_start - indexes where they start for each core
+    (xi,ix_start,ix_end) = get_ind2(dx,xc,nProcX);
+    (yi,iy_start,iy_end) = get_ind2(dy,yc,nProcY);
+    (zi,iz_start,iz_end) = get_ind2(dz,zc,nProcZ);
+
+    x_start = ix_start[num_i[:]]
+    y_start = iy_start[num_j[:]]
+    z_start = iz_start[num_k[:]]
+    x_end = ix_end[num_i[:]]
+    y_end = iy_end[num_j[:]]
+    z_end = iz_end[num_k[:]]
+
+    p_dist = particles_distribution(x_start,x_end,y_start,y_end,z_start,z_end);
+
+    return p_dist
+
+end
+
+"""
+    Grid = get_proc_grid(Grid_info, p_dist, proc_bounds, proc_num, RandomNoise)
+ Get the local grid for the current processor
+    Grid_info:   LaMEM_grid
+    p_dist:      LaMEM_partitioning_info
+    proc_bounds: bounds of the current processor
+    proc_num:    processor number
+    RandomNoise: add random noise to the grid (0/1)
+ Returns a LaMEM_grid object with the local grid for the current processor
+"""
+function get_proc_grid(Grid_info,p_dist,proc_bounds,proc_num,RandomNoise)
+
+    x_proc_bound  = proc_bounds[1];
+    y_proc_bound  = proc_bounds[2];
+    z_proc_bound  = proc_bounds[3];
+
+    loc_nump_x = p_dist.x_end[proc_num] - p_dist.x_start[proc_num] + 1
+    loc_nump_y = p_dist.y_end[proc_num] - p_dist.y_start[proc_num] + 1
+    loc_nump_z = p_dist.z_end[proc_num] - p_dist.z_start[proc_num] + 1
+    
+    loc_nel_x = loc_nump_x/Grid_info.nmark_x
+    loc_nel_y = loc_nump_y/Grid_info.nmark_y
+    loc_nel_z = loc_nump_z/Grid_info.nmark_z
+
+    x  = range(x_proc_bound[1], x_proc_bound[2], length=loc_nump_x)
+    y  = range(y_proc_bound[1], y_proc_bound[2], length=loc_nump_y)
+    z  = range(z_proc_bound[1], z_proc_bound[2], length=loc_nump_z)
+
+    # marker grid
+    X, Y, Z = GeophysicalModelGenerator.xyz_grid(x, y, z)
+
+    W = x_proc_bound[2] - x_proc_bound[1]
+    L = y_proc_bound[2] - y_proc_bound[1]
+    H = z_proc_bound[2] - z_proc_bound[1]
+
+    if RandomNoise == 1
+        dx = x[2]   - x[1]
+        dy = y[2]   - y[1]
+        dz = z[2]   - z[1]
+        dXNoise = zeros(size(X)) + dx;
+        dYNoise = zeros(size(Y)) + dy;
+        dZNoise = zeros(size(Z)) + dz;
+    
+        dXNoise = dXNoise.*(rand(size(dXNoise))-0.5);
+        dYNoise = dYNoise.*(rand(size(dYNoise))-0.5);
+        dZNoise = dZNoise.*(rand(size(dZNoise))-0.5);
+    
+        Xpart   = X + dXNoise;
+        Ypart   = Y + dYNoise;
+        Zpart   = Z + dZNoise;
+    
+        X       = Xpart;
+        Y       = Ypart;
+        Z       = Zpart;
+        x       = X(1,:,1);
+        y       = Y(:,1,1);
+        z       = Z(1,1,:);
+    
+    end
+
+    Grid = LaMEM_grid(
+        Grid_info.nmark_x, Grid_info.nmark_y, Grid_info.nmark_z,
+        loc_nump_x, loc_nump_y, loc_nump_z,
+        loc_nel_x, loc_nel_y, loc_nel_z,
+        W, L, H,
+        x, y, z,
+        x, y, z,
+        X, Y, Z,
+        [], [], [],
+        [], [], []
+    )
+    return Grid
+
+end
+
+"""
+proc_bounds = get_proc_bound(Grid, p_dist, proc_num)
+ Get the bounds of the current processor in x, y, z direction
+    Grid:       LaMEM_grid
+    p_dist:     LaMEM_partitioning_info
+    proc_num:   processor number
+ Returns a 3 element vector with maximum and minimum values[[x_min, x_max],[y_min, y_max],[z_min, z_max]] for current processor proc_num
+
+# Example for a model with 8 MPI ranks for current processor number 2
+And gives us coordinates for the current processor
+```julia
+Grid_example = LaMEM_grid(
+        3, 3, 3,
+        12, 12, 12,
+        4,   4,   4,
+        10, 5, 5,
+        [10.0, 18.0], [20,28], [30,38],
+        [],[],[],
+        [],[],[],
+        [],[],[],
+        [],[],[]
+    )
+P_example      = setup_model_domain(Grid_example.coord_x, Grid_example.coord_y, Grid_example.coord_z, Grid_example.nel_x, Grid_example.nel_x, Grid_example.nel_x, 8)
+p_dist_example = get_particles_distribution(Grid_example,P_example)
+proc_bounds    = get_proc_bound(Grid_example,p_dist_example,2)
+```
+"""
+function get_proc_bound(Grid,p_dist,proc_num)
+
+    dx           = Grid.W/Grid.nump_x;
+    dy           = Grid.L/Grid.nump_y;
+    dz           = Grid.H/Grid.nump_z;
+
+    parsed_x     = Grid.coord_x
+    parsed_y     = Grid.coord_y
+    parsed_z     = Grid.coord_z
+
+    model_x      = [ parsed_x[1] + dx/2, parsed_x[end] - dx/2 ]
+    model_y      = [ parsed_y[1] + dy/2, parsed_y[end] - dy/2 ]
+    model_z      = [ parsed_z[1] + dz/2, parsed_z[end] - dz/2 ]
+
+    x_left       = model_x[1];
+    y_front      = model_y[1];
+    z_bot        = model_z[1];
+
+    x_start      = p_dist.x_start;
+    x_end        = p_dist.x_end;
+    y_start      = p_dist.y_start;
+    y_end        = p_dist.y_end;
+    z_start      = p_dist.z_start;
+    z_end        = p_dist.z_end;
+
+    x_proc_bound = [ x_left  + dx*( x_start[proc_num] - 1 ), x_left  + dx*( x_end[proc_num] - 1 ) ];
+    y_proc_bound = [ y_front + dy*( y_start[proc_num] - 1 ), y_front + dy*( y_end[proc_num] - 1 ) ];
+    z_proc_bound = [ z_bot   + dz*( z_start[proc_num] - 1 ), z_bot   + dz*( z_end[proc_num] - 1 ) ];
+
+    return [ x_proc_bound, y_proc_bound, z_proc_bound ]
+
+end
+
+"""
+    crop_bounds(uncropped_bounds, proc_bounds, x, y, z)
+    Crop boundaries from the whole model to only the extent of the current processor
+    uncropped_bounds: 3 element vector with maximum and minimum values[[x_min, x_max],[y_min, y_max],[z_min, z_max]] for the whole model
+    proc_bounds:      3 element vector with maximum and minimum values[[x_min, x_max],[y_min, y_max],[z_min, z_max]] for the current processor
+    x,y,z:           3 element vector with maximum and minimum values[[x_min, x_max],[y_min, y_max],[z_min, z_max]] for the current processor
+    Returns a 3 element vector with maximum and minimum values[[x_min, x_max],[y_min, y_max],[z_min, z_max]] for the current processor
+"""
+function crop_bounds(uncropped_bounds, proc_bounds, x, y, z)
+
+    # Crop boundaries from the whole model to only the extent of the current processor
+    vecs       = [x, y, z]  
+    new_bounds = [zeros(size(vecs[i])) for i in eachindex(vecs)]
+    for i in eachindex(vecs)
+        vec = vecs[i]
+        test_bound = uncropped_bounds[i]
+        mask_bound = proc_bounds[i]
+
+        new_bound = Float64[]
+
+        if test_bound[1] < test_bound[2]
+            if test_bound[1] <= mask_bound[1]
+                if test_bound[2] >= mask_bound[2]
+                    new_bound = [mask_bound[1], mask_bound[2]]
+                elseif test_bound[2] >= mask_bound[1]
+                    new_bound = [mask_bound[1], test_bound[2]]
+                end
+            end
+
+            if test_bound[1] >= mask_bound[1]
+                if test_bound[2] <= mask_bound[2]
+                    new_bound = [closest_val(test_bound[1], vec), closest_val(test_bound[2], vec)]
+                elseif test_bound[1] <= mask_bound[2] && test_bound[2] >= mask_bound[2]
+                    new_bound = [test_bound[1], mask_bound[2]]
+                end
+            end
+        else
+            error("Wrong coordinates assignment")
+        end
+
+        if isempty(new_bound)
+            return []
+        end
+        new_bounds[i] = new_bound
+    end
+
+    return new_bounds
+
+end
+
+function closest_val(val, vec)
+    return  vec[argmin(abs.(vec .- val))]
+end
+
+"""
+    decompose_mpi_ranks(total_ranks::Int, nx::Int, ny::Int, nz::Int) -> Tuple{Int,Int,Int}
+
+Decompose total number of MPI ranks into a 3D processor grid (px, py, pz),
+optimizing for cell aspect ratio closest to 1.0.
+"""
+function decompose_mpi_ranks(total_ranks::Int, nx::Int, ny::Int, nz::Int)
+    # Get all factors of total_ranks
+    factors = get_factors(total_ranks)
+    
+    # Initialize best configuration
+    best_px = 1
+    best_py = 1
+    best_pz = 1
+    best_metric = Inf
+    
+    # Try all possible combinations of factors
+    for px in factors
+        remaining = total_ranks ÷ px
+        rem_factors = get_factors(remaining)
+        
+        for py in rem_factors
+            pz = remaining ÷ py
+            
+            # Skip invalid combinations
+            if px * py * pz != total_ranks
+                continue
+            end
+            
+            # Calculate local grid sizes
+            local_nx = nx / px
+            local_ny = ny / py
+            local_nz = nz / pz
+            
+            # Calculate aspect ratios (always ≥ 1.0)
+            ar_xy = max(local_nx/local_ny, local_ny/local_nx)
+            ar_xz = max(local_nx/local_nz, local_nz/local_nx)
+            ar_yz = max(local_ny/local_nz, local_nz/local_ny)
+            
+            # Metric: average deviation from aspect ratio of 1.0
+            metric = (ar_xy + ar_xz + ar_yz) / 3.0
+            
+            # Update best configuration if this one is better
+            # If metrics are equal, prefer larger px
+            if metric < best_metric || 
+               (isapprox(metric, best_metric, rtol=1e-10) && px > best_px)
+                best_metric = metric
+                best_px = px
+                best_py = py
+                best_pz = pz
+            end
+        end
+    end
+    
+    # Calculate and print aspect ratios for chosen decomposition
+    local_nx = nx / best_px
+    local_ny = ny / best_py
+    local_nz = nz / best_pz
+
+    println("Maximum aspect ratio: $(max(local_nx/local_ny, local_ny/local_nx,
+                                    local_nx/local_nz, local_nz/local_nx,
+                                    local_ny/local_nz, local_nz/local_ny))")
+    
+    return (best_px, best_py, best_pz)
+end
+
+"""
+Get all factors of a number n
+"""
+function get_factors(n::Int)
+    factors = Int[]
+    for i in 1:isqrt(n)
+        if n % i == 0
+            push!(factors, i)
+            if i != n÷i
+                push!(factors, n÷i)
+            end
+        end
+    end
+    sort!(factors)
+    return factors
+end
+
+"""
+    setup_model_domain(coord_x::Vector{Float64}, 
+                      coord_y::Vector{Float64}, 
+                      coord_z::Vector{Float64},
+                      nx::Int, ny::Int, nz::Int, 
+                      n_ranks::Int) -> ModelDomain
+
+Setup model domain decomposition using domain boundaries and resolution.
+
+Parameters:
+- coord_x, coord_y, coord_z: 2-element vectors specifying [min, max] for each direction
+- nx, ny, nz: Number of cells in each direction
+- n_ranks: Total number of MPI ranks
+
+Returns:
+- ModelDomain struct containing all domain decomposition information
+"""
+function setup_model_domain(coord_x::AbstractVector{<:Real}, 
+                            coord_y::AbstractVector{<:Real}, 
+                            coord_z::AbstractVector{<:Real},
+                            nx::Int, ny::Int, nz::Int,
+                            n_ranks::Int)
+    
+    # Verify input vectors have correct size
+    if any(length.([coord_x, coord_y, coord_z]) .!= 2)
+        error("coord_x, coord_y, and coord_z must be 2-element vectors [min, max]")
+    end
+    
+    # Generate full coordinate vectors
+    nnodx = nx + 1
+    nnody = ny + 1
+    nnodz = nz + 1
+    
+    xcoor = collect(range(coord_x[1], coord_x[2], length=nnodx))
+    ycoor = collect(range(coord_y[1], coord_y[2], length=nnody))
+    zcoor = collect(range(coord_z[1], coord_z[2], length=nnodz))
+    
+    # Decompose MPI ranks into 3D processor grid
+    Nprocx, Nprocy, Nprocz = decompose_mpi_ranks(n_ranks, nx, ny, nz)
+    
+    # Calculate subdomain divisions
+    function calculate_domain_divisions(N::Int, nproc::Int)
+        base_size = div(N, nproc)
+        remainder = N % nproc
+        
+        indices = zeros(Int, nproc + 1)
+        indices[1] = 1
+        
+        for i in 1:nproc
+            local_size = base_size + (i <= remainder ? 1 : 0)
+            indices[i + 1] = indices[i] + local_size
+        end
+        
+        return indices
+    end
+    
+    # Calculate divisions for each direction
+    ix = calculate_domain_divisions(nx, Nprocx)
+    iy = calculate_domain_divisions(ny, Nprocy)
+    iz = calculate_domain_divisions(nz, Nprocz)
+    
+    P = LaMEM_partitioning_info(
+        Nprocx, Nprocy, Nprocz,
+        nnodx, nnody, nnodz, 
+        xcoor[ix], ycoor[iy],zcoor[iz]
+        )
+
+        xcoor=[]
+        ycoor=[]
+        zcoor=[]
+
+    return P
+
 end
