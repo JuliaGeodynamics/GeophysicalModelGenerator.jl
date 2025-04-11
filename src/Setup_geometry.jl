@@ -324,7 +324,7 @@ end
 Add box function but getting bounds as a vector bounds in a way of [[xmin,xmax],[ymin,ymax],[zmin,zmax]]. If bounds is empty return nothing 
 """
 function  add_box!(Phase, Temp, Grid::AbstractGeneralGrid,           # required input
-                bounds::AbstractVector{<:AbstractVector{<:Real}};    # limits of the box
+                bounds::Union{Vector{Any}, AbstractVector{<:AbstractVector{<:Real}}};    # limits of the box
                 Origin = nothing, StrikeAngle = 0, DipAngle = 0,     # origin & dip/strike
                 phase = ConstantPhase(1),                            # Sets the phase number(s) in the box
                 T = nothing,                                         # Sets the thermal structure (various functions are available)

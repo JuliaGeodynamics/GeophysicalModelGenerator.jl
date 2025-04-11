@@ -14,6 +14,14 @@ add_box!(Phases, Temp, Grid, xlim = (2, 4), zlim = (-15, -10), phase = ConstantP
 add_ellipsoid!(Phases, Temp, Grid, cen = (4, 15, -17), axes = (1, 2, 3), StrikeAngle = 90, DipAngle = 45, phase = ConstantPhase(2), T = ConstantTemp(600))
 @test sum(Temp[1, 1, :]) ≈ 14850.0
 
+Phases = zeros(Int32, size(Data));
+empty_bounds = []
+add_box!(Phases, Temp, Grid, empty_bounds, phase = ConstantPhase(69))
+@test (unique(Phases)) == [0]
+
+not_empty_bounds = [[2,4],[minimum(Grid.lat.val),maximum(Grid.lat.val)],[-15,-10]]
+add_box!(Phases, Temp, Grid, not_empty_bounds , phase = ConstantPhase(69))
+@test maximum(Phases) == 69
 
 # CartData
 X, Y, Z = xyz_grid(1.0:1:10.0, 11.0:1:20.0, -20:1:-10);

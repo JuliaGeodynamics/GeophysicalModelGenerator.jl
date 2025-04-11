@@ -555,11 +555,9 @@ end
 function get_ind2(dx,xc,Nprocx)
 
     if Nprocx == 1
-
-        xi       = [xc[end] - xc[1]]/dx;
+        xi       = Int(round((xc[end] - xc[1]) / dx));
         ix_start = [1];
-        ix_end   = [xc[end] - xc[1]]/dx;
-
+        ix_end   = [xi];
     else
         xi = zeros(Int64, Nprocx)
         for k = 1:Nprocx
@@ -1410,13 +1408,13 @@ optimizing for cell aspect ratio closest to 1.0.
 function decompose_mpi_ranks(total_ranks::Int, nx::Int, ny::Int, nz::Int)
     # Get all factors of total_ranks
     factors = get_factors(total_ranks)
-    
     # Initialize best configuration
     best_px = 1
     best_py = 1
     best_pz = 1
     best_metric = Inf
-    
+    first_best_metric = nothing  # To store the first best metric
+
     # Try all possible combinations of factors
     for px in factors
         remaining = total_ranks ÷ px
@@ -1435,6 +1433,10 @@ function decompose_mpi_ranks(total_ranks::Int, nx::Int, ny::Int, nz::Int)
             local_ny = ny / py
             local_nz = nz / pz
             
+            if mod(nx, px) != 0 || mod(ny, py) != 0 || mod(nz, pz) != 0
+                continue  # Skip this iteration if any of them is not an integer
+            end
+    
             # Calculate aspect ratios (always ≥ 1.0)
             ar_xy = max(local_nx/local_ny, local_ny/local_nx)
             ar_xz = max(local_nx/local_nz, local_nz/local_nx)
@@ -1442,28 +1444,30 @@ function decompose_mpi_ranks(total_ranks::Int, nx::Int, ny::Int, nz::Int)
             
             # Metric: average deviation from aspect ratio of 1.0
             metric = (ar_xy + ar_xz + ar_yz) / 3.0
-            
+
             # Update best configuration if this one is better
-            # If metrics are equal, prefer larger px
-            if metric < best_metric || 
-               (isapprox(metric, best_metric, rtol=1e-10) && px > best_px)
-                best_metric = metric
-                best_px = px
-                best_py = py
-                best_pz = pz
+        if metric < best_metric
+
+            best_metric = metric
+            best_px = px
+            best_py = py
+            best_pz = pz
+            first_best_metric = metric  # Store the first best metric
+
+        elseif isapprox(metric, best_metric, rtol=1e-10)
+
+            # If the metric is equal to the first best metric, skip updating
+            if first_best_metric !== nothing && isapprox(metric, first_best_metric, rtol=1e-10)
+                continue
             end
+
+        end
         end
     end
-    
-    # Calculate and print aspect ratios for chosen decomposition
-    local_nx = nx / best_px
-    local_ny = ny / best_py
-    local_nz = nz / best_pz
-
-    println("Maximum aspect ratio: $(max(local_nx/local_ny, local_ny/local_nx,
-                                    local_nx/local_nz, local_nz/local_nx,
-                                    local_ny/local_nz, local_nz/local_ny))")
-    
+    if best_metric == Inf
+        error("No valid decomposition found for total_ranks = $total_ranks")
+        
+    end
     return (best_px, best_py, best_pz)
 end
 
@@ -1505,7 +1509,7 @@ function setup_model_domain(coord_x::AbstractVector{<:Real},
                             coord_y::AbstractVector{<:Real}, 
                             coord_z::AbstractVector{<:Real},
                             nx::Int, ny::Int, nz::Int,
-                            n_ranks::Int)
+                            n_ranks::Int; verbose::Bool = true)
     
     # Verify input vectors have correct size
     if any(length.([coord_x, coord_y, coord_z]) .!= 2)
@@ -1521,6 +1525,8 @@ function setup_model_domain(coord_x::AbstractVector{<:Real},
     ycoor = collect(range(coord_y[1], coord_y[2], length=nnody))
     zcoor = collect(range(coord_z[1], coord_z[2], length=nnodz))
     
+    check_multigrid_compatibility(nx, ny, nz, n_ranks, verbose)
+
     # Decompose MPI ranks into 3D processor grid
     Nprocx, Nprocy, Nprocz = decompose_mpi_ranks(n_ranks, nx, ny, nz)
     
@@ -1557,4 +1563,116 @@ function setup_model_domain(coord_x::AbstractVector{<:Real},
 
     return P
 
+end
+
+"""
+    check_multigrid_compatibility(nx::Int, ny::Int, nz::Int, total_ranks::Int)
+
+Check if the model resolution and MPI ranks are optimal for multigrid methods.
+
+"""
+function check_multigrid_compatibility(nx::Int, ny::Int, nz::Int, total_ranks::Int, verbose::Bool = true)
+    # Generate arrays of valid numbers for resolution
+    powers_of_2 = [2^i for i in 1:15]  # Up to 32768
+    multiples_of_48 = [48*i for i in 1:683]  # Up to 32784
+    valid_resolution_numbers = sort(unique([powers_of_2; multiples_of_48]))
+    
+    # Generate valid rank sequence algorithmically
+    valid_rank_numbers = generate_valid_rank_sequence()
+
+    # Function to find closest valid number
+    function find_closest_valid(n, valid_array)
+        idx = searchsortedfirst(valid_array, n)
+        if idx > length(valid_array)
+            return valid_array[end]
+        elseif idx == 1
+            return valid_array[1]
+        else
+            prev = valid_array[idx-1]
+            curr = valid_array[idx]
+            return abs(n - prev) < abs(n - curr) ? prev : curr
+        end
+    end
+    
+    # Function to check if a number is valid for resolution
+    function is_valid_resolution(n)
+        # Check if power of 2
+        if (n & (n - 1)) == 0 && n != 0
+            return true
+        end
+        # Check if multiple of 48
+        return n % 48 == 0
+    end
+    
+    # Function to check if a number is valid for ranks
+    function is_valid_ranks(n)
+        return n in valid_rank_numbers
+    end
+    
+    # Check each value
+    is_nx_valid = is_valid_resolution(nx)
+    is_ny_valid = is_valid_resolution(ny)
+    is_nz_valid = is_valid_resolution(nz)
+    is_ranks_valid = is_valid_ranks(total_ranks)
+    
+    all_valid = is_nx_valid && is_ny_valid && is_nz_valid && is_ranks_valid
+    
+    # Generate suggestions for invalid values
+    suggestions = Dict{String, Int}()
+    if !is_nx_valid
+        suggestions["nx"] = find_closest_valid(nx, valid_resolution_numbers)
+    end
+    if !is_ny_valid
+        suggestions["ny"] = find_closest_valid(ny, valid_resolution_numbers)
+    end
+    if !is_nz_valid
+        suggestions["nz"] = find_closest_valid(nz, valid_resolution_numbers)
+    end
+    if !is_ranks_valid
+        suggestions["total_ranks"] = find_closest_valid(total_ranks, valid_rank_numbers)
+    end
+    
+    # Print warnings and suggestions
+    if !all_valid && verbose
+        println("\nWARNING: Non-optimal configuration detected for multigrid method!")
+        println("\nCurrent configuration:")
+        println("nx = $nx ($(is_nx_valid ? "optimal" : "non-optimal "))")
+        println("ny = $ny ($(is_ny_valid ? "optimal" : "non-optimal "))")
+        println("nz = $nz ($(is_nz_valid ? "optimal" : "non-optimal "))")
+        println("total_ranks = $total_ranks ($(is_ranks_valid ? "optimal" : "non-optimal"))")
+        
+        println("\nSuggested optimal configuration:")
+        println("nx = $(get(suggestions, "nx", nx))")
+        println("ny = $(get(suggestions, "ny", ny))")
+        println("nz = $(get(suggestions, "nz", nz))")
+        println("total_ranks = $(get(suggestions, "total_ranks", total_ranks))")
+    end
+    
+    return
+end
+
+"""
+    generate_valid_rank_sequence(max_value::Int = 196608, multipliers::Vector{Int} = [3])
+
+Generate sequence of valid MPI ranks up to max_value.
+Sequence includes powers of 2 and their multiples by specified multipliers.
+"""
+function generate_valid_rank_sequence(max_value::Int = 196608, multipliers::Vector{Int} = [3])
+    valid_ranks = Int[]
+    power_of_2 = 2
+    
+    while power_of_2 <= max_value
+        push!(valid_ranks, power_of_2)
+        
+        for m in multipliers
+            multiple = m * (power_of_2 ÷ 2)
+            if multiple <= max_value
+                push!(valid_ranks, multiple)
+            end
+        end
+        
+        power_of_2 *= 2
+    end
+    
+    return sort(unique(valid_ranks))
 end
