@@ -495,9 +495,7 @@ function save_LaMEM_markers_parallel(Grid::CartData; PartitioningFile = empty, d
         part_phs = Phases[x_start[n]:x_end[n], y_start[n]:y_end[n], z_start[n]:z_end[n]]
         part_T = Temp[x_start[n]:x_end[n], y_start[n]:y_end[n], z_start[n]:z_end[n]]
         num_particles = size(part_x, 1) * size(part_x, 2) * size(part_x, 3)
-        println("x_start[n]= $x_start[n]","x_end[n]= $x_end[n]","y_start[n]= $y_start[n]","y_end[n]= $y_end[n]","z_start[n]= $z_start[n]","z_end[n]= $z_end[n]")
-        println("size(part_x) = $(size(part_x))","size(part_y) = $(size(part_y))","size(part_z) = $(size(part_z))","size(part_phs) = $(size(part_phs))","size(part_T) = $(size(part_T))")
- 
+
         # Information vector per processor
         num_prop = 5       # number of properties we save [x/y/z/phase/T]
         lvec_info = num_particles

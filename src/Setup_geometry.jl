@@ -819,7 +819,7 @@ end
 Add polygon function but getting bounds as a vector bounds in a way of [[xmin,xmax],[ymin,ymax],[zmin,zmax]]. If bounds is empty return nothing 
 """
 function  add_polygon!(Phase, Temp, Grid::AbstractGeneralGrid,           # required input
-                bounds::AbstractVector{<:AbstractVector{<:Real}};    # limits of the box
+                bounds::Union{Vector{Any}, AbstractVector{<:AbstractVector{<:Real}}};    # limits of the box
                 phase = ConstantPhase(1),                            # Sets the phase number(s) in the box
                 T = nothing,                                         # Sets the thermal structure (various functions are available)
                 cell = false                                         # if true, Phase and Temp are defined on cell centers
@@ -942,7 +942,7 @@ end
 Add plate function but getting bounds as a vector bounds in a way of [[xmin,xmax],[ymin,ymax],[zmin,zmax]]. If bounds is empty return nothing 
 """
 function  add_plate!(Phase, Temp, Grid::AbstractGeneralGrid,           # required input
-                bounds::AbstractVector{<:AbstractVector{<:Real}};    # limits of the box
+                bounds::Union{Vector{Any}, AbstractVector{<:AbstractVector{<:Real}}};    # limits of the box
                 phase = ConstantPhase(1),                            # Sets the phase number(s) in the box
                 T = nothing,                                         # Sets the thermal structure (various functions are available)
                 segments = nothing,                                  # Allows defining multiple ridge segments
