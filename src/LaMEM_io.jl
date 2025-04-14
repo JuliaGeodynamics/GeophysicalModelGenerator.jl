@@ -550,16 +550,16 @@ function get_ind(x, xc, Nprocx)
 end
 
 # Same as get_ind but without the need for the x vector
-function get_ind2(dx,xc,Nprocx)
+function get_ind2(dx, xc, Nprocx)
 
     if Nprocx == 1
-        xi       = Int(round((xc[end] - xc[1]) / dx));
-        ix_start = [1];
-        ix_end   = [xi];
+        xi = Int(round((xc[end] - xc[1]) / dx))
+        ix_start = [1]
+        ix_end = [xi]
     else
         xi = zeros(Int64, Nprocx)
-        for k = 1:Nprocx
-            xi[k] = round((xc[k+1] - xc[k])/dx);
+        for k in 1:Nprocx
+            xi[k] = round((xc[k + 1] - xc[k]) / dx)
         end
 
         ix_start = cumsum([0; xi[1:(end - 1)]]) .+ 1
@@ -567,7 +567,7 @@ function get_ind2(dx,xc,Nprocx)
 
     end
 
-    return xi,ix_start,ix_end
+    return xi, ix_start, ix_end
 
 end
 
@@ -1112,11 +1112,7 @@ function Base.show(io::IO, d::LaMEM_partitioning_info)
 end
 
 function check_markers_directory(directory)
-
-    if !isdir(directory)
-        mkdir(directory)
-    end
-
+    return if !isdir(directory) mkdir(directory) end
 end
 
 function get_LaMEM_grid_info(file; args::Union{String, Nothing} = nothing)
@@ -1151,13 +1147,13 @@ function get_LaMEM_grid_info(file; args::Union{String, Nothing} = nothing)
     Grid = LaMEM_grid(
         nmark_x, nmark_y, nmark_z,
         nump_x, nump_y, nump_z,
-        nel_x,   nel_y,   nel_z,
+        nel_x, nel_y, nel_z,
         W, L, H,
         parsed_x, parsed_y, parsed_z,
-        [],[],[],
-        [],[],[],
-        [],[],[],
-        [],[],[]
+        [], [], [],
+        [], [], [],
+        [], [], [],
+        [], [], []
     )
 
     return Grid
@@ -1172,28 +1168,28 @@ end
     P:    LaMEM_partitioning_info
  Returns a LaMEM_partitioning_info object with the distribution of particles in the grid
 """
-function get_particles_distribution(Grid,P)
+function get_particles_distribution(Grid, P)
 
     # get number of processors and processor coordnate bounds
-    nProcX = P.nProcX;
-    nProcY = P.nProcY;
-    nProcZ = P.nProcZ;
-    xc     = P.xc;
-    yc     = P.yc;
-    zc     = P.zc;
+    nProcX = P.nProcX
+    nProcY = P.nProcY
+    nProcZ = P.nProcZ
+    xc = P.xc
+    yc = P.yc
+    zc = P.zc
 
-    (num, num_i, num_j, num_k) = get_numscheme(nProcX, nProcY, nProcZ);
+    (num, num_i, num_j, num_k) = get_numscheme(nProcX, nProcY, nProcZ)
 
-    dx     = Grid.W/Grid.nump_x;
-    dy     = Grid.L/Grid.nump_y;
-    dz     = Grid.H/Grid.nump_z;
+    dx = Grid.W / Grid.nump_x
+    dy = Grid.L / Grid.nump_y
+    dz = Grid.H / Grid.nump_z
 
     # % Get particles of respective procs
     # % xi - amount of particles in x direction in each core
     # % ix_start - indexes where they start for each core
-    (xi,ix_start,ix_end) = get_ind2(dx,xc,nProcX);
-    (yi,iy_start,iy_end) = get_ind2(dy,yc,nProcY);
-    (zi,iz_start,iz_end) = get_ind2(dz,zc,nProcZ);
+    (xi, ix_start, ix_end) = get_ind2(dx, xc, nProcX)
+    (yi, iy_start, iy_end) = get_ind2(dy, yc, nProcY)
+    (zi, iz_start, iz_end) = get_ind2(dz, zc, nProcZ)
 
     x_start = ix_start[num_i[:]]
     y_start = iy_start[num_j[:]]
@@ -1202,7 +1198,7 @@ function get_particles_distribution(Grid,P)
     y_end = iy_end[num_j[:]]
     z_end = iz_end[num_k[:]]
 
-    p_dist = particles_distribution(x_start,x_end,y_start,y_end,z_start,z_end);
+    p_dist = particles_distribution(x_start, x_end, y_start, y_end, z_start, z_end)
 
     return p_dist
 
@@ -1218,23 +1214,23 @@ end
     RandomNoise: add random noise to the grid (0/1)
  Returns a LaMEM_grid object with the local grid for the current processor
 """
-function get_proc_grid(Grid_info,p_dist,proc_bounds,proc_num,RandomNoise)
+function get_proc_grid(Grid_info, p_dist, proc_bounds, proc_num, RandomNoise)
 
-    x_proc_bound  = proc_bounds[1];
-    y_proc_bound  = proc_bounds[2];
-    z_proc_bound  = proc_bounds[3];
+    x_proc_bound = proc_bounds[1]
+    y_proc_bound = proc_bounds[2]
+    z_proc_bound = proc_bounds[3]
 
     loc_nump_x = p_dist.x_end[proc_num] - p_dist.x_start[proc_num] + 1
     loc_nump_y = p_dist.y_end[proc_num] - p_dist.y_start[proc_num] + 1
     loc_nump_z = p_dist.z_end[proc_num] - p_dist.z_start[proc_num] + 1
-    
-    loc_nel_x = loc_nump_x/Grid_info.nmark_x
-    loc_nel_y = loc_nump_y/Grid_info.nmark_y
-    loc_nel_z = loc_nump_z/Grid_info.nmark_z
 
-    x  = range(x_proc_bound[1], x_proc_bound[2], length=loc_nump_x)
-    y  = range(y_proc_bound[1], y_proc_bound[2], length=loc_nump_y)
-    z  = range(z_proc_bound[1], z_proc_bound[2], length=loc_nump_z)
+    loc_nel_x = loc_nump_x / Grid_info.nmark_x
+    loc_nel_y = loc_nump_y / Grid_info.nmark_y
+    loc_nel_z = loc_nump_z / Grid_info.nmark_z
+
+    x = range(x_proc_bound[1], x_proc_bound[2], length = loc_nump_x)
+    y = range(y_proc_bound[1], y_proc_bound[2], length = loc_nump_y)
+    z = range(z_proc_bound[1], z_proc_bound[2], length = loc_nump_z)
 
     # marker grid
     X, Y, Z = GeophysicalModelGenerator.xyz_grid(x, y, z)
@@ -1244,27 +1240,27 @@ function get_proc_grid(Grid_info,p_dist,proc_bounds,proc_num,RandomNoise)
     H = z_proc_bound[2] - z_proc_bound[1]
 
     if RandomNoise == 1
-        dx = x[2]   - x[1]
-        dy = y[2]   - y[1]
-        dz = z[2]   - z[1]
-        dXNoise = zeros(size(X)) + dx;
-        dYNoise = zeros(size(Y)) + dy;
-        dZNoise = zeros(size(Z)) + dz;
-    
-        dXNoise = dXNoise.*(rand(size(dXNoise))-0.5);
-        dYNoise = dYNoise.*(rand(size(dYNoise))-0.5);
-        dZNoise = dZNoise.*(rand(size(dZNoise))-0.5);
-    
-        Xpart   = X + dXNoise;
-        Ypart   = Y + dYNoise;
-        Zpart   = Z + dZNoise;
-    
-        X       = Xpart;
-        Y       = Ypart;
-        Z       = Zpart;
-        x       = X(1,:,1);
-        y       = Y(:,1,1);
-        z       = Z(1,1,:);
+        dx = x[2] - x[1]
+        dy = y[2] - y[1]
+        dz = z[2] - z[1]
+        dXNoise = zeros(size(X)) + dx
+        dYNoise = zeros(size(Y)) + dy
+        dZNoise = zeros(size(Z)) + dz
+        
+        dXNoise = dXNoise .* (rand(size(dXNoise)) - 0.5)
+        dYNoise = dYNoise .* (rand(size(dYNoise)) - 0.5)
+        dZNoise = dZNoise .* (rand(size(dZNoise)) - 0.5)
+        
+        Xpart = X + dXNoise
+        Ypart = Y + dYNoise
+        Zpart = Z + dZNoise
+        
+        X = Xpart
+        Y = Ypart
+        Z = Zpart
+        x = X(1, :, 1)
+        y = Y(:, 1, 1)
+        z = Z(1, 1, :)
     
     end
 
@@ -1310,36 +1306,36 @@ p_dist_example = get_particles_distribution(Grid_example,P_example)
 proc_bounds    = get_proc_bound(Grid_example,p_dist_example,2)
 ```
 """
-function get_proc_bound(Grid,p_dist,proc_num)
+function get_proc_bound(Grid, p_dist, proc_num)
 
-    dx           = Grid.W/Grid.nump_x;
-    dy           = Grid.L/Grid.nump_y;
-    dz           = Grid.H/Grid.nump_z;
+    dx = Grid.W / Grid.nump_x
+    dy = Grid.L / Grid.nump_y
+    dz = Grid.H / Grid.nump_z
 
-    parsed_x     = Grid.coord_x
-    parsed_y     = Grid.coord_y
-    parsed_z     = Grid.coord_z
+    parsed_x = Grid.coord_x
+    parsed_y = Grid.coord_y
+    parsed_z = Grid.coord_z
 
-    model_x      = [ parsed_x[1] + dx/2, parsed_x[end] - dx/2 ]
-    model_y      = [ parsed_y[1] + dy/2, parsed_y[end] - dy/2 ]
-    model_z      = [ parsed_z[1] + dz/2, parsed_z[end] - dz/2 ]
+    model_x = [parsed_x[1] + dx / 2, parsed_x[end] - dx / 2]
+    model_y = [parsed_y[1] + dy / 2, parsed_y[end] - dy / 2]
+    model_z = [parsed_z[1] + dz / 2, parsed_z[end] - dz / 2]
 
-    x_left       = model_x[1];
-    y_front      = model_y[1];
-    z_bot        = model_z[1];
+    x_left = model_x[1]
+    y_front = model_y[1]
+    z_bot = model_z[1]
 
-    x_start      = p_dist.x_start;
-    x_end        = p_dist.x_end;
-    y_start      = p_dist.y_start;
-    y_end        = p_dist.y_end;
-    z_start      = p_dist.z_start;
-    z_end        = p_dist.z_end;
+    x_start = p_dist.x_start
+    x_end = p_dist.x_end
+    y_start = p_dist.y_start
+    y_end = p_dist.y_end
+    z_start = p_dist.z_start
+    z_end = p_dist.z_end
 
-    x_proc_bound = [ x_left  + dx*( x_start[proc_num] - 1 ), x_left  + dx*( x_end[proc_num] - 1 ) ];
-    y_proc_bound = [ y_front + dy*( y_start[proc_num] - 1 ), y_front + dy*( y_end[proc_num] - 1 ) ];
-    z_proc_bound = [ z_bot   + dz*( z_start[proc_num] - 1 ), z_bot   + dz*( z_end[proc_num] - 1 ) ];
+    x_proc_bound = [x_left + dx * (x_start[proc_num] - 1), x_left + dx * (x_end[proc_num] - 1)]
+    y_proc_bound = [y_front + dy * (y_start[proc_num] - 1), y_front + dy * (y_end[proc_num] - 1)]
+    z_proc_bound = [z_bot + dz * (z_start[proc_num] - 1), z_bot + dz * (z_end[proc_num] - 1)]
 
-    return [ x_proc_bound, y_proc_bound, z_proc_bound ]
+    return [x_proc_bound, y_proc_bound, z_proc_bound]
 
 end
 
@@ -1354,7 +1350,7 @@ end
 function crop_bounds(uncropped_bounds, proc_bounds, x, y, z)
 
     # Crop boundaries from the whole model to only the extent of the current processor
-    vecs       = [x, y, z]  
+    vecs = [x, y, z]
     new_bounds = [zeros(size(vecs[i])) for i in eachindex(vecs)]
     for i in eachindex(vecs)
         vec = vecs[i]
@@ -1394,7 +1390,7 @@ function crop_bounds(uncropped_bounds, proc_bounds, x, y, z)
 end
 
 function closest_val(val, vec)
-    return  vec[argmin(abs.(vec .- val))]
+    return vec[argmin(abs.(vec .- val))]
 end
 
 """
@@ -1555,9 +1551,9 @@ function setup_model_domain(coord_x::AbstractVector{<:Real},
         xcoor[ix], ycoor[iy],zcoor[iz]
         )
 
-        xcoor=[]
-        ycoor=[]
-        zcoor=[]
+        xcoor = []
+        ycoor = []
+        zcoor = []
 
     return P
 

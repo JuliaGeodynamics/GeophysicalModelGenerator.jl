@@ -19,8 +19,8 @@ empty_bounds = []
 add_box!(Phases, Temp, Grid, empty_bounds, phase = ConstantPhase(69))
 @test (unique(Phases)) == [0]
 
-not_empty_bounds = [[2,4],[minimum(Grid.lat.val),maximum(Grid.lat.val)],[-15,-10]]
-add_box!(Phases, Temp, Grid, not_empty_bounds , phase = ConstantPhase(69))
+not_empty_bounds = [[2, 4], [minimum(Grid.lat.val), maximum(Grid.lat.val)], [-15, -10]]
+add_box!(Phases, Temp, Grid, not_empty_bounds, phase = ConstantPhase(69))
 @test maximum(Phases) == 69
 
 # CartData

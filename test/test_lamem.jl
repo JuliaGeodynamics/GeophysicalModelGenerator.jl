@@ -54,15 +54,15 @@ zcoords_ans=[-6.4, 6.4];
 nProcX_ans = 4; nProcY_ans = 2; nProcZ_ans = 1;
 nNodeX_ans = 129; nNodeY_ans = 65; nNodeZ_ans = 33;
 P         = setup_model_domain([extrema(xcoords_ans)...], [extrema(ycoords_ans)...], [extrema(zcoords_ans)...], nx, ny, nz, n_ranks)
-@test isapprox(nProcX_ans, P.nProcX; atol=1e-8)
-@test isapprox(nProcY_ans, P.nProcY; atol=1e-8)
-@test isapprox(nProcZ_ans, P.nProcZ; atol=1e-8)
-@test isapprox(xcoords_ans, P.xc; atol=1e-8)
-@test isapprox(ycoords_ans, P.yc; atol=1e-8)
-@test isapprox(zcoords_ans, P.zc; atol=1e-8)
-@test isapprox(nNodeX_ans, P.nNodeX; atol=1e-8)
-@test isapprox(nNodeY_ans, P.nNodeY; atol=1e-8)
-@test isapprox(nNodeZ_ans, P.nNodeZ; atol=1e-8)
+@test isapprox(nProcX_ans, P.nProcX; atol=1.0e-8)
+@test isapprox(nProcY_ans, P.nProcY; atol=1.0e-8)
+@test isapprox(nProcZ_ans, P.nProcZ; atol=1.0e-8)
+@test isapprox(xcoords_ans, P.xc; atol=1.0e-8)
+@test isapprox(ycoords_ans, P.yc; atol=1.0e-8)
+@test isapprox(zcoords_ans, P.zc; atol=1.0e-8)
+@test isapprox(nNodeX_ans, P.nNodeX; atol=1.0e-8)
+@test isapprox(nNodeY_ans, P.nNodeY; atol=1.0e-8)
+@test isapprox(nNodeZ_ans, P.nNodeZ; atol=1.0e-8)
 
 n_ranks = 128; nx=256; ny=1; nz=128;
 xcoords_ans=[-35.35034129014803, -31.479617703551735, -27.608894116955444, -23.73817053035915, -19.867446943762857, -15.996723357166562, -12.125999770570267, -8.255276183973974, -4.384552597377681, -0.5138290107813872, 3.3568945758149065, 7.227618162411201, 11.098341749007494, 14.969065335603787, 18.839788922200082, 22.710512508796374, 26.58123609539267];
@@ -71,15 +71,15 @@ zcoords_ans=[-6.4, -4.8, -3.2, -1.6, 0.0, 1.6, 3.2, 4.8, 6.4];
 nProcX_ans = 16; nProcY_ans = 1; nProcZ_ans = 8;
 nNodeX_ans = 257; nNodeY_ans = 2; nNodeZ_ans = 129;
 P         = setup_model_domain([extrema(xcoords_ans)...], [extrema(ycoords_ans)...], [extrema(zcoords_ans)...], nx, ny, nz, n_ranks)
-@test isapprox(nProcX_ans, P.nProcX; atol=1e-8)
-@test isapprox(nProcY_ans, P.nProcY; atol=1e-8)
-@test isapprox(nProcZ_ans, P.nProcZ; atol=1e-8)
-@test isapprox(xcoords_ans, P.xc; atol=1e-8)
-@test isapprox(ycoords_ans, P.yc; atol=1e-8)
-@test isapprox(zcoords_ans, P.zc; atol=1e-8)
-@test isapprox(nNodeX_ans, P.nNodeX; atol=1e-8)
-@test isapprox(nNodeY_ans, P.nNodeY; atol=1e-8)
-@test isapprox(nNodeZ_ans, P.nNodeZ; atol=1e-8)
+@test isapprox(nProcX_ans, P.nProcX; atol=1.0e-8)
+@test isapprox(nProcY_ans, P.nProcY; atol=1.0e-8)
+@test isapprox(nProcZ_ans, P.nProcZ; atol=1.0e-8)
+@test isapprox(xcoords_ans, P.xc; atol=1.0e-8)
+@test isapprox(ycoords_ans, P.yc; atol=1.0e-8)
+@test isapprox(zcoords_ans, P.zc; atol=1.0e-8)
+@test isapprox(nNodeX_ans, P.nNodeX; atol=1.0e-8)
+@test isapprox(nNodeY_ans, P.nNodeY; atol=1.0e-8)
+@test isapprox(nNodeZ_ans, P.nNodeZ; atol=1.0e-8)
 
 n_ranks = 2048; nx=512; ny=2048; nz=512;
 xcoords_ans=[-35.35034129014803, -27.60889411695544, -19.867446943762857, -12.12599977057027, -4.3845525973776835, 3.356894575814903, 11.098341749007488, 18.839788922200068, 26.58123609539267 ];
@@ -88,15 +88,15 @@ zcoords_ans=[-6.4, -4.800000000000001, -3.2, -1.6, 0.0, 1.6, 3.2, 4.800000000000
 nProcX_ans = 8; nProcY_ans = 32; nProcZ_ans = 8;
 nNodeX_ans = 513; nNodeY_ans = 2049; nNodeZ_ans = 513;
 P         = setup_model_domain([-35.35034129014803,26.58123609539267], [-24.510578171895816,34.75629047035891], [-6.4,6.4], nx, ny, nz, n_ranks)
-@test isapprox(nProcX_ans, P.nProcX; atol=1e-8)
-@test isapprox(nProcY_ans, P.nProcY; atol=1e-8)
-@test isapprox(nProcZ_ans, P.nProcZ; atol=1e-8)
-@test isapprox(xcoords_ans, P.xc; atol=1e-8)
-@test isapprox(ycoords_ans, P.yc[1:10]; atol=1e-8)
-@test isapprox(zcoords_ans, P.zc; atol=1e-8)
-@test isapprox(nNodeX_ans, P.nNodeX; atol=1e-8)
-@test isapprox(nNodeY_ans, P.nNodeY; atol=1e-8)
-@test isapprox(nNodeZ_ans, P.nNodeZ; atol=1e-8)
+@test isapprox(nProcX_ans, P.nProcX; atol=1.0e-8)
+@test isapprox(nProcY_ans, P.nProcY; atol=1.0e-8)
+@test isapprox(nProcZ_ans, P.nProcZ; atol=1.0e-8)
+@test isapprox(xcoords_ans, P.xc; atol=1.0e-8)
+@test isapprox(ycoords_ans, P.yc[1:10]; atol=1.0e-8)
+@test isapprox(zcoords_ans, P.zc; atol=1.0e-8)
+@test isapprox(nNodeX_ans, P.nNodeX; atol=1.0e-8)
+@test isapprox(nNodeY_ans, P.nNodeY; atol=1.0e-8)
+@test isapprox(nNodeZ_ans, P.nNodeZ; atol=1.0e-8)
 
 n_ranks = 32768; nx=2048; ny=512; nz=1024;
 xcoords_ans=[-35.35034129014803, -34.38266039349895, -33.41497949684988, -32.4472986002008, -31.47961770355173, -30.511936806902664, -29.54425591025359, -28.576575013604515, -27.60889411695544, -26.64121322030637 ];
@@ -105,15 +105,15 @@ zcoords_ans=[-6.4, -6.0, -5.6000000000000005, -5.2, -4.800000000000001, -4.4, -4
 nProcX_ans = 64; nProcY_ans = 16; nProcZ_ans = 32;
 nNodeX_ans = 2049; nNodeY_ans = 513; nNodeZ_ans = 1025;
 P         = setup_model_domain([-35.35034129014803,26.58123609539267], [-24.510578171895816,34.75629047035891], [-6.4,6.4], nx, ny, nz, n_ranks)
-@test isapprox(nProcX_ans, P.nProcX; atol=1e-8)
-@test isapprox(nProcY_ans, P.nProcY; atol=1e-8)
-@test isapprox(nProcZ_ans, P.nProcZ; atol=1e-8)
-@test isapprox(xcoords_ans, P.xc[1:10]; atol=1e-8)
-@test isapprox(ycoords_ans, P.yc[1:10]; atol=1e-8)
-@test isapprox(zcoords_ans, P.zc[1:10]; atol=1e-8)
-@test isapprox(nNodeX_ans, P.nNodeX; atol=1e-8)
-@test isapprox(nNodeY_ans, P.nNodeY; atol=1e-8)
-@test isapprox(nNodeZ_ans, P.nNodeZ; atol=1e-8)
+@test isapprox(nProcX_ans, P.nProcX; atol=1.0e-8)
+@test isapprox(nProcY_ans, P.nProcY; atol=1.0e-8)
+@test isapprox(nProcZ_ans, P.nProcZ; atol=1.0e-8)
+@test isapprox(xcoords_ans, P.xc[1:10]; atol=1.0e-8)
+@test isapprox(ycoords_ans, P.yc[1:10]; atol=1.0e-8)
+@test isapprox(zcoords_ans, P.zc[1:10]; atol=1.0e-8)
+@test isapprox(nNodeX_ans, P.nNodeX; atol=1.0e-8)
+@test isapprox(nNodeY_ans, P.nNodeY; atol=1.0e-8)
+@test isapprox(nNodeZ_ans, P.nNodeZ; atol=1.0e-8)
 
 # Test creating model setups
 Grid = read_LaMEM_inputfile("test_files/Subduction2D_FreeSlip_Particles_Linear_DirectSolver.dat")
