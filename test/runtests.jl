@@ -81,6 +81,10 @@ using Test
         include("test_ASAGI_IO.jl")
     end
 
+    @testset "LaMEM_post_processing" begin
+        include("test_LaMEM_post_processing.jl")
+    end
+
 end
 
 # Cleanup
