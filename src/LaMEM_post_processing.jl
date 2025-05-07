@@ -341,7 +341,7 @@ function get_data_timestep(model_path::String,timestep::String,FileName_pvtr::St
     data = read_LaMEM_PVTR_file(proc_folder,FileName_pvtr;fields=p_fields)
 
     # Correct surface level
-    data.z.val .= data.z.val .- surface_level # surf_level read from dat file 
+    data.z.val .-= surface_level # surf_level read from dat file 
 
     return data
 end
