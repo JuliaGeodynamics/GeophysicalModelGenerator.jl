@@ -227,7 +227,7 @@ function get_phase(path::String,FileName_pvtr::String,phaseIDs::Vector{Int},sep_
         end
     end
 
-    if sep_ind  == true
+    if sep_ind
         indices = idx[1]
     end
 
