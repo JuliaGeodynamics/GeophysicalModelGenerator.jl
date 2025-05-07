@@ -215,7 +215,7 @@ function get_phase(path::String,FileName_pvtr::String,phaseIDs::Vector{Int},sep_
         indices = ind[1]
     else
         # Get the indices of the phase in the current row
-        for i in 1:length(phaseIDs)
+        for i in eachindex(phaseIDs)
 
             ind = get_phase(path,FileName_pvtr,i)
             indices = push!(indices, ind)
