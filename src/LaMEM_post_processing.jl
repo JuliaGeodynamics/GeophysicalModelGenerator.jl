@@ -336,11 +336,7 @@ function get_data_timestep(model_path::String,timestep::String,FileName_pvtr::St
     processing_folder = joinpath(model_path,timestep)
     proc_folder = replace(processing_folder,"\\" => "/")*"/"
 
-    if print == true
-        println("Processing folder:" * proc_folder)
-    else
-        nothing
-    end
+    print && println("Processing folder:" * proc_folder)
 
     data = read_LaMEM_PVTR_file(proc_folder,FileName_pvtr;fields=p_fields)
 
