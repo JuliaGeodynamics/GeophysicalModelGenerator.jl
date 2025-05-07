@@ -220,7 +220,7 @@ function get_phase(path::String,FileName_pvtr::String,phaseIDs::Vector{Int},sep_
             ind = get_phase(path,FileName_pvtr,i)
             indices = push!(indices, ind)
 
-            if (sep_ind  == true && i > 1)
+            if sep_ind && i > 1
                 idx = vcat(indices[i-1], indices[i])
             end
 
