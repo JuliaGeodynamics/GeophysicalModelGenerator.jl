@@ -268,7 +268,7 @@ julia> matrix = get_phase_bool(path,FileName_pvtr,phase_coord)
 # boolse matrix, where coordinates of phase exist values are set to true
 function get_phase_bool(path::String,FileName_pvtr::String,ind)
 
-    idx = []
+    idx = Int64[]
     proc_folder = replace(path,"\\" => "/")*"/"
     data = read_LaMEM_PVTR_file(proc_folder,FileName_pvtr)
     if any(x -> isa(x, Vector), ind)
