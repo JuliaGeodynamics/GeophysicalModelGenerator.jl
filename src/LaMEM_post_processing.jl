@@ -510,7 +510,7 @@ julia> file_info = deserialize_file(output_dir,name)
 
 function deserialize_file(output_dir::String,name::String)
 
-    file_name = string(name)*".txt"
+    file_name = name * ".txt"
     output_name=joinpath(output_dir,file_name)
 
     det_info =[]
