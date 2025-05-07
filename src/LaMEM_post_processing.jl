@@ -281,7 +281,7 @@ function get_phase_bool(path::String,FileName_pvtr::String,ind)
     end
 
     matrix =zeros(size(data.x.val))
-    matrix[ind[:]] .= 1
+    @views matrix[ind[:]] .= 1
     matrix = Int64.(matrix)
 
     return matrix
