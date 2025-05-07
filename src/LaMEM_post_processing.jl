@@ -377,12 +377,12 @@ julia> split_value = split_at__to_type(string_to_split,2,"Float")
 
 function split_at__to_type(string_to_split::Vector{String},i::Int64,type::String)
 
-    if occursin("String", type)
-        spl = [split(entry, '_')[i] for entry in string_to_split]
+    spl = if occursin("String", type)
+       [split(entry, '_')[i] for entry in string_to_split]
     elseif occursin("Float", type)
-       spl = [parse(Float64, split(entry, '_')[i]) for entry in string_to_split]
+       [parse(Float64, split(entry, '_')[i]) for entry in string_to_split]
     elseif occursin("Int", type)
-        spl = [parse(Int64, split(entry, '_')[i]) for entry in string_to_split]
+       [parse(Int64, split(entry, '_')[i]) for entry in string_to_split]
     end
     return spl
 
