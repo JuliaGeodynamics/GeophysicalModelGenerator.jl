@@ -458,7 +458,7 @@ function track_point_over_time(Point_coord::CartesianIndex,fields::Vector{String
     end
 
 
-    if save == true
+    if save
         save_dict[model_name] = Dict{String,Dict{String,Float64}}()
         save_dict[model_name] = track_point
 
