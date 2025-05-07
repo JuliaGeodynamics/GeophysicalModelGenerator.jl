@@ -206,8 +206,8 @@ end
 # get Coordinates of the searched phases. Return can either be in one list or separated by phase than as vector{vectors}
 function get_phase(path::String,FileName_pvtr::String,phaseIDs::Vector{Int},sep_ind=false)
 
-    indices = []
-    idx = []
+    indices = Int64[]
+    idx = Int64[]
 
     if length(phaseIDs) == 1
         sep_ind=false
