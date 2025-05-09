@@ -13,12 +13,12 @@ import Base: show, size
 export LaMEM_grid, read_LaMEM_inputfile
 export save_LaMEM_markers_parallel, save_LaMEM_topography
 export get_processor_partitioning, read_data_VTR, read_data_PVTR, create_partitioning_file
-export crop_bounds, get_proc_bound, get_proc_grid, get_particles_distribution, get_LaMEM_grid_info, get_processor_partitioning_info, check_markers_directory, setup_model_domain, LaMEM_partitioning_info
+export crop_bounds, get_proc_bound, get_proc_grid, get_particles_distribution, get_LaMEM_grid_info, get_processor_partitioning_info, check_markers_directory, setup_model_domain, LaMEMPartitioningInfo
 
 """
 Structure that holds information about the LaMEM partitioning
 """
-struct LaMEM_partitioning_info <: AbstractGeneralGrid
+struct LaMEMPartitioningInfo <: AbstractGeneralGrid
 
     # Number of processors in each direction
     nProcX::Int64
@@ -29,23 +29,23 @@ struct LaMEM_partitioning_info <: AbstractGeneralGrid
     nNodeY::Int64
     nNodeZ::Int64
     # Coordinates of the nodes end of each processor
-    xc
-    yc
-    zc
+    xc::Vector{Float64}
+    yc::Vector{Float64}
+    zc::Vector{Float64}
 
 end
 
 """
 Structure that holds information about the LaMEM particles distribution for partitioning
 """
-struct particles_distribution <: AbstractGeneralGrid
+struct ParticlesDistribution <: AbstractGeneralGrid
 
-    x_start
-    x_end
-    y_start
-    y_end
-    z_start
-    z_end
+    x_start::Vector{Int64}
+    x_end::Vector{Int64}
+    y_start::Vector{Int64}
+    y_end::Vector{Int64}
+    z_start::Vector{Int64}
+    z_end::Vector{Int64}
 
 end
 
@@ -562,8 +562,8 @@ function get_ind2(dx, xc, Nprocx)
             xi[k] = round((xc[k + 1] - xc[k]) / dx)
         end
 
-        ix_start = cumsum([0; xi[1:(end - 1)]]) .+ 1
-        ix_end = cumsum(xi[1:end])
+        ix_start = @views cumsum([0; xi[1:(end - 1)]]) .+ 1
+        ix_end = cumsum(xi)
 
     end
 
@@ -1095,7 +1095,7 @@ function coordinate_grids(Data::LaMEM_grid; cell = false)
     return X, Y, Z
 end
 
-function Base.show(io::IO, d::LaMEM_partitioning_info)
+function Base.show(io::IO, d::LaMEMPartitioningInfo)
 
     println(io, "LaMEM Partitioning info: ")
     println(io, "  nProcX : $(d.nProcX)")
@@ -1165,8 +1165,8 @@ end
     p_dist = get_particles_distribution(Grid, P)
  Get the distribution of particles in the grid
     Grid: LaMEM_grid
-    P:    LaMEM_partitioning_info
- Returns a LaMEM_partitioning_info object with the distribution of particles in the grid
+    P:    LaMEMPartitioningInfo
+ Returns a LaMEMPartitioningInfo object with the distribution of particles in the grid
 """
 function get_particles_distribution(Grid, P)
 
@@ -1198,7 +1198,7 @@ function get_particles_distribution(Grid, P)
     y_end = iy_end[num_j[:]]
     z_end = iz_end[num_k[:]]
 
-    p_dist = particles_distribution(x_start, x_end, y_start, y_end, z_start, z_end)
+    p_dist = ParticlesDistribution(x_start, x_end, y_start, y_end, z_start, z_end)
 
     return p_dist
 
@@ -1208,7 +1208,7 @@ end
     Grid = get_proc_grid(Grid_info, p_dist, proc_bounds, proc_num, RandomNoise)
  Get the local grid for the current processor
     Grid_info:   LaMEM_grid
-    p_dist:      LaMEM_partitioning_info
+    p_dist:      LaMEMPartitioningInfo
     proc_bounds: bounds of the current processor
     proc_num:    processor number
     RandomNoise: add random noise to the grid (0/1)
@@ -1251,13 +1251,9 @@ function get_proc_grid(Grid_info, p_dist, proc_bounds, proc_num, RandomNoise)
         dYNoise = dYNoise .* (rand(size(dYNoise)) - 0.5)
         dZNoise = dZNoise .* (rand(size(dZNoise)) - 0.5)
         
-        Xpart = X + dXNoise
-        Ypart = Y + dYNoise
-        Zpart = Z + dZNoise
-        
-        X = Xpart
-        Y = Ypart
-        Z = Zpart
+        X .+= dXNoise
+        Y .+= dYNoise
+        Z .+= dZNoise
         x = X(1, :, 1)
         y = Y(:, 1, 1)
         z = Z(1, 1, :)
@@ -1283,7 +1279,7 @@ end
 proc_bounds = get_proc_bound(Grid, p_dist, proc_num)
  Get the bounds of the current processor in x, y, z direction
     Grid:       LaMEM_grid
-    p_dist:     LaMEM_partitioning_info
+    p_dist:     LaMEMPartitioningInfo
     proc_num:   processor number
  Returns a 3 element vector with maximum and minimum values[[x_min, x_max],[y_min, y_max],[z_min, z_max]] for current processor proc_num
 
@@ -1302,7 +1298,7 @@ Grid_example = LaMEM_grid(
         [],[],[]
     )
 P_example      = setup_model_domain(Grid_example.coord_x, Grid_example.coord_y, Grid_example.coord_z, Grid_example.nel_x, Grid_example.nel_x, Grid_example.nel_x, 8)
-p_dist_example = get_particles_distribution(Grid_example,P_example)
+p_dist_example = get_ParticlesDistribution(Grid_example,P_example)
 proc_bounds    = get_proc_bound(Grid_example,p_dist_example,2)
 ```
 """
@@ -1545,7 +1541,7 @@ function setup_model_domain(coord_x::AbstractVector{<:Real},
     iy = calculate_domain_divisions(ny, Nprocy)
     iz = calculate_domain_divisions(nz, Nprocz)
     
-    P = LaMEM_partitioning_info(
+    P = LaMEMPartitioningInfo(
         Nprocx, Nprocy, Nprocz,
         nnodx, nnody, nnodz, 
         xcoor[ix], ycoor[iy],zcoor[iz]

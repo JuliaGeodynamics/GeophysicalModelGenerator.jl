@@ -825,12 +825,7 @@ function  add_polygon!(Phase, Temp, Grid::AbstractGeneralGrid,           # requi
                 cell = false                                         # if true, Phase and Temp are defined on cell centers
                 ) 
 
-    if isempty(bounds)
-
-        return nothing
-
-    else
-        
+    if !isempty(bounds)        
         xlim=(Tuple(bounds[1])) 
         ylim=(Tuple(bounds[2])) 
         zlim=(Tuple(bounds[3]))
@@ -949,12 +944,7 @@ function  add_plate!(Phase, Temp, Grid::AbstractGeneralGrid,           # require
                 cell = false                                         # if true, Phase and Temp are defined on cell centers
                 ) 
 
-    if isempty(bounds)
-
-        return nothing
-
-    else
-        
+    if !isempty(bounds)        
         xlim=(Tuple(bounds[1])) 
         ylim=(Tuple(bounds[2])) 
         zlim=(Tuple(bounds[3]))
@@ -968,14 +958,12 @@ function  add_plate!(Phase, Temp, Grid::AbstractGeneralGrid,           # require
                 segments = segments,                     # Allows defining multiple ridge segments
                 cell     = cell )
     end
-
 end
-
 
 """
     xrot, yrot, zrot = Rot3D(X::Number,Y::Number,Z::Number, cosStrikeAngle, sindStrikeAngle, cosDipAngle, sinDipAngle)
 
-Perform rotation for a point in 3D space
+    Perform rotation for a point in 3D space
 """
 function Rot3D(X::_T, Y::_T, Z::_T, cosStrikeAngle::_T, sindStrikeAngle::_T, cosDipAngle::_T, sinDipAngle::_T) where {_T <: Number}
 
