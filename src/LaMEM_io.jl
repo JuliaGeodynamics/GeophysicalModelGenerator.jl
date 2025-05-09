@@ -1511,9 +1511,9 @@ function setup_model_domain(coord_x::AbstractVector{<:Real},
     nnody = ny + 1
     nnodz = nz + 1
     
-    xcoor = collect(range(coord_x[1], coord_x[2], length=nnodx))
-    ycoor = collect(range(coord_y[1], coord_y[2], length=nnody))
-    zcoor = collect(range(coord_z[1], coord_z[2], length=nnodz))
+    xcoor = range(coord_x[1], coord_x[2], length=nnodx)
+    ycoor = range(coord_y[1], coord_y[2], length=nnody)
+    zcoor = range(coord_z[1], coord_z[2], length=nnodz)
     
     check_multigrid_compatibility(nx, ny, nz, n_ranks, verbose)
 
