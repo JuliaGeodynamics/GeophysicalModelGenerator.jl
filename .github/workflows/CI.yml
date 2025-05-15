@@ -23,7 +23,7 @@ jobs:
           - '1.9'
           - '1.10'
           - '1.11'
-          - 'nightly'
+          - 'pre'
         os:
           - ubuntu-latest
           - macos-13
