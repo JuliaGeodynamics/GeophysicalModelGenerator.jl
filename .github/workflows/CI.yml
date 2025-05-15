@@ -42,7 +42,7 @@ jobs:
             version: '1.11'
           - os: macOS-latest
             arch: aarch64
-            version: 'nightly'          
+            version: 'pre'          
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
