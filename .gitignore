@@ -20,6 +20,9 @@ tutorial/test.tiff
 *.vtr
 *.vts
 *.jld2
+*.swm
+*.swn
+*.swo
 *.tiff
 *.nc
 !/test/test_files/ISCTest.xml

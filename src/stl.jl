@@ -172,39 +172,39 @@ https://github.com/marmakoide/inside-3d-mesh
 
 This again is described in the following [paper](https://igl.ethz.ch/projects/winding-number/) by Alec Jacobson, Ladislav Kavan and Olga Sorkine-Hornung.
 """
-function isinside_closed_STL(mesh::Mesh, Pt::Vector, eps=1e-3)
+function isinside_closed_STL(mesh::Mesh, Pt::Vector, eps = 1.0e-3)
 
-     # Compute triangle vertices and their norms relative to X
-     M_vec  = [mesh.position[i]-Pt[:]   for i in eachindex(mesh.position)];
-     M      = zeros(length(M_vec),3);
-     for i=1:length(M_vec)
-        M[i,:] = Float64.(M_vec[i][1:3]);
-     end
-     M_norm = sqrt.(sum(M.^2,dims=2))
+    # Compute triangle vertices and their norms relative to X
+    M_vec = [mesh.position[i] - Pt[:]   for i in eachindex(mesh.position)]
+    M = zeros(length(M_vec), 3)
+    for i in 1:length(M_vec)
+        M[i, :] = Float64.(M_vec[i][1:3])
+    end
+    M_norm = sqrt.(sum(M .^ 2, dims = 2))
 
-     # Accumulate generalized winding number per triangle
-     winding_number = 0.
-     for iT=1:length(mesh)
-            t = mesh[iT].points;
-            M = zeros(3,3)
-            for i=1:3
-                M[i,:] = t[i]-Pt[:];
-            end
-            M_norm = sqrt.(sum(M.^2,dims=1))
+    # Accumulate generalized winding number per triangle
+    winding_number = 0.0
+    for iT in 1:length(mesh)
+        t = mesh[iT].points
+        M = zeros(3, 3)
+        for i in 1:3
+            M[i, :] = t[i] - Pt[:]
+        end
+        M_norm = sqrt.(sum(M .^ 2, dims = 1))
 
-            A,B,C = M[1,:], M[2,:], M[3,:]
-            a,b,c = M_norm[1], M_norm[2], M_norm[3]
+        A, B, C = M[1, :], M[2, :], M[3, :]
+        a, b, c = M_norm[1], M_norm[2], M_norm[3]
 
-         winding_number += atan(det(M), (a * b * c) + c * dot(A, B) + a * dot(B, C) + b * dot(C, A))
-      end
+        winding_number += atan(det(M), (a * b * c) + c * dot(A, B) + a * dot(B, C) + b * dot(C, A))
+    end
 
-     # Job done
-     if winding_number >= 2pi - eps
-        isinside = true;
-     else
+    # Job done
+    if winding_number >= 2pi - eps
+        isinside = true
+    else
         isinside = false
-     end
+    end
 
 
-     return isinside
+    return isinside
 end

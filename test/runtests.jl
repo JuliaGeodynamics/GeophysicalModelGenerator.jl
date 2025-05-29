@@ -2,7 +2,7 @@ using GeophysicalModelGenerator
 using Test
 
 @testset verbose = true "GeophysicalModelGenerator" begin
-    
+
     @testset "Data import.jl" begin
         include("test_data_import.jl")
     end
@@ -74,6 +74,14 @@ using Test
         include("test_sea_level.jl")
     end
 
+    @testset "Ridge Thermal Structure Tests" begin
+    	include("test_ridge_segments.jl")
+    end
+
+    @testset "Plate Tests" begin
+        include("test_plate.jl")
+    end
+
     @testset "Waterflow" begin
         include("test_WaterFlow.jl")
     end
@@ -81,7 +89,7 @@ using Test
     @testset "ASAGI_IO" begin
         include("test_ASAGI_IO.jl")
     end
-    
+
     @testset "Chmy" begin
         include("test_Chmy.jl")
     end
@@ -93,4 +101,4 @@ include("test_tutorials.jl")
 # Cleanup
 foreach(rm, filter(endswith(".vts"), readdir()))
 foreach(rm, filter(endswith(".vtu"), readdir()))
-rm("./markers/",recursive=true)
+rm("./markers/", recursive = true)
