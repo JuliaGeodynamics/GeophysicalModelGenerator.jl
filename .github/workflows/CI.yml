@@ -23,26 +23,35 @@ jobs:
           - '1.9'
           - '1.10'
           - '1.11'
-          - 'nightly'
+          # - 'pre'
         os:
           - ubuntu-latest
           - macos-13
           - windows-latest
         arch:
           - x64
+        allow_failure: [false]
         include:
           - os: macOS-latest
             arch: aarch64
-            version: '1.9'           
-          - os: macOS-latest
-            arch: aarch64
             version: '1.10'
+            allow_failure: false
           - os: macOS-latest
             arch: aarch64
             version: '1.11'
+            allow_failure: false
           - os: macOS-latest
             arch: aarch64
-            version: 'nightly'          
+            version: 'pre'
+            allow_failure: true
+          - os: ubuntu-latest
+            arch: x86
+            version: 'pre'
+            allow_failure: true
+          - os: windows-latest
+            arch: x86
+            version: 'pre'
+            allow_failure: true          
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
