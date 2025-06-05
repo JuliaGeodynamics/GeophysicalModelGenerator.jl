@@ -373,7 +373,7 @@ function tomo_2_GeoData(filename::String; vel_type::String = "vs")
     # create lon, lat, depth grid
     Lon, Lat, Depth = lonlatdepth_grid(lon, lat, .- depth)
 
-    # greate GeoDate struct
+    # create GeoData struct
     Tomo_data = GeoData(Lon, Lat, Depth, (vel=vel,))
 
     return Tomo_data
