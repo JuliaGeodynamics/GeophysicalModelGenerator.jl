@@ -87,3 +87,16 @@ data_Image = screenshot_to_UTMData(filename, Corner_LowerLeft, Corner_UpperRight
 Data_ISC = getlonlatdepthmag_QuakeML("test_files/ISCTest.xml");
 @test Value(Data_ISC.depth[1]) == -13.0km
 @test Data_ISC.fields.Magnitude[1] == 5.8
+
+# test the import of a seismic tomography model from a NetCDF file
+tomo_file = "test_files/test_tomo_data.nc"
+Tomo_data = tomo_2_GeoData(tomo_file)
+test_array = [i for i in 0:1:10]
+
+@test Tomo_data.lon.val[:,1,1] ≈ test_array
+@test Tomo_data.lat.val[1,:,1] ≈ test_array
+@test Tomo_data.depth.val[1,1,:] ≈ .- test_array
+
+for i in eachindex(test_array)
+    @test Tomo_data.fields.vel[i,i,i] ≈ i
+end
