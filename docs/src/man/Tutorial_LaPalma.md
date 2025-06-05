@@ -23,7 +23,7 @@ using GeophysicalModelGenerator, GMT, DelimitedFiles
 We will use GMT to download the topography with:
 
 ```julia
-Topo = import_topo(lon = [-18.2, -17.5], lat=[28.4, 29.0], file="@earth_relief_15s.grd")
+Topo = import_topo(lon = [-18.2, -17.5], lat=[28.4, 29.0], file="@earth_relief_15s")
 ```
 
 Next, lets load the seismicity. The earthquake data is available on [https://www.ign.es/web/ign/portal/vlc-catalogo](https://www.ign.es/web/ign/portal/vlc-catalogo).
@@ -31,7 +31,7 @@ We have filtered them and prepared a file with earthquake locations up to early 
 Download that:
 
 ```julia
-#download_data("","EQ_events_all_info5_LaPalma_2021.dat")
+#download_data("https://zenodo.org/records/10738510/files/EQ_events_all_info5_LaPalma_2021.dat","EQ_events_all_info5_LaPalma_2021.dat")
 data_EQ = readdlm("EQ_events_all_info5_LaPalma_2021.dat")
 ```
 
@@ -155,4 +155,3 @@ The paraview statefile `/tutorials/LaPalma.pvsm` can be used to reproduce the fo
 ---
 
 *This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
-

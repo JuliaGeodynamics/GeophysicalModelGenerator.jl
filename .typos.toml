@@ -2,6 +2,10 @@
 MOR = "MOR"
 dum = "dum"
 Shepard = "Shepard"
+arange = "arange"
+iy = "iy"
+nin = "nin"
+tect = "tect"
 
 [files]
-extend-exclude = ["tutorials/*.pvsm"]
+extend-exclude = ["tutorials/*.pvsm","docs/paper/paper.bib"]

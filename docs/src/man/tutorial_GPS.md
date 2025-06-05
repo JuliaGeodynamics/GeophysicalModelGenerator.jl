@@ -163,7 +163,7 @@ using GMT, Interpolations
 We use the `import_topo` function to read the topography from a file:
 
 ```julia
-Elevation   =   import_topo([3,17,42,50], file="@earth_relief_01m.grd");
+Elevation   =   import_topo([3,17,42,50], file="@earth_relief_01m");
 nothing #hide
 ```
 

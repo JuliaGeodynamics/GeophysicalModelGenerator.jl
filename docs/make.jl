@@ -105,13 +105,15 @@ makedocs(;
             "19 - Jura tutorial" =>  "man/Tutorial_Jura.md",
             "20 - 2D model setups" => "man/Tutorial_NumericalModel_2D.md",
             "21 - 3D model setups" => "man/Tutorial_NumericalModel_3D.md",
-            "22 - Build geometry from polygons" =>  "man/tutorial_Polygon_structures.md"
+            "22 - 3D model setups" => "man/Tutorial_VolcanoModel_3D.md",
+            "23 - Build geometry from polygons" =>  "man/tutorial_Polygon_structures.md"
         ],
         "User Guide" => Any[
             "Installation" =>  "man/installation.md",
             "Data Structures" =>  "man/datastructures.md",
             "Data Import" =>  "man/dataimport.md",
             "Projection" =>  "man/projection.md",
+            "ASAGI" => "man/asagi_io.md",
             "Paraview output" => "man/paraview_output.md",
             "Paraview collection" => "man/paraview_collection.md",
             "Surfaces" =>  "man/surfaces.md",
@@ -120,7 +122,8 @@ makedocs(;
             "Gravity code" => "man/gravity_code.md",
             "Numerical model setups" => "man/geodynamic_setups.md",
             "LaMEM" => "man/lamem.md",
-            "pTatin" => "man/lamem.md",
+            "pTatin" => "man/ptatin.md",
+            "Chmy" => "man/Tutorial_Chmy_MPI.md",
             "Profile Processing" => "man/profile_processing.md",
             "Gmsh" => "man/gmsh.md",
             "Movies" => "man/movies.md"            

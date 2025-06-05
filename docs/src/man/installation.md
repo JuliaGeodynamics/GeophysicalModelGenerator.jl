@@ -15,7 +15,7 @@ You start julia on the command line with:
 kausb$ julia
 ```
 This will start the command-line interface of julia:
-```julia
+```julia-repl
                _
    _       _ _(_)_     |  Documentation: https://docs.julialang.org
   (_)     | (_) (_)    |
@@ -25,22 +25,22 @@ This will start the command-line interface of julia:
  _/ |\__'_|_|_|\__'_|  |  Official https://julialang.org/ release
 |__/                   |
 
-julia> 
+julia>
 ```
 
 From the julia prompt, you start the package manager by typing `]`:
-```julia
-(@v1.6) pkg> 
+```julia-repl
+(@1.6) pkg>
 ```
 And you return to the command line with a backspace.
 
 Also useful is that julia has a build-in terminal, which you can reach by typing `;` on the command line:
-```julia
+```julia-repl
 julia>;
-shell> 
+shell>
 ```
 In the shell, you can use the normal commands like listing the content of a directory, or the current path:
-```julia
+```julia-repl
 shell> ls
 LICENSE         Manifest.toml   Project.toml    README.md       docs            src             test            tutorial
 shell> pwd
@@ -48,9 +48,9 @@ shell> pwd
 ```
 As before, return to the main command line (called `REPL`) with a backspace.
 
-If you want to see help information for any julia function, type `?` followed by the command. 
+If you want to see help information for any julia function, type `?` followed by the command.
 An example for `tan` is:
-```julia
+```julia-repl
 help?> tan
 search: tan tanh tand atan atanh atand instances transpose transcode contains UnitRange ReentrantLock StepRange StepRangeLen trailing_ones trailing_zeros
 
@@ -73,14 +73,14 @@ search: tan tanh tand atan atanh atand instances transpose transcode contains Un
   2×2 Matrix{Float64}:
    -1.09252  -1.09252
    -1.09252  -1.09252
-``` 
+```
 
 If you are in a directory that has a julia file (which have the extension `*.jl`), you can open that file with Visual Studio Code:
-```julia
+```julia-repl
 shell> code runtests.jl
 ```
 Execute the file with:
-```julia
+```julia-repl
 julia> include("runtests")
 ```
 Note that you do not include the `*.jl` extension.
@@ -88,44 +88,40 @@ Note that you do not include the `*.jl` extension.
 
 ### 4. Install GeophysicalModelGenerator.jl
 In order to install GeophysicalModelGenerator.jl, start julia and go to the package manager:
-```julia
+```julia-repl
 julia> ]
-(@v1.6) pkg> add GeophysicalModelGenerator
+(@v1.11) pkg> add GeophysicalModelGenerator
 ```
 This will automatically install various other packages it relies on (using the correct version).
 
 If you want, you can test if it works on your machine by running the test suite in the package manager:
-```julia
+```julia-repl
 julia> ]
-(@v1.6) pkg> test GeophysicalModelGenerator
+(@1.6) pkg> test GeophysicalModelGenerator
 ```
 Note that we run these tests automatically on Windows, Linux and Mac every time we add a new feature to GeophysicalModelGenerator (using different julia versions). This Continuous Integration (CI) ensures that new features do not break others in the package. The results can be seen [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/actions).
 
 The installation of `GMG` only needs to be done once, and will precompile the package and all other dependencies.
 
 If you, at a later stage, want to upgrade to the latest version of `GMG`, you can type:
-```julia
+```julia-repl
 julia> ]
-(@v1.6) pkg> update GeophysicalModelGenerator
+(@1.6) pkg> update GeophysicalModelGenerator
 ```
 
 You can load GeophysicalModelGenerator, for example to create cross-sections, with:
-```julia
+```julia-repl
 julia> using GeophysicalModelGenerator
 ```
 
 ### 5. Other useful packages
-As you will work your way through the tutorials you will see that we often use external packages, for example to load ascii data files into julia. You will find detailed instructions in the respective tutorials. 
+As you will work your way through the tutorials you will see that we often use external packages, for example to load ascii data files into julia. You will find detailed instructions in the respective tutorials.
 
 If you already want to install some of those, here our favorites. Install them through the package manager:
 
-- [CSV](https://github.com/JuliaData/CSV.jl): Read comma-separated data files into julia.  
-- [Plots](https://github.com/JuliaPlots/Plots.jl): Create all kinds of plots in julia (quite an extensive package, but very useful to have). 
+- [CSV](https://github.com/JuliaData/CSV.jl): Read comma-separated data files into julia.
+- [Plots](https://github.com/JuliaPlots/Plots.jl): Create all kinds of plots in julia (quite an extensive package, but very useful to have).
 - [JLD2](https://github.com/JuliaIO/JLD2.jl): This allows saving julia objects (such as a tomographic model) to a binary file and load it again at a later stage.
 - [Geodesy](https://github.com/JuliaGeo/Geodesy.jl): Convert UTM coordinates to latitude/longitude/altitude.
 - [NetCDF](https://github.com/JuliaGeo/NetCDF.jl): Read NetCDF files.
 - [GMT](https://github.com/GenericMappingTools/GMT.jl): A julia interface to the Generic Mapping Tools (GMT), which is a highly popular package to create (geophysical) maps. Note that installing `GMT.jl` is more complicated than installing the other packages listed above, as you first need to have a working version of `GMT` on your machine (it is not yet installed automatically). Installation instructions for Windows/Linux are on their webpage. On a mac, we made the best experiences by downloading the binaries from their webpage and not using a package manager to install GMT.
-
-
-
-

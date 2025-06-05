@@ -1,0 +1,100 @@
+cff-version: "1.2.0"
+authors:
+- family-names: Kaus
+  given-names: Boris J. P.
+  orcid: "https://orcid.org/0000-0002-0247-8660"
+- family-names: Thielmann
+  given-names: Marcel
+  orcid: "https://orcid.org/0000-0003-1185-3730"
+- family-names: Aellig
+  given-names: Pascal
+  orcid: "https://orcid.org/0009-0008-9039-5646"
+- family-names: Montserrat
+  given-names: Albert
+  name-particle: de
+  orcid: "https://orcid.org/0000-0003-1694-3735"
+- family-names: Siena
+  given-names: Luca
+  name-particle: de
+  orcid: "https://orcid.org/0000-0002-3615-5923"
+- family-names: Frasukiewicz
+  given-names: Jacob
+  orcid: "https://orcid.org/0009-0002-5049-4259"
+- family-names: Fuchs
+  given-names: Lukas
+  orcid: "https://orcid.org/0000-0002-9165-6384"
+- family-names: Piccolo
+  given-names: Andrea
+  orcid: "https://orcid.org/0000-0003-3074-6041"
+- family-names: Ranocha
+  given-names: Hendrik
+  orcid: "https://orcid.org/0000-0002-3456-2277"
+- family-names: Riel
+  given-names: Nicolas
+  orcid: "https://orcid.org/0000-0002-5037-5519"
+- family-names: Schuler
+  given-names: Christian
+  orcid: "https://orcid.org/0009-0004-9873-9774"
+- family-names: Spang
+  given-names: Arne
+- family-names: Weiler
+  given-names: Tatjana
+doi: 10.5281/zenodo.13993948
+message: If you use this software, please cite our article in the
+  Journal of Open Source Software.
+preferred-citation:
+  authors:
+  - family-names: Kaus
+    given-names: Boris J. P.
+    orcid: "https://orcid.org/0000-0002-0247-8660"
+  - family-names: Thielmann
+    given-names: Marcel
+    orcid: "https://orcid.org/0000-0003-1185-3730"
+  - family-names: Aellig
+    given-names: Pascal
+    orcid: "https://orcid.org/0009-0008-9039-5646"
+  - family-names: Montserrat
+    given-names: Albert
+    name-particle: de
+    orcid: "https://orcid.org/0000-0003-1694-3735"
+  - family-names: Siena
+    given-names: Luca
+    name-particle: de
+    orcid: "https://orcid.org/0000-0002-3615-5923"
+  - family-names: Frasukiewicz
+    given-names: Jacob
+    orcid: "https://orcid.org/0009-0002-5049-4259"
+  - family-names: Fuchs
+    given-names: Lukas
+    orcid: "https://orcid.org/0000-0002-9165-6384"
+  - family-names: Piccolo
+    given-names: Andrea
+    orcid: "https://orcid.org/0000-0003-3074-6041"
+  - family-names: Ranocha
+    given-names: Hendrik
+    orcid: "https://orcid.org/0000-0002-3456-2277"
+  - family-names: Riel
+    given-names: Nicolas
+    orcid: "https://orcid.org/0000-0002-5037-5519"
+  - family-names: Schuler
+    given-names: Christian
+    orcid: "https://orcid.org/0009-0004-9873-9774"
+  - family-names: Spang
+    given-names: Arne
+  - family-names: Weiler
+    given-names: Tatjana
+  date-published: 2024-11-04
+  doi: 10.21105/joss.06763
+  issn: 2475-9066
+  issue: 103
+  journal: Journal of Open Source Software
+  publisher:
+    name: Open Journals
+  start: 6763
+  title: "GeophysicalModelGenerator.jl: A Julia package to visualise
+    geoscientific data and create numerical model setups"
+  type: article
+  url: "https://joss.theoj.org/papers/10.21105/joss.06763"
+  volume: 9
+title: "GeophysicalModelGenerator.jl: A Julia package to visualise
+  geoscientific data and create numerical model setups"

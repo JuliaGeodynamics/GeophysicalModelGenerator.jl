@@ -7,9 +7,9 @@ import GeophysicalModelGenerator: import_topo, import_GeoTIFF
 # Julia v1.9.0 does not load package extensions when their dependency is
 # loaded from the main environment.
 if VERSION >= v"1.9.1"
-  using GMT
+    using GMT
 else
-  using ..GMT
+    using ..GMT
 end
 
 using GeophysicalModelGenerator: lonlatdepth_grid, GeoData, UTMData, km, remove_NaN_surface!
@@ -18,7 +18,7 @@ println("Loading GMT routines within GMG")
 
 
 """
-    Topo = import_topo(limits; file::String="@earth_relief_01m.grd", maxattempts=5) 
+    Topo = import_topo(limits; file::String="@earth_relief_01m", maxattempts=5) 
     
 Uses `GMT` to download the topography of a certain region, specified with limits=[lon_min, lon_max, lat_min, lat_max].
 Sometimes download fails because of the internet connection. We do `maxattempts` to download it.
@@ -65,45 +65,42 @@ julia> write_paraview(Topo,"Topo_Alps")
  "Topo_Alps.vts"
 ```
 """
-function import_topo(limits; file::String="@earth_relief_01m.grd", maxattempts=5)
+function import_topo(limits; file::String = "@earth_relief_01m", maxattempts = 5)
 
     # Correct if negative values are given (longitude coordinates that are west)
-    ind = findall(limits[1:2] .< 0); 
-    
+    ind = findall(limits[1:2] .< 0)
+
     if (limits[1] < 0) && (limits[2] < 0)
-      limits[ind] .= 360 .+ limits[ind]; 
-      limits[1:2] = sort(limits[1:2])   
+        limits[ind] .= 360 .+ limits[ind]
+        limits[1:2] = sort(limits[1:2])
     end
 
     # Download topo file  - add a few attempts to do so
-    G = [];
+    local G
     attempt = 0
-    while attempt<maxattempts
-      try
-        G       =   gmtread(file, limits=limits, grid=true);
-        break
-      catch
-        @warn "Failed downloading GMT topography on attempt $attempt/$maxattempts"
-        sleep(5)  # wait a few sec
-      end
-      attempt += 1
+    while attempt < maxattempts
+        try
+            G = gmtread(file, limits = limits, grid = true)
+            break
+        catch
+            @warn "Failed downloading GMT topography on attempt $attempt/$maxattempts"
+            sleep(5)  # wait a few sec
+        end
+        attempt += 1
     end
-    if isempty(G)
-      error("Could not download GMT topography data")
-    end
+    (@isdefined G) || error("Could not download GMT topography data")
 
     # Transfer to GeoData
-    nx,ny           =   size(G.z,2), size(G.z,1)
-    Lon,Lat,Depth   =   lonlatdepth_grid(G.x[1:nx],G.y[1:ny],0);
-    Depth[:,:,1]    =   1e-3*G.z';
-    Topo            =   GeoData(Lon, Lat, Depth, (Topography=Depth*km,))
-    
-    return Topo
+    nx, ny = size(G.z, 2), size(G.z, 1)
+    Lon, Lat, Depth = lonlatdepth_grid(G.x[1:nx], G.y[1:ny], 0)
+    @views Depth[:, :, 1] = 1.0e-3 * G.z'
+    Topo = GeoData(Lon, Lat, Depth, (Topography = Depth * km,))
 
+    return Topo
 end
 
 """
-  import_topo(; lat::Vector{2}, lon::Vector{2}, file::String="@earth_relief_01m.grd", maxattempts=5)
+  import_topo(; lat::Vector{2}, lon::Vector{2}, file::String="@earth_relief_01m", maxattempts=5)
 
 Imports topography (using GMT), by specifying keywords for latitude and longitude ranges
 
@@ -114,11 +111,11 @@ julia> Topo = import_topo(lat=[30,40], lon=[30, 50] )
 ```
 The values can also be defined as tuples:
 ```julia
-julia> Topo = import_topo(lon=(-50, -40), lat=(-10,-5), file="@earth_relief_30s.grd")
+julia> Topo = import_topo(lon=(-50, -40), lat=(-10,-5), file="@earth_relief_30s")
 ```
 
 """
-import_topo(; lat=[37,49], lon=[4,20], file::String="@earth_relief_01m.grd", maxattempts=5) = import_topo([lon[1],lon[2], lat[1], lat[2]], file=file, maxattempts=maxattempts)
+import_topo(; lat = [37, 49], lon = [4, 20], file::String = "@earth_relief_01m", maxattempts = 5) = import_topo([lon[1], lon[2], lat[1], lat[2]], file = file, maxattempts = maxattempts)
 
 
 """
@@ -136,62 +133,68 @@ Optional keywords:
 - `constantDepth`: if true we will not warp the surface by z-values, but use a constant value instead
 - `removeNaN_z`  : if true, we will remove NaN values from the z-dataset
 """
-function import_GeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=true, NorthernHemisphere=true, constantDepth=false, removeNaN_z=false, removeNaN_field=false)
-  G = gmtread(fname);
+function import_GeoTIFF(fname::String; fieldname = :layer1, negative = false, iskm = true, NorthernHemisphere = true, constantDepth = false, removeNaN_z = false, removeNaN_field = false)
+    G = gmtread(fname)
 
-  # Transfer to GeoData
-  nx,ny = length(G.x)-1, length(G.y)-1
-  Lon,Lat,Depth   =   lonlatdepth_grid(G.x[1:nx],G.y[1:ny],0);
-  if  hasfield(typeof(G),:z) 
-    Depth[:,:,1]    =   G.z';
-    if negative
-      Depth[:,:,1]  =   -G.z';
-    end
-    if iskm
-      Depth    *=   1e-3*km;
-    end
-  end
-
-  # Create GeoData structure
-  data = zero(Lon)
-  if hasfield(typeof(G),:z)
-    data = Depth
-  
-  elseif hasfield(typeof(G),:image)
-    if length(size(G.image)) == 3
-      data = permutedims(G.image,[2, 1, 3]);
-    elseif length(size(G.image)) == 2
-      data[:,:,1] = G.image'
+    # Transfer to GeoData
+    nx, ny = length(G.x) - 1, length(G.y) - 1
+    Lon, Lat, Depth = lonlatdepth_grid(G.x[1:nx], G.y[1:ny], 0)
+    if hasfield(typeof(G), :z)
+        Depth[:, :, 1] = G.z'
+        if negative
+            Depth[:, :, 1] = -G.z'
+        end
+        if iskm
+            Depth *= 1.0e-3 * km
+        end
     end
 
-  end
-  
-  if removeNaN_z
-    remove_NaN_surface!(Depth, Lon, Lat)
-  end
-  if removeNaN_field
-    remove_NaN_surface!(data, Lon, Lat)
-  end
-  data_field  = NamedTuple{(fieldname,)}((data,));
+    # Create GeoData structure
+    data = zero(Lon)
+    if hasfield(typeof(G), :z)
+        data = Depth
 
-  if constantDepth
-    Depth = zero(Lon)
-  end
+    elseif hasfield(typeof(G), :image)
+        if length(size(G.image)) == 3
+            data = permutedims(G.image, [2, 1, 3])
+        elseif length(size(G.image)) == 2
+            if size(G.image)==(nx,ny)
+              data[:,:,1] = G.image
+            elseif size(G.image)==(ny,nx)
+              data[:,:,1] = G.image'
+            else
+              error("unknown size; ")
+            end
+        end
 
-  if contains(G.proj4,"utm")
-    zone = parse(Int64,split.(split(G.proj4,"zone=")[2]," ")[1]); # retrieve UTM zone
-    data_GMT    = UTMData(Lon, Lat, Depth, zone, NorthernHemisphere, data_field)
-  
-  elseif contains(G.proj4,"longlat") 
-    data_GMT    = GeoData(Lon, Lat, Depth, data_field)
+    end
 
-  else
-    error("I'm sorry, I don't know how to handle this projection yet: $(G.proj4)\n
+    if removeNaN_z
+        remove_NaN_surface!(Depth, Lon, Lat)
+    end
+    if removeNaN_field
+        remove_NaN_surface!(data, Lon, Lat)
+    end
+    data_field = NamedTuple{(fieldname,)}((data,))
+
+    if constantDepth
+        Depth = zero(Lon)
+    end
+
+    if contains(G.proj4, "utm")
+        zone = parse(Int64, split.(split(G.proj4, "zone=")[2], " ")[1])  # retrieve UTM zone
+        data_GMT = UTMData(Lon, Lat, Depth, zone, NorthernHemisphere, data_field)
+
+    elseif contains(G.proj4, "longlat")
+        data_GMT = GeoData(Lon, Lat, Depth, data_field)
+
+    else
+        error("I'm sorry, I don't know how to handle this projection yet: $(G.proj4)\n
            We recommend that you transfer your GeoTIFF to longlat by using QGIS \n
            Open the GeoTIFF there and Export -> Save As , while selecting \"EPSG:4326 - WGS 84\" projection.")
-  end
+    end
 
-  return data_GMT
+    return data_GMT
 end
 
 

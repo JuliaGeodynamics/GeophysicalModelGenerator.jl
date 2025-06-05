@@ -5,12 +5,13 @@
 [![Build Status](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/workflows/CI/badge.svg)](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/actions)
 [![codecov](https://codecov.io/gh/JuliaGeodynamics/GeophysicalModelGenerator.jl/graph/badge.svg?token=2gEdE0nfSh)](https://codecov.io/gh/JuliaGeodynamics/GeophysicalModelGenerator.jl)
 [![DOI](https://zenodo.org/badge/366377223.svg)](https://zenodo.org/doi/10.5281/zenodo.8074345)
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.06763/status.svg)](https://doi.org/10.21105/joss.06763)
 
 <p align="center"><img src="./assets/GMG_Logo_new.png" alt="GeophysicalModelGenerator.jl" width="400"></p>
 
 Creating consistent 3D images of geophysical and geological datasets and turning that into an input model for geodynamic simulations is often challenging. The aim of this package is to help with this, by providing a number of routines to easily import data and create a consistent 3D visualisation from it in the VTK-toolkit format, which can for example be viewed with [Paraview](https://www.paraview.org). In addition, we provide a range of tools that helps to generate input models to perform geodynamic simulations and import the results of such simulations back into julia.
 
-A short summary of the package and its features are given below. For a detailed description of the package and to learn how to use it, have a look at the [documentation](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev/). 
+A short summary of the package and its features are given below. For a detailed description of the package and to learn how to use it, have a look at the [documentation](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev/).
 
 ![README_img](./docs/src/assets/img/Readme_pic.png)
 ### Contents
@@ -43,17 +44,17 @@ The best way to learn how to use this is to install the package (see below) and 
 ## Installation
 First, you need to install julia on your machine. We recommend to use the binaries from [https://julialang.org](https://julialang.org).
 Next, start julia and switch to the julia package manager using `]`, after which you can add the package.
-```julia
+```julia-repl
 julia> ]
-(@v1.10) pkg> add GeophysicalModelGenerator
+(@1.6) pkg> add GeophysicalModelGenerator
 ```
 You can test whether it works on your system with
-```julia
+```julia-repl
 julia> ]
-(@v1.10) pkg> test GeophysicalModelGenerator
+(@1.6) pkg> test GeophysicalModelGenerator
 ```
 and use it with
-```julia
+```julia-repl
 julia> using GeophysicalModelGenerator
 ```
 
@@ -74,6 +75,12 @@ If you want your data be included here as well, give us an email (or even better
 
 ## Contributing
 You are very welcome to request new features and point out bugs by opening an issue. You can also help by adding features and creating a pull request.
+
+## Citing
+If you find this package useful, please cite this paper:
+
+Kaus B.J.P., Thielmann M., Aellig P., De Montserrat A., De Siena L., Frasunkiewicz J., Fuchs L., Piccolo A., Ranocha H., Riel N., Schuler C., Spang A., Weiler T. (2024).  GeophysicalModelGenerator.jl: A Julia package to visualise geoscientific data and create numerical model setups. *Journal of Open Source Software*. 9(102), 6763. https://doi.org/10.21105/joss.06763.
+
 
 ## Funding
 Development of this software package was funded by the German Research Foundation (DFG grants TH2076/7-1 and KA3367/10-1), which are part of the [SPP 2017 4DMB project](http://www.spp-mountainbuilding.de) project, the DFG Emmy Noether grant TH 2076/8-1, by the European Research Council under grant ERC CoG #771143 - [MAGMA](https://magma.uni-mainz.de) and by the German Ministry of Science and Education (BMBF) as part of project DEGREE. The project was initiated at a [Terrestrial Magmatic Systems - TeMaS](https://temas.uni-mainz.de) workshop with researchers from Frankfurt and Mainz where we realized that it is way too time-consuming to collect and visualise available data of a certain region.

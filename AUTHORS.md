@@ -14,8 +14,7 @@ provided substantial additions or modifications. Together, these two groups form
 
 
 ## Contributors
-The following people contributed major additions or modifications to `GeophysicalModelGenerator.jl` and
-are listed in alphabetical order:
+The following people contributed major additions or modifications to `GeophysicalModelGenerator.jl` and are listed in alphabetical order:
 
 * Pascal Aellig
 * Albert De Montserrat

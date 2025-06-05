@@ -10,9 +10,9 @@
 # This is a rather lengthy tutorial that combines different other tutorials, but it will guide you through all the steps necessary to obtain a somewhat comprehensive view of the European Alps and their subsurface from a geodynamical point of view.
 
 # ## 1. Surface Topography
-# In many cases, we want to add topographic data to our visualization. Here we use [GMT.jl](https://github.com/GenericMappingTools/GMT.jl) to download data from a certain region, and transfer that to `GMG`. 
+# In many cases, we want to add topographic data to our visualization. Here we use [GMT.jl](https://github.com/GenericMappingTools/GMT.jl) to download data from a certain region, and transfer that to `GMG`.
 # To add the GMT package, simply add it with the julia package manager:
-# ```julia
+# ```julia-repl
 # julia> ]
 # (@v1.10) pkg> add GMT
 # ```
@@ -23,25 +23,25 @@ using GeophysicalModelGenerator, GMT
 # When loading both packages, several `GMT` routines within `GMG` will be loaded. One of these routines is the function `import_topo`, where one simply has to provide the region for which to download the topographic data and the data source.
 
 Topo = import_topo([4,20,37,50], file="@earth_relief_01m.grd")
-# The data is available in different resolutions; see [here](http://gmt.soest.hawaii.edu/doc/latest/grdimage.html) for an overview. Generally, it is advisable to not use the largest resolution if you have a large area, as the files become very large. 
+# The data is available in different resolutions; see [here](http://gmt.soest.hawaii.edu/doc/latest/grdimage.html) for an overview. Generally, it is advisable to not use the largest resolution if you have a large area, as the files become very large.
 
-# If you have issues with loading the topography with `GMT`, there is also the alternative to download the data yourself and import it using `Rasters.jl`. 
+# If you have issues with loading the topography with `GMT`, there is also the alternative to download the data yourself and import it using `Rasters.jl`.
 
 # We can now export this data to a `VTK` format so that we can visualize it with `Paraview`. To do so, `GMG` provides the function `write_paraview`:
-write_paraview(Topo, "Topography_Alps") 
+write_paraview(Topo, "Topography_Alps")
 
 # Also, if you want to save this data for later use in julia, you can save it as `*.jld2` file using the function `save_GMG`:
 save_GMG("Topography_Alps",Topo)
 
 # The result looks like:
-# ![Alps_Tutorial_1](../assets/img/Tut_Alp_Image1.png) 
+# ![Alps_Tutorial_1](../assets/img/Tut_Alp_Image1.png)
 # Note that we used the `Oleron` scientific colormap from [here](https://www.fabiocrameri.ch/colourmaps.php) for the topography.
 
 
 # ##  2. Moho topography
-# When looking at data concerning the Alpine subsurface, we are often interested in the depth of the [Moho](https://en.wikipedia.org/wiki/Mohorovi%C4%8Di%C4%87_discontinuity). 
+# When looking at data concerning the Alpine subsurface, we are often interested in the depth of the [Moho](https://en.wikipedia.org/wiki/Mohorovi%C4%8Di%C4%87_discontinuity).
 # ### 2.1 Download and import of the data
-# Here, we will use the dataset from Mroczek et al. (2023). This dataset is publicly available and can be downloaded from [here](https://datapub.gfz-potsdam.de/download/10.5880.GFZ.2.4.2021.009NUEfb/2021-009_Mroczek-et-al_SWATHD_moho_jul22.csv). 
+# Here, we will use the dataset from Mroczek et al. (2023). This dataset is publicly available and can be downloaded from [here](https://datapub.gfz-potsdam.de/download/10.5880.GFZ.2.4.2021.009NUEfb/2021-009_Mroczek-et-al_SWATHD_moho_jul22.csv).
 # To allow for downloading such data, we use the julia package `Downloads.jl`, which is a dependency of `GMG`. To download the Moho data in the current directory, simply type:
 download_data("https://datapub.gfz-potsdam.de/download/10.5880.GFZ.2.4.2021.009NUEfb/2021-009_Mroczek-et-al_SWATHD_moho_jul22.csv","MohoMroczek2023.csv")
 
@@ -51,7 +51,7 @@ using DelimitedFiles
 data_mroczek = readdlm("MohoMroczek2023.csv",',',header=false,skipstart=11)
 # Note that we skipped the first 11 lines of the file as they contain the file header. The result of this operation will look like this:
 #
-# ```julia
+# ```julia-repl
 # julia> data_mroczek = readdlm("MohoMroczek2023.csv",',',header=false,skipstart=11)
 # 40786×10 Matrix{Any}:
 #      "X"      "Y"      "Z"    "lat"    "lon"    "depth"   "tPs"   "k"   "interp"  "tag"
@@ -69,7 +69,7 @@ data_mroczek = readdlm("MohoMroczek2023.csv",',',header=false,skipstart=11)
 #  4186.85  1008.02  4639.51  47.1319  13.5368  40.8435    4.75    1.63  0          "PA"
 #  4188.49  1008.31  4638.04  47.1118  13.5355  40.7913    4.74    1.63  0          "PA"
 #  4190.14  1008.6   4636.57  47.0917  13.5341  40.7305    4.73    1.63  0          "PA"
-#     ⋮                                          ⋮                                  
+#     ⋮                                          ⋮
 #  4123.28  1111.52  4669.18  47.5537  15.0867  43.4301    5       1.67  0          "EU"
 #  4124.02  1111.57  4666.69  47.5336  15.0848  44.7763    5.13    1.67  0          "EU"
 #  4124.67  1111.59  4664.11  47.5136  15.0828  46.2535    5.28    1.67  0          "EU"
@@ -86,7 +86,7 @@ data_mroczek = readdlm("MohoMroczek2023.csv",',',header=false,skipstart=11)
 #  4126.5   1113.11  4643.52  47.3729  15.096   59.9569    6.71    1.66  0          "EU"
 # ```
 
-# We are now only interested in the depth of the Moho at a given longitude/latitude. To obtain these values, we now have to extract columns 4-6. In addition, we also extract the 10th column, as it contains an identifier for the tectonic unit the respective point belongs to. 
+# We are now only interested in the depth of the Moho at a given longitude/latitude. To obtain these values, we now have to extract columns 4-6. In addition, we also extract the 10th column, as it contains an identifier for the tectonic unit the respective point belongs to.
 lon        = zeros(size(data_mroczek,1)-1);     lon   .= data_mroczek[2:end,5];
 lat        = zeros(size(data_mroczek,1)-1);     lat   .= data_mroczek[2:end,4];
 depth      = zeros(size(data_mroczek,1)-1);     depth .= -1.0*data_mroczek[2:end,6]; #multiplied with -1, as we consider depth to be negative
@@ -107,18 +107,18 @@ using NearestNeighbors
 # Now that we have generated the grid, we can loop over our different tectonic units, extract the relevant data points and interpolate them to the regular grid:
 for iunit = 1:length(units)
     Dist              = zeros(size(Lon))
-    
+
     #Get all points belonging to the unit
     ind_unit    = findall( x -> occursin(units[iunit], x), tag) #index of the points belonging to that unit
     lon_tmp     = lon[ind_unit]
     lat_tmp     = lat[ind_unit]
     depth_tmp   = depth[ind_unit]
-    
-    #for later checking, we can now save the original point data as a VTK file: 
+
+    #for later checking, we can now save the original point data as a VTK file:
     data_Moho = GeophysicalModelGenerator.GeoData(lon_tmp,lat_tmp,depth_tmp,(MohoDepth=depth_tmp*km,))
     filename = "Mroczek_Moho_" * units[iunit]
     write_paraview(data_Moho, filename, PointsData=true)
-    
+
     #Now we create a KDTree for an effective nearest neighbor determination;
     kdtree = KDTree([lon_tmp';lat_tmp']; leafsize = 10)
     points = [Lon[:]';Lat[:]']
@@ -126,17 +126,17 @@ for iunit = 1:length(units)
     dists = reduce(vcat,dists)
     idxs  = reduce(vcat,idxs)
     idxs  = reduce(vcat,idxs)
-    
+
     #Having determined the nearest neighbor for each point in our regular grid, we can now directly assign the respective depth. Whenever the nearest neighbor is further than a certain distance away, we assume that there is no Moho at this point and do not assign a depth to that point.
     for i=1:length(idxs)
-        if dists[i]<0.02 
+        if dists[i]<0.02
             Depth[i] = depth_tmp[idxs[i]]*km
         else
             Depth[i] = NaN*km
         end
-        Dist[i]  = dists[i]    
+        Dist[i]  = dists[i]
     end
-    
+
     #As we will be using the data later, we would also like to provide some Metadata so that we know where it is coming from:
     Data_attribs   = Dict(
         "author"=>  "Mroczek et al.",
@@ -144,25 +144,25 @@ for iunit = 1:length(units)
         "doi"=>"https://doi.org/10.5880/GFZ.2.4.2021.009",
         "url"=>"https://nextcloud.gfz-potsdam.de/s/zB5dPNby6X2Kjnj",
     )
-    
+
     #Finally, we can now export that data to VTK and save a `jld2` file using the `save_GMG` routine
     Data_Moho = GeophysicalModelGenerator.GeoData(Lon, Lat, Depth, (MohoDepth=Depth,PointDist=Dist),Data_attribs)
     filename = "Mrozek_Moho_Grid_" * units[iunit]
     write_paraview(Data_Moho, filename)
     save_GMG(filename,Topo)
-    
+
 end
-    
+
 # Just for checking, we can also plot both the original data and the resulting interpolated Moho:
-# ![Alps_Tutorial_2](../assets/img/Tut_Alp_Image2.png) 
+# ![Alps_Tutorial_2](../assets/img/Tut_Alp_Image2.png)
 
 
 # ## 3. Seismicity
-# Earthquakes are always interesting, so lets import the seismicity data from ISC. 
+# Earthquakes are always interesting, so lets import the seismicity data from ISC.
 # ### 3.1 Download and import
-# ISC provides a method to download parts of it's catalogue via a web interface. 
+# ISC provides a method to download parts of it's catalogue via a web interface.
 # See the description of the interface [here](http://www.isc.ac.uk/iscbulletin/search/webservices/bulletin/).
-# We will now download all reviewed earthquake data between 1990 and 2015 in the same region as the extracted topography. 
+# We will now download all reviewed earthquake data between 1990 and 2015 in the same region as the extracted topography.
 # We will only consider earthquakes with a magnitude larger than 3. The resulting dataset is quite large, so consider to either limit the time range or the magnitude range.
 download_data("http://www.isc.ac.uk/cgi-bin/web-db-run?request=COLLECTED&req_agcy=ISC-EHB&out_format=QuakeML&ctr_lat=&ctr_lon=&radius=&max_dist_units=deg&searchshape=RECT&top_lat=49&bot_lat=37&left_lon=4&right_lon=20&srn=&grn=&start_year=1990&start_month=1&start_day=01&start_time=00%3A00%3A00&end_year=2015&end_month=12&end_day=31&end_time=00%3A00%3A00&min_dep=&max_dep=&min_mag=3.0&max_mag=&req_mag_type=Any&req_mag_agcy=Any&min_def=&max_def=&prime_only=on&include_magnitudes=on&table_owner=iscehb","ISCData.xml")
 
@@ -172,15 +172,15 @@ Data_ISC = getlonlatdepthmag_QuakeML("ISCData.xml");
 write_paraview(Data_ISC, "EQ_ISC", PointsData=true);
 save_GMG("EQ_ISC",Data_ISC)
 
-# ![Alps_Tutorial_3](../assets/img/Tut_Alp_Image3.png) 
+# ![Alps_Tutorial_3](../assets/img/Tut_Alp_Image3.png)
 
 
 # ## 4. GPS data
-# Besides data on the structure of the subsurface, it is also nice to see the dynamics of a region. Dynamic processes can be nicely seen in the surface velocities given by GPS data. 
+# Besides data on the structure of the subsurface, it is also nice to see the dynamics of a region. Dynamic processes can be nicely seen in the surface velocities given by GPS data.
 # As GPS data consists of three-dimensional vectors, we have to treat it differently than the seismicity data in the previous section. The example is based on a paper by Sanchez et al. (2018) [https://essd.copernicus.org/articles/10/1503/2018/#section7](https://essd.copernicus.org/articles/10/1503/2018/#section7).
 #
-# ### 4.1. Download and import GPS data: 
-# The data related to the paper can be downloaded from: [here](https://doi.pangaea.de/10.1594/PANGAEA.886889). There you will find links to several data sets. 
+# ### 4.1. Download and import GPS data:
+# The data related to the paper can be downloaded from: [here](https://doi.pangaea.de/10.1594/PANGAEA.886889). There you will find links to several data sets.
 # Some are the data on the actual stations and some are interpolated data on a grid. Here, we will use the gridded data as an example, and will therefore download the following data sets:
 #
 # - ALPS2017_DEF_HZ	Surface deformation model of the Alpine Region	[https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_DEF_HZ.GRD](https://store.pangaea.de/Publications/Sanchez-etal_2018/ALPS2017_DEF_HZ.GRD)
@@ -214,7 +214,7 @@ Plots.scatter(lon_vz,lat_vz)
 nlon = length(unique(lon_vz))
 nlat = length(unique(lat_vz))
 
-# So we have a `41` by `31` grid. GMG requires 3D matrixes for the data (as we want to plot the results in Paraview in 3D). 
+# So we have a `41` by `31` grid. GMG requires 3D matrixes for the data (as we want to plot the results in Paraview in 3D).
 # That is why we first initialize 3D matrixes for `lon,lat,Vz`:
 Lon   =   zeros(nlon,nlat,1)
 Lat   =   zeros(nlon,nlat,1)
@@ -244,10 +244,10 @@ vn     =   data_vh[:,4]
 
 # Let's have a look at how the data points of this dataset are distributed:
 Plots.scatter(lon_vh,lat_vh)
-# So it appears that the horizontal velocities are given on the same regular grid as well, 
-# but not in regions which are covered with water. 
-# This thus requires a bit more work to transfer them to a rectangular grid. 
-# The strategy we take is to first define 2D matrixes with horizontal velocities with the same size as `Vz` 
+# So it appears that the horizontal velocities are given on the same regular grid as well,
+# but not in regions which are covered with water.
+# This thus requires a bit more work to transfer them to a rectangular grid.
+# The strategy we take is to first define 2D matrixes with horizontal velocities with the same size as `Vz`
 # initialized with `NaN` (not a number).
 Ve = fill(NaN,size(Vz));
 Vn = fill(NaN,size(Vz));
@@ -258,18 +258,18 @@ for i in eachindex(lon_vh)
     Vn[ind] .= vn[i];
 end
 
-# At this stage, we have horizontal and vertical velocities in units of `m/yr`. 
+# At this stage, we have horizontal and vertical velocities in units of `m/yr`.
 # Yet, given the small velocities in the Alps, it makes more sense to have them in units of `mm/yr`:
 Vz = Vz*1000;
 Ve = Ve*1000;
 Vn = Vn*1000;
 
 # And their magnitude is
-Vmagnitude  =   sqrt.(Ve.^2 + Vn.^2 + Vz.^2); 
+Vmagnitude  =   sqrt.(Ve.^2 + Vn.^2 + Vz.^2);
 
 # ### 4.2 Interpolate topography on the grid
-# At this stage we have the 3D velocity components on a grid. Yet, we don't have information yet about the elevation of the stations (as the provided data set did not give this). 
-# We could ignore that and set the elevation to zero, which would allow saving the data directly. 
+# At this stage we have the 3D velocity components on a grid. Yet, we don't have information yet about the elevation of the stations (as the provided data set did not give this).
+# We could ignore that and set the elevation to zero, which would allow saving the data directly.
 # Yet, a better way is to load the topographic map of the area and interpolate the elevation to the velocity grid.
 # As we have already the loaded the topographic map in section 1 of this tutorial, we can simply reuse it. To interpolate, we will use the function `interpolate_datafields_2D`
 
@@ -285,11 +285,11 @@ Data_GPS_Sanchez = GeoData(Lon,Lat,topo_v,(Velocity_mm_year=(Ve,Vn,Vz),V_north=V
 write_paraview(Data_GPS_Sanchez, "GPS_Sanchez")
 save_GMG("GPS_Sanchez",Data_GPS_Sanchez)
 
-# ![Alps_Tutorial_4](../assets/img/Tut_Alp_Image4.png) 
+# ![Alps_Tutorial_4](../assets/img/Tut_Alp_Image4.png)
 
 # ## 5. Seismic tomography data
 # Finally, we'd like to have a look at the subsurface by looking at a seismic tomography. To do so, we'll first download the tomography published by [Rappisi et al.(2022)](https://doi.org/10.1029/2021JB023488).
-# The data is provided as `NetCDF` files: 
+# The data is provided as `NetCDF` files:
 download_data("https://figshare.com/ndownloader/files/34093955","aniNEWTON21.nc")
 
 # We can load this file with the `NCDatasets` package.
@@ -303,7 +303,7 @@ dlnVp   = dataset["dlnVp"]
 Vp      = dataset["Vpi"]
 Depth   = dataset["Zg"]
 
-# As longitude and latitude are only given as 2D grids, we here have to convert them to 3D matrices. 
+# As longitude and latitude are only given as 2D grids, we here have to convert them to 3D matrices.
 Lon = repeat(lon[:,:],1,1,size(Depth,3));
 Lat = repeat(lat[:,:],1,1,size(Depth,3));
 
@@ -326,13 +326,13 @@ write_paraview(Data, "Rappisi2022")
 save_GMG("Rappisi2022",Data)
 
 # The result looks like:
-# ![Alps_Tutorial_5](../assets/img/Tut_Alp_Image5.png) 
+# ![Alps_Tutorial_5](../assets/img/Tut_Alp_Image5.png)
 
 # For the sake of this tutorial, we have now imported all the data we would like to look at. All that is missing is now a joint visualization
-# of these datasets. To obtain this visualization, we will load all the `VTK` files into Paraview and have a look: 
-# ![Alps_Tutorial_6](../assets/img/GMG_AlpineData.png) 
+# of these datasets. To obtain this visualization, we will load all the `VTK` files into Paraview and have a look:
+# ![Alps_Tutorial_6](../assets/img/GMG_AlpineData.png)
 #
-# A Paraview statefile that reproduces this visualization is available under `tutorials/Tutorial_AlpineData.pvsm`. 
+# A Paraview statefile that reproduces this visualization is available under `tutorials/Tutorial_AlpineData.pvsm`.
 
 #src Note: The markdown page is generated using:
 #src Literate.markdown("tutorials/Tutorial_AlpineData.jl","docs/src/man",keepcomments=true, execute=false, codefence = "```julia" => "```")

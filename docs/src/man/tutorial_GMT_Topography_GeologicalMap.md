@@ -8,7 +8,7 @@ In many cases, we want to add topographic data as well a information about tecto
 
 #### 1. Download topographic data and tectonic maps of the Alpine region
 The ETOPO1 data file used in this example can be downloaded here:  
-[https://ngdc.noaa.gov/mgg/global/global.html](https://ngdc.noaa.gov/mgg/global/global.html). For this example, we downloaded `ETOPO1_Ice_g_gmt4.grd` and stored it directly in the folder where we will be working. For the geological map, we download the data from the [SPP 4DMB repository](http://www.spp-mountainbuilding.de/data/Maps.zip) and extract the zip file (to the current folder). In this data set, a `gmt` file with the data for different tectonic units is given in `./tectonic_maps_4dmb_2020_09_17/GMT_example/alcapadi_polygons.gmt`. 
+[https://ngdc.noaa.gov/mgg/global/global.html](https://ngdc.noaa.gov/mgg/global/global.html). For this example, we downloaded `ETOPO1_Ice_g_gmt4` and stored it directly in the folder where we will be working. For the geological map, we download the data from the [SPP 4DMB repository](http://www.spp-mountainbuilding.de/data/Maps.zip) and extract the zip file (to the current folder). In this data set, a `gmt` file with the data for different tectonic units is given in `./tectonic_maps_4dmb_2020_09_17/GMT_example/alcapadi_polygons.gmt`. 
 
 #### 2. Create a tectonic map with orthogonal projection 
 To create a png with an orthogonal map projection (which we need for the png import), we do the following in julia:  
@@ -28,7 +28,7 @@ julia> using GMT, NearestNeighbors, GeoParams, GeophysicalModelGenerator
 ```
 First, define the filenames of the files you want to import:  
 ```julia
-julia> filename_topo = "./ETOPO1/ETOPO1_Ice_g_gmt4.grd" 
+julia> filename_topo = "./ETOPO1/ETOPO1_Ice_g_gmt4" 
 julia> filename_geo  = "./tectonicmap_SPP.png"
 ```
 Next, define the region that you want to visualize (note that we use the same coordinates here as we used previously for the generation of the geological map):  

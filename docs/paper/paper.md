@@ -1,11 +1,12 @@
 ---
-title: 'GeophysicalModelGenerator.jl: A Julia package to visualize geoscientific data and generate model '
+title: 'GeophysicalModelGenerator.jl: A Julia package to visualise geoscientific data and create numerical model setups'
 tags:
-  - Julia
+  - julia
   - geosciences
   - geodynamics
   - tectonics
   - geophysics
+  - computational geosciences
 authors:
   - name: Boris J.P. Kaus
     orcid: 0000-0002-0247-8660
@@ -13,107 +14,200 @@ authors:
   - name: Marcel Thielmann
     orcid: 0000-0003-1185-3730
     affiliation: 2
-  - name: Arne Spang
-    orcid: 0000-0002-6107-0403
-    affiliation: 2
-  - name: Luca de Siena
-    orcid: 0000-0002-3615-5923
-    affiliation: 3
   - name: Pascal Aellig
     orcid: 0009-0008-9039-5646
     affiliation: 1
+  - name: Albert de Montserrat
+    orcid: 0000-0003-1694-3735 
+    affiliation: 3
+  - name: Luca de Siena
+    orcid: 0000-0002-3615-5923
+    affiliation: 4,1
   - name: Jacob Frasukiewicz
-    #orcid: 0000-0003-1185-3730
+    orcid: 0009-0002-5049-4259
     affiliation: 1
+  - name: Lukas Fuchs
+    orcid: 0000-0002-9165-6384
+    affiliation: 5
+  - name: Andrea Piccolo
+    orcid: 0000-0003-3074-6041
+    affiliation: 2
+  - name: Hendrik Ranocha
+    orcid: 0000-0002-3456-2277
+    affiliation: 1
+  - name: Nicolas Riel
+    orcid: 0000-0002-5037-5519
+    affiliation: 1
+  - name: Christian Schuler
+    orcid: 0009-0004-9873-9774
+    affiliation: 1
+  - name: Arne Spang
+    orcid: 0000-0002-6107-0403
+    affiliation: 2
+  - name: Tatjana Weiler
+    #orcid: 0000-0002-6107-0403
+    affiliation: 2
+
 affiliations:
- - name: Johannes Gutenberg University Mainz, Germany
+ - name: Johannes Gutenberg-University Mainz, Germany
    index: 1
  - name: University of Bayreuth, Germany
    index: 2
- - name: Bologna University, Italy
+ - name: ETH Zürich, Switzerland
    index: 3
+ - name: Alma Mater Studiorum Bologna University, Italy
+   index: 4
+ - name: Goethe University Frankfurt, Germany
+   index: 5
 
-date: 27 February 2024
+date: 14 March 2024
 bibliography: paper.bib
 ---
 
 # Summary
 
-The forces on stars, galaxies, and dark matter under external gravitational
-fields lead to the dynamical evolution of structures in the universe. The orbits
-of these bodies are therefore key to understanding the formation, history, and
-future state of galaxies. The field of "galactic dynamics," which aims to model
-the gravitating components of galaxies to study their structure and evolution,
-is now well-established, commonly taught, and frequently used in astronomy.
-Aside from toy problems and demonstrations, the majority of problems require
-efficient numerical tools, many of which require the same base code (e.g., for
-performing numerical orbit integration).
+Geoscientific data exists in a wide variety of formats. Yet, to make a consistent interpretation of a certain region, it is often helpful to jointly visualise all this data using the same coordinates and compare, for example, seismic tomography, surface geology, Moho (crust-mantle transition) depth, Earthquake locations, and GPS surface velocities. If one wishes to create mechanical or thermo-mechanical numerical models of the region, creating an input setup that honors these constraints is crucial. And since most numerical codes work in Cartesian boxes, it is helpful to have tools to project the data from geographic to Cartesian coordinates.
+
+A significant challenge in doing this is that there is no standard format for geoscientific data. Seismic tomography, for example, may come in the form of ASCII data with `lon/lat/depth` axes or as NetCDF files, with the ordering of the data typically differing from one dataset to the other. In ideal cases, geological surfaces may be provided as GeoTIFF images. In many cases, however, the underlying data discussed in publications are not available in digital format and are only shown as figures in the paper. It is nevertheless still helpful to visualise these in 3D in the correct coordinates, along with more recent, digitally available datasets.
+
+The aim of the `GeophysicalModelGenerator.jl` package is therefore twofold:
+
+1) Simplify collecting and visualising a wide variety of geoscientific data that is provided as point (e.g., earthquake locations), surface (e.g., topography) or volumetric data (e.g., seismic tomography).  
+2) Create input setups for 2D or 3D numerical models.
 
 # Statement of need
 
-`Gala` is an Astropy-affiliated Python package for galactic dynamics. Python
-enables wrapping low-level languages (e.g., C) for speed without losing
-flexibility or ease-of-use in the user-interface. The API for `Gala` was
-designed to provide a class-based and user-friendly interface to fast (C or
-Cython-optimized) implementations of common operations such as gravitational
-potential and force evaluation, orbit integration, dynamical transformations,
-and chaos indicators for nonlinear dynamics. `Gala` also relies heavily on and
-interfaces well with the implementations of physical units and astronomical
-coordinate systems in the `Astropy` package [@astropy] (`astropy.units` and
-`astropy.coordinates`).
+`GeophysicalModelGenerator.jl` is a Julia [@bezanson2017julia] package that helps collect and visualise a wide variety of geophysical and geoscientific data coherently. It also simplifies the process of generating 2D or 3D models that can, for example, be used as input models in geodynamic simulations. It provides functions that transfer data from one format to the other, or project them from geographic `Longitude/Latitude/Depth` or `UTM` coordinates to Cartesian coordinates (`kilometers`). It allows performing tasks such as creating cross-sections through volumetric data, importing screenshots from published papers, downloading digital elevation data and saving the resulting data in `VTK` format, which can, for instance, be visualised with open source tools such as [Paraview](www.paraview.org).
 
-`Gala` was designed to be used by both astronomical researchers and by
-students in courses on gravitational dynamics or astronomy. It has already been
-used in a number of scientific publications [@Pearson:2017] and has also been
-used in graduate courses on Galactic dynamics to, e.g., provide interactive
-visualizations of textbook material [@Binney:2008]. The combination of speed,
-design, and support for Astropy functionality in `Gala` will enable exciting
-scientific explorations of forthcoming data releases from the *Gaia* mission
-[@gaia] by students and experts alike.
+Most geoscientists tend to have their own Python/MATLAB/Bash visualisation, and many perform part of this job on a daily basis. Yet, having all functionality in one place in an easy-to-use package makes this more extendable and will likely facilitate sharing data along with their interpretations.
 
-# Mathematics
+# Related software packages
+Perhaps the most widely used package in geophysics to create figures or maps is the Generic Mapping Tools package ([`GMT`](https://www.generic-mapping-tools.org)), which also provides a Julia interface [GMT.jl](https://github.com/GenericMappingTools/GMT.jl) [@Wessel_Luis_Uieda_Scharroo_Wobbe_Smith_Tian_2019]. It mostly focuses on generating maps and postscript/pdf images and is therefore not ideally suited for interactive 3D data visualisation, or to generate input models for numerical codes.
+ 
+The [`Geodynamic World Builder`](https://github.com/GeodynamicWorldBuilder/WorldBuilder) is a C++ library to create model setups [@se-10-1785-2019]. The focus is on generating input models for geodynamic simulations, such as subduction zones and related thermal structures. It has C and Fortran wrappers and can thus be embedded in geodynamic codes. Users of the `Geodynamic World Builder` have to generate JSON files to define the model geometry, which is less interactive than by using the Julia `REPL`. There is no straightforward way to integrate existing geophysical/geological data in the workflow and compare model results with them.   
 
-Single dollars ($) are required for inline mathematics e.g. $f(x) = e^{\pi/x}$
+[geomIO](https://bitbucket.org/geomio/geomio/src) is a MATLAB-based toolbox that allows creating geodynamic input setups by drawing several cross-sections using vector software such as Inkscape, which is put together into 3D volumes [@Bauville_Baumann_2019]. While it does allow the creation of sophisticated setups, data can only be taken into account by adding them as screenshots to Inkscape while drawing cross-sections. Its reliance on commercial software may be problematic for some users.
 
-Double dollars make self-standing equations:
+[GemPy](https://www.gempy.org) is a Python-based, open-source geomodeling library that can construct 3D geological models of folded structures, fault networks and unconformities while taking uncertainties into account [@DeLaVarga_Schaaf_Wellmann_2019]. It focuses on creating geometric models with uncertainties rather than on integrating a wide variety of geoscientific datasets.
 
-$$\Theta(x) = \left\{\begin{array}{l}
-0\textrm{ if } x < 0\cr
-1\textrm{ else}
-\end{array}\right.$$
+There are also a number of commercial software solutions: 
 
-You can also use plain \LaTeX for equations
-\begin{equation}\label{eq:fourier}
-\hat f(\omega) = \int_{-\infty}^{\infty} f(x) e^{i\omega x} dx
-\end{equation}
-and refer to \autoref{eq:fourier} from text.
+- [Petrel subsurface software](https://www.software.slb.com/products/petrel) (by Schlumberger), which is mostly used by the hydrocarbon industry and is particularly powerful in integrating seismic reflection and well-data.
 
-# Citations
+- [GOCAD Mining Suite](https://www.mirageoscience.com/mining-industry-software/gocad-mining-suite/) (by MiraGeoscience) helps to generate geometric models of the subsurface in the vicinity of mines based on sparse geological measurements and drill hole data.
 
-Citations to entries in paper.bib should be in
-[rMarkdown](http://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html)
-format.
+- [GeoModeller](https://www.intrepid-geophysics.com/products/geomodeller/) (by Intrepid Geophysics) creates surface-near geometric geological models by implicit modelling of surface measurements while taking geophysical constraints into account.
 
-If you want to cite a software repository URL (e.g. something on GitHub without a preferred
-citation) then you can do it with the example BibTeX entry below for @fidgit.
+In all cases, the commercial license fees are far beyond what most researchers can afford, even if reduced license fees are often available for academia. The closed-source nature of the software packages makes them non-extendable by the community.
 
-For a quick reference, the following citation commands can be used:
-- `@author:2001`  ->  "Author et al. (2001)"
-- `[@author:2001]` -> "(Author et al., 2001)"
-- `[@author1:2001; @author2:2001]` -> "(Author1 et al., 2001; Author2 et al., 2002)"
+The `GeophysicalModelGenerator.jl` package is already used to generate input models for the geodynamic codes [LaMEM](https://github.com/UniMainzGeo/LaMEM) [@Kaus_Popov_Baumann_Pusok_Bauville_Fernandez_Collignon_2016], [JustRelax.jl](https://github.com/PTsolvers/JustRelax.jl), and [MagmaThermokinematics.jl](https://github.com/boriskaus/MagmaThermoKinematics.jl). It is also used in a number of short courses and lectures at the Universities of Mainz, Heidelberg, Jena and Bologna, in hands-on tutorials during various workshops and in a number of recent publications to highlight 3D [@gabrielli2023scattering; @napolitano2023imaging] and 4D [@desiena2024geophysical] geophysical and geological data.  
 
-# Figures
+# Basic usage
 
-Figures can be included like this:
-![Caption for example figure.\label{fig:example}](figure.png)
-and referenced from text using \autoref{fig:example}.
+The core of the package consists of the  `GeoData`, `UTMData`, `ParaviewData`, and `CartData` structures which hold the 3D data along with coordinates (and potentially metadata) information. `GeophysicalModelGenerator.jl` can be installed using the built-in Julia package manager:
+```julia
+julia> ]
+(@v1.10) pkg> add GeophysicalModelGenerator
+```
+which comes with a test-suite:
+```julia
+(@v1.10) pkg> test GeophysicalModelGenerator
+```
+and can be loaded with:
+```julia
+julia> using GeophysicalModelGenerator
+```
 
-Figure sizes can be customized by adding an optional second parameter:
-![Caption for example figure.](figure.png){ width=20% }
+As a first example, we will download a 3D seismic tomography dataset for the Alpine region (from [@Paffrath_Friederich_Schmid_Handy_2021]):
+```julia
+julia> Tomo_Alps_full = load_GMG(
+  "https://zenodo.org/records/10738510/files/Paffrath_2021_SE_Pwave.jld2?download=1");
+```
+We can download the topography of the Alpine region with:
+```julia
+julia> Topo_Alps = load_GMG(
+  "https://zenodo.org/records/10738510/files/AlpsTopo.jld2?download=1");
+```
+
+The seismic data covers a much wider region than the Alps itself, but in much of that region there is poor data coverage. We can, therefore, extract a part of the data that has coverage:
+```julia
+julia> Tomo_Alps = extract_subvolume(Tomo_Alps_full, Lon_level=(4,20), 
+                        Lat_level=(36,50), Depth_level=(-600,-10));
+```
+
+At this stage, we can save the data to `VTK`  format:
+```julia
+julia> write_paraview(Tomo_Alps,"Tomo_Alps");
+julia> write_paraview(Topo_Alps,"Topo_Alps");
+```
+and open it with Paraview (see \autoref{fig:basic}a).
+We can create vertical and horizontal cross-sections through the data with:
+```julia
+julia> Cross_200km = cross_section(Tomo_Alps, Depth_level=-200, Interpolate=true);
+julia> Cross_vert  = cross_section(Tomo_Alps, Start=(5,47), End=(15,44));
+julia> write_paraview(Cross_vert, "Cross_vert");
+julia> write_paraview(Cross_200km,"Cross_200km");
+```
+and visualise them along with the volumetric data (\autoref{fig:basic}a).
+
+![Example of visualising 3D seismic data of the Alps, using a) geographic coordinates (`GeoData`) or b) Cartesian coordinates (`CartData`) projected from geographic coordinates. The topography and several slices through the 3D seismic tomography P-wave model of [@Paffrath_Friederich_Schmid_Handy_2021] are shown.  \label{fig:basic} ](Basic_Tutorial.png){ width=100% }
+
+One complication with geographic data is that Paraview does not have native support for geographic coordinates; accordingly, it is not always straightforward to use the built-in tools, for example, to create slices through the data. In addition, many numerical models work in (orthogonal) Cartesian rather than in spherical coordinates, which appears to be a good first-order approximation for many geodynamic applications [@Macherel_Räss_Schmalholz_2024].
+
+`GeophysicalModelGenerator.jl` includes tools to transfer the data from geographic to Cartesian coordinates, which requires defining a projection point along which the projection is performed:
+```julia
+julia> proj = ProjectionPoint(Lon=12.0,Lat =43)
+ProjectionPoint(43.0, 12.0, 255466.98055255096, 4.765182932801006e6, 33, true)
+```
+We can now project the topography with:
+```julia
+julia> Topo_cart = convert2CartData(Topo_Alps, proj);
+```
+which returns a `CartData` (Cartesian data) structure. The disadvantage of doing this projection is that the resulting Cartesian grid is no longer strictly orthogonal, which is a problem for some Cartesian numerical models (e.g., those using a finite difference discretisation).
+We can project the data on an orthogonal grid as well, by first creating appropriately sized orthogonal grids for the tomography and topography:
+```julia
+julia> Tomo_rect = CartData(xyz_grid(-550.0:10:600, -500.0:10:700, -600.0:5:-17));
+julia> Topo_rect = CartData(xyz_grid(-550.0:1:600, -500.0:1:700, 0)); 
+```
+Next, we can project the data to the orthogonal grids with:
+```julia
+julia> Topo_rect = project_CartData(Topo_rect, Topo_Alps, proj);
+julia> Tomo_rect = project_CartData(Tomo_rect, Tomo_Alps, proj);
+julia> write_paraview(Tomo_rect,"Tomo_rect");
+julia> write_paraview(Topo_rect,"Topo_rect");
+```
+We can now use the built-in tools of Paraview to visualise the data (see \autoref{fig:basic} b), and use this as inspiration to create an initial numerical model setup. It is also possible to interpolate other seismic tomography datasets to the same grid and subsequently compute a _votemap_ to count how many tomographic models contain a specific seismic anomaly [see, e.g., @Shephard_Matthews_Hosseini_Domeier_2017].
+
+# Examples of usage
+`GeophysicalModelGenerator.jl` comes with build-in (CI/CD) tests and [tutorials](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev) that explain the most important use cases, from importing data to generating input model setups for numerical simulations. In the following, we present a number of examples that illustrate various aspects of the package. Many additional tutorials are available in the online documentation.
+
+### Visualise data from the Alps
+The European Alps are among the best-studied mountain belts on the planet and have therefore been the focus of numerous geological and geophysical studies. Different seismic tomography models have been published (using different parameterisations and datasets), but those do not necessarily agree with each other. 
+
+In [`Tutorial_AlpineData.jl`](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev/man/Tutorial_AlpineData/), users learn how to load the topography of the region, import Moho data, load and visualise GPS vectors, import and plot earthquake locations, along with cross-sections through the model (\autoref{fig:alps}).
+
+![Example of combined data of the Alps, which shows the GPS surface velocity (arrows), topography, earthquake locations (colored dots) and cross-sections through a recent anisotropic P-wave tomography model by [@Rappisi_VanderBeek_Faccenda_Morelli_Molinari_2022]. \label{fig:alps}](../src/assets/img/GMG_AlpineData.png){ width=90% }
+
+### La Palma volcanic eruption
+The 2019 Cumbre Viejo eruption in La Palma, Canary Islands, was accompanied by seismic activity. In [`Tutorial_LaPalma.jl`](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev/man/Tutorial_LaPalma/), users learn to generate a Cartesian block model of the island, import seismicity and use that to generate a 3D volumetric seismic activity map (\autoref{fig:lapalma}). 
+
+![Example of a model of La Palma that shows seismicity during the 2019 Cumbre Viejo eruption. \label{fig:lapalma}](../src/assets/img/Tutorial_LaPalma.png){ width=100% }
+
+
+### Jura mountains
+The Jura mountains are a small-scale fold and thrust belt located in Switzerland and France. Thanks to seismic cross-sections and boreholes, a lot of information is available about its structure at depth. This information was used to generate extensive 3D models of the subsurface, including thickness maps of various geological units, generate a new geological map of the region, and create balanced reconstructions [@Schori_2021].  
+
+In [`Tutorial_Jura.jl`](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev/man/Tutorial_Jura/), users learn how to drape the geological map over the topography, import surfaces from GeoTIFF images (such as basement topography), and include screenshots from geological cross-sections. The data is rotated and transferred to Cartesian coordinates such that we obtain a 3D block model that is perpendicular to the strike of the mountain range (\autoref{fig:jura}).
+
+![Example of creating a 3D Cartesian block model that runs perpendicular to the Jura mountains, combining surface geology, with screenshots from interpreted cross-sections (in the center right), and digital data of the the basement topography [using data of @Schori_2021]. \label{fig:jura}](../src/assets/img/Jura_2.png){ width=100% }
+
+
+### Slab model setup 
+In `Tutorial_NumericalModel_3D.jl`, users learn how to generate a 3D geodynamic model setup with subducting slabs, a mid-oceanic ridge and an overriding cratonic lithosphere. The thermal structure of the oceanic slab increases away from the ridge until the trench, following a halfspace cooling analytical solution. In contrast, the thermal structure of the subducted part of the slab is based on an analytical solution that takes heating from the surrounding hot mantle into account [after @McKenzie_1969]. Between the mantle and the trench, the slab uses a mixture of these two thermal models. A weak zone is added above the slab (to facilitate subduction in numerical models). A sedimentary wedge is situated at the continental margin, and a grid-like pattern is put on top of the oceanic slab to simplify tracking deformation throughout the simulation (\autoref{fig:slab3d}).
+
+![Example of a geodynamic setup of a subducting oceanic plate beneath a continental lithosphere with a smoothly bending slab. \label{fig:slab3d}](../src/assets/img/Mechanical3D_Tutorial_2.png){ width=100% }
 
 # Acknowledgements
-
-We acknowledge contributions from Brigitta Sipocz, Syrtis Major, and Semyeong
-Oh, and support from Kathryn Johnston during the genesis of this project.
+We acknowledge funding by 1) the European Research Council as part of Consolidator Grant 771143 (MAGMA), 2) the German Research Foundation through DFG grants KA3367/10-1, TH2076/7-1 (both part of the SPP 2017 4D-MB project) and Emmy Noether grant TH2076/8-1, 3) the German Ministry of Science and Education (BMBF) through project DEGREE, and 4) by the CHEESE-2p Center of Excellence, co-funded by both EuroHPC-JU and the BMBF. 
 
 # References
