@@ -3,7 +3,7 @@
 
 using FileIO
 # using GeometryBasics: TriangleP, Mesh, normals, PointMeta, coordinates
-# I removed TriangleP and PointMeta, as they are not existing in GeometryBasics anymore (past 0.5.0) 
+# I removed TriangleP and PointMeta, as they are not existing in GeometryBasics anymore (past 0.5.0)
 # HD, 2024-06-10
 using GeometryBasics: Mesh, normals, coordinates
 using LinearAlgebra
