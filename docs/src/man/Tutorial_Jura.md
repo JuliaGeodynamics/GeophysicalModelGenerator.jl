@@ -94,8 +94,8 @@ CrossSection_1 = screenshot_to_GeoData("Schori_2020_Ornans-Miserey-v2_whiteBG.pn
 
 Note that we slightly modified the image to save it with a white instead of a transparent background
 
-# 2. Project the data to a cartesian grid
-At this stage, we have all data in geographic coordinates. In most cases it is more useful to have them in cartesian coordinates.
+# 2. Project the data to a Cartesian grid
+At this stage, we have all data in geographic coordinates. In most cases it is more useful to have them in Cartesian coordinates.
 Moreover, the resolution of the grids is different. Whereas the `TopoGeology` has a size of `(3721, 2641, 1)`,  `Basement` has size `(2020, 1751, 1)`.
 It is often useful to have them on exactly the same size grid
 
@@ -169,7 +169,7 @@ CartData
     fields  : (:Basement,)
 ```
 
-Finally, we can also transfer the cross-section to cartesian coordinates. As this is just for visualization, we will
+Finally, we can also transfer the cross-section to Cartesian coordinates. As this is just for visualization, we will
 use `convert2CartData` in this case
 
 ```julia

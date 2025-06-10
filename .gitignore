@@ -1,5 +1,6 @@
 /test/*.vts
 /test/*.vtu
+/.vscode
 .DS_Store
 Manifest.toml
 /docs/build

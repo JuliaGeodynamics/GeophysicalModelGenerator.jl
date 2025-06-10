@@ -9,7 +9,7 @@ The aim of this tutorial is to show you how to create 3D numerical model setups 
 
 ### 3D Subduction setup
 
-Lets start with creating a 3D model setup in cartesian coordinates, which uses the `CartData` data structure
+Lets start with creating a 3D model setup in Cartesian coordinates, which uses the `CartData` data structure
 
 ```julia
 using GeophysicalModelGenerator

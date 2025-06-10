@@ -4,7 +4,7 @@ Typically, you load a dataset by reading it into julia and either generating a `
 
 If you write the data to `Paraview`, it is internally converted to a Paraview structure (which involves `x,y,z` Cartesian Earth-Centered-Earth-Fixed (ECEF) coordinates using the `wgs84` ellipsoid).
 
-Yet, if you do geodynamic calculations the chances are that the geodynamic code does not operate in spherical coordinates, but rather use cartesian ones. In that case you should transfer your data to the `CartData` structure, which requires you to specify a `ProjectionPoint` that is a point on the map that will later have the coordinates `(0,0)` in the `CartData` structure.
+Yet, if you do geodynamic calculations the chances are that the geodynamic code does not operate in spherical coordinates, but rather use Cartesian ones. In that case you should transfer your data to the `CartData` structure, which requires you to specify a `ProjectionPoint` that is a point on the map that will later have the coordinates `(0,0)` in the `CartData` structure.
 
 
 #### 1. Converting
@@ -75,7 +75,7 @@ This shows that the model is ~5600 by 3000 km.
 Whereas this is ok to look at and compare with a LaMEM model setup, we cannot use it to perform internal calculations (or to generate a LaMEM model setup), because the `x` and `y` coordinates are distorted and not orthogonal.
 
 #### 2. Projecting data
-For use with LaMEM, you would need an orthogonal cartesian grid. From the last command above we get some idea on the area, so we can create this:
+For use with LaMEM, you would need an orthogonal Cartesian grid. From the last command above we get some idea on the area, so we can create this:
 ```julia-repl
 julia> Topo_Cart_orth  = CartData(xyz_grid(-2000:20:2000,-1000:20:1000,0))
 CartData
@@ -97,7 +97,7 @@ CartData
 julia> write_paraview(Topo_Cart_orth,"Topo_Cart_orth");
 ```
 ![Topo_Europe_CartData_Proj](../assets/img/Topo_Europe_CartData_Proj.png)
-So this interpolates the topographic data from the `GeoData` to the orthogonal cartesian grid (which can be used with LaMEM, for example).
+So this interpolates the topographic data from the `GeoData` to the orthogonal Cartesian grid (which can be used with LaMEM, for example).
 
 You can do similar projections with full 3D data sets or pointwise data.
 
