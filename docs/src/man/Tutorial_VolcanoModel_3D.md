@@ -5,7 +5,7 @@ The aim of this tutorial is to show you how to create 3D numerical model setups 
 
 ### Generating the model
 
-Lets start with creating a 3D model setup in cartesian coordinates, which uses the `CartData` data structure, with a resolution of $ 128 \times 128 \times 128 $ grid points, inside the domain $\Omega \in [-100,100] \times [-100,100] \times [-110,50]$ km
+Lets start with creating a 3D model setup in Cartesian coordinates, which uses the `CartData` data structure, with a resolution of $ 128 \times 128 \times 128 $ grid points, inside the domain $\Omega \in [-100,100] \times [-100,100] \times [-110,50]$ km
 
 ```julia
 using GeophysicalModelGenerator

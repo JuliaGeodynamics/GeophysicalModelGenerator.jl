@@ -31,7 +31,7 @@ GeoData
 ````
 
 This is a so-called `GeoData` object, which is a 3D grid of seismic velocities as a function of longitude, latitude and depth, which can include various fields (here we only have a single field: `:dVp_Percentage`)
-We can save this in `VTK` format, which is a widely used format that can for exampke be read by the 3D open-source visualization tool [Paraview](https://www.paraview.org/):
+We can save this in `VTK` format, which is a widely used format that can for example be read by the 3D open-source visualization tool [Paraview](https://www.paraview.org/):
 
 ```julia
 write_paraview(Tomo_Alps_full,"Tomo_Alps_full")
@@ -101,7 +101,7 @@ After loading the new data again in paraview, switching to the proper data field
 ![Basic_Tutorial_2](../assets/img/Basic_Tutorial_2.png)
 
 ### 3. Create cross sections
-Paraview has the option to `Slice` through the data but it is not very intuitive to do this in 3D. Another limitation of Paraview is that it does not have native support for spherical coordinates, and therefore the data is translated to cartesian (`x`,`y`,`z`) coordinates (with the center of the Earth at `(0,0,0)`).
+Paraview has the option to `Slice` through the data but it is not very intuitive to do this in 3D. Another limitation of Paraview is that it does not have native support for spherical coordinates, and therefore the data is translated to Cartesian (`x`,`y`,`z`) coordinates (with the center of the Earth at `(0,0,0)`).
 That makes this a bit cumbersome to make a cross-section at a particular location.
 If you are interested in this you can use the `cross_section` function:
 
@@ -214,9 +214,9 @@ After doing all these steps, you should see something like this:
 ![Basic_Tutorial_3](../assets/img/Basic_Tutorial_3.png)
 
 ### 4. Cartesian data
-As you can see, the curvature or the Earth is taken into account here. Yet, for many applications it is more convenient to work in Cartesian coordinates (kilometers) rather then in geographic coordinates.
+As you can see, the curvature or the Earth is taken into account here. Yet, for many applications it is more convenient to work in Cartesian coordinates (kilometers) rather than in geographic coordinates.
 `GeophysicalModelGenerator` has a number of tools for this.
-First we need do define a `ProjectionPoint`  around which we project the data
+First we need to define a `ProjectionPoint` around which we project the data
 
 ```julia
 proj = ProjectionPoint(Lon=12.0,Lat =43)
@@ -267,7 +267,7 @@ Saved file: Topo_cart.vts
 As the coordinates are now aligned with the `x`,`y`,`z` coordinate axes in Paraview it is now straightforward to use the build-in tools to explore the data.
 
 ### 5. Rectilinear data
-Yet, because of the curvature of the Earth, the resulting 3D model is not strictly rectilinear, which is often a requiment for cartesian numerical models.
+Yet, because of the curvature of the Earth, the resulting 3D model is not strictly rectilinear, which is often a requirement for Cartesian numerical models.
 This can be achieved in a relatively straightforward manner, by creating a new 3D dataset that is slightly within the curved boundaries of the projected data set:
 
 ```julia
@@ -322,7 +322,7 @@ Saved file: Topo_rect.vts
 
 ![Basic_Tutorial_5](../assets/img/Basic_Tutorial_5.png)
 
-At this stage, the data can directly be used to generate cartesian numerical model setups, as explained in the other tutorials.
+At this stage, the data can directly be used to generate Cartesian numerical model setups, as explained in the other tutorials.
 
 ---
 

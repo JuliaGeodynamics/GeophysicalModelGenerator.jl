@@ -1,8 +1,8 @@
-# Campi Flegrei Volcano tutorial using cartesian coordinates
+# Campi Flegrei Volcano tutorial using Cartesian coordinates
 
 ## Goal
 
-This tutorial visualizes available 3D data at a local volcano (Campi Flegrei caldera, Italy) using cartesian coordinates. This is done, e.g., when we only have geomorphological data in cartesian coordinates. It includes geological and geophysical data in UTM format from the following papers:
+This tutorial visualizes available 3D data at a local volcano (Campi Flegrei caldera, Italy) using Cartesian coordinates. This is done, e.g., when we only have geomorphological data in Cartesian coordinates. It includes geological and geophysical data in UTM format from the following papers:
 
 - Two shape files containing coastline and faults:
     - Vilardo, G., Ventura, G., Bellucci Sessa, E. and Terranova, C., 2013. Morphometry of the Campi Flegrei caldera (southern Italy). Journal of maps, 9(4), pp.635-640. doi:10.1080/17445647.2013.842508
@@ -29,11 +29,11 @@ Make sure that you are in the unzipped directory.
 
 #### 2. Geomorphology
 
-Load both the the shape (.shp) files contained in `./Geomorphology/*.shp` inside Paraview. In the following figures we show the Cartesian representation (not geolocalized - left) and the UTM (UTM). Our shape files can only be loaded in the cartesian:
+Load both the the shape (.shp) files contained in `./Geomorphology/*.shp` inside Paraview. In the following figures we show the Cartesian representation (not geolocalized - left) and the UTM (UTM). Our shape files can only be loaded in the Cartesian:
 
 ![Tutorial_Flegrei_Geomorphology](../assets/img/Flegrei_Geomorphology.png)
 
-To reproduce it, represent the coastline as data points with black solid color and assign your favourite color map to the morphology. Note that each block color number corresponds to a different morphology. Beware that this file only works in cartesian coordinate, as it is still impossible to generate shape files in real UTM coordinates
+To reproduce it, represent the coastline as data points with black solid color and assign your favourite color map to the morphology. Note that each block color number corresponds to a different morphology. Beware that this file only works in Cartesian coordinate, as it is still impossible to generate shape files in real UTM coordinates
 
 #### 3. Earthquakes
 
@@ -55,7 +55,7 @@ julia> EQ_Data_UTM         = UTMData(WE, SN, depth, 33, true, (Depth=depth * m,T
 julia> Data_set_UTM        =   convert(GeophysicalModelGenerator.GeoData,EQ_Data_UTM)
 julia> write_paraview(Data_set_UTM, "CF_Earthquakes_UTM", PointsData=true)
 ```
-Save in paraview with both cartesian and UTM formats. The final seismicity map looks like this:
+Save in paraview with both Cartesian and UTM formats. The final seismicity map looks like this:
 
 ![Tutorial_Flegrei_seismicity](../assets/img/Flegrei_Seismicity.png)
 
@@ -63,7 +63,7 @@ The colour scale distinguishes earthquakes of different decades. Notice the prog
 
 #### 4. Velocity model
 
-Using the Alps tutorial it is easy to create a paraview file from the Vp, Vs and Vp/Vs model in `./TravelTmeTomography/modvPS.dat` for both cartesian and UTM coordinates.
+Using the Alps tutorial it is easy to create a paraview file from the Vp, Vs and Vp/Vs model in `./TravelTmeTomography/modvPS.dat` for both Cartesian and UTM coordinates.
 
 ```julia
 julia> using DelimitedFiles, GeophysicalModelGenerator
