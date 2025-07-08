@@ -59,6 +59,7 @@ prof1 = ProfileData(start_lonlat = (5, 45), end_lonlat = (15, 49))
 prof2 = ProfileData(depth = -100)
 prof3 = ProfileData(start_lonlat = (5, 45), end_lonlat = (5, 49))
 prof4 = ProfileData(depth = -20)
+prof5 = ProfileData(start_lonlat = (12, 49), end_lonlat = (12, 45))
 
 # test internal routines to intersect profile with volumetric data:
 GeophysicalModelGenerator.create_profile_volume!(prof1, VolData_combined1)
@@ -80,27 +81,32 @@ GeophysicalModelGenerator.create_profile_point!(prof4, Data.Point, section_width
 @test  length(prof1.PointData[1].lon) == 13
 @test  length(prof4.PointData[1].lon) == 445
 
+# test screenshot data 
+GeophysicalModelGenerator.create_profile_screenshot!(prof5, Data.Screenshot)
+@test prof5.SurfData[1].fields.x_profile[1,1,1] == 0
+
 
 # Test the main profile extraction routines:
-extract_ProfileData!(prof1, VolData_combined1, Data.Surface, Data.Point)
-extract_ProfileData!(prof2, VolData_combined1, Data.Surface, Data.Point)
-extract_ProfileData!(prof3, VolData_combined1, Data.Surface, Data.Point)
-extract_ProfileData!(prof4, VolData_combined1, Data.Surface, Data.Point)
+extract_ProfileData!(prof1, VolData_combined1, Data.Surface, Data.Point, NamedTuple())
+extract_ProfileData!(prof2, VolData_combined1, Data.Surface, Data.Point, NamedTuple())
+extract_ProfileData!(prof3, VolData_combined1, Data.Surface, Data.Point, NamedTuple())
+extract_ProfileData!(prof4, VolData_combined1, Data.Surface, Data.Point, NamedTuple())
 
-extract_ProfileData!(prof1, VolData_combined2, Data.Surface, Data.Point)
-extract_ProfileData!(prof2, VolData_combined2, Data.Surface, Data.Point)
-extract_ProfileData!(prof3, VolData_combined2, Data.Surface, Data.Point)
-extract_ProfileData!(prof4, VolData_combined2, Data.Surface, Data.Point)
+extract_ProfileData!(prof1, VolData_combined2, Data.Surface, Data.Point, NamedTuple())
+extract_ProfileData!(prof2, VolData_combined2, Data.Surface, Data.Point, NamedTuple())
+extract_ProfileData!(prof3, VolData_combined2, Data.Surface, Data.Point, NamedTuple())
+extract_ProfileData!(prof4, VolData_combined2, Data.Surface, Data.Point, NamedTuple())
 
-extract_ProfileData!(prof1, VolData_combined3, Data.Surface, Data.Point)
-extract_ProfileData!(prof2, VolData_combined3, Data.Surface, Data.Point)
-extract_ProfileData!(prof3, VolData_combined3, Data.Surface, Data.Point)
-extract_ProfileData!(prof4, VolData_combined3, Data.Surface, Data.Point)
+extract_ProfileData!(prof1, VolData_combined3, Data.Surface, Data.Point, NamedTuple())
+extract_ProfileData!(prof2, VolData_combined3, Data.Surface, Data.Point, NamedTuple())
+extract_ProfileData!(prof3, VolData_combined3, Data.Surface, Data.Point, NamedTuple())
+extract_ProfileData!(prof4, VolData_combined3, Data.Surface, Data.Point, NamedTuple())
+extract_ProfileData!(prof5, VolData_combined3, Data.Surface, Data.Point, Data.Screenshot)
 
 
 # Test that it works if only EQ's are provided:
 prof4 = ProfileData(depth = -20)
-extract_ProfileData!(prof4, nothing, NamedTuple(), Data.Point)
+extract_ProfileData!(prof4, nothing, NamedTuple(), Data.Point, NamedTuple())
 @test isnothing(prof4.VolData)
 @test isempty(prof4.SurfData)
 @test length(prof4.PointData[1].depth) == 3280

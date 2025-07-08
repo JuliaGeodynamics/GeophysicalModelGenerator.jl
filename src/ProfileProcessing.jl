@@ -29,6 +29,7 @@ mutable struct ProfileData
     VolData::Union{Nothing, GeophysicalModelGenerator.GeoData}
     SurfData::Union{Nothing, NamedTuple}
     PointData::Union{Nothing, NamedTuple}
+    ScreenshotData::Union{Nothing, NamedTuple}
 
     function ProfileData(; kwargs...) # this constructor allows to define only certain fields and leave the others blank
         K = new(true, nothing, nothing, nothing, nothing, nothing, nothing)
@@ -282,6 +283,31 @@ function create_profile_volume!(Profile::ProfileData, VolData::AbstractGeneralGr
     return nothing
 end
 
+### internal function to process screenshot data - contrary to the volume data, we here have to save lon/lat/depth pairs for every screenshot data set, so we create a NamedTuple of GeoData data sets
+function create_profile_screenshot!(Profile::ProfileData, DataSet::NamedTuple)
+    num_datasets = length(DataSet)
+
+    tmp = NamedTuple()             # initialize empty one
+    DataSetName = keys(DataSet)    # Names of the datasets
+
+    for idata in 1:num_datasets
+        # load data set --> each data set is a single GeoData structure, so we'll only have to get the respective key to load the correct type
+        data_tmp = DataSet[idata]
+        if Profile.vertical
+            x_profile = flatten_cross_section(data_tmp, Start = Profile.start_lonlat) # compute the distance along the profile
+            data_tmp = addfield(data_tmp, "x_profile", x_profile)
+
+             # add the data set as a NamedTuple
+            data_NT = NamedTuple{(DataSetName[idata],)}((data_tmp,))
+            tmp = merge(tmp, data_NT)
+        else
+            # we do not have this implemented
+            #error("horizontal profiles not yet implemented")
+        end        
+    end
+    Profile.SurfData = tmp # assign to profile data structure
+    return
+end
 
 ### internal function to process surface data - contrary to the volume data, we here have to save lon/lat/depth pairs for every surface data set, so we create a NamedTuple of GeoData data sets
 function create_profile_surface!(Profile::ProfileData, DataSet::NamedTuple; DimsSurfCross = (100,))
@@ -362,18 +388,20 @@ end
 
 
 """
-    extract_ProfileData!(Profile::ProfileData,VolData::GeoData, SurfData::NamedTuple, PointData::NamedTuple; DimsVolCross=(100,100),Depth_extent=nothing,DimsSurfCross=(100,),section_width=50)
+    extract_ProfileData!(Profile::ProfileData,VolData::GeoData, SurfData::NamedTuple, PointData::NamedTuple, ScreenshotData::NamedTuple; DimsVolCross=(100,100),Depth_extent=nothing,DimsSurfCross=(100,),section_width=50)
 
 Extracts data along a vertical or horizontal profile
 """
-function extract_ProfileData!(Profile::ProfileData, VolData::Union{Nothing, GeoData} = nothing, SurfData::NamedTuple = NamedTuple(), PointData::NamedTuple = NamedTuple(); DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km)
+function extract_ProfileData!(Profile::ProfileData, VolData::Union{Nothing, GeoData} = nothing, SurfData::NamedTuple = NamedTuple(), PointData::NamedTuple = NamedTuple(),ScreenshotData::NamedTuple = NamedTuple(); DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km)
 
     if !isnothing(VolData)
         create_profile_volume!(Profile, VolData; DimsVolCross = DimsVolCross, Depth_extent = Depth_extent)
     end
     create_profile_surface!(Profile, SurfData, DimsSurfCross = DimsSurfCross)
     create_profile_point!(Profile, PointData, section_width = section_width)
-
+    if !isempty(ScreenshotData)
+        create_profile_screenshot!(Profile, ScreenshotData)
+    end
     return nothing
 end
 
