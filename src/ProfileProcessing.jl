@@ -17,6 +17,7 @@ Structure that holds profile data (interpolated/projected on the profile)
         VolData         ::  GeophysicalModelGenerator.GeoData
         SurfData        ::  Union{Nothing, NamedTuple}
         PointData       ::  Union{Nothing, NamedTuple}
+        ScreenshotData  ::Union{Nothing, NamedTuple}
     end
 
     Structure to store cross section data
@@ -52,7 +53,6 @@ mutable struct ProfileData
     end
 end
 
-
 function show(io::IO, g::ProfileData)
     if g.vertical
         println(io, "Vertical ProfileData")
@@ -70,7 +70,9 @@ function show(io::IO, g::ProfileData)
     if !isnothing(g.PointData)
         println(io, "        PointData: $(keys(g.PointData)) ")
     end
-
+    if !isnothing(g.ScreenshotData)
+        println(io, "        ScreenshotData: $(keys(g.ScreenshotData)) ")
+    end
     return nothing
 end
 
@@ -404,6 +406,21 @@ function extract_ProfileData!(Profile::ProfileData, VolData::Union{Nothing, GeoD
     end
     return nothing
 end
+
+"""
+    extract_ProfileData!(Profile::ProfileData,VolData::GeoData, SurfData::NamedTuple, PointData::NamedTuple; DimsVolCross=(100,100),Depth_extent=nothing,DimsSurfCross=(100,),section_width=50)
+
+Extracts data along a vertical or horizontal profile. 
+"""
+function extract_ProfileData!(Profile::ProfileData, VolData::Union{Nothing, GeoData} = nothing, SurfData::NamedTuple = NamedTuple(), PointData::NamedTuple = NamedTuple(); DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km)
+
+    # call the actual function to extract the profile data
+    extract_ProfileData!(Profile, VolData, SurfData, PointData,NamedTuple(); DimsVolCross = DimsVolCross, Depth_extent = Depth_extent, DimsSurfCross = DimsSurfCross, section_width = section_width)
+    return nothing
+end
+
+
+
 
 """
 This reads the picked profiles from disk and returns a vector of ProfileData

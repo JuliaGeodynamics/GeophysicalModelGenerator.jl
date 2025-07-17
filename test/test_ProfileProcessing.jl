@@ -22,7 +22,6 @@ data_Vol2 = GMG_Dataset("Plomerova2022", "Volume", "https://seafile.rlp.net/f/ab
 #data_Vol2   = GMG_Dataset("Zhao2016","Volume","https://seafile.rlp.net/f/e81a6d075f6746609973/?dl=1", true)
 
 # Now load these datasets into NamedTuples
-
 SurfData = load_GMG(data_Surf)
 PointData = load_GMG(data_EQ)
 ScreenshotData = load_GMG(data_SS)
@@ -87,26 +86,26 @@ GeophysicalModelGenerator.create_profile_screenshot!(prof5, Data.Screenshot)
 
 
 # Test the main profile extraction routines:
-extract_ProfileData!(prof1, VolData_combined1, Data.Surface, Data.Point, NamedTuple())
-extract_ProfileData!(prof2, VolData_combined1, Data.Surface, Data.Point, NamedTuple())
-extract_ProfileData!(prof3, VolData_combined1, Data.Surface, Data.Point, NamedTuple())
-extract_ProfileData!(prof4, VolData_combined1, Data.Surface, Data.Point, NamedTuple())
+extract_ProfileData!(prof1, VolData_combined1, Data.Surface, Data.Point)
+extract_ProfileData!(prof2, VolData_combined1, Data.Surface, Data.Point)
+extract_ProfileData!(prof3, VolData_combined1, Data.Surface, Data.Point)
+extract_ProfileData!(prof4, VolData_combined1, Data.Surface, Data.Point)
 
-extract_ProfileData!(prof1, VolData_combined2, Data.Surface, Data.Point, NamedTuple())
-extract_ProfileData!(prof2, VolData_combined2, Data.Surface, Data.Point, NamedTuple())
-extract_ProfileData!(prof3, VolData_combined2, Data.Surface, Data.Point, NamedTuple())
-extract_ProfileData!(prof4, VolData_combined2, Data.Surface, Data.Point, NamedTuple())
+extract_ProfileData!(prof1, VolData_combined2, Data.Surface, Data.Point)
+extract_ProfileData!(prof2, VolData_combined2, Data.Surface, Data.Point)
+extract_ProfileData!(prof3, VolData_combined2, Data.Surface, Data.Point)
+extract_ProfileData!(prof4, VolData_combined2, Data.Surface, Data.Point)
 
-extract_ProfileData!(prof1, VolData_combined3, Data.Surface, Data.Point, NamedTuple())
-extract_ProfileData!(prof2, VolData_combined3, Data.Surface, Data.Point, NamedTuple())
-extract_ProfileData!(prof3, VolData_combined3, Data.Surface, Data.Point, NamedTuple())
-extract_ProfileData!(prof4, VolData_combined3, Data.Surface, Data.Point, NamedTuple())
+extract_ProfileData!(prof1, VolData_combined3, Data.Surface, Data.Point)
+extract_ProfileData!(prof2, VolData_combined3, Data.Surface, Data.Point)
+extract_ProfileData!(prof3, VolData_combined3, Data.Surface, Data.Point)
+extract_ProfileData!(prof4, VolData_combined3, Data.Surface, Data.Point)
 extract_ProfileData!(prof5, VolData_combined3, Data.Surface, Data.Point, Data.Screenshot)
 
 
 # Test that it works if only EQ's are provided:
 prof4 = ProfileData(depth = -20)
-extract_ProfileData!(prof4, nothing, NamedTuple(), Data.Point, NamedTuple())
+extract_ProfileData!(prof4, nothing, NamedTuple(), Data.Point)
 @test isnothing(prof4.VolData)
 @test isempty(prof4.SurfData)
 @test length(prof4.PointData[1].depth) == 3280
