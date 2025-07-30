@@ -1050,7 +1050,7 @@ end
 write_processor_partitioning_LaMEM(P::LaMEMPartitioningInfo; is64bit::Bool = false)	
 
 Writes the processor partitioning information `P` to a binary file in the format used by LaMEM.
-The file is named `ProcessorPartitioning_$(P.nProcX*P.nProcY*P.nProcZ)cpu_$(P.nProcX).$(P.nProcY).$(P.nProcZ).bin` and returned as string.
+The file is named `ProcessorPartitioning_(P.nProcX*P.nProcY*P.nProcZ)cpu_(P.nProcX).(P.nProcY).(P.nProcZ).bin` and returned as string.
 The coordinates are written as Float64, and the processor counts and node counts as Int64 or Int32, depending on the `is64bit` flag.
 """
 function write_processor_partitioning_LaMEM(
