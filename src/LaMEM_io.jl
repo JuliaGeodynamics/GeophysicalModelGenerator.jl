@@ -33,6 +33,12 @@ struct LaMEMPartitioningInfo <: AbstractGeneralGrid
     yc::Vector{Float64}
     zc::Vector{Float64}
 
+    # Indexes of the nodes from full vectors of each processor
+    ix::Vector{Int64}
+    iy::Vector{Int64}
+    iz::Vector{Int64}
+    
+
 end
 
 """
@@ -1106,8 +1112,13 @@ function Base.show(io::IO, d::LaMEMPartitioningInfo)
     println(io, "  nNodeZ : $(d.nNodeZ)")
     println(io, "  xc     : $(d.xc)")
     println(io, "  yc     : $(d.yc)")
+    println(io, "  zc     : $(d.zc)")
 
-    return println(io, "  zc     : $(d.zc)")
+    println(io, "  ix     : $(d.ix)")
+    println(io, "  iy     : $(d.iy)")
+    println(io, "  iz     : $(d.iz)")
+    
+    return nothing
 
 end
 
@@ -1540,11 +1551,12 @@ function setup_model_domain(coord_x::AbstractVector{<:Real},
     ix = calculate_domain_divisions(nx, Nprocx)
     iy = calculate_domain_divisions(ny, Nprocy)
     iz = calculate_domain_divisions(nz, Nprocz)
-    
+
     P = LaMEMPartitioningInfo(
         Nprocx, Nprocy, Nprocz,
         nnodx, nnody, nnodz, 
-        xcoor[ix], ycoor[iy],zcoor[iz]
+        xcoor[ix], ycoor[iy], zcoor[iz],
+        ix, iy, iz
         )
 
         xcoor = []
