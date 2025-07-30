@@ -8,4 +8,5 @@ GeophysicalModelGenerator.screenshot_to_CartData
 GeophysicalModelGenerator.screenshot_to_UTMData
 GeophysicalModelGenerator.import_topo
 GeophysicalModelGenerator.import_GeoTIFF
+GeophysicalModelGenerator.tomo_2_GeoData
 ```

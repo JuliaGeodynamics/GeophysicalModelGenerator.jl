@@ -168,7 +168,7 @@ If you want to plot iso-surfaces (e.g. at 3%), you can use the `Clip` option aga
 
 ![Paraview_6](../assets/img/Tutorial_Zhao_Paraview_6.png)
 
-Note that using geographic coordinates is slightly cumbersome in Paraview. If your area is not too large, it may be advantageous to transfer all data to cartesian coordinates, in which case it is easier to create slices through the model. This is explained in some of the other tutorials.
+Note that using geographic coordinates is slightly cumbersome in Paraview. If your area is not too large, it may be advantageous to transfer all data to Cartesian coordinates, in which case it is easier to create slices through the model. This is explained in some of the other tutorials.
 
 #### 5. Extract and plot cross-sections of the data
 In many cases you would like to create cross-sections through the 3D data sets as well, and visualize that in Paraview. That is in principle possible in Paraview as well (using the `Slice` tool, as described above). Yet, in many cases we want to have it at a specific depth, or through pre-defined `lon/lat` coordinates.

@@ -2,7 +2,10 @@
 # These are routines that allow importing *.stl triangular surfaces and employ them
 
 using FileIO
-using GeometryBasics: TriangleP, Mesh, normals, PointMeta, coordinates
+# using GeometryBasics: TriangleP, Mesh, normals, PointMeta, coordinates
+# I removed TriangleP and PointMeta, as they are not existing in GeometryBasics anymore (past 0.5.0)
+# HD, 2024-06-10
+using GeometryBasics: Mesh, normals, coordinates
 using LinearAlgebra
 
 # Warning: the TriangleIntersect dependency does not seem to work on different machines, as the developer did not add a version number..

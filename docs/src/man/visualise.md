@@ -10,7 +10,7 @@ julia> using GeophysicalModelGenerator, GLMakie
 julia> using GMT, JLD2
 ```
 The last line loads packages we need to read in the pre-generated `JLD2` file (see the tutorials) and download topography from the region.
-Lets load the data, by first moving to the correct directory (will likely be different on your machine).
+Let's load the data, by first moving to the correct directory (will likely be different on your machine).
 ```julia
 julia> ;
 shell> cd ~/Downloads/Zhao_etal_2016_data/      
@@ -34,7 +34,7 @@ Which will look like:
 ![Tutorial_Visualize](../assets/img/Tutorial_Visualize.png)
 
 
-This is an example where we used `GeoData` to visualize results. Alternatively, we can also visualize results in km (often more useful for numerical modelling setups). For `Visualize` to work with this, we however need orthogonal cartesian data, which can be obtained by projecting both the data.
+This is an example where we used `GeoData` to visualize results. Alternatively, we can also visualize results in km (often more useful for numerical modelling setups). For `Visualize` to work with this, we however need orthogonal Cartesian data, which can be obtained by projecting both the data.
 ```julia
 julia> p=ProjectionPoint(Lon=10, Lat=45)
 ProjectionPoint(45.0, 10.0, 578815.302916711, 4.983436768349297e6, 32, true)

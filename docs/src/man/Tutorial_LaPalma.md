@@ -60,7 +60,7 @@ write_paraview(Topo,"Topo")
 ![LaPalma_EQTopo_GeoData](../assets/img/TopoEQs_LaPalma_GeoData.png)
 Note that this data is in geographic coordinates, which makes it non-trivial to create slices through the data (see coordinate axis in the plot, where `z` is *not* pointing upwards).
 
-## 2. Convert data to cartesian coordinates
+## 2. Convert data to Cartesian coordinates
 In order to create model setups, it is helpful to first transfer the data to Cartesian.
 This requires us to first determine a *projection point*, that is fixed. Often, it is helpful to use the center of the topography for this. In the present example, we will center the model around La Palma itself:
 
@@ -68,14 +68,14 @@ This requires us to first determine a *projection point*, that is fixed. Often, 
 proj = ProjectionPoint(Lon=-17.84, Lat=28.56)
 ```
 
-Once this is done you can convert the topographic data to the cartesian reference frame
+Once this is done you can convert the topographic data to the Cartesian reference frame
 
 ```julia
 EQ_cart   = convert2CartData(data_all_EQ, proj);
 Topo_cart = convert2CartData(Topo, proj)
 ```
 
-It is important to realize that the cartesian coordinates of the topographic grid is no longer strictly orthogonal after this conversion. You don't notice that in the current example, as the model domain is rather small.
+It is important to realize that the Cartesian coordinates of the topographic grid is no longer strictly orthogonal after this conversion. You don't notice that in the current example, as the model domain is rather small.
 In other cases, however, this is quite substantial (e.g., India-Asia collision zone).
 LaMEM needs an orthogonal grid of topography, which we can create with:
 
