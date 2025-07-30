@@ -1047,6 +1047,53 @@ function save_LaMEM_topography(Topo::CartData, filename::String)
 end
 
 """
+write_processor_partitioning_LaMEM(P::LaMEMPartitioningInfo; is64bit::Bool = false)	
+
+Writes the processor partitioning information `P` to a binary file in the format used by LaMEM.
+The file is named `ProcessorPartitioning_$(P.nProcX*P.nProcY*P.nProcZ)cpu_$(P.nProcX).$(P.nProcY).$(P.nProcZ).bin` and returned as string.
+The coordinates are written as Float64, and the processor counts and node counts as Int64 or Int32, depending on the `is64bit` flag.
+"""
+function write_processor_partitioning_LaMEM(
+    P::LaMEMPartitioningInfo;
+    is64bit::Bool = false
+)
+    xcoor = range(P.xc[1], P.xc[end], length=P.nNodeX)
+    ycoor = range(P.yc[1], P.yc[end], length=P.nNodeY)
+    zcoor = range(P.zc[1], P.zc[end], length=P.nNodeZ)
+
+    filename = "ProcessorPartitioning_$(P.nProcX*P.nProcY*P.nProcZ)cpu_$(P.nProcX).$(P.nProcY).$(P.nProcZ).bin"
+    typ = is64bit ? Int64 : Int32
+    open(filename, "w") do io
+        # Write processor counts (Int64, big-endian)
+        write(io, hton(typ(P.nProcX)))
+        write(io, hton(typ(P.nProcY)))
+        write(io, hton(typ(P.nProcZ)))
+        # Write node counts (Int64, big-endian)
+        write(io, hton(typ(P.nNodeX)))
+        write(io, hton(typ(P.nNodeY)))
+        write(io, hton(typ(P.nNodeZ)))
+        # Write indexes for each processor division (Int64, big-endian)
+        write(io, hton.(P.ix .- 1))
+        write(io, hton.(P.iy .- 1))
+        write(io, hton.(P.iz .- 1))
+        # Write scaling (use 1.0)
+        write(io, hton(Float64(1.0)))
+        # Write coordinates (Float64, big-endian)
+        write(io, hton.(xcoor))
+        write(io, hton.(ycoor))
+        write(io, hton.(zcoor))
+
+        xcoor = []
+        ycoor = []
+        zcoor = []
+
+    end
+    println("Processor partitioning written to $filename")
+    return filename
+end
+
+
+"""
     create_partitioning_file(LaMEM_input::String, NumProc::Int64; LaMEM_dir::String=pwd(), LaMEM_options::String="", MPI_dir="", verbose=true)
 
 This executes LaMEM for the input file `LaMEM_input` & creates a parallel partitioning file for `NumProc` processors.
