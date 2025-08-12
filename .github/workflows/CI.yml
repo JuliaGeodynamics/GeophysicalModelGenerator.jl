@@ -6,12 +6,14 @@ on:
     branches:
       - main
     tags: '*'
+  schedule:
+    - cron: '0 15 */14 * *'
 
 # Cancel redundant CI tests automatically
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-  
+
 jobs:
   run_tests:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
@@ -51,7 +53,7 @@ jobs:
           - os: windows-latest
             arch: x86
             version: 'pre'
-            allow_failure: true          
+            allow_failure: true
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
