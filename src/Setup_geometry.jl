@@ -1444,28 +1444,27 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::LithosphericTemp)
         dtfac, nz, rheology = s
 
     # Create 1D depth profile within the box
-    z = LinRange(round(maximum(Z)), round(minimum(Z)), nz)    # [km]
-    z = @. z * 1.0e3                                            # [m]
+    z = LinRange(maximum(Z) * 1.0e3, minimum(Z) * 1.0e3, nz)    # [m]
     dz = z[2] - z[1]                                         # Gride resolution
-
     # Initialize 1D arrays for explicit solver
     T = zeros(nz)
     phase = Int64.(zeros(nz))
 
     # Assign phase id from Phase to 1D phase array
     phaseid = (minimum(Phase):1:maximum(Phase))
-    ztop = round(maximum(Z[findall(Phase .== phaseid[1])]))
-    zlayer = zeros(length(phaseid))
+    zsurf = maximum(Z[findall(Phase .== phaseid[1])]) * 1.0e3
+    zbase = zeros(length(phaseid)) # base of each layer
+
+    # for each phase id
     for i in 1:length(phaseid)
         # Calculate layer thickness from Phase array
-        zlayer[i] = round(minimum(Z[findall(Phase .== phaseid[i])]))
-        zlayer[i] = zlayer[i] * 1.0e3
+        zbase[i] = minimum(Z[findall(Phase .== phaseid[i])]) * 1.0e3
     end
     for i in 1:length(phaseid)
         # Assign phase ids
-        ind = findall((z .>= zlayer[i]) .& (z .<= ztop))
+        ztop = i === 1 ? zsurf : zbase[i - 1]
+        ind = findall((z .>= zbase[i]) .& (z .<= ztop))
         phase[ind] .= phaseid[i]
-        ztop = zlayer[i]
     end
 
     # Setup initial T-profile
