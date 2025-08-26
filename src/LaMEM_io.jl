@@ -421,6 +421,15 @@ function save_LaMEM_markers_parallel(Grid::CartData; PartitioningFile = empty, d
         Temp = zeros(size(Phases))
     end
 
+    if haskey(Grid.fields, :APS)
+        APS = Grid.fields[:APS]
+    else
+        if verbose
+            println("Field :APS is not provided; setting it to zero")
+        end
+        APS = zeros(size(Phases))
+    end
+
     if PartitioningFile == empty
         # in case we run this on 1 processor only
         Nprocx = 1
@@ -459,10 +468,11 @@ function save_LaMEM_markers_parallel(Grid::CartData; PartitioningFile = empty, d
         part_z = ustrip.(Grid.z.val[x_start[n]:x_end[n], y_start[n]:y_end[n], z_start[n]:z_end[n]])
         part_phs = Phases[x_start[n]:x_end[n], y_start[n]:y_end[n], z_start[n]:z_end[n]]
         part_T = Temp[x_start[n]:x_end[n], y_start[n]:y_end[n], z_start[n]:z_end[n]]
+        part_APS = APS[x_start[n]:x_end[n], y_start[n]:y_end[n], z_start[n]:z_end[n]]
         num_particles = size(part_x, 1) * size(part_x, 2) * size(part_x, 3)
 
         # Information vector per processor
-        num_prop = 5       # number of properties we save [x/y/z/phase/T]
+        num_prop = 6       # number of properties we save [x/y/z/phase/T/APS]
         lvec_info = num_particles
 
         lvec_prtcls = zeros(Float64, num_prop * num_particles)
@@ -472,6 +482,7 @@ function save_LaMEM_markers_parallel(Grid::CartData; PartitioningFile = empty, d
         lvec_prtcls[3:num_prop:end] = part_z[:]
         lvec_prtcls[4:num_prop:end] = part_phs[:]
         lvec_prtcls[5:num_prop:end] = part_T[:]
+        lvec_prtcls[6:num_prop:end] = part_APS[:]
 
         # Write output files
         if ~isdir(directory)
@@ -482,7 +493,7 @@ function save_LaMEM_markers_parallel(Grid::CartData; PartitioningFile = empty, d
             println("Writing LaMEM marker file -> $fname")                   # print info
         end
         lvec_output = [lvec_info; lvec_prtcls]           # one vec with info about length
-
+        
         PetscBinaryWrite_Vec(fname, lvec_output)            # Write PETSc vector as binary file
 
     end
@@ -552,7 +563,10 @@ function PetscBinaryWrite_Vec(filename, A)
         n = length(A)
         nummark = A[1]            # number of markers
 
-        write(f, hton(Float64(1211214)))     # header (not actually used)
+        # header number encodes the version of particle data file
+        # version with APS is 1211215
+        # version without APS was 1211214
+        write(f, hton(Float64(1211215)))     # header
         write(f, hton(Float64(nummark)))     # info about # of markers written
 
         for i in 2:n
