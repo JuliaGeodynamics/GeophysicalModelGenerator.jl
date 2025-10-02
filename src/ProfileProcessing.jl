@@ -17,7 +17,7 @@ Structure that holds profile data (interpolated/projected on the profile)
         VolData         ::  GeophysicalModelGenerator.GeoData
         SurfData        ::  Union{Nothing, NamedTuple}
         PointData       ::  Union{Nothing, NamedTuple}
-        ScreenshotData  ::Union{Nothing, NamedTuple}
+        ScreenshotData  ::  Union{Nothing, NamedTuple}
     end
 
     Structure to store cross section data
