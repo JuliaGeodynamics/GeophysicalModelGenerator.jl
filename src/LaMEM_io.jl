@@ -13,6 +13,47 @@ import Base: show, size
 export LaMEM_grid, read_LaMEM_inputfile
 export save_LaMEM_markers_parallel, save_LaMEM_topography
 export get_processor_partitioning, read_data_VTR, read_data_PVTR, create_partitioning_file
+export crop_bounds, get_proc_bound, get_proc_grid, get_particles_distribution, get_LaMEM_grid_info, get_processor_partitioning_info, check_markers_directory, setup_model_domain, LaMEMPartitioningInfo, write_processor_partitioning_LaMEM, insert_cpu_lines_after_nelz, update_nel_xyz_in_file
+
+"""
+Structure that holds information about the LaMEM partitioning
+"""
+struct LaMEMPartitioningInfo <: AbstractGeneralGrid
+
+    # Number of processors in each direction
+    nProcX::Int64
+    nProcY::Int64
+    nProcZ::Int64
+    # Number of nodes in each direction
+    nNodeX::Int64
+    nNodeY::Int64
+    nNodeZ::Int64
+    # Coordinates of the nodes end of each processor
+    xc::Vector{Float64}
+    yc::Vector{Float64}
+    zc::Vector{Float64}
+
+    # Indexes of the nodes from full vectors of each processor
+    ix::Vector{Int64}
+    iy::Vector{Int64}
+    iz::Vector{Int64}
+    
+
+end
+
+"""
+Structure that holds information about the LaMEM particles distribution for partitioning
+"""
+struct ParticlesDistribution <: AbstractGeneralGrid
+
+    x_start::Vector{Int64}
+    x_end::Vector{Int64}
+    y_start::Vector{Int64}
+    y_end::Vector{Int64}
+    z_start::Vector{Int64}
+    z_end::Vector{Int64}
+
+end
 
 """
 Structure that holds information about the LaMEM grid (usually read from an input file).
@@ -514,6 +555,28 @@ function get_ind(x, xc, Nprocx)
     return xi, ix_start, ix_end
 end
 
+# Same as get_ind but without the need for the x vector
+function get_ind2(dx, xc, Nprocx)
+
+    if Nprocx == 1
+        xi = Int(round((xc[end] - xc[1]) / dx))
+        ix_start = [1]
+        ix_end = [xi]
+    else
+        xi = zeros(Int64, Nprocx)
+        for k in 1:Nprocx
+            xi[k] = round((xc[k + 1] - xc[k]) / dx)
+        end
+
+        ix_start = @views cumsum([0; xi[1:(end - 1)]]) .+ 1
+        ix_end = cumsum(xi)
+
+    end
+
+    return xi, ix_start, ix_end
+
+end
+
 # Internal routine
 function get_numscheme(Nprocx, Nprocy, Nprocz)
     n = zeros(Int64, Nprocx * Nprocy * Nprocz)
@@ -984,6 +1047,53 @@ function save_LaMEM_topography(Topo::CartData, filename::String)
 end
 
 """
+write_processor_partitioning_LaMEM(P::LaMEMPartitioningInfo; is64bit::Bool = false)	
+
+Writes the processor partitioning information `P` to a binary file in the format used by LaMEM.
+The file is named `ProcessorPartitioning_(P.nProcX*P.nProcY*P.nProcZ)cpu_(P.nProcX).(P.nProcY).(P.nProcZ).bin` and returned as string.
+The coordinates are written as Float64, and the processor counts and node counts as Int64 or Int32, depending on the `is64bit` flag.
+"""
+function write_processor_partitioning_LaMEM(
+    P::LaMEMPartitioningInfo;
+    is64bit::Bool = false
+)
+    xcoor = range(P.xc[1], P.xc[end], length=P.nNodeX)
+    ycoor = range(P.yc[1], P.yc[end], length=P.nNodeY)
+    zcoor = range(P.zc[1], P.zc[end], length=P.nNodeZ)
+
+    filename = "ProcessorPartitioning_$(P.nProcX*P.nProcY*P.nProcZ)cpu_$(P.nProcX).$(P.nProcY).$(P.nProcZ).bin"
+    typ = is64bit ? Int64 : Int32
+    open(filename, "w") do io
+        # Write processor counts (Int64, big-endian)
+        write(io, hton(typ(P.nProcX)))
+        write(io, hton(typ(P.nProcY)))
+        write(io, hton(typ(P.nProcZ)))
+        # Write node counts (Int64, big-endian)
+        write(io, hton(typ(P.nNodeX)))
+        write(io, hton(typ(P.nNodeY)))
+        write(io, hton(typ(P.nNodeZ)))
+        # Write indexes for each processor division (Int64, big-endian)
+        write(io, hton.(P.ix .- 1))
+        write(io, hton.(P.iy .- 1))
+        write(io, hton.(P.iz .- 1))
+        # Write scaling (use 1.0)
+        write(io, hton(Float64(1.0)))
+        # Write coordinates (Float64, big-endian)
+        write(io, hton.(xcoor))
+        write(io, hton.(ycoor))
+        write(io, hton.(zcoor))
+
+        xcoor = []
+        ycoor = []
+        zcoor = []
+
+    end
+    println("Processor partitioning written to $filename")
+    return filename
+end
+
+
+"""
     create_partitioning_file(LaMEM_input::String, NumProc::Int64; LaMEM_dir::String=pwd(), LaMEM_options::String="", MPI_dir="", verbose=true)
 
 This executes LaMEM for the input file `LaMEM_input` & creates a parallel partitioning file for `NumProc` processors.
@@ -1036,4 +1146,693 @@ function coordinate_grids(Data::LaMEM_grid; cell = false)
     end
 
     return X, Y, Z
+end
+
+function Base.show(io::IO, d::LaMEMPartitioningInfo)
+
+    println(io, "LaMEM Partitioning info: ")
+    println(io, "  nProcX : $(d.nProcX)")
+    println(io, "  nProcY : $(d.nProcY)")
+    println(io, "  nProcZ : $(d.nProcZ)")
+    println(io, "  nNodeX : $(d.nNodeX)")
+    println(io, "  nNodeY : $(d.nNodeY)")
+    println(io, "  nNodeZ : $(d.nNodeZ)")
+    println(io, "  xc     : $(d.xc)")
+    println(io, "  yc     : $(d.yc)")
+    println(io, "  zc     : $(d.zc)")
+
+    println(io, "  ix     : $(d.ix)")
+    println(io, "  iy     : $(d.iy)")
+    println(io, "  iz     : $(d.iz)")
+    
+    return nothing
+
+end
+
+function check_markers_directory(directory)
+    return if !isdir(directory) mkdir(directory) end
+end
+
+function get_LaMEM_grid_info(file; args::Union{String, Nothing} = nothing)
+
+    # read information from file
+    nmark_x = GeophysicalModelGenerator.ParseValue_LaMEM_InputFile(file, "nmark_x", Int64, args = args)
+    nmark_y = GeophysicalModelGenerator.ParseValue_LaMEM_InputFile(file, "nmark_y", Int64, args = args)
+    nmark_z = GeophysicalModelGenerator.ParseValue_LaMEM_InputFile(file, "nmark_z", Int64, args = args)
+
+    nel_x = GeophysicalModelGenerator.ParseValue_LaMEM_InputFile(file, "nel_x", Int64, args = args)
+    nel_y = GeophysicalModelGenerator.ParseValue_LaMEM_InputFile(file, "nel_y", Int64, args = args)
+    nel_z = GeophysicalModelGenerator.ParseValue_LaMEM_InputFile(file, "nel_z", Int64, args = args)
+
+    parsed_x = GeophysicalModelGenerator.ParseValue_LaMEM_InputFile(file, "coord_x", Float64, args = args)
+    parsed_y = GeophysicalModelGenerator.ParseValue_LaMEM_InputFile(file, "coord_y", Float64, args = args)
+    parsed_z = GeophysicalModelGenerator.ParseValue_LaMEM_InputFile(file, "coord_z", Float64, args = args)
+
+    # compute information from file
+    W = parsed_x[end] - parsed_x[1]
+    L = parsed_y[end] - parsed_y[1]
+    H = parsed_z[end] - parsed_z[1]
+
+    nel_x_tot = sum(nel_x)
+    nel_y_tot = sum(nel_y)
+    nel_z_tot = sum(nel_z)
+
+    nump_x = nel_x_tot * nmark_x
+    nump_y = nel_y_tot * nmark_y
+    nump_z = nel_z_tot * nmark_z
+
+    # finish Grid
+    Grid = LaMEM_grid(
+        nmark_x, nmark_y, nmark_z,
+        nump_x, nump_y, nump_z,
+        nel_x, nel_y, nel_z,
+        W, L, H,
+        parsed_x, parsed_y, parsed_z,
+        [], [], [],
+        [], [], [],
+        [], [], [],
+        [], [], []
+    )
+
+    return Grid
+
+end
+
+
+"""
+    p_dist = get_particles_distribution(Grid, P)
+ Get the distribution of particles in the grid
+    Grid: LaMEM_grid
+    P:    LaMEMPartitioningInfo
+ Returns a LaMEMPartitioningInfo object with the distribution of particles in the grid
+"""
+function get_particles_distribution(Grid, P)
+
+    # get number of processors and processor coordnate bounds
+    nProcX = P.nProcX
+    nProcY = P.nProcY
+    nProcZ = P.nProcZ
+    xc = P.xc
+    yc = P.yc
+    zc = P.zc
+
+    (num, num_i, num_j, num_k) = get_numscheme(nProcX, nProcY, nProcZ)
+
+    dx = Grid.W / Grid.nump_x
+    dy = Grid.L / Grid.nump_y
+    dz = Grid.H / Grid.nump_z
+
+    # % Get particles of respective procs
+    # % xi - amount of particles in x direction in each core
+    # % ix_start - indexes where they start for each core
+    (xi, ix_start, ix_end) = get_ind2(dx, xc, nProcX)
+    (yi, iy_start, iy_end) = get_ind2(dy, yc, nProcY)
+    (zi, iz_start, iz_end) = get_ind2(dz, zc, nProcZ)
+
+    x_start = ix_start[num_i[:]]
+    y_start = iy_start[num_j[:]]
+    z_start = iz_start[num_k[:]]
+    x_end = ix_end[num_i[:]]
+    y_end = iy_end[num_j[:]]
+    z_end = iz_end[num_k[:]]
+
+    p_dist = ParticlesDistribution(x_start, x_end, y_start, y_end, z_start, z_end)
+
+    return p_dist
+
+end
+
+"""
+    Grid = get_proc_grid(Grid_info, p_dist, proc_bounds, proc_num, RandomNoise)
+ Get the local grid for the current processor
+    Grid_info:   LaMEM_grid
+    p_dist:      LaMEMPartitioningInfo
+    proc_bounds: bounds of the current processor
+    proc_num:    processor number
+    RandomNoise: add random noise to the grid (0/1)
+ Returns a LaMEM_grid object with the local grid for the current processor
+"""
+function get_proc_grid(Grid_info, p_dist, proc_bounds, proc_num, RandomNoise)
+
+    x_proc_bound = proc_bounds[1]
+    y_proc_bound = proc_bounds[2]
+    z_proc_bound = proc_bounds[3]
+
+    loc_nump_x = p_dist.x_end[proc_num] - p_dist.x_start[proc_num] + 1
+    loc_nump_y = p_dist.y_end[proc_num] - p_dist.y_start[proc_num] + 1
+    loc_nump_z = p_dist.z_end[proc_num] - p_dist.z_start[proc_num] + 1
+
+    loc_nel_x = loc_nump_x / Grid_info.nmark_x
+    loc_nel_y = loc_nump_y / Grid_info.nmark_y
+    loc_nel_z = loc_nump_z / Grid_info.nmark_z
+
+    x = range(x_proc_bound[1], x_proc_bound[2], length = loc_nump_x)
+    y = range(y_proc_bound[1], y_proc_bound[2], length = loc_nump_y)
+    z = range(z_proc_bound[1], z_proc_bound[2], length = loc_nump_z)
+
+    # marker grid
+    X, Y, Z = GeophysicalModelGenerator.xyz_grid(x, y, z)
+
+    W = x_proc_bound[2] - x_proc_bound[1]
+    L = y_proc_bound[2] - y_proc_bound[1]
+    H = z_proc_bound[2] - z_proc_bound[1]
+
+    if RandomNoise == 1
+        dx = x[2] - x[1]
+        dy = y[2] - y[1]
+        dz = z[2] - z[1]
+        dXNoise = zeros(size(X)) + dx
+        dYNoise = zeros(size(Y)) + dy
+        dZNoise = zeros(size(Z)) + dz
+        
+        dXNoise = dXNoise .* (rand(size(dXNoise)) - 0.5)
+        dYNoise = dYNoise .* (rand(size(dYNoise)) - 0.5)
+        dZNoise = dZNoise .* (rand(size(dZNoise)) - 0.5)
+        
+        X .+= dXNoise
+        Y .+= dYNoise
+        Z .+= dZNoise
+        x = X(1, :, 1)
+        y = Y(:, 1, 1)
+        z = Z(1, 1, :)
+    
+    end
+
+    Grid = LaMEM_grid(
+        Grid_info.nmark_x, Grid_info.nmark_y, Grid_info.nmark_z,
+        loc_nump_x, loc_nump_y, loc_nump_z,
+        loc_nel_x, loc_nel_y, loc_nel_z,
+        W, L, H,
+        x, y, z,
+        x, y, z,
+        X, Y, Z,
+        [], [], [],
+        [], [], []
+    )
+    return Grid
+
+end
+
+"""
+proc_bounds = get_proc_bound(Grid, p_dist, proc_num)
+ Get the bounds of the current processor in x, y, z direction
+    Grid:       LaMEM_grid
+    p_dist:     LaMEMPartitioningInfo
+    proc_num:   processor number
+ Returns a 3 element vector with maximum and minimum values[[x_min, x_max],[y_min, y_max],[z_min, z_max]] for current processor proc_num
+
+# Example for a model with 8 MPI ranks for current processor number 2
+And gives us coordinates for the current processor
+```julia
+Grid_example = LaMEM_grid(
+        3, 3, 3,
+        12, 12, 12,
+        4,   4,   4,
+        10, 5, 5,
+        [10.0, 18.0], [20,28], [30,38],
+        [],[],[],
+        [],[],[],
+        [],[],[],
+        [],[],[]
+    )
+P_example      = setup_model_domain(Grid_example.coord_x, Grid_example.coord_y, Grid_example.coord_z, Grid_example.nel_x, Grid_example.nel_x, Grid_example.nel_x, 8)
+p_dist_example = get_ParticlesDistribution(Grid_example,P_example)
+proc_bounds    = get_proc_bound(Grid_example,p_dist_example,2)
+```
+"""
+function get_proc_bound(Grid, p_dist, proc_num)
+
+    dx = Grid.W / Grid.nump_x
+    dy = Grid.L / Grid.nump_y
+    dz = Grid.H / Grid.nump_z
+
+    parsed_x = Grid.coord_x
+    parsed_y = Grid.coord_y
+    parsed_z = Grid.coord_z
+
+    model_x = [parsed_x[1] + dx / 2, parsed_x[end] - dx / 2]
+    model_y = [parsed_y[1] + dy / 2, parsed_y[end] - dy / 2]
+    model_z = [parsed_z[1] + dz / 2, parsed_z[end] - dz / 2]
+
+    x_left = model_x[1]
+    y_front = model_y[1]
+    z_bot = model_z[1]
+
+    x_start = p_dist.x_start
+    x_end = p_dist.x_end
+    y_start = p_dist.y_start
+    y_end = p_dist.y_end
+    z_start = p_dist.z_start
+    z_end = p_dist.z_end
+
+    x_proc_bound = [x_left + dx * (x_start[proc_num] - 1), x_left + dx * (x_end[proc_num] - 1)]
+    y_proc_bound = [y_front + dy * (y_start[proc_num] - 1), y_front + dy * (y_end[proc_num] - 1)]
+    z_proc_bound = [z_bot + dz * (z_start[proc_num] - 1), z_bot + dz * (z_end[proc_num] - 1)]
+
+    return [x_proc_bound, y_proc_bound, z_proc_bound]
+
+end
+
+"""
+    crop_bounds(uncropped_bounds, proc_bounds, x, y, z)
+    Crop boundaries from the whole model to only the extent of the current processor
+    uncropped_bounds: 3 element vector with maximum and minimum values[[x_min, x_max],[y_min, y_max],[z_min, z_max]] for the whole model
+    proc_bounds:      3 element vector with maximum and minimum values[[x_min, x_max],[y_min, y_max],[z_min, z_max]] for the current processor
+    x,y,z:           3 element vector with maximum and minimum values[[x_min, x_max],[y_min, y_max],[z_min, z_max]] for the current processor
+    Returns a 3 element vector with maximum and minimum values[[x_min, x_max],[y_min, y_max],[z_min, z_max]] for the current processor
+"""
+function crop_bounds(uncropped_bounds, proc_bounds, x, y, z)
+
+    # Crop boundaries from the whole model to only the extent of the current processor
+    vecs = [x, y, z]
+    new_bounds = [zeros(size(vecs[i])) for i in eachindex(vecs)]
+    for i in eachindex(vecs)
+        vec = vecs[i]
+        test_bound = uncropped_bounds[i]
+        mask_bound = proc_bounds[i]
+
+        new_bound = Float64[]
+
+        if test_bound[1] < test_bound[2]
+            if test_bound[1] <= mask_bound[1]
+                if test_bound[2] >= mask_bound[2]
+                    new_bound = [mask_bound[1], mask_bound[2]]
+                elseif test_bound[2] >= mask_bound[1]
+                    new_bound = [mask_bound[1], test_bound[2]]
+                end
+            end
+
+            if test_bound[1] >= mask_bound[1]
+                if test_bound[2] <= mask_bound[2]
+                    new_bound = [closest_val(test_bound[1], vec), closest_val(test_bound[2], vec)]
+                elseif test_bound[1] <= mask_bound[2] && test_bound[2] >= mask_bound[2]
+                    new_bound = [test_bound[1], mask_bound[2]]
+                end
+            end
+        else
+            error("Wrong coordinates assignment")
+        end
+
+        if isempty(new_bound)
+            return []
+        end
+        new_bounds[i] = new_bound
+    end
+
+    return new_bounds
+
+end
+
+function closest_val(val, vec)
+    return vec[argmin(abs.(vec .- val))]
+end
+
+"""
+    decompose_mpi_ranks(total_ranks::Int, nx::Int, ny::Int, nz::Int) -> Tuple{Int,Int,Int}
+
+Decompose total number of MPI ranks into a 3D processor grid (px, py, pz),
+optimizing for cell aspect ratio closest to 1.0.
+"""
+function decompose_mpi_ranks(total_ranks::Int, nx::Int, ny::Int, nz::Int)
+    # Get all factors of total_ranks
+    factors = get_factors(total_ranks)
+    # Initialize best configuration
+    best_px = 1
+    best_py = 1
+    best_pz = 1
+    best_metric = Inf
+    first_best_metric = nothing  # To store the first best metric
+
+    # Try all possible combinations of factors
+    for px in factors
+        remaining = total_ranks ÷ px
+        rem_factors = get_factors(remaining)
+        
+        for py in rem_factors
+            pz = remaining ÷ py
+            
+            # Skip invalid combinations
+            if px * py * pz != total_ranks
+                continue
+            end
+            
+            # Calculate local grid sizes
+            local_nx = nx / px
+            local_ny = ny / py
+            local_nz = nz / pz
+            
+            if mod(nx, px) != 0 || mod(ny, py) != 0 || mod(nz, pz) != 0
+                continue  # Skip this iteration if any of them is not an integer
+            end
+    
+            # Calculate aspect ratios (always ≥ 1.0)
+            ar_xy = max(local_nx/local_ny, local_ny/local_nx)
+            ar_xz = max(local_nx/local_nz, local_nz/local_nx)
+            ar_yz = max(local_ny/local_nz, local_nz/local_ny)
+            
+            # Metric: average deviation from aspect ratio of 1.0
+            metric = (ar_xy + ar_xz + ar_yz) / 3.0
+
+            # Update best configuration if this one is better
+        if metric < best_metric
+
+            best_metric = metric
+            best_px = px
+            best_py = py
+            best_pz = pz
+            first_best_metric = metric  # Store the first best metric
+
+        elseif isapprox(metric, best_metric, rtol=1e-10)
+
+            # If the metric is equal to the first best metric, skip updating
+            if first_best_metric !== nothing && isapprox(metric, first_best_metric, rtol=1e-10)
+                continue
+            end
+
+        end
+        end
+    end
+    if best_metric == Inf
+        error("No valid decomposition found for total_ranks = $total_ranks")
+        
+    end
+    return (best_px, best_py, best_pz)
+end
+
+"""
+Get all factors of a number n
+"""
+function get_factors(n::Int)
+    factors = Int[]
+    for i in 1:isqrt(n)
+        if n % i == 0
+            push!(factors, i)
+            if i != n÷i
+                push!(factors, n÷i)
+            end
+        end
+    end
+    sort!(factors)
+    return factors
+end
+
+"""
+    setup_model_domain(coord_x::Vector{Float64}, 
+                      coord_y::Vector{Float64}, 
+                      coord_z::Vector{Float64},
+                      nx::Int, ny::Int, nz::Int, 
+                      n_ranks::Int) -> ModelDomain
+
+Setup model domain decomposition using domain boundaries and resolution.
+
+Parameters:
+- coord_x, coord_y, coord_z: 2-element vectors specifying [min, max] for each direction
+- nx, ny, nz: Number of cells in each direction
+- n_ranks: Total number of MPI ranks
+
+Returns:
+- ModelDomain struct containing all domain decomposition information
+"""
+function setup_model_domain(coord_x::AbstractVector{<:Real}, 
+                            coord_y::AbstractVector{<:Real}, 
+                            coord_z::AbstractVector{<:Real},
+                            nx::Int, ny::Int, nz::Int,
+                            n_ranks::Int; verbose::Bool = true)
+    
+    # Verify input vectors have correct size
+    if any(length.([coord_x, coord_y, coord_z]) .!= 2)
+        error("coord_x, coord_y, and coord_z must be 2-element vectors [min, max]")
+    end
+    
+    # Generate full coordinate vectors
+    nnodx = nx + 1
+    nnody = ny + 1
+    nnodz = nz + 1
+    
+    xcoor = range(coord_x[1], coord_x[2], length=nnodx)
+    ycoor = range(coord_y[1], coord_y[2], length=nnody)
+    zcoor = range(coord_z[1], coord_z[2], length=nnodz)
+    
+    check_multigrid_compatibility(nx, ny, nz, n_ranks, verbose)
+
+    # Decompose MPI ranks into 3D processor grid
+    Nprocx, Nprocy, Nprocz = decompose_mpi_ranks(n_ranks, nx, ny, nz)
+    
+    # Calculate subdomain divisions
+    function calculate_domain_divisions(N::Int, nproc::Int)
+        base_size = div(N, nproc)
+        remainder = N % nproc
+        
+        indices = zeros(Int, nproc + 1)
+        indices[1] = 1
+        
+        for i in 1:nproc
+            local_size = base_size + (i <= remainder ? 1 : 0)
+            indices[i + 1] = indices[i] + local_size
+        end
+        
+        return indices
+    end
+    
+    # Calculate divisions for each direction
+    ix = calculate_domain_divisions(nx, Nprocx)
+    iy = calculate_domain_divisions(ny, Nprocy)
+    iz = calculate_domain_divisions(nz, Nprocz)
+
+    P = LaMEMPartitioningInfo(
+        Nprocx, Nprocy, Nprocz,
+        nnodx, nnody, nnodz, 
+        xcoor[ix], ycoor[iy], zcoor[iz],
+        ix, iy, iz
+        )
+
+        xcoor = []
+        ycoor = []
+        zcoor = []
+
+    return P
+
+end
+
+"""
+    check_multigrid_compatibility(nx::Int, ny::Int, nz::Int, total_ranks::Int)
+
+Check if the model resolution and MPI ranks are optimal for multigrid methods.
+
+"""
+function check_multigrid_compatibility(nx::Int, ny::Int, nz::Int, total_ranks::Int, verbose::Bool = true)
+    # Generate arrays of valid numbers for resolution
+    powers_of_2 = [2^i for i in 1:15]  # Up to 32768
+    multiples_of_48 = [48*i for i in 1:683]  # Up to 32784
+    valid_resolution_numbers = sort(unique([powers_of_2; multiples_of_48]))
+    
+    # Generate valid rank sequence algorithmically
+    valid_rank_numbers = generate_valid_rank_sequence()
+
+    # Function to find closest valid number
+    function find_closest_valid(n, valid_array)
+        idx = searchsortedfirst(valid_array, n)
+        if idx > length(valid_array)
+            return valid_array[end]
+        elseif idx == 1
+            return valid_array[1]
+        else
+            prev = valid_array[idx-1]
+            curr = valid_array[idx]
+            return abs(n - prev) < abs(n - curr) ? prev : curr
+        end
+    end
+    
+    # Function to check if a number is valid for resolution
+    function is_valid_resolution(n)
+        # Check if power of 2
+        if (n & (n - 1)) == 0 && n != 0
+            return true
+        end
+        # Check if multiple of 48
+        return n % 48 == 0
+    end
+    
+    # Function to check if a number is valid for ranks
+    function is_valid_ranks(n)
+        return n in valid_rank_numbers
+    end
+    
+    # Check each value
+    is_nx_valid = is_valid_resolution(nx)
+    is_ny_valid = is_valid_resolution(ny)
+    is_nz_valid = is_valid_resolution(nz)
+    is_ranks_valid = is_valid_ranks(total_ranks)
+    
+    all_valid = is_nx_valid && is_ny_valid && is_nz_valid && is_ranks_valid
+    
+    # Generate suggestions for invalid values
+    suggestions = Dict{String, Int}()
+    if !is_nx_valid
+        suggestions["nx"] = find_closest_valid(nx, valid_resolution_numbers)
+    end
+    if !is_ny_valid
+        suggestions["ny"] = find_closest_valid(ny, valid_resolution_numbers)
+    end
+    if !is_nz_valid
+        suggestions["nz"] = find_closest_valid(nz, valid_resolution_numbers)
+    end
+    if !is_ranks_valid
+        suggestions["total_ranks"] = find_closest_valid(total_ranks, valid_rank_numbers)
+    end
+    
+    # Print warnings and suggestions
+    if !all_valid && verbose
+        println("\nWARNING: Non-optimal configuration detected for multigrid method!")
+        println("\nCurrent configuration:")
+        println("nx = $nx ($(is_nx_valid ? "optimal" : "non-optimal "))")
+        println("ny = $ny ($(is_ny_valid ? "optimal" : "non-optimal "))")
+        println("nz = $nz ($(is_nz_valid ? "optimal" : "non-optimal "))")
+        println("total_ranks = $total_ranks ($(is_ranks_valid ? "optimal" : "non-optimal"))")
+        
+        println("\nSuggested optimal configuration:")
+        println("nx = $(get(suggestions, "nx", nx))")
+        println("ny = $(get(suggestions, "ny", ny))")
+        println("nz = $(get(suggestions, "nz", nz))")
+        println("total_ranks = $(get(suggestions, "total_ranks", total_ranks))")
+    end
+    
+    return
+end
+
+"""
+    generate_valid_rank_sequence(max_value::Int = 196608, multipliers::Vector{Int} = [3])
+
+Generate sequence of valid MPI ranks up to max_value.
+Sequence includes powers of 2 and their multiples by specified multipliers.
+"""
+function generate_valid_rank_sequence(max_value::Int = 196608, multipliers::Vector{Int} = [3])
+    valid_ranks = Int[]
+    power_of_2 = 2
+    
+    while power_of_2 <= max_value
+        push!(valid_ranks, power_of_2)
+        
+        for m in multipliers
+            multiple = m * (power_of_2 ÷ 2)
+            if multiple <= max_value
+                push!(valid_ranks, multiple)
+            end
+        end
+        
+        power_of_2 *= 2
+    end
+    
+    return sort(unique(valid_ranks))
+end
+
+"""
+update_nel_xyz_in_file(ParamFile_name, nx, ny, nz)
+Generates or updates CPU lines in a LaMEM input file after the `nel_z` line.
+Usage:
+1. Generate LaMEM model
+# Target resolution is 256x256x256.
+nx = 256; ny = 256; nz = 256
+ParamFile_name = "LaMEM_setup.txt"
+model = Model(  LaMEM.Grid(x=[-80.,80.], y=[-95.,100.], z=[-60.0,10.0] , 
+                    nel=(8,8,8)),Output(param_file_name     = ParamFile_name,))
+Notice that here nel is a very small number. Thick hacky way prevents us to generate huge grid at this stage.
+2. Once populated model with information, we save model as setup file in text.
+write_LaMEM_inputFile(model,ParamFile_name).
+3. Then we can use this function to update back amount of elements of each direction to the target one, so setup file is correct. 
+update_nel_xyz_in_file(ParamFile_name, nx, ny, nz)
+"""
+function update_nel_xyz_in_file(filename::String, nx::Int, ny::Int, nz::Int)
+    lines = readlines(filename)
+    for i in eachindex(lines)
+        if occursin("nel_x", lines[i])
+            lines[i] = "    nel_x   =  $nx"
+        elseif occursin("nel_y", lines[i])
+            lines[i] = "    nel_y   =  $ny"
+        elseif occursin("nel_z", lines[i])
+            lines[i] = "    nel_z   =  $nz"
+        end
+    end
+    open(filename, "w") do io
+        for line in lines
+            println(io, line)
+        end
+    end
+end
+
+
+"""
+insert_cpu_lines_after_nelz(filename::String, P)
+Inserts or updates CPU lines in a LaMEM input file after the `nel_z` line.
+If CPU lines already exist, they are replaced with the new values from `P`.
+If they do not exist, new lines are inserted.
+Usage:
+1. Generate LaMEM model and save it to a setup file, and update to correct target resolution after saving.
+# Target resolution is 256x256x256 and we want to run on 128 processors n_ranks
+nx = 256; ny = 256; nz = 256; n_ranks = 128
+ParamFile_name = "LaMEM_setup.txt"
+model = Model(  LaMEM.Grid(x=[-80.,80.], y=[-95.,100.], z=[-60.0,10.0] , 
+                    nel=(8,8,8)),Output(param_file_name     = ParamFile_name,))
+write_LaMEM_inputFile(model,ParamFile_name).
+update_nel_xyz_in_file(ParamFile_name, nx, ny, nz)
+2. Create a partitioning info object `P` with the number of processes.
+Grid_info = get_LaMEM_grid_info(ParamFile_name)
+P         = setup_model_domain(Grid_info.coord_x, Grid_info.coord_y, Grid_info.coord_z, nx, ny, nz, n_ranks)
+2. Then we can use this function to insert or update CPU lines in the setup file.
+insert_cpu_lines_after_nelz(ParamFile_name, P)
+
+Use-case:This allows to run correctly LaMEM simulation with the correct number of processes on each direction if partitioning file is generated by julia routine:
+part_filename = write_processor_partitioning_LaMEM(P; is64bit=true) # always use is64bit=true
+insert_cpu_lines_after_nelz(ParamFile_name, P)
+Grid_o    = read_LaMEM_inputfile(ParamFile_name);
+Phase_o   = zeros(UInt8, size(Grid_o.X));
+Temp_o    = zeros(size(Phase_o));
+Model3D_o = CartData(Grid_o, (Phases=Phase_o,Temp=Temp_o))
+save_LaMEM_markers_parallel(Model3D_o, PartitioningFile=part_filename,verbose = true, is64bit = true)
+run_lamem(ParamFile_name,n_ranks)
+"""
+function insert_cpu_lines_after_nelz(filename::String, P)
+    lines = readlines(filename)
+    newlines = String[]
+    inserted = false
+    skip_next_lines = 0
+    
+    for (i, line) in enumerate(lines)
+        if skip_next_lines > 0
+            skip_next_lines -= 1
+            continue
+        end
+        
+        push!(newlines, line)
+        
+        if !inserted && occursin("nel_z", line)
+            # Check if CPU lines already exist in the next few lines
+            if i + 4 <= length(lines) &&
+               occursin("cpu_x", lines[i+1]) &&
+               occursin("cpu_y", lines[i+2]) &&
+               occursin("cpu_z", lines[i+3])
+                # Replace existing lines
+                newlines[end] = ""  # Replace the current line with empty line
+                push!(newlines, "# Number of processes")
+                push!(newlines, "    cpu_x   =  $(P.nProcX)")
+                push!(newlines, "    cpu_y   =  $(P.nProcY)")
+                push!(newlines, "    cpu_z   =  $(P.nProcZ)")
+                skip_next_lines = 3  # Skip the next 3 lines (cpu_x, cpu_y, cpu_z)
+            else
+                # Insert new lines
+                push!(newlines, "")
+                push!(newlines, "# Number of processes")
+                push!(newlines, "    cpu_x   =  $(P.nProcX)")
+                push!(newlines, "    cpu_y   =  $(P.nProcY)")
+                push!(newlines, "    cpu_z   =  $(P.nProcZ)")
+            end
+            inserted = true
+        end
+    end
+    
+    open(filename, "w") do io
+        for line in newlines
+            println(io, line)
+        end
+    end
 end
