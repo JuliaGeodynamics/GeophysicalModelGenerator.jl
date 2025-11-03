@@ -305,7 +305,7 @@ function create_profile_screenshot!(Profile::ProfileData, DataSet::NamedTuple)
         else
             # we do not have this implemented
             #error("horizontal profiles not yet implemented")
-        end        
+        end
     end
     Profile.SurfData = tmp # assign to profile data structure
     return
@@ -390,32 +390,26 @@ end
 
 
 """
-    extract_ProfileData!(Profile::ProfileData,VolData::GeoData, SurfData::NamedTuple, PointData::NamedTuple, ScreenshotData::NamedTuple; DimsVolCross=(100,100),Depth_extent=nothing,DimsSurfCross=(100,),section_width=50)
+    extract_ProfileData!(Profile::ProfileData,VolData::GeoData, SurfData::NamedTuple, PointData::NamedTuple; DimsVolCross=(100,100),Depth_extent=nothing,DimsSurfCross=(100,),section_width=50, ScreenshotData=nothing)
 
 Extracts data along a vertical or horizontal profile
 """
-function extract_ProfileData!(Profile::ProfileData, VolData::Union{Nothing, GeoData} = nothing, SurfData::NamedTuple = NamedTuple(), PointData::NamedTuple = NamedTuple(),ScreenshotData::NamedTuple = NamedTuple(); DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km)
+function extract_ProfileData!(Profile::ProfileData, VolData::Union{Nothing, GeoData} = nothing, SurfData::NamedTuple = NamedTuple(), PointData::NamedTuple = NamedTuple(); DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km, ScreenshotData = nothing)
+
+    return extract_ProfileData!(Profile, VolData, SurfData, PointData, ScreenshotData; DimsVolCross = DimsVolCross, Depth_extent = Depth_extent, DimsSurfCross = DimsSurfCross, section_width = section_width)
+end
+
+# Internal method - called by the main method with ScreenshotData as positional argument
+function extract_ProfileData!(Profile::ProfileData, VolData::Union{Nothing, GeoData}, SurfData::NamedTuple, PointData::NamedTuple, ScreenshotData::Union{Nothing, NamedTuple}; DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km)
 
     if !isnothing(VolData)
         create_profile_volume!(Profile, VolData; DimsVolCross = DimsVolCross, Depth_extent = Depth_extent)
     end
     create_profile_surface!(Profile, SurfData, DimsSurfCross = DimsSurfCross)
     create_profile_point!(Profile, PointData, section_width = section_width)
-    if !isempty(ScreenshotData)
+    if !isnothing(ScreenshotData)
         create_profile_screenshot!(Profile, ScreenshotData)
     end
-    return nothing
-end
-
-"""
-    extract_ProfileData!(Profile::ProfileData,VolData::GeoData, SurfData::NamedTuple, PointData::NamedTuple; DimsVolCross=(100,100),Depth_extent=nothing,DimsSurfCross=(100,),section_width=50)
-
-Extracts data along a vertical or horizontal profile. 
-"""
-function extract_ProfileData!(Profile::ProfileData, VolData::Union{Nothing, GeoData} = nothing, SurfData::NamedTuple = NamedTuple(), PointData::NamedTuple = NamedTuple(); DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km)
-
-    # call the actual function to extract the profile data
-    extract_ProfileData!(Profile, VolData, SurfData, PointData,NamedTuple(); DimsVolCross = DimsVolCross, Depth_extent = Depth_extent, DimsSurfCross = DimsSurfCross, section_width = section_width)
     return nothing
 end
 
@@ -468,7 +462,7 @@ function extract_ProfileData(ProfileCoordFile::String, ProfileNumber::Int64, Dat
 
     # project data onto profile:
     extract_ProfileData!(
-        profile, VolData_combined, SurfData, PointData,
+        profile, VolData_combined, SurfData, PointData;
         DimsVolCross = DimsVolCross, DimsSurfCross = DimsSurfCross,
         Depth_extent = DepthVol, section_width = WidthPointProfile
     )

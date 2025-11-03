@@ -22,9 +22,8 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - '1.9'
-          - '1.10'
-          - '1.11'
+          - 'lts'
+          - '1'
           # - 'pre'
         os:
           - ubuntu-latest
@@ -36,11 +35,11 @@ jobs:
         include:
           - os: macOS-latest
             arch: aarch64
-            version: '1.10'
+            version: 'lts'
             allow_failure: false
           - os: macOS-latest
             arch: aarch64
-            version: '1.11'
+            version: '1'
             allow_failure: false
           - os: macOS-latest
             arch: aarch64
