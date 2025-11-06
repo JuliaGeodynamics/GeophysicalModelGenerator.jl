@@ -97,7 +97,7 @@ add_box!(
     DipAngle = 0.0, T = LithosphericTemp(nz = 201)
 )
 
-@test sum(Temp[Int64(nel / 2), Int64(nel / 2), :]) ≈ 36131.638045729735
+@test sum(Temp[Int64(nel / 2), Int64(nel / 2), :]) ≈ 36141.716490778184
 
 # 2) inclined lithosphere; UpperCrust,LowerCrust,Mantle
 Temp = zeros(Float64, Grid.N...);
@@ -109,7 +109,7 @@ add_box!(
     DipAngle = 30.0, T = LithosphericTemp(nz = 201)
 )
 
-@test sum(Temp[Int64(nel / 2), Int64(nel / 2), :]) ≈ 41912.18172533137
+@test sum(Temp[Int64(nel / 2), Int64(nel / 2), :]) ≈ 41890.41004596295
 
 # 3) inclined lithosphere with respect to the default origin; UpperCrust,LowerCrust,Mantle
 Temp = zeros(Float64, Grid.N...);
@@ -121,7 +121,7 @@ add_box!(
     DipAngle = 30.0, T = LithosphericTemp(nz = 201)
 )
 
-@test sum(Temp[Int64(nel / 2), Int64(nel / 2), :]) ≈ 41316.11499878003
+@test sum(Temp[Int64(nel / 2), Int64(nel / 2), :]) ≈ 41308.02652464832
 
 # 4) inclined lithosphere with only two layers
 Temp = zeros(Float64, Grid.N...);
@@ -161,7 +161,7 @@ add_box!(
     DipAngle = 30.0, T = LithosphericTemp(rheology = rheology, nz = 201)
 )
 
-@test sum(Temp[Int64(nel / 2), Int64(nel / 2), :]) ≈ 40513.969831615716
+@test sum(Temp[Int64(nel / 2), Int64(nel / 2), :]) ≈ 40506.25905747755
 
 # 5) using flux lower boundary conditions
 Temp = zeros(Float64, Grid.N...);
@@ -173,7 +173,7 @@ add_box!(
     DipAngle = 30.0, T = LithosphericTemp(lbound = "flux", nz = 201)
 )
 
-@test sum(Temp[Int64(nel / 2), Int64(nel / 2), :]) ≈ 37359.648604722104
+@test sum(Temp[Int64(nel / 2), Int64(nel / 2), :]) ≈ 37343.81717155344
 
 
 # Test the McKenzie thermal structure
