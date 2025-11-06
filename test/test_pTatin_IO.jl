@@ -10,3 +10,12 @@ fe_data = convert2FEData(q1_data)
 
 out = write_pTatin_mesh(fe_data)
 @test isnothing(out)
+@test isfile("md.bin")
+@test isfile("region_cell.bin")
+@test isfile("T_vertex.bin")
+@test isfile("Z_vertex.bin")
+
+rm("md.bin")
+rm("region_cell.bin")
+rm("T_vertex.bin")
+rm("Z_vertex.bin")
