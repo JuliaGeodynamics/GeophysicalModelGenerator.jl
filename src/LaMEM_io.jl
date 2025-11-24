@@ -493,7 +493,7 @@ function save_LaMEM_markers_parallel(Grid::CartData; PartitioningFile = empty, d
             println("Writing LaMEM marker file -> $fname")                   # print info
         end
         lvec_output = [lvec_info; lvec_prtcls]           # one vec with info about length
-        
+
         PetscBinaryWrite_Vec(fname, lvec_output)            # Write PETSc vector as binary file
 
     end
