@@ -45,15 +45,15 @@ jobs:
             allow_failure: false
           - os: macOS-latest
             arch: aarch64
-            version: 'pre'
+            version: '1.12'
             allow_failure: true
           - os: ubuntu-latest
             arch: x86
-            version: 'pre'
+            version: '1.12'
             allow_failure: true
           - os: windows-latest
             arch: x86
-            version: 'pre'
+            version: '1.12'
             allow_failure: true
     steps:
       - uses: actions/checkout@v4
