@@ -314,6 +314,46 @@ function add_box!(
 end
 
 """
+    add_box!(Phase, Temp, Grid::AbstractGeneralGrid,
+    bounds::AbstractVector{<:AbstractVector{<:Real}};
+    Origin = nothing, StrikeAngle = 0, DipAngle = 0,
+    phase = ConstantPhase(1),
+    T = nothing,
+    segments = nothing,
+    cell = false     )
+Add box function but getting bounds as a vector bounds in a way of [[xmin,xmax],[ymin,ymax],[zmin,zmax]]. If bounds is empty return nothing 
+"""
+function  add_box!(Phase, Temp, Grid::AbstractGeneralGrid,           # required input
+                bounds::Union{Vector{Any}, AbstractVector{<:AbstractVector{<:Real}}};    # limits of the box
+                Origin = nothing, StrikeAngle = 0, DipAngle = 0,     # origin & dip/strike
+                phase = ConstantPhase(1),                            # Sets the phase number(s) in the box
+                T = nothing,                                         # Sets the thermal structure (various functions are available)
+                segments = nothing,                                  # Allows defining multiple ridge segments
+                cell = false                                         # if true, Phase and Temp are defined on cell centers
+                ) 
+
+    if isempty(bounds)
+
+        return nothing
+        
+    else
+        
+        xlim=(Tuple(bounds[1])) 
+        ylim=(Tuple(bounds[2])) 
+        zlim=(Tuple(bounds[3]))
+
+        add_box!( 
+                Phase, Temp, Grid;       # required input
+                xlim     = xlim, ylim = ylim, zlim = zlim,     # limits of the box
+                Origin   = Origin, StrikeAngle = StrikeAngle, DipAngle = DipAngle,      # origin & dip/strike
+                phase    = phase,                          # Sets the phase number(s) in the box
+                T        = T,                                  # Sets the thermal structure (various functions are available)
+                cell     = cell )
+    end
+
+end
+
+"""
     add_layer!(Phase, Temp, Grid::AbstractGeneralGrid; xlim::Tuple = (1,100), [ylim::Tuple = (0,20)], zlim::Tuple = (0,-100),
             phase = ConstantPhase(1),
             T=nothing, cell=false )
@@ -771,6 +811,36 @@ function add_polygon!(
 end
 
 """
+    add_polygon!(Phase, Temp, Grid::AbstractGeneralGrid,
+    bounds::AbstractVector{<:AbstractVector{<:Real}};
+    phase = ConstantPhase(1),
+    T = nothing,
+    cell = false     )
+Add polygon function but getting bounds as a vector bounds in a way of [[xmin,xmax],[ymin,ymax],[zmin,zmax]]. If bounds is empty return nothing 
+"""
+function  add_polygon!(Phase, Temp, Grid::AbstractGeneralGrid,           # required input
+                bounds::Union{Vector{Any}, AbstractVector{<:AbstractVector{<:Real}}};    # limits of the box
+                phase = ConstantPhase(1),                            # Sets the phase number(s) in the box
+                T = nothing,                                         # Sets the thermal structure (various functions are available)
+                cell = false                                         # if true, Phase and Temp are defined on cell centers
+                ) 
+
+    if !isempty(bounds)        
+        xlim=(Tuple(bounds[1])) 
+        ylim=(Tuple(bounds[2])) 
+        zlim=(Tuple(bounds[3]))
+
+        add_polygon!( 
+                Phase, Temp, Grid;       # required input
+                xlim     = xlim, ylim = ylim, zlim = zlim,     # limits of the box
+                phase    = phase,                              # Sets the phase number(s) in the box
+                T        = T,                                  # Sets the thermal structure (various functions are available)
+                cell     = cell )
+    end
+
+end
+
+"""
         add_plate!(Phase, Temp, Grid::AbstractGeneralGrid; xlim=(), ylim=(), zlim::Tuple = (0.0,0.8), phase = ConstantPhase(1), T=nothing, segments=nothing, cell=false )
 Adds a tectonic plate with phase and temperature structure to a 3D model setup.
 This function enables the definition of tectonic plates in the xy plane and projects them along the z-axis, providing a flexible approach to model complex plate geometries.
@@ -858,9 +928,42 @@ function add_plate!(
 end
 
 """
+    add_plate!(Phase, Temp, Grid::AbstractGeneralGrid,
+    bounds::AbstractVector{<:AbstractVector{<:Real}};
+    phase = ConstantPhase(1),
+    T = nothing,
+    segments = nothing,
+    cell = false     )
+Add plate function but getting bounds as a vector bounds in a way of [[xmin,xmax],[ymin,ymax],[zmin,zmax]]. If bounds is empty return nothing 
+"""
+function  add_plate!(Phase, Temp, Grid::AbstractGeneralGrid,           # required input
+                bounds::Union{Vector{Any}, AbstractVector{<:AbstractVector{<:Real}}};    # limits of the box
+                phase = ConstantPhase(1),                            # Sets the phase number(s) in the box
+                T = nothing,                                         # Sets the thermal structure (various functions are available)
+                segments = nothing,                                  # Allows defining multiple ridge segments
+                cell = false                                         # if true, Phase and Temp are defined on cell centers
+                ) 
+
+    if !isempty(bounds)        
+        xlim=(Tuple(bounds[1])) 
+        ylim=(Tuple(bounds[2])) 
+        zlim=(Tuple(bounds[3]))
+
+        add_plate!( 
+                Phase, Temp, Grid;       # required input
+                xlim     = xlim, ylim = ylim, zlim = zlim,     # limits of the box
+                Origin   = Origin, StrikeAngle = StrikeAngle, DipAngle = DipAngle,      # origin & dip/strike
+                phase    = phase,                          # Sets the phase number(s) in the box
+                T        = T,                                  # Sets the thermal structure (various functions are available)
+                segments = segments,                     # Allows defining multiple ridge segments
+                cell     = cell )
+    end
+end
+
+"""
     xrot, yrot, zrot = Rot3D(X::Number,Y::Number,Z::Number, cosStrikeAngle, sindStrikeAngle, cosDipAngle, sinDipAngle)
 
-Perform rotation for a point in 3D space
+    Perform rotation for a point in 3D space
 """
 function Rot3D(X::_T, Y::_T, Z::_T, cosStrikeAngle::_T, sindStrikeAngle::_T, cosDipAngle::_T, sinDipAngle::_T) where {_T <: Number}
 
