@@ -12,7 +12,7 @@ using GeophysicalModelGenerator, GMT
 Topo = import_topo(lat=[45.5,47.7], lon=[5, 8.1], file="@earth_relief_03s.grd")
 
 
-# Next, we drape the geological map on top of the geological map. 
+# Next, we drape the geological map on top of the topography. 
 # The geological map was taken from the [2021 PhD thesis of Marc Schori](https://folia.unifr.ch/unifr/documents/313053) and saved as png map.
 # We downloaded the pdf map, and cropped it to the lower left and upper right corners.
 # The resulting map was uploaded to zenodo; it can be downloaded with
@@ -23,7 +23,7 @@ download_data("https://zenodo.org/records/10726801/files/SchoriM_Encl_01_Jura-ma
 lowerleft  = [4.54602510460251, 45.27456049638056, 0.0]
 upperright = [8.948117154811715, 47.781282316442606, 0.0]
 
-# We can now import the map with the `Screensho_To_GeoData` function:
+# We can now import the map with the `screenshot_To_GeoData` function:
 Geology  = screenshot_to_GeoData("SchoriM_Encl_01_Jura-map_A1.png", lowerleft, upperright, fieldname=:geology_colors) # name should have "colors" in it
 
 # You can "drape" this image on the topographic map with
