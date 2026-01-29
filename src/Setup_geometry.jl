@@ -265,15 +265,15 @@ function add_box!(
         ylim = (minimum(Y), maximum(Y))
     end
 
-    if Origin == nothing
-        Origin = (xlim[1], ylim[1], zlim[2])  # upper-left corner
-    end
-
     if Origin !== nothing && isa(T, McKenzie_subducting_slab)
         @warn  "McKenzie temperature does not require the definition of 'Origin' field; if Origin is defined it must be equal to [xmin,ymin,zmax] of the box that has been defined."
         if Origin[1] != xlim[1] || Origin[2] != ylim[1] || Origin[3] != zlim[2]
             @error  "Origin is not set up correctly. For fixing the problem Origin can be left blank or Origin = [xmin,ymin,zmax] of the box"
         end
+    end
+
+    if Origin == nothing
+        Origin = (xlim[1], ylim[1], zlim[2])  # upper-left corner
     end
 
     # Perform rotation of 3D coordinates:
@@ -1444,28 +1444,27 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::LithosphericTemp)
         dtfac, nz, rheology = s
 
     # Create 1D depth profile within the box
-    z = LinRange(round(maximum(Z)), round(minimum(Z)), nz)    # [km]
-    z = @. z * 1.0e3                                            # [m]
+    z = LinRange(maximum(Z) * 1.0e3, minimum(Z) * 1.0e3, nz)    # [m]
     dz = z[2] - z[1]                                         # Gride resolution
-
     # Initialize 1D arrays for explicit solver
     T = zeros(nz)
     phase = Int64.(zeros(nz))
 
     # Assign phase id from Phase to 1D phase array
     phaseid = (minimum(Phase):1:maximum(Phase))
-    ztop = round(maximum(Z[findall(Phase .== phaseid[1])]))
-    zlayer = zeros(length(phaseid))
+    zsurf = maximum(Z[findall(Phase .== phaseid[1])]) * 1.0e3
+    zbase = zeros(length(phaseid)) # base of each layer
+
+    # for each phase id
     for i in 1:length(phaseid)
         # Calculate layer thickness from Phase array
-        zlayer[i] = round(minimum(Z[findall(Phase .== phaseid[i])]))
-        zlayer[i] = zlayer[i] * 1.0e3
+        zbase[i] = minimum(Z[findall(Phase .== phaseid[i])]) * 1.0e3
     end
     for i in 1:length(phaseid)
         # Assign phase ids
-        ind = findall((z .>= zlayer[i]) .& (z .<= ztop))
+        ztop = i === 1 ? zsurf : zbase[i - 1]
+        ind = findall((z .>= zbase[i]) .& (z .<= ztop))
         phase[ind] .= phaseid[i]
-        ztop = zlayer[i]
     end
 
     # Setup initial T-profile

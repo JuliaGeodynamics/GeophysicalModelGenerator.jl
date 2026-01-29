@@ -2,6 +2,8 @@ name: CI
 
 on:
   push:
+    branches:
+      - main
   pull_request:
     branches:
       - main
@@ -22,13 +24,12 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - '1.9'
-          - '1.10'
-          - '1.11'
+          - 'lts'
+          - '1'
           # - 'pre'
         os:
           - ubuntu-latest
-          - macos-13
+          - macos-15-intel
           - windows-latest
         arch:
           - x64
@@ -36,23 +37,23 @@ jobs:
         include:
           - os: macOS-latest
             arch: aarch64
-            version: '1.10'
+            version: 'lts'
             allow_failure: false
           - os: macOS-latest
             arch: aarch64
-            version: '1.11'
+            version: '1'
             allow_failure: false
           - os: macOS-latest
             arch: aarch64
-            version: 'pre'
+            version: '1.12'
             allow_failure: true
           - os: ubuntu-latest
             arch: x86
-            version: 'pre'
+            version: '1.12'
             allow_failure: true
           - os: windows-latest
             arch: x86
-            version: 'pre'
+            version: '1.12'
             allow_failure: true
     steps:
       - uses: actions/checkout@v4
