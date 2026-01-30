@@ -43,7 +43,7 @@ PSwave_Koulakov
 # - Sum up the 3 models. 
 # - The resulting 3D map will have the number `3` at locations where all 3 models see a high-velocity anomaly (say a slab), implying that this feature is consistent between all models. Features that have a number 1 or 2 are only seen in a single or in 2/3 models.
 #
-# The result of this gives a feeling which features are consistent between the 3 models. It is ofcourse still subjective, as you still have to choose a criteria and as we are assuming in this that the 3 tomographic models are comparable (which they are not as they are produced using different amounts of datam, etc. etc.)
+# The result of this gives a feeling which features are consistent between the 3 models. It is ofcourse still subjective, as you still have to choose a criteria and as we are assuming in this that the 3 tomographic models are comparable (which they are not as they are produced using different amounts of data, etc. etc.).
 #
 # So how do we create Votemaps? 
 # Doing this is rather simple:

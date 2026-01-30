@@ -11,7 +11,7 @@ using GeophysicalModelGenerator;
 Tomo_Alps_full = load_GMG("https://zenodo.org/records/10738510/files/Paffrath_2021_SE_Pwave.jld2?download=1")
 
 # This is a so-called `GeoData` object, which is a 3D grid of seismic velocities as a function of longitude, latitude and depth, which can include various fields (here we only have a single field: `:dVp_Percentage`)
-# We can save this in `VTK` format, which is a widely used format that can for exampke be read by the 3D open-source visualization tool [Paraview](https://www.paraview.org/):
+# We can save this in `VTK` format, which is a widely used format that can for example be read by the 3D open-source visualization tool [Paraview](https://www.paraview.org/):
 write_paraview(Tomo_Alps_full,"Tomo_Alps_full")
 
 # We also uploaded a dataset with the topography of the Alpine region which can be downloaded with:
@@ -21,7 +21,7 @@ Topo_Alps = load_GMG("https://zenodo.org/records/10738510/files/AlpsTopo.jld2?do
 # We can write this to disk as well
 write_paraview(Topo_Alps,"Topo_Alps")
 
-# If we open both datasets in Paraview, and changing both files from outline/solid colors to the corresponding data field, we see:
+# If we open both datasets in Paraview, and change both files from outline/solid colors to the corresponding data field, we see:
 # ![Basic_Tutorial_1](../assets/img/Basic_Tutorial_Paraview_1.png)
 # Now we can change the colormap on the right side, marked by a red square. For topography we use the `Oleron` colormap, which you can download [here](https://www.fabiocrameri.ch/colourmaps/).
 # For the tomography we use the `Roma` scientific colormap. You will now see a blue'ish box of the tomography, this is not the best color to visualise the data. Let's invert the colormap by clicking on the item marked by the blue arrow.
@@ -110,7 +110,7 @@ write_paraview(data_200km,"data_200km");
 
 #
 # ### 4. Cartesian data
-# As you can see, the curvature or the Earth is taken into account here. Yet, for many applications it is more convenient to work in Cartesian coordinates (kilometers) rather then in geographic coordinates.
+# As you can see, the curvature of the Earth is taken into account here. Yet, for many applications it is more convenient to work in Cartesian coordinates (kilometers) rather then in geographic coordinates.
 # `GeophysicalModelGenerator` has a number of tools for this.
 # First we need do define a `ProjectionPoint`  around which we project the data
 proj = ProjectionPoint(Lon=12.0,Lat =43)

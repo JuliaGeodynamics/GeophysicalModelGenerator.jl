@@ -44,7 +44,7 @@ add_box!(Phases, Temp, Grid; xlim=(-800,0.0), ylim=(-400, 400.0), zlim=(-80.0, 0
         T=SpreadingRateTemp(SpreadingVel=v_spreading_cm_yr, MORside="right"), StrikeAngle=30);
 
 
-# And an an inclined part:
+# And an inclined part:
 AgeTrench = 800e3/(v_spreading_cm_yr/100)/1e6;
 #add_box!(Phases, Temp, Grid; xlim=(0,300), ylim=(-400, 400.0), zlim=(-80.0, 0.0), phase = lith, Origin = (0,0,0), T=HalfspaceCoolingTemp(Age=0), DipAngle=0, StrikeAngle=30);
 add_box!(Phases, Temp, Grid; xlim=(0,300), ylim=(-400, 400.0), zlim=(-80.0, 0.0), phase = lith, Origin = (0,0,0), T=HalfspaceCoolingTemp(Age=AgeTrench), DipAngle=30, StrikeAngle=30);
