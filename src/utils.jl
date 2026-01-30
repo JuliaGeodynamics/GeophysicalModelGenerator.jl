@@ -427,6 +427,7 @@ function cross_section_points(P::GeoData; Depth_level = nothing, Lat_level = not
 
     if !isnothing(Lat_level)   # vertical slice @ given latitude
 
+        # to define the projection point, only choose events close to the desired profile
         p_Point = ProjectionPoint(Lat = Lat_level, Lon = sum(P.lon.val) / length(P.lon.val)) # define the projection point (lat/lon) as the latitude and the mean of the longitudes of the data
         P_UTM = convert2UTMzone(P, p_Point) # convert to UTM
         ind = findall(-0.5 * ustrip(uconvert(u"m", section_width)) .< (P_UTM.NS.val .- p_Point.NS) .< 0.5 * ustrip(uconvert(u"m", section_width))) # find all points around the desired latitude level, UTM is in m, so we have to convert the section width
@@ -443,6 +444,8 @@ function cross_section_points(P::GeoData; Depth_level = nothing, Lat_level = not
     end
 
     if !isnothing(Lon_level)   # vertical slice @ given longitude
+        
+        # to define the projection point, only choose events close to the desired profile
         p_Point = ProjectionPoint(Lat = sum(P.lat.val) / length(P.lat.val), Lon = Lon_level) # define the projection point (lat/lon) as the latitude and the mean of the longitudes of the data
         P_UTM = convert2UTMzone(P, p_Point) # convert to UTM
         ind = findall(-0.5 * ustrip(uconvert(u"m", section_width)) .< (P_UTM.EW.val .- p_Point.EW) .< 0.5 * ustrip(uconvert(u"m", section_width))) # find all points around the desired longitude level, UTM is in m, so we have to convert the section width
@@ -466,11 +469,28 @@ function cross_section_points(P::GeoData; Depth_level = nothing, Lat_level = not
             error("Also define End coordinates if you indicate starting lon/lat value")
         end
 
-        # choose projection point based on Start and End coordinates of the profile
-        p_Point = ProjectionPoint(Lat = 0.5 * (Start[2] + End[2]), Lon = 0.5 * (Start[1] + End[1]))
+        p_Point = ProjectionPoint(Lat = 0.5 * (Start[2] + End[2]), Lon = 0.5 * (Start[1] + End[1])) # choose the projection point as the midpoint of the profile
 
         # convert P to UTM Data
-        P_UTM = convert2UTMzone(P, p_Point) # convert to UTM
+        # to avoid projection issues, reduce the given point data set to a set that is located abound the desired profile
+        # to choose the subset, we use a box around the profile with the profile width being added to the start and end points of the profile
+        # approximate formula: 
+        # Latitude: 1 deg = 110.574 km --> 1 km = 1/110.574 deg
+        # Longitude: 1 deg = 111.320*cos(latitude) km --> 1km = 1/ 111.320 / cos(latitude) 
+        lat_add = 1.1 * ustrip(uconvert(u"km", section_width))/110.574 # multiply with 1.1 to make sure the box is large enough
+        lat_start = minimum([Start[2],End[2]]) - lat_add;
+        lat_end   = maximum([Start[2],End[2]])   + lat_add;
+        
+        lon_add = 1.1*ustrip(uconvert(u"km", section_width))/111.3209
+
+        lon_start = minimum([Start[1],End[1]]) - lon_add/cos(deg2rad(minimum([Start[1],End[1]])))
+        lon_end   = maximum([Start[1],End[1]]) + lon_add/cos(deg2rad(maximum([Start[1],End[1]])))
+
+        ind = findall( (lon_start .< P.lon.val .< lon_end) .& (lat_start .< P.lat.val .< lat_end))
+
+        # now create a GeoData structure that only contains the subset, fields Magnitude and depth are hardcoded, more 
+        P_sub = GeoData(P.lon.val[ind], P.lat.val[ind], P.depth.val[ind], (Magnitude=P.fields.Magnitude[ind],Depth=P.fields.Depth[ind]))
+        P_UTM = convert2UTMzone(P_sub, p_Point) # convert to UTM
 
         # create a GeoData set containing the points that create the profile plane (we need three points to uniquely define that plane)
         # here, we define the points in a way that the angle between P1-P2 and P1-P3 vectors is 90° --> useful for the cross product
