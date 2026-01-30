@@ -406,28 +406,28 @@ function save_LaMEM_markers_parallel(Grid::CartData; PartitioningFile = empty, d
     y = ustrip.(Grid.y.val[1, :, 1])
     z = ustrip.(Grid.z.val[1, 1, :])
 
-    if haskey(Grid.fields, :Phases)
-        Phases = Grid.fields[:Phases]
+    Phases = if haskey(Grid.fields, :Phases)
+        Grid.fields[:Phases]
     else
         error("You must provide the field :Phases in the structure")
     end
 
-    if haskey(Grid.fields, :Temp)
-        Temp = Grid.fields[:Temp]
+    Temp = if haskey(Grid.fields, :Temp)
+        Grid.fields[:Temp]
     else
         if verbose
             println("Field :Temp is not provided; setting it to zero")
         end
-        Temp = zeros(size(Phases))
+        zeros(size(Phases))
     end
 
-    if haskey(Grid.fields, :APS)
-        APS = Grid.fields[:APS]
+    APS = if haskey(Grid.fields, :APS)
+        Grid.fields[:APS]
     else
         if verbose
             println("Field :APS is not provided; setting it to zero")
         end
-        APS = zeros(size(Phases))
+        zeros(size(Phases))
     end
 
     if PartitioningFile == empty
