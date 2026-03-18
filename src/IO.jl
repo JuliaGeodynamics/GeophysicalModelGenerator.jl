@@ -72,7 +72,7 @@ function load_GMG(filename::String, dir = pwd(); maxattempts = 5)
 
     # remove local temporary file
     if contains(filename, "http")
-        rm(joinpath(dir, local_filename), force=true)
+        rm(joinpath(dir, local_filename), force = true)
     end
 
     return data
@@ -118,4 +118,4 @@ function download_data(url::String, local_filename = "temp.dat"; dir = pwd(), ma
     end
 
     return file_ext
-end 
+end
