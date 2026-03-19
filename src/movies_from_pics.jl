@@ -9,11 +9,11 @@ using FFMPEG
 export movie_from_images
 
 """
-    movie_from_images(; dir=pwd(), file=nothing, outfile=nothing, framerate=10, copy_to_current_dir=true, type=:mp4_default, collect=true)
+    movie_from_images(; dir=pwd(), file=nothing, outfile=nothing, framerate=10, copy_to_current_dir=true, type=:mp4_default, gif=false, collect=true)
 
 The typical way to create animations with `Paraview` is to use the `Save Animation` option to save a series of `*.png` images.
 
-This function combines these images to an `*.mp4` movie.
+This function combines these images to an `*.mp4` movie (default) or a `*.gif` animation.
 
 Optional options
 ===
@@ -25,9 +25,11 @@ Optional options
 - `type`: type of movie that is created; possible options are:
     -  `:mp4_default`: Default option that saves a well-compressed `mp4` movie that works well for us on ipad and embedded in a powerpoint presentation.
     -  `:mov_hires`: Higher-resolution quicktime movie (larger filesize & not compatible with windows)
+    -  `:gif`: Animated GIF (same as passing `gif=true`).
+- `gif`: if `true`, creates a `*.gif` animation in addition to the `mp4` movie. If `type=:gif`, only a gif is created.
 - `collect`: suppresses output of `FFMPEG` if `true` (default).
 """
-function movie_from_images(; dir = pwd(), file = nothing, outfile = nothing, framerate = 10, copy_to_current_dir = true, type = :mp4_default)
+function movie_from_images(; dir = pwd(), file = nothing, outfile = nothing, framerate = 10, copy_to_current_dir = true, type = :mp4_default, gif = false)
     curdir = pwd()
     cd(dir)
     files = split.(readdir(), ".")
@@ -55,22 +57,48 @@ function movie_from_images(; dir = pwd(), file = nothing, outfile = nothing, fra
     elseif type == :mov_hires
         outfile_ext = outfile * ".mov"
         cmd = `-y -f image2 -framerate $framerate -i $file.%0$(le)d.$fileext  -c:v prores_ks -profile:v 1  $outfile_ext`
+    elseif type == :gif
+        gif = true  # ensure gif branch is taken below
+        outfile_ext = nothing
+        cmd = nothing
     else
         error("unknown movie type $type")
     end
 
-    # run
-    FFMPEG.exe(cmd, collect = true)
+    result = nothing
 
-    result = joinpath(pwd(), outfile_ext)
-    if copy_to_current_dir
-        # copy result
-        result = joinpath(curdir, outfile_ext)
-        cp(outfile_ext, result, force = true)
+    if type != :gif
+        # run ffmpeg for mp4/mov
+        FFMPEG.exe(cmd, collect = true)
+
+        result = joinpath(pwd(), outfile_ext)
+        if copy_to_current_dir
+            result = joinpath(curdir, outfile_ext)
+            cp(outfile_ext, result, force = true)
+        end
+        println("created movie: $result")
     end
-    println("created movie: $result")
+
+    if gif
+        # create palette for better gif quality, then encode gif
+        outfile_gif = outfile * ".gif"
+        palette = outfile * "_palette.png"
+        cmd_palette = `-y -framerate $framerate -f image2 -i $file.%0$(le)d.$fileext -vf palettegen $palette`
+        cmd_gif     = `-y -framerate $framerate -f image2 -i $file.%0$(le)d.$fileext -i $palette -lavfi paletteuse $outfile_gif`
+        FFMPEG.exe(cmd_palette, collect = true)
+        FFMPEG.exe(cmd_gif, collect = true)
+        rm(palette, force = true)
+
+        result_gif = joinpath(pwd(), outfile_gif)
+        if copy_to_current_dir
+            result_gif = joinpath(curdir, outfile_gif)
+            cp(outfile_gif, result_gif, force = true)
+        end
+        println("created gif: $result_gif")
+        isnothing(result) && (result = result_gif)
+    end
 
     cd(curdir)  # return to original directory
 
-    return outfile_ext
+    return isnothing(outfile_ext) ? outfile * ".gif" : outfile_ext
 end
