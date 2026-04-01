@@ -29,7 +29,7 @@ jobs:
           # - 'pre'
         os:
           - ubuntu-latest
-          - macos-13
+          - macos-15-intel
           - windows-latest
         arch:
           - x64
@@ -45,32 +45,25 @@ jobs:
             allow_failure: false
           - os: macOS-latest
             arch: aarch64
-            version: 'pre'
+            version: '1.12'
             allow_failure: true
           - os: ubuntu-latest
             arch: x86
-            version: 'pre'
+            version: '1.12'
             allow_failure: true
           - os: windows-latest
             arch: x86
-            version: 'pre'
+            version: '1.12'
             allow_failure: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
-      - uses: actions/cache@v4
-        env:
-          cache-name: cache-artifacts
+      - uses: julia-actions/cache@v2
         with:
-          path: ~/.julia/artifacts
-          key: ${{ runner.os }}-test-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-test-${{ env.cache-name }}-
-            ${{ runner.os }}-test-
-            ${{ runner.os }}-
+          include-matrix: false
       - uses: julia-actions/julia-buildpkg@latest
       - uses: julia-actions/julia-runtest@latest
       - uses: julia-actions/julia-processcoverage@v1

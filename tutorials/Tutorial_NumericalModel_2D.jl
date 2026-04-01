@@ -129,7 +129,7 @@ Temp = fill(1350.0, nx, 1, nz);
 add_box!(Phases, Temp, Grid2D; xlim=(-800,0.0), zlim=(-80.0, 0.0), phase = ConstantPhase(1));    
 
 # Next, we should define a `Trench` structure, which contains info about the trench which goes in 3D from `Start` - `End` coordinates (`x`,`y`)-coordinates respectively. As we are dealing with a 2D model, we set the `y`-coordinates to -100.0 and 100.0 respectively.
-# Other parameters to be specified are `Thickness` (Slab thickness), `θ_max` (maximum slab dip angle), `Length` (length of slab), and `Lb` length of bending zoneof slab
+# Other parameters to be specified are `Thickness` (Slab thickness), `θ_max` (maximum slab dip angle), `Length` (length of slab), and `Lb` (length of slab bending zone).
 
 trench = Trench(Start=(0.0,-100.0), End=(0.0,100.0), Thickness=80.0, θ_max=45.0, Length=300, Lb=200, direction=-1.0);
 add_slab!(Phases, Temp, Grid2D, trench, phase = ConstantPhase(1));
@@ -192,7 +192,7 @@ write_paraview(Grid2D,"Grid2D_SubductionCurvedOverriding");
 # - `AddCylinder!`
 #
 # The help functions are quite self-explanatory, so we won't show it in detail here.
-# If you have a topography surface or any other horizontal surface, you can surface with the cartesian grid with `above_surface` or `below_surface`.
+# If you have a topography surface or any other horizontal surface, you can intersect the surface with the cartesian grid with `above_surface` or `below_surface`.
 #
 # Also, if you wish to take a seismic tomography as inspiration to set a slab geometry, you can interpolate it to a `CartGrid` with the same dimensions and use that with the julia `findall` function.
 

@@ -140,7 +140,7 @@ height      =   interpol.(lon,lat)/1e3
 # At this stage we have `lon/lat/height` of all points as well as velocity components
 GPS_Sanchez_grid        =   GeoData(lon,lat,height,(Velocity_mm_year=(Ve,Vn,Vz),V_north=Vn*mm/yr, V_east=Ve*mm/yr, V_vertical=Vz*mm/yr, Vmagnitude = Vmagnitude*mm/yr, Topography = height*km))
 
-# Save paraview is as always:
+# Save to paraview as always:
 write_paraview(GPS_Sanchez_grid, "GPSAlps_Sanchez_2017_grid")
 
 # Opening and plotting the vertical field gives:

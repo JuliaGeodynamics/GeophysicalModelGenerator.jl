@@ -268,10 +268,10 @@ Vn = Vn*1000;
 Vmagnitude  =   sqrt.(Ve.^2 + Vn.^2 + Vz.^2);
 
 # ### 4.2 Interpolate topography on the grid
-# At this stage we have the 3D velocity components on a grid. Yet, we don't have information yet about the elevation of the stations (as the provided data set did not give this).
+# At this stage we have the 3D velocity components on a grid. Yet, we don't have information about the elevation of the stations (as the provided data set did not give this).
 # We could ignore that and set the elevation to zero, which would allow saving the data directly.
 # Yet, a better way is to load the topographic map of the area and interpolate the elevation to the velocity grid.
-# As we have already the loaded the topographic map in section 1 of this tutorial, we can simply reuse it. To interpolate, we will use the function `interpolate_datafields_2D`
+# As we already have loaded the topographic map in section 1 of this tutorial, we can simply reuse it. To interpolate, we will use the function `interpolate_datafields_2D`.
 
 topo_v, fields_v = interpolate_datafields_2D(Topo, Lon, Lat)
 
@@ -319,7 +319,7 @@ Data_attribs   = Dict(
     "url"=>"https://doi.org/10.1029/2021JB023488",
     "year"=>2022
 )
-# Now we are all set and can create a GeoData structure which along with metadata
+# Now we are all set and can create a GeoData structure along with its metadata
 Data = GeoData(Lon,Lat,Depth[:,:,:],(Vp=Vp[:,:,:],dVp=dlnVp[:,:,:]),Data_attribs);
 # And then we save it again.
 write_paraview(Data, "Rappisi2022")
