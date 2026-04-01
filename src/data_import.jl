@@ -366,15 +366,15 @@ function tomo_2_GeoData(filename::String; vel_type::String = "vs")
 
     # Extract the variables
     depth = data["depth"][:]
-    lon   = data["longitude"][:]
-    lat   = data["latitude"][:]
-    vel   = data[vel_type][:,:,:]
+    lon = data["longitude"][:]
+    lat = data["latitude"][:]
+    vel = data[vel_type][:, :, :]
 
     # create lon, lat, depth grid
     Lon, Lat, Depth = lonlatdepth_grid(lon, lat, .- depth)
 
     # create GeoData struct
-    Tomo_data = GeoData(Lon, Lat, Depth, (vel=vel,))
+    Tomo_data = GeoData(Lon, Lat, Depth, (vel = vel,))
 
     return Tomo_data
 end

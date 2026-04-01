@@ -59,7 +59,7 @@ GeoData
 """
 function load_GMG(filename::String, dir = pwd(); maxattempts = 5)
 
-    local_filename = "download_GMG_temp.jld2"
+    local_filename = "download_GMG_temp_$(getpid()).jld2"
     if contains(filename, "http")
         file_ext = download_data(filename, local_filename, dir = dir, maxattempts = maxattempts)
     else
@@ -72,7 +72,7 @@ function load_GMG(filename::String, dir = pwd(); maxattempts = 5)
 
     # remove local temporary file
     if contains(filename, "http")
-        rm(local_filename)
+        rm(joinpath(dir, local_filename), force = true)
     end
 
     return data
@@ -118,4 +118,4 @@ function download_data(url::String, local_filename = "temp.dat"; dir = pwd(), ma
     end
 
     return file_ext
-end 
+end

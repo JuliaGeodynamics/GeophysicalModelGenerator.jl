@@ -14,7 +14,7 @@ Reads a Gmsh file and returns a `FEData` object with info about the mesh. `tag_n
 """
 function import_Gmsh(fname::String)
 
-    mesh = GmshDiscreteModel(fname, renumber = false)
+    mesh = GmshDiscreteModel(fname, renumber = false, has_affine_map = false)
 
     # Extract vertices
     nverts = length(mesh.grid.node_coordinates)

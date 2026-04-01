@@ -299,7 +299,7 @@ function create_profile_screenshot!(Profile::ProfileData, DataSet::NamedTuple)
             x_profile = flatten_cross_section(data_tmp, Start = Profile.start_lonlat) # compute the distance along the profile
             data_tmp = addfield(data_tmp, "x_profile", x_profile)
 
-             # add the data set as a NamedTuple
+            # add the data set as a NamedTuple
             data_NT = NamedTuple{(DataSetName[idata],)}((data_tmp,))
             tmp = merge(tmp, data_NT)
         else
@@ -412,8 +412,6 @@ function extract_ProfileData!(Profile::ProfileData, VolData::Union{Nothing, GeoD
     end
     return nothing
 end
-
-
 
 
 """
