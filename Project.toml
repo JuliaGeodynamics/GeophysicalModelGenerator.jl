@@ -73,7 +73,7 @@ StaticArrays = "1"
 Statistics = "1"
 WhereTheWaterFlows = "0.10, 0.11"
 WriteVTK = "1"
-julia = "1.9"
+julia = "1.10"
 
 [extras]
 Chmy = "33a72cf0-4690-46d7-b987-06506c2248b9"
