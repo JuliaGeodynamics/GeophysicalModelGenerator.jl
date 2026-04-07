@@ -1,5 +1,5 @@
 # test setting geometries in the different grid types
-using Test, GeophysicalModelGenerator, GeoParams
+using Test, GeophysicalModelGenerator, GeoParams, Statistics
 
 # GeoData
 Lon3D, Lat3D, Depth3D = lonlatdepth_grid(1.0:1:10.0, 11.0:1:20.0, (-20:1:-10) * km);
