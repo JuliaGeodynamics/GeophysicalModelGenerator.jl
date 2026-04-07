@@ -44,7 +44,6 @@ include("Setup_geometry.jl")
 include("stl.jl")
 include("ProfileProcessing.jl")
 include("IO.jl")
-include("IO_ASAGI.jl")
 include("event_counts.jl")
 include("surface_functions.jl")
 include("movies_from_pics.jl")
@@ -54,6 +53,30 @@ include("WaterFlow.jl")
 # Add optional routines (only activated when the packages are loaded)
 
 # GMT routines
+
+"""
+    write_ASAGI(fname::String, Data::CartData; fields=nothing, km_to_m=false)
+
+Writes a CartData structure to an ASAGI NetCDF file. Requires loading `NCDatasets`.
+"""
+function write_ASAGI end
+export write_ASAGI
+
+"""
+    read_ASAGI(fname::String)
+
+Reads an ASAGI NetCDF file and returns a CartData structure. Requires loading `NCDatasets`.
+"""
+function read_ASAGI end
+export read_ASAGI
+
+"""
+    tomo_2_GeoData(filename::String; vel_type="vs")
+
+Reads a seismic tomography NetCDF file and returns a GeoData structure. Requires loading `NCDatasets`.
+"""
+function tomo_2_GeoData end
+export tomo_2_GeoData
 
 """
         import_topo

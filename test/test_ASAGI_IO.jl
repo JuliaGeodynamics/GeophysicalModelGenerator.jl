@@ -1,4 +1,4 @@
-using GeophysicalModelGenerator, Test, Statistics
+using GeophysicalModelGenerator, Test, Statistics, NCDatasets
 
 XYZ = xyz_grid(1.0:1:10.0, 11.0:1:21.0, -23:1:-10);
 Dat = zeros(size(XYZ[1]));

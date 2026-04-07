@@ -2,6 +2,7 @@
 
 using Test
 using GeophysicalModelGenerator
+using NCDatasets
 
 
 # test the import of a csv file with depth given as positive values and units in km
