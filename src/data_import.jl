@@ -352,27 +352,3 @@ function getlonlatdepthmag_QuakeML(filename::String)
 end
 
 
-Reads a seismic tomography dataset from a NetCDF file as a GeoData object. The keyword argument `vel_type::String` allows you to specify the type of velocity data to extract (default is "vs" for shear wave velocity).
-The function assumes that the NetCDF file contains variables for depth, longitude, latitude, and the specified velocity type.
-
-tomodata = tomo_2_GeoData("path/to/tomo_data.nc")
-"""
-function tomo_2_GeoData(filename::String; vel_type::String = "vs")
-
-    # Open the NetCDF file
-    data = NCDataset(filename)
-
-    # Extract the variables
-    depth = data["depth"][:]
-    lon = data["longitude"][:]
-    lat = data["latitude"][:]
-    vel = data[vel_type][:, :, :]
-
-    # create lon, lat, depth grid
-    Lon, Lat, Depth = lonlatdepth_grid(lon, lat, .- depth)
-
-    # create GeoData struct
-    Tomo_data = GeoData(Lon, Lat, Depth, (vel = vel,))
-
-    return Tomo_data
-end
