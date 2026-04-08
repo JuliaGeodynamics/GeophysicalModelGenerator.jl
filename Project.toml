@@ -1,6 +1,6 @@
 name = "GeophysicalModelGenerator"
 uuid = "3700c31b-fa53-48a6-808a-ef22d5a84742"
-version = "0.7.20"
+version = "0.7.21"
 authors = ["Boris Kaus", "Marcel Thielmann"]
 
 [deps]
@@ -47,7 +47,7 @@ NCDatasets_utils = "NCDatasets"
 
 [compat]
 Chmy = "0.1.20"
-Colors = "0.9 - 0.12, 0.13"
+Colors = "0.9 - 0.13"
 DelimitedFiles = "1"
 Downloads = "1"
 FFMPEG = "0.4"
@@ -64,7 +64,7 @@ ImageIO = "0.1 - 0.6"
 Interpolations = "0.14, 0.15, 0.16"
 JLD2 = "0.4, 0.5, 0.6"
 LightXML = "0.8, 0.9"
-MeshIO = "0.1 - 0.5"
+MeshIO = "0.5"
 NCDatasets = "0.14"
 NearestNeighbors = "0.2 - 0.4"
 ParallelTestRunner = "2"
