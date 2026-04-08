@@ -414,10 +414,11 @@ function Base.show(io::IO, d::LaMEM_grid)
 end
 
 """
-    save_LaMEM_markers_parallel(Grid::CartData; PartitioningFile=empty, directory="./markers", verbose=true, is64bit=false)
+    save_LaMEM_markers_parallel(Grid::CartData; PartitioningFile=empty, directory="./markers", verbose=true, is64bit=false, add_APS=false)
 
 Saves a LaMEM marker file from the `CartData` structure `Grid`. It must have a field called `Phases`, holding phase information (as integers) and optionally a field `Temp` with temperature info.
 It is possible to provide a LaMEM partitioning file `PartitioningFile`. If not, output is assumed to be for one processor. By default it is assumed that the partitioning file was generated on a 32bit PETSc installation. If `Int64` was used instead, set the flag.
+if `add_APS` is true it will add a new field to all particles (needed in newer versions of LaMEM, but not supported in LaMEM 2.2.0 or before)
 
 The size of `Grid` should be consistent with what is provided in the LaMEM input file. In practice, the size of the mesh can be retrieved from a LaMEM input file using `read_LaMEM_inputfile`.
 
@@ -441,7 +442,7 @@ Writing LaMEM marker file -> ./markers/mdb.00000003.dat
 ```
 
 """
-function save_LaMEM_markers_parallel(Grid::CartData; PartitioningFile = empty, directory = "./markers", verbose = true, is64bit = false)
+function save_LaMEM_markers_parallel(Grid::CartData; PartitioningFile = empty, directory = "./markers", verbose = true, is64bit = false, add_APS=false)
 
     x = ustrip.(Grid.x.val[:, 1, 1])
     y = ustrip.(Grid.y.val[1, :, 1])
@@ -471,8 +472,8 @@ function save_LaMEM_markers_parallel(Grid::CartData; PartitioningFile = empty, d
         zeros(size(Phases))
     end
 
-    if PartitioningFile == empty
-        # in case we run this on 1 processor only
+    if PartitioningFile == empty || isnothing(PartitioningFile)
+        # in case we run this on 1 processor only (or partitioning file could not be created)
         Nprocx = 1
         Nprocy = 1
         Nprocz = 1
@@ -510,10 +511,13 @@ function save_LaMEM_markers_parallel(Grid::CartData; PartitioningFile = empty, d
         part_phs = Phases[x_start[n]:x_end[n], y_start[n]:y_end[n], z_start[n]:z_end[n]]
         part_T = Temp[x_start[n]:x_end[n], y_start[n]:y_end[n], z_start[n]:z_end[n]]
         part_APS = APS[x_start[n]:x_end[n], y_start[n]:y_end[n], z_start[n]:z_end[n]]
+
         num_particles = size(part_x, 1) * size(part_x, 2) * size(part_x, 3)
 
         # Information vector per processor
-        num_prop = 6       # number of properties we save [x/y/z/phase/T/APS]
+        # add_APS=false: 5 props [x/y/z/phase/T],         header 1211214, LaMEM >= 2.2.0
+        # add_APS=true:  6 props [x/y/z/phase/T/APS],     header 1211215, LaMEM >= 2.2.1
+        num_prop = add_APS ? 6 : 5
         lvec_info = num_particles
 
         lvec_prtcls = zeros(Float64, num_prop * num_particles)
@@ -523,7 +527,9 @@ function save_LaMEM_markers_parallel(Grid::CartData; PartitioningFile = empty, d
         lvec_prtcls[3:num_prop:end] = part_z[:]
         lvec_prtcls[4:num_prop:end] = part_phs[:]
         lvec_prtcls[5:num_prop:end] = part_T[:]
-        lvec_prtcls[6:num_prop:end] = part_APS[:]
+        if add_APS
+            lvec_prtcls[6:num_prop:end] = part_APS[:]
+        end
 
         # Write output files
         if ~isdir(directory)
@@ -535,7 +541,7 @@ function save_LaMEM_markers_parallel(Grid::CartData; PartitioningFile = empty, d
         end
         lvec_output = [lvec_info; lvec_prtcls]           # one vec with info about length
 
-        PetscBinaryWrite_Vec(fname, lvec_output)            # Write PETSc vector as binary file
+        PetscBinaryWrite_Vec(fname, lvec_output; add_APS)   # Write PETSc vector as binary file
 
     end
     return
@@ -619,17 +625,18 @@ end
 Writes a vector `A` to disk, such that it can be read with `PetscBinaryRead` (which assumes a Big Endian type)
 
 """
-function PetscBinaryWrite_Vec(filename, A)
+function PetscBinaryWrite_Vec(filename, A; add_APS=false)
 
     # Note: use "hton" to transfer to Big Endian type, which is what PETScBinaryRead expects
     return open(filename, "w+") do f
         n = length(A)
         nummark = A[1]            # number of markers
 
-        # header number encodes the version of particle data file
-        # version with APS is 1211215
-        # version without APS was 1211214
-        write(f, hton(Float64(1211215)))     # header
+        # header encodes the marker file version:
+        # 1211214 = without APS (LaMEM >= 2.2.0, default)
+        # 1211215 = with APS    (LaMEM >= 2.2.1)
+        header = add_APS ? Float64(1211215) : Float64(1211214)
+        write(f, hton(header))               # header
         write(f, hton(Float64(nummark)))     # info about # of markers written
 
         for i in 2:n
