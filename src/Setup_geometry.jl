@@ -1276,7 +1276,7 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::LinearTemp)
     dz = Z[end] - Z[1]
     dT = Tbot - Ttop
 
-    Temp = abs.(Z ./ dz) .* dT .+ Ttop
+    Temp = abs.((Z .- Z[end]) ./ dz) .* dT .+ Ttop
     return Temp
 end
 
@@ -1311,7 +1311,7 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::HalfspaceCoolingTemp
     MantleAdiabaticT = Tmantle .+ Adiabat * abs.(Z)    # Adiabatic temperature of mantle
 
     for i in eachindex(Temp)
-        Temp[i] = (Tsurface .- Tmantle) * erfc((abs.(Z[i]) * 1.0e3) ./ (2 * sqrt(kappa * ThermalAge))) + MantleAdiabaticT[i]
+        Temp[i] = (Tsurface .- Tmantle) * erfc((abs.(Z[i] - Z[end]) * 1.0e3) ./ (2 * sqrt(kappa * ThermalAge))) + MantleAdiabaticT[i]
     end
     return Temp
 end
