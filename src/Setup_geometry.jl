@@ -323,32 +323,34 @@ end
     cell = false     )
 Add box function but getting bounds as a vector bounds in a way of [[xmin,xmax],[ymin,ymax],[zmin,zmax]]. If bounds is empty return nothing 
 """
-function  add_box!(Phase, Temp, Grid::AbstractGeneralGrid,           # required input
-                bounds::Union{Vector{Any}, AbstractVector{<:AbstractVector{<:Real}}};    # limits of the box
-                Origin = nothing, StrikeAngle = 0, DipAngle = 0,     # origin & dip/strike
-                phase = ConstantPhase(1),                            # Sets the phase number(s) in the box
-                T = nothing,                                         # Sets the thermal structure (various functions are available)
-                segments = nothing,                                  # Allows defining multiple ridge segments
-                cell = false                                         # if true, Phase and Temp are defined on cell centers
-                ) 
+function add_box!(
+        Phase, Temp, Grid::AbstractGeneralGrid,           # required input
+        bounds::Union{Vector{Any}, AbstractVector{<:AbstractVector{<:Real}}};    # limits of the box
+        Origin = nothing, StrikeAngle = 0, DipAngle = 0,     # origin & dip/strike
+        phase = ConstantPhase(1),                            # Sets the phase number(s) in the box
+        T = nothing,                                         # Sets the thermal structure (various functions are available)
+        segments = nothing,                                  # Allows defining multiple ridge segments
+        cell = false                                         # if true, Phase and Temp are defined on cell centers
+    )
 
     if isempty(bounds)
 
         return nothing
-        
-    else
-        
-        xlim=(Tuple(bounds[1])) 
-        ylim=(Tuple(bounds[2])) 
-        zlim=(Tuple(bounds[3]))
 
-        add_box!( 
-                Phase, Temp, Grid;       # required input
-                xlim     = xlim, ylim = ylim, zlim = zlim,     # limits of the box
-                Origin   = Origin, StrikeAngle = StrikeAngle, DipAngle = DipAngle,      # origin & dip/strike
-                phase    = phase,                          # Sets the phase number(s) in the box
-                T        = T,                                  # Sets the thermal structure (various functions are available)
-                cell     = cell )
+    else
+
+        xlim = (Tuple(bounds[1]))
+        ylim = (Tuple(bounds[2]))
+        zlim = (Tuple(bounds[3]))
+
+        add_box!(
+            Phase, Temp, Grid;       # required input
+            xlim = xlim, ylim = ylim, zlim = zlim,     # limits of the box
+            Origin = Origin, StrikeAngle = StrikeAngle, DipAngle = DipAngle,      # origin & dip/strike
+            phase = phase,                          # Sets the phase number(s) in the box
+            T = T,                                  # Sets the thermal structure (various functions are available)
+            cell = cell
+        )
     end
 
 end
@@ -818,24 +820,26 @@ end
     cell = false     )
 Add polygon function but getting bounds as a vector bounds in a way of [[xmin,xmax],[ymin,ymax],[zmin,zmax]]. If bounds is empty return nothing 
 """
-function  add_polygon!(Phase, Temp, Grid::AbstractGeneralGrid,           # required input
-                bounds::Union{Vector{Any}, AbstractVector{<:AbstractVector{<:Real}}};    # limits of the box
-                phase = ConstantPhase(1),                            # Sets the phase number(s) in the box
-                T = nothing,                                         # Sets the thermal structure (various functions are available)
-                cell = false                                         # if true, Phase and Temp are defined on cell centers
-                ) 
+function add_polygon!(
+        Phase, Temp, Grid::AbstractGeneralGrid,           # required input
+        bounds::Union{Vector{Any}, AbstractVector{<:AbstractVector{<:Real}}};    # limits of the box
+        phase = ConstantPhase(1),                            # Sets the phase number(s) in the box
+        T = nothing,                                         # Sets the thermal structure (various functions are available)
+        cell = false                                         # if true, Phase and Temp are defined on cell centers
+    )
 
-    if !isempty(bounds)        
-        xlim=(Tuple(bounds[1])) 
-        ylim=(Tuple(bounds[2])) 
-        zlim=(Tuple(bounds[3]))
+    return if !isempty(bounds)
+        xlim = (Tuple(bounds[1]))
+        ylim = (Tuple(bounds[2]))
+        zlim = (Tuple(bounds[3]))
 
-        add_polygon!( 
-                Phase, Temp, Grid;       # required input
-                xlim     = xlim, ylim = ylim, zlim = zlim,     # limits of the box
-                phase    = phase,                              # Sets the phase number(s) in the box
-                T        = T,                                  # Sets the thermal structure (various functions are available)
-                cell     = cell )
+        add_polygon!(
+            Phase, Temp, Grid;       # required input
+            xlim = xlim, ylim = ylim, zlim = zlim,     # limits of the box
+            phase = phase,                              # Sets the phase number(s) in the box
+            T = T,                                  # Sets the thermal structure (various functions are available)
+            cell = cell
+        )
     end
 
 end
@@ -936,27 +940,29 @@ end
     cell = false     )
 Add plate function but getting bounds as a vector bounds in a way of [[xmin,xmax],[ymin,ymax],[zmin,zmax]]. If bounds is empty return nothing 
 """
-function  add_plate!(Phase, Temp, Grid::AbstractGeneralGrid,           # required input
-                bounds::Union{Vector{Any}, AbstractVector{<:AbstractVector{<:Real}}};    # limits of the box
-                phase = ConstantPhase(1),                            # Sets the phase number(s) in the box
-                T = nothing,                                         # Sets the thermal structure (various functions are available)
-                segments = nothing,                                  # Allows defining multiple ridge segments
-                cell = false                                         # if true, Phase and Temp are defined on cell centers
-                ) 
+function add_plate!(
+        Phase, Temp, Grid::AbstractGeneralGrid,           # required input
+        bounds::Union{Vector{Any}, AbstractVector{<:AbstractVector{<:Real}}};    # limits of the box
+        phase = ConstantPhase(1),                            # Sets the phase number(s) in the box
+        T = nothing,                                         # Sets the thermal structure (various functions are available)
+        segments = nothing,                                  # Allows defining multiple ridge segments
+        cell = false                                         # if true, Phase and Temp are defined on cell centers
+    )
 
-    if !isempty(bounds)        
-        xlim=(Tuple(bounds[1])) 
-        ylim=(Tuple(bounds[2])) 
-        zlim=(Tuple(bounds[3]))
+    return if !isempty(bounds)
+        xlim = (Tuple(bounds[1]))
+        ylim = (Tuple(bounds[2]))
+        zlim = (Tuple(bounds[3]))
 
-        add_plate!( 
-                Phase, Temp, Grid;       # required input
-                xlim     = xlim, ylim = ylim, zlim = zlim,     # limits of the box
-                Origin   = Origin, StrikeAngle = StrikeAngle, DipAngle = DipAngle,      # origin & dip/strike
-                phase    = phase,                          # Sets the phase number(s) in the box
-                T        = T,                                  # Sets the thermal structure (various functions are available)
-                segments = segments,                     # Allows defining multiple ridge segments
-                cell     = cell )
+        add_plate!(
+            Phase, Temp, Grid;       # required input
+            xlim = xlim, ylim = ylim, zlim = zlim,     # limits of the box
+            Origin = Origin, StrikeAngle = StrikeAngle, DipAngle = DipAngle,      # origin & dip/strike
+            phase = phase,                          # Sets the phase number(s) in the box
+            T = T,                                  # Sets the thermal structure (various functions are available)
+            segments = segments,                     # Allows defining multiple ridge segments
+            cell = cell
+        )
     end
 end
 
