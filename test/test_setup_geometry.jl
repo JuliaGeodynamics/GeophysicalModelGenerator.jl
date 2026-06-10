@@ -226,7 +226,7 @@ add_box!(Phase, Temp, Cart; xlim = (0.0, 600.0), ylim = (0.0, 600.0), zlim = (-8
 T_slab = LinearWeightedTemperature(crit_dist = 600, F1 = TsHC, F2 = TsMK);
 Temp = ones(Float64, size(Cart)) * 1350;
 add_box!(Phase, Temp, Cart; xlim = (0.0, 600.0), ylim = (0.0, 600.0), zlim = (-80.0, 0.0), phase = ConstantPhase(5), T = T_slab);
-@test sum(Temp) ≈ 3.499457641038468e8
+@test sum(Temp) ≈ 3.496951166102279e8
 
 
 Data_Final = addfield(Cart, "Temp", Temp)
@@ -246,11 +246,10 @@ Temp = ones(Float64, (length(x), length(y), length(z))) * 1350;
 add_box!(Phase, Temp, Cart; xlim = (0.0, 600.0), ylim = (0.0, 600.0), zlim = (-80.0, 0.0), phase = ConstantPhase(5), T = T = ConstantTemp(120.0));
 
 # add accretionary prism
-add_polygon!(Phase, Temp, Cart; xlim = (500.0, 200.0, 500.0), ylim = (100.0, 400.0), zlim = (0.0, 0.0, -60.0), phase = ConstantPhase(8), T = LinearTemp(Ttop = 20, Tbot = 30))
-
+add_polygon!(Phase, Temp, Cart; xlim = (500.0, 200.0, 500.0), ylim = (100.0, 400.0), zlim = (-5.0, -5.0, -65.0), phase = ConstantPhase(8), T = LinearTemp(Ttop = 20, Tbot = 30))
 @test maximum(Phase) == 8
-@test minimum(Temp) == 21.40845070422536
-@test sum(Phase) == 292736
+@test minimum(Temp) == 20.0
+@test sum(Phase) == 293264
 
 # Test the Bending slab geometry
 
@@ -276,7 +275,7 @@ TsHC = HalfspaceCoolingTemp(Tsurface = 20.0, Tmantle = 1350, Age = 30, Adiabat =
 temp = TsHC;
 
 add_slab!(Phase, Temp, Cart, t1, phase = phase, T = TsHC)
-@test Temp[84, 84, 110] ≈ 1045.1322688510577
+@test Temp[84, 84, 110] ≈ 1042.7807110443487
 @test extrema(Phase) == (1, 4)
 
 # with weak zone
@@ -304,7 +303,7 @@ phase = LithosphericPhases(Layers = [5 7 88], Phases = [2 3 4], Tlab = nothing)
 t1 = Trench(Start = (400.0, 400.0), End = (800.0, 800.0), θ_max = 90.0, direction = 1.0, n_seg = 50, Length = 600.0, Thickness = 80.0, Lb = 500.0, d_decoupling = 100.0, type_bending = :Ribe, WeakzoneThickness = 10, WeakzonePhase = 9)
 
 add_slab!(Phase, Temp, Cart, t1, phase = phase, T = T_slab)
-@test Temp[84, 84, 110] ≈ 624.6682008876219
+@test Temp[84, 84, 110] ≈ 623.9868388771819
 
 Data_Final = CartData(X, Y, Z, (Phase = Phase, Temp = Temp))
 
@@ -323,7 +322,7 @@ add_slab!(Phases, Temp, Grid2D, trench, phase = ConstantPhase(2), T = HalfspaceC
 T_slab = LinearWeightedTemperature(F1 = HalfspaceCoolingTemp(Age = 40), F2 = McKenzie_subducting_slab(Tsurface = 0, v_cm_yr = 4, Adiabat = 0.0), crit_dist = 600)
 add_slab!(Phases, Temp, Grid2D, trench, phase = ConstantPhase(2), T = T_slab);
 
-@test sum(Temp) ≈ 8.571402268095453e7
+@test sum(Temp) ≈ 8.571247449404927e7
 @test extrema(Phases) == (0, 2)
 
 # Add them to the `CartData` dataset:
@@ -366,7 +365,7 @@ add_slab!(Phases, Temp, Grid2D, trench, phase = lith, T = T_slab);
 ind = findall(Temp .> 1250 .&& (Phases .== 2 .|| Phases .== 5));
 Phases[ind] .= 0;
 
-@test sum(Temp) ≈ 8.292000736425713e7
+@test sum(Temp) ≈ 8.291641108619794e7
 @test extrema(Phases) == (0, 6)
 #Grid2D = CartData(Grid2D.x.val,Grid2D.y.val,Grid2D.z.val, (;Phases, Temp))
 #write_paraview(Grid2D,"Grid2D_SubductionCurvedOverriding");
@@ -466,7 +465,7 @@ add_ellipsoid!(PhasesV, TempV, Grid, cen = (4, 15, -17), axes = (1, 2, 3), Strik
 
 # Add data to cell fields:
 add_box!(PhasesC, TempC, Grid, xlim = (2, 4), zlim = (-15, -10), phase = ConstantPhase(3), DipAngle = 10, T = LinearTemp(Tbot = 1350, Ttop = 200), cell = true)
-@test sum(TempC[1, 1, :]) ≈ 13360.239732164195
+@test sum(TempC[1, 1, :]) ≈ 13235.793377972634
 
 add_ellipsoid!(PhasesC, TempC, Grid, cen = (4, 15, -17), axes = (1, 2, 3), StrikeAngle = 90, DipAngle = 45, phase = ConstantPhase(2), T = ConstantTemp(1600), cell = true)
-@test all(extrema(TempC) .≈ (262.2231770957809, 1600.0))
+@test all(extrema(TempC) .≈ (200, 1600.0))

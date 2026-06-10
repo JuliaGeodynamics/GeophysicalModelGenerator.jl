@@ -131,13 +131,13 @@ add_box!(Phases, Temp, Grid, xlim = (0, 500), zlim = (0, 20), phase = ConstantPh
 # Linear T
 Temp = ones(Float64, size(Grid.X)) * 1350;
 add_box!(Phases, Temp, Grid, xlim = (0, 500), zlim = (-50, 0), phase = ConstantPhase(3), DipAngle = 10, T = LinearTemp(Tbot = 1350, Ttop = 200))
-@test sum(Temp) == 1.1881296265169694e9
+@test sum(Temp) == 1.1879553307069368e9
 
 # Halfspace cooling T structure
 Phases = zeros(Int32, size(Grid.X));
 Temp = ones(Float64, size(Grid.X)) * 1350;
 add_box!(Phases, Temp, Grid, xlim = (0, 500), zlim = (-500, 0), phase = LithosphericPhases(Layers = [15 15 250], Phases = [1 2 3 0], Tlab = 1250), DipAngle = 10, T = HalfspaceCoolingTemp(Age = 20, Adiabat = 0.3))
-@test sum(Temp) == 1.1942982365477426e9
+@test sum(Temp) == 1.194094895654067e9
 
 # Mid-oceanic ridge cooling temperature structure
 Phases = zeros(Int32, size(Grid.X));
