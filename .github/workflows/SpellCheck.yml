@@ -10,6 +10,6 @@ jobs:
       - name: Checkout Actions Repository
         uses: actions/checkout@v7
       - name: Check spelling
-        uses: crate-ci/typos@v1.48.0
+        uses: crate-ci/typos@v1.50.0
         with:
             args: --exclude **/*.txt --exclude **/*.pvsm
