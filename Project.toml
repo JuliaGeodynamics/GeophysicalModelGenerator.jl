@@ -69,7 +69,7 @@ Parameters = "0.9 - 0.12"
 SpecialFunctions = "1.0, 2"
 StaticArrays = "1"
 Statistics = "1"
-WhereTheWaterFlows = "0.10, 0.11"
+WhereTheWaterFlows = "0.10, 0.11, 0.13"
 WriteVTK = "1"
 julia = "1.9"
 
