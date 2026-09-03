@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<VTKFile type="PStructuredGrid" version="1.0" byte_order="LittleEndian" header_type="UInt64">
+	<PStructuredGrid GhostLevel="0" WholeExtent="1 513 1 2 1 1">
+		<PCellData>
+		</PCellData>
+		<PPoints>
+			<PDataArray type="Float32" Name="Points" NumberOfComponents="3" format="appended"/>
+		</PPoints>
+		<PPointData>
+			<PDataArray type="Float32" Name="velocity [cm/yr]" NumberOfComponents="3" format="appended"/>
+			<PDataArray type="Float32" Name="topography [km]" NumberOfComponents="1" format="appended"/>
+			<PDataArray type="Float32" Name="amplitude [km]" NumberOfComponents="1" format="appended"/>
+		</PPointData>
+		<Piece Extent="1 129 1 2 1 1" Source="output_surf_p00000000.vts"/>
+		<Piece Extent="129 257 1 2 1 1" Source="output_surf_p00000001.vts"/>
+		<Piece Extent="257 385 1 2 1 1" Source="output_surf_p00000002.vts"/>
+		<Piece Extent="385 513 1 2 1 1" Source="output_surf_p00000003.vts"/>
+	</PStructuredGrid>
+</VTKFile>

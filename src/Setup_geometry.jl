@@ -664,10 +664,12 @@ for i = 1:size(Y)[2]
     end
 end
 
+Zrel = Z .- maximum(zlim);
 
+println("add poly")
 # Compute thermal structure accordingly. See routines below for different options
 if T != nothing
-   Temp[ind] = compute_thermal_structure(Temp[ind], X[ind], Y[ind], Z[ind], Phase[ind], T)
+   Temp[ind] = compute_thermal_structure(Temp[ind], X[ind], Y[ind], Zrel[ind], Phase[ind], T) 
 end
 
 # Set the phase. Different routines are available for that - see below.

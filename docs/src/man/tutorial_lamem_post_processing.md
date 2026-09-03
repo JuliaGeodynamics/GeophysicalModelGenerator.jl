@@ -1,44 +1,52 @@
 # Post processing of LaMEM files
 
 ## Goal
-This tutorial visualizes how to do comparative analysis and quantitative evaluation of LaMEM models. The post-processing is julia based and extracts the information directly from the .pvtr-file. 
+This tutorial visualizes how to do comparative analysis and quantitative evaluation of LaMEM models. The post-processing is julia based and extracts the information directly from the pvtr-, pvts- and pvtu-files. 
 
 
 ## Steps
 
 ## 1. Get general information
-Before beginning the post-processing, it is useful to extract some general information about the model. This includes material properties of the different phases, time of the time step, ascii-file stored information and the model data. 
+Before beginning the post-processing, it is useful to extract some general information about the model. This includes material properties of the phases, timestep and real time from the timefiles, information of ascii-files and the model data itself. 
 
 
 ```julia
-using GeophysicalModelGenerator, LaMEM, Serialization
+using GeophysicalModelGenerator, LaMEM, JLD2
 
 #### set path and variables
-dat_path = ("../test/test_files/Subduction_VEP.dat")
-model_path = ("../test/test_files/timestep/")
-model_name = "VEP"
-timestep = "Timestep_00000000_0.00000000e+00"
-FileName_pvtr = "output.pvtr"
-p_fields = ["phase", "temperature"]
-output_dir = model_path
+dat_path = ("../test/test_files/Subduction2D_LaMEM.dat") # path to dat file
+model_path = ("../test/test_files/")             # path to model timesteps
+output_dir =("../test/test_files/output/")       # path to output_folder
+model_name = "Subduction"                        # name of the model
+timestep = "Timestep_00000000_0.00000000e+00"    # name of Timestep
+FileName = "output"                              # name of model output files
+FileName_pvtr=FileName*".pvtr"                   # name of pvtr file 
+FileName_pvtu=FileName*"_passive_tracers.pvtu"   # name of pvtu file 
+FileName_pvts=FileName*"_surf.pvts"              # name of pvts file 
+p_fields = ["phase", "temperature"]              # field to save
 
-# extract data information from ascii file
+
+# extract data information from data file
 surface_level = search_for_model_constrains(dat_path, "surf_level")
 
 # read output file
-material_block = Dict{String, Dict{String, Dict{String, String}}}()  # Dictionary to store material properties
+material_block = Dict{String, Dict{String, Dict{String, String}}}()  # dictionary to store material properties
 material_block = search_for_phase_properties(dat_path, model_name, "<MaterialStart>", "<MaterialEnd>")
+number_phases = length(material_block[model_name])  # extract total number of phases
 
 # get the time as a float number
+time_file = filter(f -> startswith(f, "Time"), readdir(model_path)) # Extract time information --> timestep and time
 time = split_at__to_type([timestep],3,"Float")
 
-
-# extract data information for selected fields
-data = get_data_timestep(model_path,timestep,FileName_pvtr,p_fields,surface_level,false)
+# extract data information for selected fields, tracer and surface
+data = get_data_timestep(model_path,timestep,FileName_pvtr,p_fields,surface_level)   # model fields
+surf = get_surf_timestep(model_path,timestep,FileName_pvts,surface_level)            # surface development
+tracer = get_tracer_timestep(model_path,timestep,FileName_pvtu)                      # tracer development
 ```
 
-## 2. Start post-processing
-To analyse the differences between models and its evolution, coordinates of specific phases can be obtained either as a vector or as a matrix. Additionally, a point can be tracked over time for specific fields. 
+## 2. Save model information
+To analyse the differences between models and its evolution, coordinates of specific phases can be obtained as a matrix. This matrix, together with the corresponding grid configuration and timestep information, provides the basis for extracting field data across all timesteps. Furthermore, surface evolution and tracer distributions can be stored separately for each timestep as welll as the development of a specific grid point. All output is stored in the JLD2 format. 
+For rapid inspection of model results, snapshots of selected fields can also be generated for each timestep. 
 
 
 ```julia
@@ -48,14 +56,54 @@ path = replace(processing_folder,"\\" => "/")*"/"
 indices = get_phase(path,FileName_pvtr,[2],false)
 matrix = get_phase_bool(path,FileName_pvtr,indices)
 
-# track one point over time
-name = "track"*string(indices[1])
-track_point = track_point_over_time(indices[1],p_fields,model_name,model_path,surface_level,name,output_dir,false)
+# create a standardized directory structure for organized storage of model outputs 
+Savefieldfolder = "fields"                       # folder to store field information 
+Savegenfolder = "general"                        # folder to store general information
+Savetracerfolder = "tracer"                      # folder to store tracer information
+Savesurffolder = "surf"                          # folder to store surface information
 
-tracked_point = deserialize_file(output_dir,name)
+# specify plotting attributes
+y_slice = [1]                                    # slice in y-direction which should be looked at
+dxdz = [-1000.0, 1000.0, -600.0, -50.0]          # pLot window, maximum and minimum x and z values in Coordinates --> Float numbers
+textpos = [-500.0, -500.0]                       # position of the text on the field plot
+numb_ticks = 6                                   # number of ticks on axis
+phase_to_save = [2,3]                            # phases to save the fields
+
+# save general grid properties
+find_general_grid_prop(data,time_file,output_dir,Savegenfolder,material_block)  
+
+# save data of fields, surface and tracer for each timestep
+for timestep in time_file
+    @show timestep
+    data = get_data_timestep(model_path,timestep,FileName_pvtr,p_fields,surface_level)    # load data from current timestep
+    post_plot(data,p_fields,timestep,number_phases,y_slice,output_dir, surface_level, dxdz,textpos, numb_ticks;phase_contour=true) # plot fields to see overall development
+    find_field_properties_grid(data,model_path,timestep,phase_to_save,FileName_pvtr,p_fields,output_dir,Savefieldfolder)    # save field properties
+    find_surf_evolution(model_path,timestep,FileName_pvts,surface_level,output_dir,Savesurffolder)   # save surface development
+    find_tracer_info(model_path,timestep,FileName_pvtu,surface_level,phase_to_save,output_dir,Savetracerfolder)  # save tracer development
+end
+
+# track a point over time
+Point_coord = CartesianIndex(282, 1, 81)         # node coordinate to track over time
+track_name = "track_point"                       # name to save the tracked point
+
+track_point =  track_point_over_time(Point_coord,model_name,Savegenfolder,Savefieldfolder, track_name, output_dir) # track one grid point over time
+
+```
+
+
+## 2. Load model information 
+To use the stored information, load either a specific timestep or the complete temporal evolution across all timesteps. Depending on the analysis, individual timesteps and datasets can be accessed independently, while time-series data can be loaded to examine the development of model properties, phases, tracers, and surface processes throughout the simulation.
+
+```julia
+# load saved information
+gen_info = load_field_info(output_dir,Savegenfolder)            # load general information
+phase_info0 = load_field_info("0",output_dir,Savefieldfolder)   # load field info for one specific timestep
+phase_info = load_field_info(output_dir,Savefieldfolder)        # load field info for all timestep
+surf_info = load_field_info(output_dir,Savesurffolder)          # load surface information
+tracer_info = load_field_info(output_dir,Savetracerfolder)      # load tracer information
+tracker_info = load_field_info(output_dir,track_name*".jld2")   # load tracked point information
 ```
 
 
 
-
-If you want to run the entire example, you can find the .jl code [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/main/tutorial/Tutorial_post_processing.jl)
+If you want to run the entire example, you can find the .jl code [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/main/tutorial/Tutorial_post_processing.jl) 

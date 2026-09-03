@@ -30,10 +30,6 @@ using Test
         include("test_surfaces.jl")
     end
 
-    @testset "LaMEM" begin
-        include("test_lamem.jl")
-    end
-
     @testset "pTatin" begin
         include("test_pTatin_IO.jl")
     end
@@ -81,7 +77,7 @@ using Test
         include("test_ASAGI_IO.jl")
     end
 
-    @testset "LaMEM_post_processing" begin
+    @testset "LaMEM_post" begin
         include("test_LaMEM_post_processing.jl")
     end
 
