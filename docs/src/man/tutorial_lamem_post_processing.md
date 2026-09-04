@@ -45,7 +45,7 @@ tracer = get_tracer_timestep(model_path,timestep,FileName_pvtu)                 
 ```
 
 ## 2. Save model information
-To analyse the differences between models and its evolution, coordinates of specific phases can be obtained as a matrix. This matrix, together with the corresponding grid configuration and timestep information, provides the basis for extracting field data across all timesteps. Furthermore, surface evolution and tracer distributions can be stored separately for each timestep as welll as the development of a specific grid point. All output is stored in the JLD2 format. 
+To analyse the differences between models and its evolution, coordinates of specific phases can be obtained as a matrix. This matrix, together with the corresponding grid configuration and timestep information, provides the basis for extracting field data across all timesteps. Furthermore, surface evolution and tracer distributions can be stored separately for each timestep as well as the development of a specific grid point. All output is stored in the JLD2 format. 
 For rapid inspection of model results, snapshots of selected fields can also be generated for each timestep. 
 
 

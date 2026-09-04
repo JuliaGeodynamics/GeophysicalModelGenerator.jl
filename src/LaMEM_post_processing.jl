@@ -11,7 +11,7 @@ using Plots
 
 
 
-export  search_for_phase_properties, search_for_model_constrains, search_for_all_model_contrains, get_phase, get_phase_bool, split_at__to_type, 
+export  search_for_phase_properties, search_for_model_constrains, search_for_all_model_constrains, get_phase, get_phase_bool, split_at__to_type, 
 get_data_timestep, get_tracer_timestep,  get_surf_timestep,
 post_plot, find_field_properties_grid, find_general_grid_prop, find_surf_evolution, find_tracer_info, 
 track_point_over_time
@@ -1102,12 +1102,12 @@ function find_field_properties_grid(data::CartData,subsubfolder_path::String,tim
     # create matrix from position of indices
     matrix = get_phase_bool(location,FileName_pvtr,indices)
 
-    # write information to dictonary
+    # write information to dictionary
     field_info = Dict()  # Dictionary to store material properties
     field_info["indices"]= indices
     field_info["matrix"]= matrix
 
-    # write field information to dictonary for each direction
+    # write field information to dictionary for each direction
     for i in eachindex(fields)
 
         field_n = Symbol(fields[i])
@@ -1134,7 +1134,7 @@ function find_field_properties_grid(data::CartData,subsubfolder_path::String,tim
                 field_name_dir = string(fields[i]) * string(data_direction[j])# get field direction name
                 field_data = getfield(data.fields, field_n)[j] # get field data direction
                 field_values = field_data[matrix .== 1] # get field of phase
-                field_info[string(field_name_dir)]= field_values # write to dictonary
+                field_info[string(field_name_dir)]= field_values # write to dictionary
 
             end
 
@@ -1142,7 +1142,7 @@ function find_field_properties_grid(data::CartData,subsubfolder_path::String,tim
 
             field_data = getfield(data.fields, field_n)# get field data direction
             field_values = field_data[matrix .== 1]  # get field of phase
-            field_info[string(fields[i])]= field_values # write to dictonary
+            field_info[string(fields[i])]= field_values # write to dictionary
         end
 
     end
@@ -1409,9 +1409,9 @@ Parameters
 # load saved field data for one specific time step
 function load_field_info(timestep::String,output_path::String,output_folder::String)
 
-    # load saved field informations 
+    # load saved field information 
     output_slab = joinpath(output_path,output_folder)
-    output_det = sort(readdir(output_slab), lt=natural) # sort files in output folder according to thte time steps
+    output_det = sort(readdir(output_slab), lt=natural) # sort files in output folder according to the time steps
 
     file_name = filter(s -> occursin(timestep,s), output_det)[1] # read specific times step file
 
