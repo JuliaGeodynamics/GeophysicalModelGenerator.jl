@@ -75,20 +75,28 @@ function import_topo(limits; file::String = "@earth_relief_01m", maxattempts = 5
         limits[1:2] = sort(limits[1:2])
     end
 
-    # Download topo file  - add a few attempts to do so
+    # Download topo file  - add a few attempts to do so.
+    # When the GMT data server is briefly unreachable, GMT turns off
+    # auto-downloading and reports "Remote download is currently deactivated".
+    # That state clears once the server responds again, so retrying in-process
+    # does recover -- but only with a long enough backoff to outlast the outage.
     local G
-    attempt = 0
-    while attempt < maxattempts
+    local last_err = nothing
+    for attempt in 1:maxattempts
         try
             G = gmtread(file, limits = limits, grid = true)
             break
-        catch
-            @warn "Failed downloading GMT topography on attempt $attempt/$maxattempts"
-            sleep(5)  # wait a few sec
+        catch e
+            last_err = e
+            @warn "Failed downloading GMT topography ($file) on attempt $attempt/$maxattempts"
+            if attempt < maxattempts
+                sleep(10 * attempt)  # back off progressively
+            end
         end
-        attempt += 1
     end
-    (@isdefined G) || error("Could not download GMT topography data")
+    if !(@isdefined G)
+        error("Could not download GMT topography \"$file\" after $maxattempts attempts. Last error: $last_err")
+    end
 
     # Transfer to GeoData
     nx, ny = size(G.z, 2), size(G.z, 1)

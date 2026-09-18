@@ -20,6 +20,7 @@ jobs:
   run_tests:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.allow_failure }}
     strategy:
       fail-fast: false
       matrix:
@@ -46,6 +47,18 @@ jobs:
           - os: macOS-latest
             arch: aarch64
             version: '1.12'
+            allow_failure: true
+          # Julia 1.13 is the current stable release; test it explicitly on Linux
+          # so a regression there is visible independently of the '1' alias.
+          - os: ubuntu-latest
+            arch: x64
+            version: '1.13'
+            allow_failure: false
+          # Track the upcoming release so breakage is caught early, without
+          # blocking CI when an unreleased Julia is temporarily broken.
+          - os: ubuntu-latest
+            arch: x64
+            version: 'pre'
             allow_failure: true
     steps:
       - uses: actions/checkout@v7
