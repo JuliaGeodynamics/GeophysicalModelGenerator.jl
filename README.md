@@ -4,7 +4,7 @@
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev/)
 [![Build Status](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/workflows/CI/badge.svg)](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/actions)
 [![codecov](https://codecov.io/gh/JuliaGeodynamics/GeophysicalModelGenerator.jl/graph/badge.svg?token=2gEdE0nfSh)](https://codecov.io/gh/JuliaGeodynamics/GeophysicalModelGenerator.jl)
-[![DOI](https://zenodo.org/badge/366377223.svg)](https://zenodo.org/doi/10.5281/zenodo.8074345)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8074345.svg)](https://zenodo.org/doi/10.5281/zenodo.8074345)
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.06763/status.svg)](https://doi.org/10.21105/joss.06763)
 
 <p align="center"><img src="./assets/GMG_Logo_new.png" alt="GeophysicalModelGenerator.jl" width="400"></p>
