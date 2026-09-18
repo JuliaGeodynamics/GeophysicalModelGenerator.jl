@@ -483,7 +483,7 @@ function save_LaMEM_markers_parallel(Grid::CartData; PartitioningFile = empty, d
             xc, yc, zc,
             nNodeX, nNodeY, nNodeZ = get_processor_partitioning(PartitioningFile, is64bit = is64bit)
         if verbose
-            @show  Nprocx, Nprocy, Nprocz, xc, yc, zc, nNodeX, nNodeY, nNodeZ
+            println("Processor partitioning: $(Nprocx) x $(Nprocy) x $(Nprocz)")
         end
     end
 
