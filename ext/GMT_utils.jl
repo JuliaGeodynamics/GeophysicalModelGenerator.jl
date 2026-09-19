@@ -83,30 +83,59 @@ function import_topo(limits; file::String = "@earth_relief_01m", maxattempts = 5
 
     # Download topo file. If the GMT data server is unreachable, GMT stops
     # auto-downloading and reports "Remote download is currently deactivated".
-    # Rather than only retrying the same server, cycle through the official
-    # mirrors (see https://www.generic-mapping-tools.org/mirrors), so a single
-    # server being down no longer fails the download. The download itself is
-    # still exercised -- we only change *which* mirror serves it.
+    #
+    # First try the server the user/GMT is already configured with, so that the
+    # normal case does not touch any global state. Only if that fails do we fall
+    # back to the official mirrors (https://www.generic-mapping-tools.org/mirrors),
+    # so a single server being offline does not fail the download. The download
+    # itself is still exercised -- only *which* mirror serves it changes.
+    #
+    # Note: `gmtset` changes GMT's *global* configuration (it writes a gmt.conf in
+    # the working directory), so switching mirrors is visible to anything else
+    # using GMT concurrently. We therefore restore the original setting afterwards
+    # and only switch when a download has actually failed.
     local G
     local last_err = nothing
-    for attempt in 1:maxattempts
-        server = GMT_DATA_SERVERS[mod1(attempt, length(GMT_DATA_SERVERS))]
-        try
-            # Note: GMT reads GMT_DATA_SERVER when the session starts, so setting
-            # the environment variable here has no effect; `gmtset` changes it at runtime.
-            gmtset(GMT_DATA_SERVER = server)
-            G = gmtread(file, limits = limits, grid = true)
-            break
-        catch e
-            last_err = e
-            @warn "Failed downloading GMT topography ($file) from mirror \"$server\" on attempt $attempt/$maxattempts"
-            if attempt < maxattempts
-                sleep(5)  # brief pause before trying the next mirror
+
+    # `gmtset` writes/updates a gmt.conf in the working directory. Remember whether
+    # one already existed so we can leave the directory as we found it.
+    conf_file = joinpath(pwd(), "gmt.conf")
+    had_conf = isfile(conf_file)
+    conf_backup = had_conf ? read(conf_file) : nothing
+
+    try
+        for attempt in 1:maxattempts
+            if attempt > 1
+                # Previous attempt failed -> try the next mirror in the list
+                server = GMT_DATA_SERVERS[mod1(attempt - 1, length(GMT_DATA_SERVERS))]
+                gmtset(GMT_DATA_SERVER = server)
+                @info "Retrying GMT topography download from mirror \"$server\""
             end
+            try
+                G = gmtread(file, limits = limits, grid = true)
+                break
+            catch e
+                last_err = e
+                @warn "Failed downloading GMT topography ($file) on attempt $attempt/$maxattempts"
+                if attempt < maxattempts
+                    sleep(5)  # brief pause before trying the next mirror
+                end
+            end
+        end
+    finally
+        # Restore the original configuration, so our mirror choice does not leak
+        # into other code (or other tests) that use GMT afterwards.
+        try
+            if had_conf
+                conf_backup !== nothing && write(conf_file, conf_backup)
+            elseif isfile(conf_file)
+                rm(conf_file, force = true)
+            end
+        catch
         end
     end
     if !(@isdefined G)
-        error("Could not download GMT topography \"$file\" after $maxattempts attempts across mirrors $(GMT_DATA_SERVERS). Last error: $last_err")
+        error("Could not download GMT topography \"$file\" after $maxattempts attempts (mirrors tried: $(GMT_DATA_SERVERS)). Last error: $last_err")
     end
 
     # Transfer to GeoData
