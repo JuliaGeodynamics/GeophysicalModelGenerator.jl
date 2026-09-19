@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<VTKFile type="PUnstructuredGrid" version="1.0" byte_order="LittleEndian" header_type="UInt64">
+	<PUnstructuredGrid GhostLevel="0">
+		<PCellData>
+		</PCellData>
+			<Cells>
+				<DataArray type="Int32" Name="connectivity" format="appended" />
+				<DataArray type="Int32" Name="offsets" format="appended" />
+				<DataArray type="Int32" Name="types" format="appended" />
+			</Cells>
+		<PPoints>
+			<PDataArray type="Float32" Name="Points" NumberOfComponents="3" format="appended"/>
+		</PPoints>
+		<PPointData>
+			<PDataArray type="Int32" Name="Phase" NumberOfComponents="1" format="appended"/>
+			<PDataArray type="Float32" Name="Temperature [C]" NumberOfComponents="1" format="appended"/>
+			<PDataArray type="Float32" Name="Pressure [MPa]" NumberOfComponents="1" format="appended"/>
+			<PDataArray type="Float32" Name="Mf [ ]" NumberOfComponents="1" format="appended"/>
+			<PDataArray type="Float32" Name="Mf_Grid [ ]" NumberOfComponents="1" format="appended"/>
+			<PDataArray type="Int32" Name="ID" NumberOfComponents="1" format="appended"/>
+			<PDataArray type="Int32" Name="Active" NumberOfComponents="1" format="appended"/>
+		</PPointData>
+		<Piece Source="output_passive_tracers_p00000000.vtu"/>
+	</PUnstructuredGrid>
+</VTKFile>
