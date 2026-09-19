@@ -16,6 +16,12 @@ using GeophysicalModelGenerator: lonlatdepth_grid, GeoData, UTMData, km, remove_
 
 println("Loading GMT routines within GMG")
 
+# Official GMT data server mirrors, see https://www.generic-mapping-tools.org/mirrors.
+# `import_topo` cycles through these if a download fails, so that a single
+# mirror being offline does not break the download (or the tests that check it).
+# Ordered by measured response; "singapore" is omitted as it was unreachable.
+const GMT_DATA_SERVERS = ["oceania", "australia", "sdsc-opentopography", "noaa", "brasil", "china"]
+
 
 """
     Topo = import_topo(limits; file::String="@earth_relief_01m", maxattempts=5) 
@@ -75,27 +81,32 @@ function import_topo(limits; file::String = "@earth_relief_01m", maxattempts = 5
         limits[1:2] = sort(limits[1:2])
     end
 
-    # Download topo file  - add a few attempts to do so.
-    # When the GMT data server is briefly unreachable, GMT turns off
+    # Download topo file. If the GMT data server is unreachable, GMT stops
     # auto-downloading and reports "Remote download is currently deactivated".
-    # That state clears once the server responds again, so retrying in-process
-    # does recover -- but only with a long enough backoff to outlast the outage.
+    # Rather than only retrying the same server, cycle through the official
+    # mirrors (see https://www.generic-mapping-tools.org/mirrors), so a single
+    # server being down no longer fails the download. The download itself is
+    # still exercised -- we only change *which* mirror serves it.
     local G
     local last_err = nothing
     for attempt in 1:maxattempts
+        server = GMT_DATA_SERVERS[mod1(attempt, length(GMT_DATA_SERVERS))]
         try
+            # Note: GMT reads GMT_DATA_SERVER when the session starts, so setting
+            # the environment variable here has no effect; `gmtset` changes it at runtime.
+            gmtset(GMT_DATA_SERVER = server)
             G = gmtread(file, limits = limits, grid = true)
             break
         catch e
             last_err = e
-            @warn "Failed downloading GMT topography ($file) on attempt $attempt/$maxattempts"
+            @warn "Failed downloading GMT topography ($file) from mirror \"$server\" on attempt $attempt/$maxattempts"
             if attempt < maxattempts
-                sleep(10 * attempt)  # back off progressively
+                sleep(5)  # brief pause before trying the next mirror
             end
         end
     end
     if !(@isdefined G)
-        error("Could not download GMT topography \"$file\" after $maxattempts attempts. Last error: $last_err")
+        error("Could not download GMT topography \"$file\" after $maxattempts attempts across mirrors $(GMT_DATA_SERVERS). Last error: $last_err")
     end
 
     # Transfer to GeoData
