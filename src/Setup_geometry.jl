@@ -301,9 +301,9 @@ function add_box!(
                 Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], phase)
             end
             if segments !== nothing
-                Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind_flat], T, segments)
+                Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind_flat], T, segments; ztop = ztop, zbot = zbot)
             else
-                Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind_flat], T)
+                Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind_flat], T; ztop = ztop, zbot = zbot)
             end
         end
         # Set the phase. Different routines are available for that - see below.
@@ -449,7 +449,7 @@ function add_layer!(
     if !isempty(ind_flat)
         # Compute thermal structure accordingly. See routines below for different options
         if !isnothing(T)
-            Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], X[ind], Y[ind], Z[ind], Phase[ind_flat], T)
+            Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], X[ind], Y[ind], Z[ind], Phase[ind_flat], T; ztop = maximum(zlim), zbot = minimum(zlim))
         end
 
         # Set the phase. Different routines are available for that - see below.
@@ -521,7 +521,7 @@ function add_sphere!(
     if !isempty(ind_flat)
         # Compute thermal structure accordingly. See routines below for different options
         if T != nothing
-            Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], X[ind], Y[ind], Z[ind], Phase[ind_flat], T)
+            Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], X[ind], Y[ind], Z[ind], Phase[ind_flat], T; ztop = cen[3] + radius, zbot = cen[3] - radius)
         end
 
         # Set the phase. Different routines are available for that - see below.
@@ -802,7 +802,7 @@ function add_polygon!(
     if !isempty(ind)
         # Compute thermal structure accordingly. See routines below for different options
         if T != nothing
-            Temp[ind] = compute_thermal_structure(Temp[ind], X[ind], Y[ind], Z[ind], Phase[ind], T)
+            Temp[ind] = compute_thermal_structure(Temp[ind], X[ind], Y[ind], Z[ind], Phase[ind], T; ztop = maximum(zlim_), zbot = minimum(zlim_))
         end
 
         # Set the phase. Different routines are available for that - see below.
@@ -920,9 +920,9 @@ function add_plate!(
     if !isempty(ind)
         if T != nothing
             if segments !== nothing
-                Temp[ind] = compute_thermal_structure(Temp[ind], X[ind], Y[ind], Z[ind], Phase[ind], T, segments)
+                Temp[ind] = compute_thermal_structure(Temp[ind], X[ind], Y[ind], Z[ind], Phase[ind], T, segments; ztop = maximum(zlim_), zbot = minimum(zlim_))
             else
-                Temp[ind] = compute_thermal_structure(Temp[ind], X[ind], Y[ind], Z[ind], Phase[ind], T)
+                Temp[ind] = compute_thermal_structure(Temp[ind], X[ind], Y[ind], Z[ind], Phase[ind], T; ztop = maximum(zlim_), zbot = minimum(zlim_))
             end
         end
         Phase[ind] = compute_phase(Phase[ind], Temp[ind], X[ind], Y[ind], Z[ind], phase)
@@ -1062,7 +1062,8 @@ function add_volcano!(
     # @views Temp[ind .== false] .= 0.0
     if !isempty(ind_flat)
         if !isnothing(T)
-            Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Grid.x.val[ind], Grid.y.val[ind], depth[ind], Phases[ind_flat], T)
+            # depth is measured downwards from the topography, so the surface is at depth = 0
+            Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Grid.x.val[ind], Grid.y.val[ind], depth[ind], Phases[ind_flat], T; ztop = 0.0, zbot = maximum(depth[ind]))
         end
     end
 
@@ -1254,7 +1255,7 @@ Parameters
     T = 1000
 end
 
-function compute_thermal_structure(Temp, X, Y, Z, Phase, s::ConstantTemp)
+function compute_thermal_structure(Temp, X, Y, Z, Phase, s::ConstantTemp; kwargs...)
     Temp .= s.T
     return Temp
 end
@@ -1263,7 +1264,11 @@ end
 """
     LinearTemp(Ttop=0, Tbot=1000)
 
-Set a linear temperature structure from top to bottom
+Set a linear temperature structure from top to bottom.
+
+`Ttop` is applied at the top of the region the structure is added to (e.g. the top of the
+box or polygon) and `Tbot` at its bottom, wherever these are located; the temperature
+varies linearly in between.
 
 Parameters
 ===
@@ -1276,20 +1281,31 @@ Parameters
     Tbot = 1350
 end
 
-function compute_thermal_structure(Temp, X, Y, Z, Phase, s::LinearTemp)
+function compute_thermal_structure(Temp, X, Y, Z, Phase, s::LinearTemp; ztop = nothing, zbot = nothing)
     @unpack Ttop, Tbot = s
 
-    dz = Z[end] - Z[1]
+    # Anchor at the geometric top/bottom of the region when the caller knows them;
+    # otherwise fall back to the extent of the grid points inside it.
+    zbot_grid, ztop_grid = extrema(Z)
+    ztop = isnothing(ztop) ? ztop_grid : ztop
+    zbot = isnothing(zbot) ? zbot_grid : zbot
+    dz = ztop - zbot
     dT = Tbot - Ttop
 
-    Temp = abs.((Z .- Z[end]) ./ dz) .* dT .+ Ttop
+    if dz == 0
+        return fill!(Temp, Ttop)   # region without vertical extent: no gradient to apply
+    end
+    Temp = abs.((Z .- ztop) ./ dz) .* dT .+ Ttop
     return Temp
 end
 
 """
     HalfspaceCoolingTemp(Tsurface=0, Tmantle=1350, Age=60, Adiabat=0)
 
-Sets a halfspace temperature structure in plate
+Sets a halfspace temperature structure in plate.
+
+`Tsurface` is applied at the top of the region the structure is added to (e.g. the top of the
+box or polygon), and the depth used in the cooling model is measured from there.
 
 Parameters
 ========
@@ -1306,18 +1322,20 @@ Parameters
     Adiabat = 0        # Adiabatic gradient in K/km
 end
 
-function compute_thermal_structure(Temp, X, Y, Z, Phase, s::HalfspaceCoolingTemp)
+function compute_thermal_structure(Temp, X, Y, Z, Phase, s::HalfspaceCoolingTemp; ztop = nothing, zbot = nothing)
     @unpack Tsurface, Tmantle, Age, Adiabat = s
 
     kappa = 1.0e-6
     SecYear = 3600 * 24 * 365
-    dz = Z[end] - Z[1]
+    # Depth is measured from the geometric top of the region (the surface of the
+    # cooling halfspace), not from the topmost grid point inside it.
+    ztop = isnothing(ztop) ? maximum(Z) : ztop
     ThermalAge = Age * 1.0e6 * SecYear
 
     MantleAdiabaticT = Tmantle .+ Adiabat * abs.(Z)    # Adiabatic temperature of mantle
 
     for i in eachindex(Temp)
-        Temp[i] = (Tsurface .- Tmantle) * erfc((abs.(Z[i] - Z[end]) * 1.0e3) ./ (2 * sqrt(kappa * ThermalAge))) + MantleAdiabaticT[i]
+        Temp[i] = (Tsurface .- Tmantle) * erfc((abs.(Z[i] - ztop) * 1.0e3) ./ (2 * sqrt(kappa * ThermalAge))) + MantleAdiabaticT[i]
     end
     return Temp
 end
@@ -1351,7 +1369,7 @@ Note: the thermal age at the mid oceanic ridge is set to 1 year to avoid divisio
     maxAge = 60       # maximum thermal age of plate [Myrs]
 end
 
-function compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp)
+function compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp; kwargs...)
     @unpack Tsurface, Tmantle, Adiabat, MORside, SpreadingVel, AgeRidge, maxAge = s
 
     kappa = 1.0e-6
@@ -1416,7 +1434,7 @@ The thermal age is capped at `maxAge` years, and the temperature is adjusted bas
 
 """
 
-function compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp, segments::Vector{Tuple{Tuple{Float64, Float64}, Tuple{Float64, Float64}}})
+function compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp, segments::Vector{Tuple{Tuple{Float64, Float64}, Tuple{Float64, Float64}}}; kwargs...)
     @unpack Tsurface, Tmantle, Adiabat, SpreadingVel, AgeRidge, maxAge = s
     kappa = 1.0e-6
     SecYear = 3600 * 24 * 365
@@ -1548,7 +1566,7 @@ struct Thermal_parameters{A}
     end
 end
 
-function compute_thermal_structure(Temp, X, Y, Z, Phase, s::LithosphericTemp)
+function compute_thermal_structure(Temp, X, Y, Z, Phase, s::LithosphericTemp; kwargs...)
     @unpack Tsurface, Tpot, dTadi, ubound, lbound, utbf, ltbf, age,
         dtfac, nz, rheology = s
 
@@ -1839,7 +1857,7 @@ Parameters
 - `Phase`: Phase array
 - `s`:    `McKenzie_subducting_slab`
 """
-function compute_thermal_structure(Temp, X, Y, Z, Phase, s::McKenzie_subducting_slab)
+function compute_thermal_structure(Temp, X, Y, Z, Phase, s::McKenzie_subducting_slab; kwargs...)
     @unpack Tsurface, Tmantle, Adiabat, v_cm_yr, κ, it = s
 
     # Thickness of the layer:
@@ -1913,7 +1931,7 @@ can be used to smooth the temperature field from continent ocean:
 - compute the thermal fields {F1} {F2}
 - then modify F.
 """
-function compute_thermal_structure(Temp, X, Y, Z, Phase, s::LinearWeightedTemperature)
+function compute_thermal_structure(Temp, X, Y, Z, Phase, s::LinearWeightedTemperature; kwargs...)
     @unpack w_min, w_max, crit_dist, dir = s
     @unpack F1, F2 = s
 
@@ -1928,8 +1946,8 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::LinearWeightedTemper
     # compute the 1D thermal structures
     Temp1 = zeros(size(Temp))
     Temp2 = zeros(size(Temp))
-    Temp1 = compute_thermal_structure(Temp1, X, Y, Z, Phase, F1)
-    Temp2 = compute_thermal_structure(Temp2, X, Y, Z, Phase, F2)
+    Temp1 = compute_thermal_structure(Temp1, X, Y, Z, Phase, F1; kwargs...)
+    Temp2 = compute_thermal_structure(Temp2, X, Y, Z, Phase, F2; kwargs...)
 
     # Compute the weights
     weight = w_min .+ (w_max - w_min) ./ (crit_dist) .* (dist)
@@ -2289,7 +2307,8 @@ function add_slab!(
 
         # Compute thermal structure accordingly. See routines below for different options {Future: introducing the length along the trench for having lateral varying properties along the trench}
         if !isnothing(T)
-            Temp[ind] = compute_thermal_structure(Temp[ind], ls[ind], Y[ind], d[ind], Phase[ind], T)
+            # d is the distance perpendicular to the slab: its surface is at d = 0 and its base at d = -Thickness
+            Temp[ind] = compute_thermal_structure(Temp[ind], ls[ind], Y[ind], d[ind], Phase[ind], T; ztop = 0.0, zbot = -trench.Thickness)
         end
 
         # Set the phase
