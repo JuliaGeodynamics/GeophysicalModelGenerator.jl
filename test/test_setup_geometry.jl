@@ -226,7 +226,7 @@ add_box!(Phase, Temp, Cart; xlim = (0.0, 600.0), ylim = (0.0, 600.0), zlim = (-8
 T_slab = LinearWeightedTemperature(crit_dist = 600, F1 = TsHC, F2 = TsMK);
 Temp = ones(Float64, size(Cart)) * 1350;
 add_box!(Phase, Temp, Cart; xlim = (0.0, 600.0), ylim = (0.0, 600.0), zlim = (-80.0, 0.0), phase = ConstantPhase(5), T = T_slab);
-@test sum(Temp) ≈ 3.496951166102279e8
+@test sum(Temp) ≈ 3.499457641038468e8
 
 
 Data_Final = addfield(Cart, "Temp", Temp)
@@ -248,7 +248,7 @@ add_box!(Phase, Temp, Cart; xlim = (0.0, 600.0), ylim = (0.0, 600.0), zlim = (-8
 # add accretionary prism
 add_polygon!(Phase, Temp, Cart; xlim = (500.0, 200.0, 500.0), ylim = (100.0, 400.0), zlim = (-5.0, -5.0, -65.0), phase = ConstantPhase(8), T = LinearTemp(Ttop = 20, Tbot = 30))
 @test maximum(Phase) == 8
-@test minimum(Temp) == 20.0
+@test minimum(Temp) ≈ 20.22486772486773
 @test sum(Phase) == 293264
 
 # Test the Bending slab geometry
@@ -275,7 +275,7 @@ TsHC = HalfspaceCoolingTemp(Tsurface = 20.0, Tmantle = 1350, Age = 30, Adiabat =
 temp = TsHC;
 
 add_slab!(Phase, Temp, Cart, t1, phase = phase, T = TsHC)
-@test Temp[84, 84, 110] ≈ 1042.7807110443487
+@test Temp[84, 84, 110] ≈ 1045.1322688510577
 @test extrema(Phase) == (1, 4)
 
 # with weak zone
@@ -303,7 +303,7 @@ phase = LithosphericPhases(Layers = [5 7 88], Phases = [2 3 4], Tlab = nothing)
 t1 = Trench(Start = (400.0, 400.0), End = (800.0, 800.0), θ_max = 90.0, direction = 1.0, n_seg = 50, Length = 600.0, Thickness = 80.0, Lb = 500.0, d_decoupling = 100.0, type_bending = :Ribe, WeakzoneThickness = 10, WeakzonePhase = 9)
 
 add_slab!(Phase, Temp, Cart, t1, phase = phase, T = T_slab)
-@test Temp[84, 84, 110] ≈ 623.9868388771819
+@test Temp[84, 84, 110] ≈ 624.6682008876219
 
 Data_Final = CartData(X, Y, Z, (Phase = Phase, Temp = Temp))
 
@@ -322,7 +322,7 @@ add_slab!(Phases, Temp, Grid2D, trench, phase = ConstantPhase(2), T = HalfspaceC
 T_slab = LinearWeightedTemperature(F1 = HalfspaceCoolingTemp(Age = 40), F2 = McKenzie_subducting_slab(Tsurface = 0, v_cm_yr = 4, Adiabat = 0.0), crit_dist = 600)
 add_slab!(Phases, Temp, Grid2D, trench, phase = ConstantPhase(2), T = T_slab);
 
-@test sum(Temp) ≈ 8.571247449404927e7
+@test sum(Temp) ≈ 8.571402268095453e7
 @test extrema(Phases) == (0, 2)
 
 # Add them to the `CartData` dataset:
@@ -365,7 +365,7 @@ add_slab!(Phases, Temp, Grid2D, trench, phase = lith, T = T_slab);
 ind = findall(Temp .> 1250 .&& (Phases .== 2 .|| Phases .== 5));
 Phases[ind] .= 0;
 
-@test sum(Temp) ≈ 8.291641108619794e7
+@test sum(Temp) ≈ 8.292000736425713e7
 @test extrema(Phases) == (0, 6)
 #Grid2D = CartData(Grid2D.x.val,Grid2D.y.val,Grid2D.z.val, (;Phases, Temp))
 #write_paraview(Grid2D,"Grid2D_SubductionCurvedOverriding");
@@ -465,7 +465,41 @@ add_ellipsoid!(PhasesV, TempV, Grid, cen = (4, 15, -17), axes = (1, 2, 3), Strik
 
 # Add data to cell fields:
 add_box!(PhasesC, TempC, Grid, xlim = (2, 4), zlim = (-15, -10), phase = ConstantPhase(3), DipAngle = 10, T = LinearTemp(Tbot = 1350, Ttop = 200), cell = true)
-@test sum(TempC[1, 1, :]) ≈ 13235.793377972634
+@test sum(TempC[1, 1, :]) ≈ 13051.985346405856
 
 add_ellipsoid!(PhasesC, TempC, Grid, cen = (4, 15, -17), axes = (1, 2, 3), StrikeAngle = 90, DipAngle = 45, phase = ConstantPhase(2), T = ConstantTemp(1600), cell = true)
-@test all(extrema(TempC) .≈ (200, 1600.0))
+@test all(extrema(TempC) .≈ (253.34427030131295, 1600.0))
+
+
+# ---------------------------------------------------------------------------
+# Thermal structures must be anchored at the *geometric* top of the region, not
+# at the topmost grid point inside it (which depends on the grid resolution).
+# See PR #206 (Ttop/Tsurface wrongly assumed at z = 0) and its follow-up fix.
+erfc = GeophysicalModelGenerator.erfc
+halfspace_T(depth_km, Tsurf, Tmantle, Age_Myr) = (Tsurf - Tmantle) * erfc(depth_km * 1.0e3 / (2 * sqrt(1.0e-6 * Age_Myr * 1.0e6 * 3600 * 24 * 365))) + Tmantle
+
+# 1) Box with its top at z = 0, on a grid WITH a node at z = 0 and on one WITHOUT:
+#    the temperature at the same physical depth must be the analytic halfspace value in both cases
+x = -500.0:100.0:500.0; y = -10.0:20.0:10.0
+for z in (-1000.0:20.0:50.0, range(-1000.0, 50.0, length = 65))     # 2nd grid: 16.4 km spacing, no node at 0
+    Cart = CartData(xyz_grid(x, y, z))
+    Phase = zeros(Int64, size(Cart.x)); Temp = zeros(Float64, size(Cart.x))
+    add_box!(Phase, Temp, Cart; xlim = (-500.0, 500.0), zlim = (-1000.0, 0.0), phase = ConstantPhase(3), T = HalfspaceCoolingTemp(Tsurface = 0, Tmantle = 1350, Age = 100))
+    k = findlast(z .<= 0.0)                                             # topmost node inside the box
+    @test Temp[6, 1, k] ≈ halfspace_T(-z[k], 0, 1350, 100)
+    @test Temp[6, 1, k - 5] ≈ halfspace_T(-z[k - 5], 0, 1350, 100)
+end
+
+# 2) Box whose top is at depth (the case PR #206 addressed): Tsurface applies at the box top, not at z = 0
+z = range(-1000.0, 50.0, length = 65)
+Cart = CartData(xyz_grid(x, y, z))
+Phase = zeros(Int64, size(Cart.x)); Temp = zeros(Float64, size(Cart.x))
+add_box!(Phase, Temp, Cart; xlim = (-500.0, 500.0), zlim = (-1000.0, -10.0), phase = ConstantPhase(3), T = HalfspaceCoolingTemp(Tsurface = 0, Tmantle = 1350, Age = 100))
+k = findlast(z .<= -10.0)
+@test Temp[6, 1, k] ≈ halfspace_T(-10.0 - z[k], 0, 1350, 100)
+
+# 3) Polygon with its top at depth and a linear gradient: Ttop at the polygon top, Tbot at its bottom
+Phase = zeros(Int64, size(Cart.x)); Temp = zeros(Float64, size(Cart.x))
+add_polygon!(Phase, Temp, Cart; xlim = (-400.0, 400.0, 400.0, -400.0), ylim = (-10.0, 10.0), zlim = (-10.0, -10.0, -210.0, -210.0), phase = ConstantPhase(2), T = LinearTemp(Ttop = 20, Tbot = 420))
+k = findlast(z .<= -10.0)
+@test Temp[6, 1, k] ≈ 20 + (-10.0 - z[k]) / 200.0 * 400        # 2 C/km below the polygon top
