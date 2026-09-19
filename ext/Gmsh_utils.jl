@@ -3,6 +3,7 @@
 module Gmsh_utils
 
 using GridapGmsh, StaticArrays
+using GridapGmsh: gmsh
 
 import GeophysicalModelGenerator: import_Gmsh, FEData, CartData
 
@@ -13,6 +14,22 @@ import GeophysicalModelGenerator: import_Gmsh, FEData, CartData
 Reads a Gmsh file and returns a `FEData` object with info about the mesh. `tag_names` contains the names of the regions of the FE mesh
 """
 function import_Gmsh(fname::String)
+
+    # `GmshDiscreteModel` initializes and finalizes gmsh itself. That normally
+    # works, but on a freshly started worker process gmsh's global state is
+    # occasionally not in place yet and it fails with "Gmsh has not been
+    # initialized" (seen on Windows under the parallel test runner).
+    #
+    # Initializing here first makes that state explicit. gmsh reference-counts
+    # nothing, so we must NOT finalize afterwards: GmshDiscreteModel already
+    # finalizes the session it used, and a second finalize errors.
+    try
+        if gmsh.isInitialized() == 0
+            gmsh.initialize()
+        end
+    catch e
+        @warn "Could not initialize gmsh, letting GmshDiscreteModel handle it" exception = e
+    end
 
     mesh = GmshDiscreteModel(fname, renumber = false, has_affine_map = false)
 
