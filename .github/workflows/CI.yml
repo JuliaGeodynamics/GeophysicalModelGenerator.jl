@@ -20,6 +20,7 @@ jobs:
   run_tests:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.allow_failure }}
     strategy:
       fail-fast: false
       matrix:
@@ -47,6 +48,18 @@ jobs:
             arch: aarch64
             version: '1.12'
             allow_failure: true
+          # Julia 1.13 is the current stable release; test it explicitly on Linux
+          # so a regression there is visible independently of the '1' alias.
+          - os: ubuntu-latest
+            arch: x64
+            version: '1.13'
+            allow_failure: false
+          # Track the upcoming release so breakage is caught early, without
+          # blocking CI when an unreleased Julia is temporarily broken.
+          - os: ubuntu-latest
+            arch: x64
+            version: 'pre'
+            allow_failure: true
     steps:
       - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v3
@@ -57,7 +70,22 @@ jobs:
         with:
           include-matrix: false
       - uses: julia-actions/julia-buildpkg@latest
+      # Cache the GMT topography tiles that the tests download (see
+      # test/topo_prefetch.jl), so PR runs do not depend on the GMT data
+      # server. The scheduled run skips the cache on purpose, so that the
+      # download itself is still tested regularly.
+      - uses: actions/cache/restore@v4
+        id: gmt-cache
+        if: github.event_name != 'schedule'
+        with:
+          path: ~/.gmt
+          key: gmt-topo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('test/topo_prefetch.jl') }}
       - uses: julia-actions/julia-runtest@latest
+      - uses: actions/cache/save@v4
+        if: always() && github.event_name != 'schedule' && steps.gmt-cache.outputs.cache-hit != 'true'
+        with:
+          path: ~/.gmt
+          key: gmt-topo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('test/topo_prefetch.jl') }}
       - uses: julia-actions/julia-processcoverage@v1
       - uses: codecov/codecov-action@v7
         with:

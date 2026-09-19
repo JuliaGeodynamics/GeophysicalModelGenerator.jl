@@ -102,19 +102,25 @@ function download_data(url::String, local_filename = "temp.dat"; dir = pwd(), ma
 
     #download remote file to a local temporary directory
     file_ext = []
-    attempt = 0
-    while attempt < maxattempts
+    for attempt in 1:maxattempts
         try
             file_ext = Downloads.download(url, joinpath(dir, local_filename))
+            # A truncated transfer can still return a path, so only accept a
+            # download that actually produced a non-empty file.
+            if filesize(file_ext) == 0
+                error("downloaded file is empty")
+            end
             break
-        catch
-            @warn "Failed downloading data on attempt $attempt/$maxattempts"
-            sleep(5)  # wait a few sec
+        catch e
+            file_ext = []
+            @warn "Failed downloading $url on attempt $attempt/$maxattempts: $e"
+            if attempt < maxattempts
+                sleep(5 * attempt)  # back off progressively
+            end
         end
-        attempt += 1
     end
     if isempty(file_ext)
-        error("Could not download GMT topography data")
+        error("Could not download data from $url after $maxattempts attempts")
     end
 
     return file_ext

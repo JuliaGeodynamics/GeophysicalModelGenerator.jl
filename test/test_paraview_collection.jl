@@ -1,5 +1,16 @@
 using Test
 using GeophysicalModelGenerator, WriteVTK
+
+# Check the structure of a `*.pvd` collection rather than its exact byte size:
+# the file embeds absolute paths and OS-dependent separators, so `filesize` varies
+# between machines/platforms and is not a portable assertion.
+function check_pvd(fname, n_datasets)
+    isfile(fname) || return false
+    str = read(fname, String)
+    occursin("type=\"Collection\"", str) || return false
+    return count(_ -> true, eachmatch(r"<DataSet\b", str)) == n_datasets
+end
+
 @testset "Paraview collection" begin
 
     x, y, z = 0:10, 1:6, 2:0.1:3
@@ -20,26 +31,25 @@ using GeophysicalModelGenerator, WriteVTK
 
     make_paraview_collection(; dir = "./test_files", pvd_name = "test", file_extension = ".vti")
     @test isfile("test.pvd")
-    @test filesize("test.pvd") == 317
+    @test check_pvd("test.pvd", 2)
 
     make_paraview_collection(; dir = "./test_files", file_extension = ".vti")
     @test isfile("full_simulation.pvd")
-    @test filesize("full_simulation.pvd") == 317
+    @test check_pvd("full_simulation.pvd", 2)
 
     make_paraview_collection(; dir = "./test_files")
     @test isfile("full_simulation.pvd")
-    #@test filesize("full_simulation.pvd") == 251
 
 
     files = ["test_files/test_vti_1.vti", "test_files/test_vti_2.vti"]
     time = ["1.0", "2.0"]
     make_paraview_collection("test2", files, time)
     @test isfile("test2.pvd")
-    @test filesize("test2.pvd") == 317
+    @test check_pvd("test2.pvd", 2)
 
     make_paraview_collection(; pvd_name = "test3", files = files, time = time)
     @test isfile("test3.pvd")
-    @test filesize("test3.pvd") == 317
+    @test check_pvd("test3.pvd", 2)
 
     rm("test.pvd")
     rm("full_simulation.pvd")
