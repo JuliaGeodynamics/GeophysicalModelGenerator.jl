@@ -512,7 +512,7 @@ function extract_ProfileData!(Profile::ProfileData, VolData::NamedTuple, SurfDat
     create_profile_surface!(Profile, SurfData, DimsSurfCross = DimsSurfCross)
     create_profile_point!(Profile, PointData, section_width = section_width)
     if !isnothing(TopoData)
-        create_profile_topo!(Profile, TopoData, DimsSurfCross = DimsSurfCross*5) # we use a larger number of points for the topography, as it is often more detailed than the surface data
+        create_profile_topo!(Profile, TopoData, DimsSurfCross = 5 .* DimsSurfCross) # we use a larger number of points for the topography, as it is often more detailed than the surface data
     end
     if !isnothing(ScreenshotData)
         create_profile_screenshot!(Profile, ScreenshotData)
@@ -540,7 +540,7 @@ function extract_ProfileData!(Profile::ProfileData, VolData::GeoData, SurfData::
     create_profile_surface!(Profile, SurfData, DimsSurfCross = DimsSurfCross)
     create_profile_point!(Profile, PointData, section_width = section_width)
     if !isnothing(TopoData)
-        create_profile_topo!(Profile, TopoData, DimsSurfCross = DimsSurfCross*5) # we use a larger number of points for the topography, as it is often more detailed than the surface data
+        create_profile_topo!(Profile, TopoData, DimsSurfCross = 5 .* DimsSurfCross) # we use a larger number of points for the topography, as it is often more detailed than the surface data
     end
     if !isnothing(ScreenshotData)
         create_profile_screenshot!(Profile, ScreenshotData)
