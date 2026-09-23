@@ -307,7 +307,7 @@ function create_profile_volume!(Profile::ProfileData, VolData::NamedTuple; DimsV
                 # the issue is now that the fields do not contain any information about the originating dataset, so we add the name of the dataset to the field names
                 # we now do this by creating a new data structure named cross_add, which is then built up in the first iteration, and then merged with the next datasets in the following iterations
 
-                cross_add = GeoData(cross_tmp.lon.val, cross_tmp.lat.val, cross_tmp.depth.val, (x_profile = cross_tmp.x_profile.val,)) # create a new GeoData structure with the x_profile field
+                cross_add = GeoData(cross_tmp.lon.val, cross_tmp.lat.val, cross_tmp.depth.val, (x_profile = cross_tmp.fields.x_profile.val,)) # create a new GeoData structure with the x_profile field
                 
                 names_fields = String.(keys(cross_tmp.fields))
                 for ifield in eachindex(names_fields)
