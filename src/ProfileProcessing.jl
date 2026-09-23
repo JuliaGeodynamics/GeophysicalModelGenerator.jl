@@ -485,13 +485,13 @@ end
 
 Extracts data along a vertical or horizontal profile
 """
-function extract_ProfileData!(Profile::ProfileData, VolData::Union{Nothing, GeoData} = nothing, SurfData::NamedTuple = NamedTuple(), PointData::NamedTuple = NamedTuple(); DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km, ScreenshotData = nothing)
+function extract_ProfileData!(Profile::ProfileData, VolData::GeoData, SurfData::NamedTuple = NamedTuple(), PointData::NamedTuple = NamedTuple(); DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km, ScreenshotData = nothing)
 
     return extract_ProfileData!(Profile, VolData, SurfData, PointData, ScreenshotData; DimsVolCross = DimsVolCross, Depth_extent = Depth_extent, DimsSurfCross = DimsSurfCross, section_width = section_width)
 end
 
 # Internal method - called by the main method with ScreenshotData as positional argument
-function extract_ProfileData!(Profile::ProfileData, VolData::Union{Nothing, GeoData}, SurfData::NamedTuple, PointData::NamedTuple, ScreenshotData::Union{Nothing, NamedTuple}; DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km)
+function extract_ProfileData!(Profile::ProfileData, VolData::GeoData, SurfData::NamedTuple, PointData::NamedTuple, ScreenshotData::Union{Nothing, NamedTuple}; DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km)
 
     if !isnothing(VolData)
         create_profile_volume!(Profile, VolData; DimsVolCross = DimsVolCross, Depth_extent = Depth_extent)
