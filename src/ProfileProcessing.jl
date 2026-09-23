@@ -16,6 +16,7 @@ Structure that holds profile data (interpolated/projected on the profile)
         depth           ::  Union{Nothing,Float64}
         VolData         ::  GeophysicalModelGenerator.GeoData
         SurfData        ::  Union{Nothing, NamedTuple}
+        TopoData        ::  Union{Nothing, NamedTuple}
         PointData       ::  Union{Nothing, NamedTuple}
         ScreenshotData  ::  Union{Nothing, NamedTuple}
     end
@@ -29,6 +30,7 @@ mutable struct ProfileData
     depth::Union{Nothing, Float64}
     VolData::Union{Nothing, GeophysicalModelGenerator.GeoData}
     SurfData::Union{Nothing, NamedTuple}
+    TopoData::Union{Nothing, NamedTuple}
     PointData::Union{Nothing, NamedTuple}
     ScreenshotData::Union{Nothing, NamedTuple}
 
@@ -66,6 +68,9 @@ function show(io::IO, g::ProfileData)
     end
     if !isnothing(g.SurfData)
         println(io, "    SurfData : $(keys(g.SurfData)) ")
+    end
+    if !isnothing(g.TopoData)
+        println(io, "    TopoData : $(keys(g.TopoData)) ")
     end
     if !isnothing(g.PointData)
         println(io, "        PointData: $(keys(g.PointData)) ")
@@ -349,8 +354,6 @@ function create_profile_volume!(Profile::ProfileData, VolData::NamedTuple; DimsV
     return nothing
 end
 
-
-
 ### internal function to process screenshot data - contrary to the volume data, we here have to save lon/lat/depth pairs for every screenshot data set, so we create a NamedTuple of GeoData data sets
 function create_profile_screenshot!(Profile::ProfileData, DataSet::NamedTuple)
     num_datasets = length(DataSet)
@@ -411,6 +414,41 @@ function create_profile_surface!(Profile::ProfileData, DataSet::NamedTuple; Dims
 end
 
 
+### internal function to process topography data - contrary to the volume data, we here have to save lon/lat/depth pairs for every surface data set, so we create a NamedTuple of GeoData data sets
+### this is essentially the same as create_profile_surface!, but we save the data in Profile.TopoData instead of Profile.SurfData
+function create_profile_topo!(Profile::ProfileData, DataSet::NamedTuple; DimsSurfCross = (100,))
+    num_datasets = length(DataSet)
+
+    tmp = NamedTuple()             # initialize empty one
+    DataSetName = keys(DataSet)    # Names of the datasets
+    for idata in 1:num_datasets
+
+        # load data set --> each data set is a single GeoData structure, so we'll only have to get the respective key to load the correct type
+        data_tmp = DataSet[idata]
+
+        if Profile.vertical
+            # take a vertical cross section
+            data = cross_section_surface(data_tmp, dims = DimsSurfCross, Start = Profile.start_lonlat, End = Profile.end_lonlat)        # create the cross section
+
+            # flatten cross section and add this data to the structure
+            x_profile = flatten_cross_section(data, Start = Profile.start_lonlat)
+            data = addfield(data, "x_profile", x_profile)
+
+            # add the data set as a NamedTuple
+            data_NT = NamedTuple{(DataSetName[idata],)}((data,))
+            tmp = merge(tmp, data_NT)
+
+        else
+            # we do not have this implemented
+            #error("horizontal profiles not yet implemented")
+        end
+    end
+
+    Profile.TopoData = tmp # assign to profile data structure
+    return
+end
+
+
 ### function to process point data - contrary to the volume data, we here have to save lon/lat/depth pairs for every point data set
 function create_profile_point!(Profile::ProfileData, DataSet::NamedTuple; section_width = 50km)
     num_datasets = length(DataSet)
@@ -460,19 +498,22 @@ end
 
 Extracts data along a vertical or horizontal profile. Allows VolData to be passed as a NamedTuple.
 """
-function extract_ProfileData!(Profile::ProfileData, VolData::NamedTuple = NamedTuple(),  SurfData::NamedTuple = NamedTuple(), PointData::NamedTuple = NamedTuple(); DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km, ScreenshotData = nothing)
+function extract_ProfileData!(Profile::ProfileData, VolData::NamedTuple = NamedTuple(),  SurfData::NamedTuple = NamedTuple(), PointData::NamedTuple = NamedTuple(); DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km, ScreenshotData = nothing, TopoData::NamedTuple = NamedTuple())
 
-    return extract_ProfileData!(Profile, VolData, SurfData, PointData, ScreenshotData; DimsVolCross = DimsVolCross, Depth_extent = Depth_extent, DimsSurfCross = DimsSurfCross, section_width = section_width)
+    return extract_ProfileData!(Profile, VolData, SurfData, PointData, TopoData, ScreenshotData; DimsVolCross = DimsVolCross, Depth_extent = Depth_extent, DimsSurfCross = DimsSurfCross, section_width = section_width)
 end
 
 # Internal method - called by the main method with ScreenshotData as positional argument, allows VolData as NamedTuple
-function extract_ProfileData!(Profile::ProfileData, VolData::NamedTuple, SurfData::NamedTuple, PointData::NamedTuple, ScreenshotData::Union{Nothing, NamedTuple}; DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km)
+function extract_ProfileData!(Profile::ProfileData, VolData::NamedTuple, SurfData::NamedTuple, PointData::NamedTuple, TopoData:: Union{Nothing, NamedTuple},ScreenshotData::Union{Nothing, NamedTuple}; DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km)
 
     if !isempty(VolData)
         create_profile_volume!(Profile, VolData; DimsVolCross = DimsVolCross, Depth_extent = Depth_extent)
     end
     create_profile_surface!(Profile, SurfData, DimsSurfCross = DimsSurfCross)
     create_profile_point!(Profile, PointData, section_width = section_width)
+    if !isnothing(TopoData)
+        create_profile_topo!(Profile, TopoData, DimsSurfCross = DimsSurfCross*5) # we use a larger number of points for the topography, as it is often more detailed than the surface data
+    end
     if !isnothing(ScreenshotData)
         create_profile_screenshot!(Profile, ScreenshotData)
     end
@@ -485,19 +526,22 @@ end
 
 Extracts data along a vertical or horizontal profile
 """
-function extract_ProfileData!(Profile::ProfileData, VolData::GeoData, SurfData::NamedTuple = NamedTuple(), PointData::NamedTuple = NamedTuple(); DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km, ScreenshotData = nothing)
+function extract_ProfileData!(Profile::ProfileData, VolData::GeoData, SurfData::NamedTuple = NamedTuple(), PointData::NamedTuple = NamedTuple(); DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km, ScreenshotData = nothing, TopoData::NamedTuple = NamedTuple())
 
-    return extract_ProfileData!(Profile, VolData, SurfData, PointData, ScreenshotData; DimsVolCross = DimsVolCross, Depth_extent = Depth_extent, DimsSurfCross = DimsSurfCross, section_width = section_width)
+    return extract_ProfileData!(Profile, VolData, SurfData, PointData, TopoData, ScreenshotData; DimsVolCross = DimsVolCross, Depth_extent = Depth_extent, DimsSurfCross = DimsSurfCross, section_width = section_width)
 end
 
 # Internal method - called by the main method with ScreenshotData as positional argument
-function extract_ProfileData!(Profile::ProfileData, VolData::GeoData, SurfData::NamedTuple, PointData::NamedTuple, ScreenshotData::Union{Nothing, NamedTuple}; DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km)
+function extract_ProfileData!(Profile::ProfileData, VolData::GeoData, SurfData::NamedTuple, PointData::NamedTuple, TopoData::Union{Nothing, NamedTuple}, ScreenshotData::Union{Nothing, NamedTuple}; DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km)
 
     if !isnothing(VolData)
         create_profile_volume!(Profile, VolData; DimsVolCross = DimsVolCross, Depth_extent = Depth_extent)
     end
     create_profile_surface!(Profile, SurfData, DimsSurfCross = DimsSurfCross)
     create_profile_point!(Profile, PointData, section_width = section_width)
+    if !isnothing(TopoData)
+        create_profile_topo!(Profile, TopoData, DimsSurfCross = DimsSurfCross*5) # we use a larger number of points for the topography, as it is often more detailed than the surface data
+    end
     if !isnothing(ScreenshotData)
         create_profile_screenshot!(Profile, ScreenshotData)
     end
