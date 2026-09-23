@@ -297,7 +297,7 @@ function create_profile_volume!(Profile::ProfileData, VolData::NamedTuple; DimsV
     datasetnames = String.(keys(VolData)) # get the names of the datasets
 
     if Profile.vertical # take a vertical cross section
-        for ivol in eachindex(VolData) # loop over the different datasets and create a cross section through each of them
+        for ivol in eachindex(datasetnames) # loop over the different datasets and create a cross section through each of them
             if ivol == 1 
                 cross_tmp = cross_section(VolData[1], dims = DimsVolCross, Start = Profile.start_lonlat, End = Profile.end_lonlat, Depth_extent = Depth_extent)        # create the cross section
                 # flatten cross section and add this data to the structure
