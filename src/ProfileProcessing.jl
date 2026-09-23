@@ -298,7 +298,7 @@ function create_profile_volume!(Profile::ProfileData, VolData::NamedTuple; DimsV
             if ivol == 1 
                 cross_tmp = cross_section(VolData[1], dims = DimsVolCross, Start = Profile.start_lonlat, End = Profile.end_lonlat, Depth_extent = Depth_extent)        # create the cross section
                 # flatten cross section and add this data to the structure
-                x_profile = flatten_cross_section(cross_tmp, Start = Profile.start_lonlat) # in the frist iteration, we create the x_profile field, which is the same for all datasets, so we only need to do this once
+                x_profile = flatten_cross_section(cross_tmp, Start = Profile.start_lonlat) # in the first iteration, we create the x_profile field, which is the same for all datasets, so we only need to do this once
                 cross_tmp = addfield(cross_tmp, "x_profile", x_profile)
 
                 # the issue is now that the fields do not contain any information about the originating dataset, so we add the name of the dataset to the field names
