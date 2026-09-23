@@ -264,7 +264,8 @@ end
 """
     create_profile_volume!(Profile::ProfileData, VolData::AbstractGeneralGrid; DimsVolCross::NTuple=(100,100), Depth_extent=nothing)
 
-Creates a cross-section through a volumetric 3D dataset `VolData` with the data supplied in `Profile`. `Depth_extent` can be the minimum & maximum depth for vertical profiles
+Creates a cross-section through a volumetric 3D dataset `VolData` with the data supplied in `Profile`. `Depth_extent` can be the minimum & maximum depth for vertical profiles.
+
 """
 function create_profile_volume!(Profile::ProfileData, VolData::AbstractGeneralGrid; DimsVolCross::NTuple = (100, 100), Depth_extent = nothing)
 
@@ -287,7 +288,9 @@ end
 
 """
     create_profile_volume!(Profile::ProfileData, VolData::NamedTuple; DimsVolCross::NTuple=(100,100), Depth_extent=nothing)
+
 Creates a cross-section through a volumetric 3D dataset `VolData` with the data supplied in `Profile`. `Depth_extent` can be the minimum & maximum depth for vertical profiles. This function allows to pass the data as NamedTuples instead of a GeoData object.
+
 """
 function create_profile_volume!(Profile::ProfileData, VolData::NamedTuple; DimsVolCross::NTuple = (100, 100), Depth_extent = nothing)
 
@@ -453,6 +456,31 @@ end
 
 
 """
+    extract_ProfileData!(Profile::ProfileData,VolData::NamedTuple, SurfData::NamedTuple, PointData::NamedTuple; DimsVolCross=(100,100),Depth_extent=nothing,DimsSurfCross=(100,),section_width=50, ScreenshotData=nothing)
+
+Extracts data along a vertical or horizontal profile. Allows VolData to be passed as a NamedTuple.
+"""
+function extract_ProfileData!(Profile::ProfileData, VolData::NamedTuple = NamedTuple(),  SurfData::NamedTuple = NamedTuple(), PointData::NamedTuple = NamedTuple(); DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km, ScreenshotData = nothing)
+
+    return extract_ProfileData!(Profile, VolData, SurfData, PointData, ScreenshotData; DimsVolCross = DimsVolCross, Depth_extent = Depth_extent, DimsSurfCross = DimsSurfCross, section_width = section_width)
+end
+
+# Internal method - called by the main method with ScreenshotData as positional argument, allows VolData as NamedTuple
+function extract_ProfileData!(Profile::ProfileData, VolData::NamedTuple, SurfData::NamedTuple, PointData::NamedTuple, ScreenshotData::Union{Nothing, NamedTuple}; DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km)
+
+    if !isempty(VolData)
+        create_profile_volume!(Profile, VolData; DimsVolCross = DimsVolCross, Depth_extent = Depth_extent)
+    end
+    create_profile_surface!(Profile, SurfData, DimsSurfCross = DimsSurfCross)
+    create_profile_point!(Profile, PointData, section_width = section_width)
+    if !isnothing(ScreenshotData)
+        create_profile_screenshot!(Profile, ScreenshotData)
+    end
+    return nothing
+end
+
+
+"""
     extract_ProfileData!(Profile::ProfileData,VolData::GeoData, SurfData::NamedTuple, PointData::NamedTuple; DimsVolCross=(100,100),Depth_extent=nothing,DimsSurfCross=(100,),section_width=50, ScreenshotData=nothing)
 
 Extracts data along a vertical or horizontal profile
@@ -475,6 +503,10 @@ function extract_ProfileData!(Profile::ProfileData, VolData::Union{Nothing, GeoD
     end
     return nothing
 end
+
+
+
+
 
 """
 This reads the picked profiles from disk and returns a vector of ProfileData
