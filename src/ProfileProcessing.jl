@@ -311,7 +311,7 @@ function create_profile_volume!(Profile::ProfileData, VolData::NamedTuple; DimsV
                 
                 names_fields = String.(keys(cross_tmp.fields))
                 for ifield in eachindex(names_fields)
-                    name_new_field = datasetnames[ivol] * "_" * names_fields[ifield] # name of new field includes name of dataset
+                    name_new_field = datasetnames[1] * "_" * names_fields[ifield] # name of new field includes name of dataset
                     cross_add = addfield(cross_add, name_new_field, ustrip.(cross_tmp.fields[ifield])) # Note: we use ustrip here, and thereby remove the values, as the cross-section routine made problems
                 end
 
@@ -321,6 +321,7 @@ function create_profile_volume!(Profile::ProfileData, VolData::NamedTuple; DimsV
                 names_fields = String.(keys(cross_tmp.fields))
                 for ifield in eachindex(names_fields)
                     name_new_field = datasetnames[ivol] * "_" * names_fields[ifield] # name of new field includes name of dataset
+                    println("Adding field $name_new_field to cross_add")
                     cross_add = addfield(cross_add, name_new_field, ustrip.(cross_tmp.fields[ifield])) # Note: we use ustrip here, and thereby remove the values, as the cross-section routine made problems
                 end
             end
