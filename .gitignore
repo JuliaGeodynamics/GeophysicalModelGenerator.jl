@@ -27,3 +27,4 @@ tutorial/test.tiff
 *.tiff
 *.nc
 !/test/test_files/ISCTest.xml
+test/gmt.history
