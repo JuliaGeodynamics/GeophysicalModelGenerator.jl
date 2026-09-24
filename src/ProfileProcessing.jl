@@ -302,53 +302,53 @@ function create_profile_volume!(Profile::ProfileData, VolData::NamedTuple; DimsV
     datasetnames = String.(keys(VolData)) # get the names of the datasets
 
     if Profile.vertical # take a vertical cross section
-        for ivol in eachindex(datasetnames) # loop over the different datasets and create a cross section through each of them
-            if ivol == 1 
-                cross_tmp = cross_section(VolData[1], dims = DimsVolCross, Start = Profile.start_lonlat, End = Profile.end_lonlat, Depth_extent = Depth_extent)        # create the cross section
-                # flatten cross section and add this data to the structure
-                x_profile = flatten_cross_section(cross_tmp, Start = Profile.start_lonlat) # in the first iteration, we create the x_profile field, which is the same for all datasets, so we only need to do this once
-                cross_tmp = addfield(cross_tmp, "x_profile", x_profile)
 
-                # the issue is now that the fields do not contain any information about the originating dataset, so we add the name of the dataset to the field names
-                # we now do this by creating a new data structure named cross_add, which is then built up in the first iteration, and then merged with the next datasets in the following iterations
+        # process the first dataset, and create the cross_add structure
+        #-----------------------------------------------------------------------
+        cross_tmp = cross_section(VolData[1], dims = DimsVolCross, Start = Profile.start_lonlat, End = Profile.end_lonlat, Depth_extent = Depth_extent)        # create the cross section
+        # flatten cross section and add this data to the structure
+        x_profile = flatten_cross_section(cross_tmp, Start = Profile.start_lonlat) # in the first iteration, we create the x_profile field, which is the same for all datasets, so we only need to do this once
+        cross_tmp = addfield(cross_tmp, "x_profile", x_profile)
 
-                cross_add = GeoData(cross_tmp.lon.val, cross_tmp.lat.val, cross_tmp.depth.val, (x_profile = cross_tmp.fields.x_profile,)) # create a new GeoData structure with the x_profile field
+        # the issue is now that the fields do not contain any information about the originating dataset, so we add the name of the dataset to the field names
+        # we now do this by creating a new data structure named cross_add, which is then built up in the first iteration, and then merged with the next datasets in the following iterations
+
+        cross_add = GeoData(cross_tmp.lon.val, cross_tmp.lat.val, cross_tmp.depth.val, (x_profile = cross_tmp.fields.x_profile,)) # create a new GeoData structure with the x_profile field
                 
-                names_fields = String.(keys(cross_tmp.fields))
-                for ifield in eachindex(names_fields)
-                    name_new_field = datasetnames[1] * "_" * names_fields[ifield] # name of new field includes name of dataset
-                    cross_add = addfield(cross_add, name_new_field, ustrip.(cross_tmp.fields[ifield])) # Note: we use ustrip here, and thereby remove the units, as the cross-section routine made problems
-                end
+        names_fields = String.(keys(cross_tmp.fields))
+        for ifield in eachindex(names_fields)
+            name_new_field = datasetnames[1] * "_" * names_fields[ifield] # name of new field includes name of dataset
+            cross_add = addfield(cross_add, name_new_field, ustrip.(cross_tmp.fields[ifield])) # Note: we use ustrip here, and thereby remove the units, as the cross-section routine made problems
+        end
 
-            else
-                cross_tmp = cross_section(VolData[ivol], dims = DimsVolCross, Start = Profile.start_lonlat, End = Profile.end_lonlat, Depth_extent = Depth_extent)        # create the cross section
-                # add new fields to the cross_add structure, which already contains the data from the previous datasets
-                names_fields = String.(keys(cross_tmp.fields))
-                for ifield in eachindex(names_fields)               
-                    name_new_field = datasetnames[ivol] * "_" * names_fields[ifield] # name of new field includes name of dataset
-                    cross_add = addfield(cross_add, name_new_field, ustrip.(cross_tmp.fields[ifield])) # Note: we use ustrip here, and thereby remove the units, as the cross-section routine made problems
-                end
+        # loop over the remaining datasets and add the result to the cross_add structure
+        for ivol in eachindex(datasetnames)[2:end] 
+            cross_tmp = cross_section(VolData[ivol], dims = DimsVolCross, Start = Profile.start_lonlat, End = Profile.end_lonlat, Depth_extent = Depth_extent)        # create the cross section
+            # add new fields to the cross_add structure, which already contains the data from the previous datasets
+            names_fields = String.(keys(cross_tmp.fields))
+            for ifield in eachindex(names_fields)               
+                name_new_field = datasetnames[ivol] * "_" * names_fields[ifield] # name of new field includes name of dataset
+                cross_add = addfield(cross_add, name_new_field, ustrip.(cross_tmp.fields[ifield])) # Note: we use ustrip here, and thereby remove the units, as the cross-section routine made problems
             end
-
         end
     
     else # take a horizontal cross section
-        for ivol in eachindex(datasetnames) # loop over the different datasets and create a cross section through each of them - 
-            if ivol == 1
-                cross_tmp = cross_section(VolData, Depth_level = Profile.depth, Interpolate = true, dims =  DimsVolCross) # create a horizontal cross section
-                cross_add = GeoData(cross_tmp.lon.val, cross_tmp.lat.val, cross_tmp.depth.val, (FlatCrossSection = cross_tmp.fields.FlatCrossSection,)) # create a basic cross section  structure with the FlatCrossSection field
-                names_fields = String.(keys(cross_tmp.fields))
-                for ifield in eachindex(names_fields)
-                    name_new_field = datasetnames[ivol] * "_" * names_fields[ifield] # name of new field    includes name of dataset
-                    cross_add = addfield(cross_add, name_new_field, ustrip.(cross_tmp.fields[ifield])) # Note: we use ustrip here, and thereby remove the units, as the cross-section routine  made problems
-                end
-            else
-                cross_tmp = cross_section(VolData[ivol], Depth_level = Profile.depth, Interpolate = true,   dims = DimsVolCross) # create a horizontal cross section
-                names_fields = String.(keys(cross_tmp.fields))
-                for ifield in eachindex(names_fields)
-                    name_new_field = datasetnames[ivol] * "_" * names_fields[ifield] # name of new field    includes name of dataset
-                    cross_add = addfield(cross_add, name_new_field, ustrip.(cross_tmp.fields[ifield])) # Note: we use ustrip here, and thereby remove the units, as the cross-section routine  made problems
-                end
+
+        # process the first dataset, and create the cross_add structure
+        cross_tmp = cross_section(VolData[1], Depth_level = Profile.depth, Interpolate = true, dims =  DimsVolCross) # create a horizontal cross section
+        cross_add = GeoData(cross_tmp.lon.val, cross_tmp.lat.val, cross_tmp.depth.val, (FlatCrossSection = cross_tmp.fields.FlatCrossSection,)) # create a basic cross section  structure with the FlatCrossSection field
+        names_fields = String.(keys(cross_tmp.fields))
+        for ifield in eachindex(names_fields)
+            name_new_field = datasetnames[1] * "_" * names_fields[ifield] # name of new field    includes name of dataset
+            cross_add = addfield(cross_add, name_new_field, ustrip.(cross_tmp.fields[ifield])) # Note: we use ustrip here, and thereby remove the units, as the cross-section routine  made problems
+        end
+
+        for ivol in eachindex(datasetnames)[2:end] # loop over the remaining datasets and create a cross section through each of them
+            cross_tmp = cross_section(VolData[ivol], Depth_level = Profile.depth, Interpolate = true,   dims = DimsVolCross) # create a horizontal cross section
+            names_fields = String.(keys(cross_tmp.fields))
+            for ifield in eachindex(names_fields)
+                name_new_field = datasetnames[ivol] * "_" * names_fields[ifield] # name of new field    includes name of dataset
+                cross_add = addfield(cross_add, name_new_field, ustrip.(cross_tmp.fields[ifield])) # Note: we use ustrip here, and thereby remove the units, as the cross-section routine  made problems
             end
         end
     end
