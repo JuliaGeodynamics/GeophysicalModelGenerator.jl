@@ -70,6 +70,16 @@ GeophysicalModelGenerator.create_profile_volume!(prof2, VolData_combined1)
 GeophysicalModelGenerator.create_profile_volume!(prof1, VolData_combined1, Depth_extent = (-300, -100))
 @test extrema(prof1.VolData.depth.val) == (-300.0, -100.0)
 
+# test routines with volumetric data, but with NamedTuple instead of GeoData
+GeophysicalModelGenerator.create_profile_volume!(prof1, Data.Volume)
+@test prof1.VolData.fields.Hua2017_Vp[30, 40] ≈ 9.141520976523731
+
+GeophysicalModelGenerator.create_profile_volume!(prof2, Data.Volume)
+@test prof2.VolData.fields.Hua2017_Vp[30, 40] ≈ 8.177263544536272
+
+GeophysicalModelGenerator.create_profile_volume!(prof1, Data.Volume, Depth_extent = (-300, -100))
+@test extrema(prof1.VolData.depth.val) == (-300.0, -100.0)
+
 # Intersect surface data:
 GeophysicalModelGenerator.create_profile_surface!(prof1, Data.Surface)
 @test prof1.SurfData[1].fields.MohoDepth[80] ≈ -37.58791461075397km
