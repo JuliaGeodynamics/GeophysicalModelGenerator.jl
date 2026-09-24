@@ -16,6 +16,7 @@ Structure that holds profile data (interpolated/projected on the profile)
         depth           ::  Union{Nothing,Float64}
         VolData         ::  GeophysicalModelGenerator.GeoData
         SurfData        ::  Union{Nothing, NamedTuple}
+        TopoData        ::  Union{Nothing, NamedTuple}
         PointData       ::  Union{Nothing, NamedTuple}
         ScreenshotData  ::  Union{Nothing, NamedTuple}
     end
@@ -29,6 +30,7 @@ mutable struct ProfileData
     depth::Union{Nothing, Float64}
     VolData::Union{Nothing, GeophysicalModelGenerator.GeoData}
     SurfData::Union{Nothing, NamedTuple}
+    TopoData::Union{Nothing, NamedTuple}
     PointData::Union{Nothing, NamedTuple}
     ScreenshotData::Union{Nothing, NamedTuple}
 
@@ -66,6 +68,9 @@ function show(io::IO, g::ProfileData)
     end
     if !isnothing(g.SurfData)
         println(io, "    SurfData : $(keys(g.SurfData)) ")
+    end
+    if !isnothing(g.TopoData)
+        println(io, "    TopoData : $(keys(g.TopoData)) ")
     end
     if !isnothing(g.PointData)
         println(io, "        PointData: $(keys(g.PointData)) ")
@@ -264,7 +269,8 @@ end
 """
     create_profile_volume!(Profile::ProfileData, VolData::AbstractGeneralGrid; DimsVolCross::NTuple=(100,100), Depth_extent=nothing)
 
-Creates a cross-section through a volumetric 3D dataset `VolData` with the data supplied in `Profile`. `Depth_extent` can be the minimum & maximum depth for vertical profiles
+Creates a cross-section through a volumetric 3D dataset `VolData` with the data supplied in `Profile`. `Depth_extent` can be the minimum & maximum depth for vertical profiles.
+
 """
 function create_profile_volume!(Profile::ProfileData, VolData::AbstractGeneralGrid; DimsVolCross::NTuple = (100, 100), Depth_extent = nothing)
 
@@ -282,6 +288,71 @@ function create_profile_volume!(Profile::ProfileData, VolData::AbstractGeneralGr
     end
 
     Profile.VolData = cross_tmp # assign to Profile data structure
+    return nothing
+end
+
+"""
+    create_profile_volume!(Profile::ProfileData, VolData::NamedTuple; DimsVolCross::NTuple=(100,100), Depth_extent=nothing)
+
+Creates a cross-section through a volumetric 3D dataset `VolData` with the data supplied in `Profile`. `Depth_extent` can be the minimum & maximum depth for vertical profiles. This function allows to pass the data as NamedTuples instead of a GeoData object.
+
+"""
+function create_profile_volume!(Profile::ProfileData, VolData::NamedTuple; DimsVolCross::NTuple = (100, 100), Depth_extent = nothing)
+
+    datasetnames = String.(keys(VolData)) # get the names of the datasets
+
+    if Profile.vertical # take a vertical cross section
+
+        # process the first dataset, and create the cross_add structure
+        #-----------------------------------------------------------------------
+        cross_tmp = cross_section(VolData[1], dims = DimsVolCross, Start = Profile.start_lonlat, End = Profile.end_lonlat, Depth_extent = Depth_extent)        # create the cross section
+        # flatten cross section and add this data to the structure
+        x_profile = flatten_cross_section(cross_tmp, Start = Profile.start_lonlat) # in the first iteration, we create the x_profile field, which is the same for all datasets, so we only need to do this once
+        cross_tmp = addfield(cross_tmp, "x_profile", x_profile)
+
+        # the issue is now that the fields do not contain any information about the originating dataset, so we add the name of the dataset to the field names
+        # we now do this by creating a new data structure named cross_add, which is then built up in the first iteration, and then merged with the next datasets in the following iterations
+
+        cross_add = GeoData(cross_tmp.lon.val, cross_tmp.lat.val, cross_tmp.depth.val, (x_profile = cross_tmp.fields.x_profile,)) # create a new GeoData structure with the x_profile field
+                
+        names_fields = String.(keys(cross_tmp.fields))
+        for ifield in eachindex(names_fields)
+            name_new_field = datasetnames[1] * "_" * names_fields[ifield] # name of new field includes name of dataset
+            cross_add = addfield(cross_add, name_new_field, ustrip.(cross_tmp.fields[ifield])) # Note: we use ustrip here, and thereby remove the units, as the cross-section routine made problems
+        end
+
+        # loop over the remaining datasets and add the result to the cross_add structure
+        for ivol in eachindex(datasetnames)[2:end] 
+            cross_tmp = cross_section(VolData[ivol], dims = DimsVolCross, Start = Profile.start_lonlat, End = Profile.end_lonlat, Depth_extent = Depth_extent)        # create the cross section
+            # add new fields to the cross_add structure, which already contains the data from the previous datasets
+            names_fields = String.(keys(cross_tmp.fields))
+            for ifield in eachindex(names_fields)               
+                name_new_field = datasetnames[ivol] * "_" * names_fields[ifield] # name of new field includes name of dataset
+                cross_add = addfield(cross_add, name_new_field, ustrip.(cross_tmp.fields[ifield])) # Note: we use ustrip here, and thereby remove the units, as the cross-section routine made problems
+            end
+        end
+    
+    else # take a horizontal cross section
+
+        # process the first dataset, and create the cross_add structure
+        cross_tmp = cross_section(VolData[1], Depth_level = Profile.depth, Interpolate = true, dims =  DimsVolCross) # create a horizontal cross section
+        cross_add = GeoData(cross_tmp.lon.val, cross_tmp.lat.val, cross_tmp.depth.val, (FlatCrossSection = cross_tmp.fields.FlatCrossSection,)) # create a basic cross section  structure with the FlatCrossSection field
+        names_fields = String.(keys(cross_tmp.fields))
+        for ifield in eachindex(names_fields)
+            name_new_field = datasetnames[1] * "_" * names_fields[ifield] # name of new field    includes name of dataset
+            cross_add = addfield(cross_add, name_new_field, ustrip.(cross_tmp.fields[ifield])) # Note: we use ustrip here, and thereby remove the units, as the cross-section routine  made problems
+        end
+
+        for ivol in eachindex(datasetnames)[2:end] # loop over the remaining datasets and create a cross section through each of them
+            cross_tmp = cross_section(VolData[ivol], Depth_level = Profile.depth, Interpolate = true,   dims = DimsVolCross) # create a horizontal cross section
+            names_fields = String.(keys(cross_tmp.fields))
+            for ifield in eachindex(names_fields)
+                name_new_field = datasetnames[ivol] * "_" * names_fields[ifield] # name of new field    includes name of dataset
+                cross_add = addfield(cross_add, name_new_field, ustrip.(cross_tmp.fields[ifield])) # Note: we use ustrip here, and thereby remove the units, as the cross-section routine  made problems
+            end
+        end
+    end
+    Profile.VolData = cross_add # assign to Profile data structure
     return nothing
 end
 
@@ -345,6 +416,41 @@ function create_profile_surface!(Profile::ProfileData, DataSet::NamedTuple; Dims
 end
 
 
+### internal function to process topography data - contrary to the volume data, we here have to save lon/lat/depth pairs for every surface data set, so we create a NamedTuple of GeoData data sets
+### this is essentially the same as create_profile_surface!, but we save the data in Profile.TopoData instead of Profile.SurfData
+function create_profile_topo!(Profile::ProfileData, DataSet::NamedTuple; DimsSurfCross = (100,))
+    num_datasets = length(DataSet)
+
+    tmp = NamedTuple()             # initialize empty one
+    DataSetName = keys(DataSet)    # Names of the datasets
+    for idata in 1:num_datasets
+
+        # load data set --> each data set is a single GeoData structure, so we'll only have to get the respective key to load the correct type
+        data_tmp = DataSet[idata]
+
+        if Profile.vertical
+            # take a vertical cross section
+            data = cross_section_surface(data_tmp, dims = DimsSurfCross, Start = Profile.start_lonlat, End = Profile.end_lonlat)        # create the cross section
+
+            # flatten cross section and add this data to the structure
+            x_profile = flatten_cross_section(data, Start = Profile.start_lonlat)
+            data = addfield(data, "x_profile", x_profile)
+
+            # add the data set as a NamedTuple
+            data_NT = NamedTuple{(DataSetName[idata],)}((data,))
+            tmp = merge(tmp, data_NT)
+
+        else
+            # we do not have this implemented
+            #error("horizontal profiles not yet implemented")
+        end
+    end
+
+    Profile.TopoData = tmp # assign to profile data structure
+    return
+end
+
+
 ### function to process point data - contrary to the volume data, we here have to save lon/lat/depth pairs for every point data set
 function create_profile_point!(Profile::ProfileData, DataSet::NamedTuple; section_width = 50km)
     num_datasets = length(DataSet)
@@ -390,28 +496,62 @@ end
 
 
 """
-    extract_ProfileData!(Profile::ProfileData,VolData::GeoData, SurfData::NamedTuple, PointData::NamedTuple; DimsVolCross=(100,100),Depth_extent=nothing,DimsSurfCross=(100,),section_width=50, ScreenshotData=nothing)
+    extract_ProfileData!(Profile::ProfileData,VolData::NamedTuple, SurfData::NamedTuple, PointData::NamedTuple; DimsVolCross=(100,100),Depth_extent=nothing,DimsSurfCross=(100,),section_width=50, ScreenshotData=nothing, TopoData=NamedTuple())
+
+Extracts data along a vertical or horizontal profile. Allows VolData to be passed as a NamedTuple.
+"""
+function extract_ProfileData!(Profile::ProfileData, VolData::NamedTuple = NamedTuple(),  SurfData::NamedTuple = NamedTuple(), PointData::NamedTuple = NamedTuple(); DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km, ScreenshotData = nothing, TopoData::NamedTuple = NamedTuple())
+
+    return extract_ProfileData!(Profile, VolData, SurfData, PointData, TopoData, ScreenshotData; DimsVolCross = DimsVolCross, Depth_extent = Depth_extent, DimsSurfCross = DimsSurfCross, section_width = section_width)
+end
+
+# Internal method - called by the main method with ScreenshotData as positional argument, allows VolData as NamedTuple
+function extract_ProfileData!(Profile::ProfileData, VolData::NamedTuple, SurfData::NamedTuple, PointData::NamedTuple, TopoData:: Union{Nothing, NamedTuple},ScreenshotData::Union{Nothing, NamedTuple}; DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km)
+
+    if !isempty(VolData)
+        create_profile_volume!(Profile, VolData; DimsVolCross = DimsVolCross, Depth_extent = Depth_extent)
+    end
+    create_profile_surface!(Profile, SurfData, DimsSurfCross = DimsSurfCross)
+    create_profile_point!(Profile, PointData, section_width = section_width)
+    if !isnothing(TopoData)
+        create_profile_topo!(Profile, TopoData, DimsSurfCross = 5 .* DimsSurfCross) # we use a larger number of points for the topography, as it is often more detailed than the surface data
+    end
+    if !isnothing(ScreenshotData)
+        create_profile_screenshot!(Profile, ScreenshotData)
+    end
+    return nothing
+end
+
+
+"""
+    extract_ProfileData!(Profile::ProfileData,VolData::GeoData, SurfData::NamedTuple, PointData::NamedTuple; DimsVolCross=(100,100),Depth_extent=nothing,DimsSurfCross=(100,),section_width=50, ScreenshotData=nothing, TopoData=NamedTuple())
 
 Extracts data along a vertical or horizontal profile
 """
-function extract_ProfileData!(Profile::ProfileData, VolData::Union{Nothing, GeoData} = nothing, SurfData::NamedTuple = NamedTuple(), PointData::NamedTuple = NamedTuple(); DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km, ScreenshotData = nothing)
+function extract_ProfileData!(Profile::ProfileData, VolData::GeoData, SurfData::NamedTuple = NamedTuple(), PointData::NamedTuple = NamedTuple(); DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km, ScreenshotData = nothing, TopoData::NamedTuple = NamedTuple())
 
-    return extract_ProfileData!(Profile, VolData, SurfData, PointData, ScreenshotData; DimsVolCross = DimsVolCross, Depth_extent = Depth_extent, DimsSurfCross = DimsSurfCross, section_width = section_width)
+    return extract_ProfileData!(Profile, VolData, SurfData, PointData, TopoData, ScreenshotData; DimsVolCross = DimsVolCross, Depth_extent = Depth_extent, DimsSurfCross = DimsSurfCross, section_width = section_width)
 end
 
 # Internal method - called by the main method with ScreenshotData as positional argument
-function extract_ProfileData!(Profile::ProfileData, VolData::Union{Nothing, GeoData}, SurfData::NamedTuple, PointData::NamedTuple, ScreenshotData::Union{Nothing, NamedTuple}; DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km)
+function extract_ProfileData!(Profile::ProfileData, VolData::GeoData, SurfData::NamedTuple, PointData::NamedTuple, TopoData::Union{Nothing, NamedTuple}, ScreenshotData::Union{Nothing, NamedTuple}; DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km)
 
     if !isnothing(VolData)
         create_profile_volume!(Profile, VolData; DimsVolCross = DimsVolCross, Depth_extent = Depth_extent)
     end
     create_profile_surface!(Profile, SurfData, DimsSurfCross = DimsSurfCross)
     create_profile_point!(Profile, PointData, section_width = section_width)
+    if !isnothing(TopoData)
+        create_profile_topo!(Profile, TopoData, DimsSurfCross = 5 .* DimsSurfCross) # we use a larger number of points for the topography, as it is often more detailed than the surface data
+    end
     if !isnothing(ScreenshotData)
         create_profile_screenshot!(Profile, ScreenshotData)
     end
     return nothing
 end
+
+
+
 
 
 """
