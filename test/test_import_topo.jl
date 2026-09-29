@@ -54,7 +54,7 @@ using GeophysicalModelGenerator
 
     @testset "summit is in the right place" begin
         # 3 arcseconds resolves the summit; it should land on the real one to within a
-        # pixel, which is what catches a transposed or mis-assembled grid
+        # pixel, which is what catches a transposed or wrongly assembled grid
         Topo = import_topo(limits, res = "03s")
         z = ustrip.(Topo.fields.Topography)
         i = argmax(z)

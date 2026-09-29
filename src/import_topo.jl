@@ -231,16 +231,18 @@ Fetch one file, trying each mirror in turn. Returns `true` if it was downloaded,
 the file is not on the server -- which is not an error: the 3 arcsecond set covers land only,
 so a tile that is entirely ocean simply does not exist.
 """
-function download_tile(relative_url::AbstractString, dest::AbstractString)
+function download_tile(relative_url::AbstractString, dest::AbstractString; maxattempts::Integer = 5)
     isfile(dest) && filesize(dest) > 0 && return true       # cached
-    for server in GMT_SERVERS
-        try
-            Downloads.download("$server/$relative_url", dest)
-            return true
-        catch err
-            # a 404 means there is no such tile; anything else is worth trying elsewhere
-            if err isa Downloads.RequestError && err.response.status == 404
-                return false
+    for attempt in 1:max(1, maxattempts)
+        for server in GMT_SERVERS
+            try
+                Downloads.download("$server/$relative_url", dest)
+                return true
+            catch err
+                # a 404 means there is no such tile, and no mirror will have it either
+                if err isa Downloads.RequestError && err.response.status == 404
+                    return false
+                end
             end
         end
     end
@@ -269,7 +271,8 @@ end
 Assemble the tiles that cover `limits` and cut out the requested region. Tiles that are not
 on the server are taken to be at sea level, which is what the land-only 3 arcsecond set needs.
 """
-function grid_from_tiles(limits, dataset::AbstractString, res::AbstractString, reg::AbstractString)
+function grid_from_tiles(limits, dataset::AbstractString, res::AbstractString, reg::AbstractString;
+                         maxattempts::Integer = 5)
     lonmin, lonmax, latmin, latmax = limits
     # Not every set is published in both registrations: the SRTM-derived ones are gridline
     # only, 15s is pixel only. GMT serves whichever the set actually has rather than
@@ -304,7 +307,7 @@ function grid_from_tiles(limits, dataset::AbstractString, res::AbstractString, r
     for (j, la) in enumerate(lats), (i, lo) in enumerate(lons)
         name = tile_filename(la, lo, dataset, res, tile_reg)
         file = joinpath(dir, name)
-        if !download_tile("$dataset/$sub/$name", file)
+        if !download_tile("$dataset/$sub/$name", file; maxattempts = maxattempts)
             push!(missing_tiles, (la, lo))      # filled from the coarser set below
             continue
         end
@@ -390,11 +393,12 @@ The coarse resolutions are published as one NetCDF file for the whole globe, whi
 enough to download and cut down here. Reading it needs `NCDatasets`, which is a weak
 dependency -- the tiled resolutions, which are the interesting ones, need nothing extra.
 """
-function grid_from_single_file(limits, dataset::AbstractString, res::AbstractString, reg::AbstractString)
+function grid_from_single_file(limits, dataset::AbstractString, res::AbstractString, reg::AbstractString;
+                               maxattempts::Integer = 5)
     lonmin, lonmax, latmin, latmax = limits
     name = "$(dataset)_$(res)_$(reg).grd"
     file = joinpath(topo_cache_dir(), name)
-    download_tile("$dataset/$name", file) ||
+    download_tile("$dataset/$name", file; maxattempts = maxattempts) ||
         error("could not download $name from the GMT data server")
 
     lon, lat, Z = read_topo_netcdf(file)
@@ -438,7 +442,8 @@ Tiles are cached, so importing the same region again does not download them a se
 """
 function import_topo(limits; dataset::AbstractString = "earth_relief",
                      res::AbstractString = "01m", reg::AbstractString = "g",
-                     file::Union{Nothing, AbstractString} = nothing)
+                     file::Union{Nothing, AbstractString} = nothing,
+                     maxattempts::Integer = 5)
 
     # accept the `file="@earth_relief_01m"` spelling that this function used to take
     if !isnothing(file)
@@ -455,8 +460,8 @@ function import_topo(limits; dataset::AbstractString = "earth_relief",
     end
 
     lon, lat, Z = isnothing(tile_size_deg(dataset, res, native_registration(dataset, res, reg))) ?
-        grid_from_single_file(limits, dataset, res, reg) :
-        grid_from_tiles(limits, dataset, res, reg)
+        grid_from_single_file(limits, dataset, res, reg; maxattempts = maxattempts) :
+        grid_from_tiles(limits, dataset, res, reg; maxattempts = maxattempts)
 
     Lon, Lat, Depth = lonlatdepth_grid(lon, lat, 0)
     @views Depth[:, :, 1] = 1.0e-3 * Z'            # the field is in km
@@ -474,6 +479,10 @@ that name it on the server.
 """
 function parse_topo_file(file::AbstractString)
     s = lstrip(file, '@')
+    # the tutorials write "@earth_relief_01m.grd"; the suffix names the format GMT used to
+    # download into and says nothing about which set is wanted
+    endswith(s, ".grd") && (s = s[1:(end - 4)])
+    endswith(s, ".nc") && (s = s[1:(end - 3)])
     m = match(r"^(.*)_(\d+[dms])(?:_([gp]))?$", s)
     isnothing(m) && error("cannot make sense of the topography file name \"$file\"")
     # a name without a trailing _g/_p leaves the registration open, and GMT then serves
