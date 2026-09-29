@@ -6,6 +6,7 @@ using ParallelTestRunner
 # concurrently (which times out regularly in CI). See topo_prefetch.jl.
 include("topo_prefetch.jl")
 
+include("test_import_topo.jl")
 testsuite = find_tests(@__DIR__)
 # Not a test file, only a helper
 delete!(testsuite, "topo_prefetch")
