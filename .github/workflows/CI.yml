@@ -70,21 +70,29 @@ jobs:
         with:
           include-matrix: false
       - uses: julia-actions/julia-buildpkg@latest
-      # Cache the GMT topography tiles that the tests download (see
+      # Cache the topography tiles that the tests download (see
       # test/topo_prefetch.jl), so PR runs do not depend on the GMT data
       # server. The scheduled run skips the cache on purpose, so that the
       # download itself is still tested regularly.
+      #
+      # `import_topo` keeps the tiles in its own scratch space rather than in
+      # ~/.gmt, which is where GMT used to put them; the UUID is the package's.
+      # ~/.gmt is still cached for import_GeoTIFF, which does go through GMT.
       - uses: actions/cache/restore@v4
         id: gmt-cache
         if: github.event_name != 'schedule'
         with:
-          path: ~/.gmt
+          path: |
+            ~/.julia/scratchspaces/3700c31b-fa53-48a6-808a-ef22d5a84742/topo_tiles
+            ~/.gmt
           key: gmt-topo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('test/topo_prefetch.jl') }}
       - uses: julia-actions/julia-runtest@latest
       - uses: actions/cache/save@v4
         if: always() && github.event_name != 'schedule' && steps.gmt-cache.outputs.cache-hit != 'true'
         with:
-          path: ~/.gmt
+          path: |
+            ~/.julia/scratchspaces/3700c31b-fa53-48a6-808a-ef22d5a84742/topo_tiles
+            ~/.gmt
           key: gmt-topo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('test/topo_prefetch.jl') }}
       - uses: julia-actions/julia-processcoverage@v1
       - uses: codecov/codecov-action@v7

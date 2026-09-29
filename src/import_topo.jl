@@ -10,6 +10,13 @@
 using Downloads, OpenJpeg_jll, Scratch
 
 """
+How long to wait for one tile before giving up on that mirror and trying the next. The
+transfers are a few megabytes, so a minute is generous; without a limit a throttled or
+stalled connection blocks indefinitely.
+"""
+const TILE_TIMEOUT = 60.0
+
+"""
 The GMT data server mirrors. The first that answers is used; the others are tried in turn if
 a download fails, so one server being offline does not fail the import.
 """
@@ -70,7 +77,7 @@ function server_index_file()
     for server in GMT_SERVERS
         root = replace(server, "/server/earth" => "")
         try
-            Downloads.download("$root/gmt_data_server.txt", index)
+            Downloads.download("$root/gmt_data_server.txt", index; timeout = TILE_TIMEOUT)
             return index
         catch
         end
@@ -231,20 +238,32 @@ Fetch one file, trying each mirror in turn. Returns `true` if it was downloaded,
 the file is not on the server -- which is not an error: the 3 arcsecond set covers land only,
 so a tile that is entirely ocean simply does not exist.
 """
-function download_tile(relative_url::AbstractString, dest::AbstractString; maxattempts::Integer = 5)
+function download_tile(relative_url::AbstractString, dest::AbstractString;
+                      maxattempts::Integer = 5, timeout::Real = TILE_TIMEOUT)
     isfile(dest) && filesize(dest) > 0 && return true       # cached
+
+    tmp = dest * ".part"                                    # never leave a half file behind
     for attempt in 1:max(1, maxattempts)
         for server in GMT_SERVERS
             try
-                Downloads.download("$server/$relative_url", dest)
+                # `Downloads.download` waits forever by default. The data server throttles
+                # when several jobs pull tiles at once -- which is exactly what CI does --
+                # and without a timeout a throttled connection hangs the whole run rather
+                # than failing over to the next mirror.
+                Downloads.download("$server/$relative_url", tmp; timeout = timeout)
+                mv(tmp, dest; force = true)
                 return true
             catch err
+                rm(tmp, force = true)
                 # a 404 means there is no such tile, and no mirror will have it either
                 if err isa Downloads.RequestError && err.response.status == 404
                     return false
                 end
             end
         end
+        # back off a little before going round the mirrors again, so a server that is busy
+        # is given a chance rather than hammered
+        attempt < maxattempts && sleep(min(2.0^attempt, 10.0))
     end
     return false
 end
