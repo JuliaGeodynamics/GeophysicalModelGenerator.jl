@@ -1,19 +1,20 @@
-# Warm the GMT topography cache before the parallel test workers start.
+# Warm the topography cache before the parallel test workers start.
 #
 # Several tests (test_GMT, test_WaterFlow, the LaPalma tutorial) download
-# topography tiles through GMT. Under ParallelTestRunner they run concurrently,
-# so they all hit the GMT data server at the same time, and the transfers then
-# regularly time out in CI ("Libcurl Error: Timeout was reached").
+# topography tiles. Under ParallelTestRunner they run concurrently, so they all
+# hit the GMT data server at the same time, and the server throttles: the
+# transfers then crawl or time out in CI.
 #
 # Downloading the tiles here, one at a time and with generous retries, means the
-# workers later find them in GMT's cache (~/.gmt/server) and never touch the
-# network. The download itself is still exercised: it happens right here, and
-# on CI the cache is bypassed for the scheduled run so it is tested regularly.
+# workers later find them in the cache and never touch the network. The download
+# itself is still exercised: it happens right here, and on CI the cache is
+# bypassed for the scheduled run so it is tested regularly.
 #
-# NOTE: .github/workflows/CI.yml caches ~/.gmt keyed on the hash of this file,
-# so changing the list below invalidates that cache automatically.
+# NOTE: .github/workflows/CI.yml caches the scratch space that `import_topo`
+# keeps its tiles in, keyed on the hash of this file, so changing the list below
+# invalidates that cache automatically.
 
-using GeophysicalModelGenerator, GMT
+using GeophysicalModelGenerator
 
 # (region, file) pairs, matching the calls made in the tests/tutorials
 const TOPO_PREFETCH = [
@@ -23,8 +24,8 @@ const TOPO_PREFETCH = [
 ]
 
 function prefetch_topography()
-    gmt_cache = joinpath(get(ENV, "GMT_USERDIR", joinpath(homedir(), ".gmt")), "server")
-    n_before = isdir(gmt_cache) ? count(f -> endswith(f, ".nc"), collect(Iterators.flatten(map(t -> t[3], walkdir(gmt_cache))))) : 0
+    cache = GeophysicalModelGenerator.topo_cache_dir()
+    n_before = isdir(cache) ? count(f -> endswith(f, ".jp2") || endswith(f, ".grd"), readdir(cache)) : 0
 
     for (limits, file) in TOPO_PREFETCH
         t = @elapsed try
@@ -38,8 +39,8 @@ function prefetch_topography()
         @info "Prefetched topography $file for $limits in $(round(t, digits = 1)) s"
     end
 
-    n_after = isdir(gmt_cache) ? count(f -> endswith(f, ".nc"), collect(Iterators.flatten(map(t -> t[3], walkdir(gmt_cache))))) : 0
-    @info "GMT topography cache: $n_after tiles in $gmt_cache ($(n_after - n_before) newly downloaded)"
+    n_after = isdir(cache) ? count(f -> endswith(f, ".jp2") || endswith(f, ".grd"), readdir(cache)) : 0
+    @info "Topography cache: $n_after tiles in $cache ($(n_after - n_before) newly downloaded)"
     return nothing
 end
 

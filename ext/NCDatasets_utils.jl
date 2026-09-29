@@ -8,7 +8,7 @@ end
 
 using NCDatasets: nc_create, NC_NETCDF4, NC_CLOBBER, NC_NOWRITE, nc_def_dim, nc_def_compound, nc_insert_compound, nc_def_var, nc_put_var, nc_close, NC_INT, nc_unsafe_put_var, libnetcdf, check, ncType, nc_open, nc_inq_vartype, nc_inq_compound_nfields, nc_inq_compound_size, nc_inq_compound_name, nc_inq_compound_fieldoffset, nc_inq_compound_fieldndims, nc_inq_compound_fielddim_sizes, nc_inq_compound_fieldname, nc_inq_compound_fieldindex, nc_inq_compound_fieldtype, nc_inq_compound, nc_inq_varid, nc_get_var!, nc_insert_array_compound, nc_def_vlen
 
-import GeophysicalModelGenerator: write_ASAGI, read_ASAGI, tomo_2_GeoData
+import GeophysicalModelGenerator: write_ASAGI, read_ASAGI, tomo_2_GeoData, read_topo_netcdf
 using GeophysicalModelGenerator: CartData, GeoData, lonlatdepth_grid, xyz_grid
 
 """
@@ -218,6 +218,25 @@ function tomo_2_GeoData(filename::String; vel_type::String = "vs")
     Tomo_data = GeoData(Lon, Lat, Depth, (vel = vel,))
 
     return Tomo_data
+end
+
+
+
+"""
+    read_topo_netcdf(file)
+
+Read one of the global `.grd` grids that the GMT data server publishes for its coarse
+resolutions, and return `(lon, lat, z)`. The tiled resolutions do not come through here --
+they are JPEG2000 and are decoded without NCDatasets.
+"""
+function read_topo_netcdf(file::AbstractString)
+    return NCDataset(file) do ds
+        lon = Array(ds["lon"][:])
+        lat = Array(ds["lat"][:])
+        z = Array(ds["z"][:, :])
+        # the file stores z as (lon, lat); the rest of the code wants (lat, lon)
+        (lon, lat, permutedims(coalesce.(z, 0.0f0)))
+    end
 end
 
 
