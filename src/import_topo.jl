@@ -28,6 +28,20 @@ const GMT_SERVERS = [
 ]
 
 """
+How long to wait for the server's index file, which is a hundred kilobytes: if that does not
+arrive within a few seconds the mirror is not going to deliver the tiles either.
+"""
+const INDEX_TIMEOUT = 15.0
+
+"""
+Once every mirror has failed to deliver a file, how long (seconds) to leave the server alone
+before asking it again. Without this, every later call in the session -- and in every other
+test worker, hence the marker file rather than a variable -- waits out the full retry budget
+too, and a run that should fail in a minute takes hours.
+"""
+const SERVER_RETRY_AFTER = 600.0
+
+"""
     tile_size_deg(res)
 
 The width and height, in degrees, of one tile at resolution `res`, or `nothing` if that
@@ -67,23 +81,71 @@ function server_entry(dataset::AbstractString, res::AbstractString, reg::Abstrac
 end
 
 """
+The copy of the server's index that ships with the package, for when the server cannot be
+asked for the current one. It changes rarely (new sets are added now and then; the existing
+lines stay), so a stale copy is far better than none: without it a tiled resolution would be
+looked for as a single global file, which does not exist.
+"""
+const BUNDLED_SERVER_INDEX = joinpath(@__DIR__, "..", "assets", "gmt_data_server.txt")
+
+# whether this session has already tried to download the index
+const SERVER_INDEX_TRIED = Ref(false)
+
+"""
     server_index_file()
 
-The server's own index of its datasets, downloaded once and cached.
+The server's own index of its datasets: downloaded once into the cache and read from there
+after that. If it cannot be downloaded, the copy bundled with the package is used instead.
+The download is attempted once per session, not once per call: the index is consulted
+several times per import, and with the server down each attempt would cost a full round of
+the mirrors.
 """
 function server_index_file()
     index = joinpath(topo_cache_dir(), "gmt_data_server.txt")
     (isfile(index) && filesize(index) > 0) && return index
-    for server in GMT_SERVERS
-        root = replace(server, "/server/earth" => "")
-        try
-            Downloads.download("$root/gmt_data_server.txt", index; timeout = TILE_TIMEOUT)
-            return index
-        catch
+    if !SERVER_INDEX_TRIED[] && server_down_for() == 0
+        SERVER_INDEX_TRIED[] = true
+        for server in GMT_SERVERS
+            root = replace(server, "/server/earth" => "")
+            try
+                Downloads.download("$root/gmt_data_server.txt", index; timeout = INDEX_TIMEOUT)
+                return index
+            catch
+                rm(index; force = true)               # no half-written index
+            end
         end
     end
-    return nothing
+    return BUNDLED_SERVER_INDEX
 end
+
+"""
+    server_down_for()
+
+How many seconds are left of leaving the server alone after every mirror failed to deliver a
+file, or `0.0` if it may be asked. The marker is a file in the cache rather than a variable
+so that separate processes -- the parallel test workers -- share it.
+"""
+function server_down_for()
+    marker = joinpath(topo_cache_dir(), "server_unreachable_until")
+    isfile(marker) || return 0.0
+    until = something(tryparse(Float64, read(marker, String)), 0.0)
+    remaining = until - time()
+    remaining > 0 && return remaining
+    rm(marker; force = true)
+    return 0.0
+end
+
+function mark_server_down()
+    return write(joinpath(topo_cache_dir(), "server_unreachable_until"), string(time() + SERVER_RETRY_AFTER))
+end
+
+"""
+    reset_topo_server()
+
+Forget that the GMT data server was unreachable, so that the next `import_topo` asks it
+again right away rather than after `SERVER_RETRY_AFTER` seconds.
+"""
+reset_topo_server() = rm(joinpath(topo_cache_dir(), "server_unreachable_until"); force = true)
 
 """
     tile_size_px(res, deg, reg)
@@ -172,8 +234,7 @@ asking for the other one would 404 on every tile.
 """
 function native_registration(dataset::AbstractString, res::AbstractString, reg::AbstractString)
     res in ("03s", "01s") && return "g"
-    index = joinpath(topo_cache_dir(), "gmt_data_server.txt")
-    isfile(index) || return reg
+    index = server_index_file()
     have = String[]
     for line in eachline(index)
         startswith(line, "#") && continue
@@ -242,6 +303,9 @@ function download_tile(relative_url::AbstractString, dest::AbstractString;
                       maxattempts::Integer = 5, timeout::Real = TILE_TIMEOUT)
     isfile(dest) && filesize(dest) > 0 && return true       # cached
 
+    wait = server_down_for()
+    wait > 0 && error("the GMT data server could not be reached a moment ago, so $(basename(dest)) was not requested; it will be tried again in $(round(Int, wait)) s. To retry now, call GeophysicalModelGenerator.reset_topo_server().")
+
     tmp = dest * ".part"                                    # never leave a half file behind
     for attempt in 1:max(1, maxattempts)
         for server in GMT_SERVERS
@@ -265,7 +329,11 @@ function download_tile(relative_url::AbstractString, dest::AbstractString;
         # is given a chance rather than hammered
         attempt < maxattempts && sleep(min(2.0^attempt, 10.0))
     end
-    return false
+    # Every mirror failed every time: the server is down, or throttling us. That is not the
+    # same as a tile that does not exist (which is filled with sea level), so it is an error
+    # -- and it is remembered, so the next call does not wait all of this out again.
+    mark_server_down()
+    return error("could not download $relative_url from any GMT data server mirror in $maxattempts attempts")
 end
 
 """
