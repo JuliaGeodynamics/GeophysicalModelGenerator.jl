@@ -49,6 +49,8 @@ include("surface_functions.jl")
 include("movies_from_pics.jl")
 include("sea_lvl.jl")
 include("WaterFlow.jl")
+include("import_topo.jl")
+export import_topo
 
 # Add optional routines (only activated when the packages are loaded)
 
@@ -79,17 +81,11 @@ function tomo_2_GeoData end
 export tomo_2_GeoData
 
 """
-        import_topo
-Optional routine that imports topography. It requires you to load `GMT`
-"""
-function import_topo end
-
-"""
         import_GeoTIFF
 Optional routine that imports GeoTIFF images. It requires you to load `GMT`
 """
 function import_GeoTIFF end
-export import_topo, import_GeoTIFF
+export import_GeoTIFF
 
 # GLMakie routines
 

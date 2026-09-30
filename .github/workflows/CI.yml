@@ -20,6 +20,9 @@ jobs:
   run_tests:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
+    # A normal run takes 10-30 minutes. This is a backstop in case a download
+    # hangs after all, so that a job cannot occupy a runner for hours.
+    timeout-minutes: 90
     continue-on-error: ${{ matrix.allow_failure }}
     strategy:
       fail-fast: false
@@ -70,21 +73,46 @@ jobs:
         with:
           include-matrix: false
       - uses: julia-actions/julia-buildpkg@latest
-      # Cache the GMT topography tiles that the tests download (see
-      # test/topo_prefetch.jl), so PR runs do not depend on the GMT data
-      # server. The scheduled run skips the cache on purpose, so that the
-      # download itself is still tested regularly.
+      # Cache the topography tiles that the tests download (see
+      # test/topo_prefetch.jl), so push/PR runs do not depend on the GMT data
+      # server. The key changes with the prefetch list; `restore-keys` then
+      # still restores the previous tiles, so only the new ones are fetched
+      # rather than every job of the matrix fetching everything at once (the
+      # server throttles that, and a throttled job used to run for two hours).
+      #
+      # `import_topo` keeps the tiles in its own scratch space rather than in
+      # ~/.gmt, which is where GMT used to put them; the UUID is the package's.
+      # ~/.gmt is still cached for import_GeoTIFF, which does go through GMT.
+      # The decoded .raw files are left out: they are rebuilt from the tiles.
       - uses: actions/cache/restore@v4
         id: gmt-cache
-        if: github.event_name != 'schedule'
         with:
-          path: ~/.gmt
+          path: |
+            ~/.julia/scratchspaces/3700c31b-fa53-48a6-808a-ef22d5a84742/topo_tiles
+            !~/.julia/scratchspaces/3700c31b-fa53-48a6-808a-ef22d5a84742/topo_tiles/*.raw
+            !~/.julia/scratchspaces/3700c31b-fa53-48a6-808a-ef22d5a84742/topo_tiles/*.part
+            !~/.julia/scratchspaces/3700c31b-fa53-48a6-808a-ef22d5a84742/topo_tiles/server_unreachable_until
+            ~/.gmt
           key: gmt-topo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('test/topo_prefetch.jl') }}
+          restore-keys: |
+            gmt-topo-${{ runner.os }}-${{ runner.arch }}-
+      # The scheduled run tests the download itself: clear the tiles, whichever
+      # cache they came from (julia-actions/cache restores ~/.julia, scratch
+      # spaces included), so that test/topo_prefetch.jl has to fetch them.
+      - name: Clear topography cache (scheduled run)
+        if: github.event_name == 'schedule'
+        shell: bash
+        run: rm -rf ~/.julia/scratchspaces/3700c31b-fa53-48a6-808a-ef22d5a84742/topo_tiles
       - uses: julia-actions/julia-runtest@latest
       - uses: actions/cache/save@v4
-        if: always() && github.event_name != 'schedule' && steps.gmt-cache.outputs.cache-hit != 'true'
+        if: always() && steps.gmt-cache.outputs.cache-hit != 'true'
         with:
-          path: ~/.gmt
+          path: |
+            ~/.julia/scratchspaces/3700c31b-fa53-48a6-808a-ef22d5a84742/topo_tiles
+            !~/.julia/scratchspaces/3700c31b-fa53-48a6-808a-ef22d5a84742/topo_tiles/*.raw
+            !~/.julia/scratchspaces/3700c31b-fa53-48a6-808a-ef22d5a84742/topo_tiles/*.part
+            !~/.julia/scratchspaces/3700c31b-fa53-48a6-808a-ef22d5a84742/topo_tiles/server_unreachable_until
+            ~/.gmt
           key: gmt-topo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('test/topo_prefetch.jl') }}
       - uses: julia-actions/julia-processcoverage@v1
       - uses: codecov/codecov-action@v7

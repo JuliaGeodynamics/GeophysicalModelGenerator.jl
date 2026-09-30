@@ -8,8 +8,18 @@ end
 #    include("../tutorials/Tutorial_Jura.jl")
 #end
 
+# This one downloads topography, which topo_prefetch.jl has put in the tile cache. If the
+# prefetch could not reach the GMT data server, skip on a push/PR run; the scheduled run
+# insists, so a real breakage is caught.
+topo_server_ok = get(ENV, "GMG_TOPO_PREFETCH_OK", "true") == "true" ||
+    get(ENV, "GITHUB_EVENT_NAME", "") == "schedule"
+
 @testset "LaPalma tutorial" begin
-    include("../tutorials/Tutorial_LaPalma.jl")
+    if !topo_server_ok
+        @test_skip "GMT data server unreachable: LaPalma tutorial skipped"
+    else
+        include("../tutorials/Tutorial_LaPalma.jl")
+    end
 end
 
 # Deactivating this one as it plots in the tutorial

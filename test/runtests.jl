@@ -2,10 +2,12 @@ using GeophysicalModelGenerator
 using ParallelTestRunner
 
 # Download the topography tiles the tests need *before* spawning the parallel
-# workers, so they are served from GMT's cache instead of being downloaded
-# concurrently (which times out regularly in CI). See topo_prefetch.jl.
+# workers, so they are served from the tile cache instead of being downloaded
+# concurrently (which the GMT data server throttles). This is the only place
+# that downloads topography; see topo_prefetch.jl.
 include("topo_prefetch.jl")
 
+include("test_import_topo.jl")
 testsuite = find_tests(@__DIR__)
 # Not a test file, only a helper
 delete!(testsuite, "topo_prefetch")
