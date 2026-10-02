@@ -562,13 +562,26 @@ function read_picked_profiles(ProfileCoordFile::String)
     profiles = Vector{ProfileData}()
     profile_data = readdlm(ProfileCoordFile, skipstart = 1, ',')
 
-    for i in 1:size(profile_data, 1)
-        start_lonlat = (profile_data[i, 2:3]...,)
-        end_lonlat = (profile_data[i, 4:5]...,)
-        profile = ProfileData(start_lonlat = start_lonlat, end_lonlat = end_lonlat)
-        push!(profiles, profile)
+    # check the number of columns in the profile data
+    if size(profile_data, 2) == 2
+        # we have a horizontal profile, so we only have the depth in the second column
+        for i in 1:size(profile_data, 1)
+            depth = profile_data[i, 2]
+            profile = ProfileData(depth = depth)
+            push!(profiles, profile)
+        end
+        elseif size(profile_data, 2) == 5
+        # we have a vertical profile, so we have the start and end lon/lat in
+        for i in 1:size(profile_data, 1)
+            start_lonlat = (profile_data[i, 2:3]...,)
+            end_lonlat = (profile_data[i, 4:5]...,)
+            profile = ProfileData(start_lonlat = start_lonlat, end_lonlat = end_lonlat)
+            push!(profiles, profile)
+        end
+    else
+        error("ProfileCoordFile should have either 2 columns (for horizontal profiles) or 5 columns (for vertical profiles).")
     end
-
+    
     return profiles
 end
 
