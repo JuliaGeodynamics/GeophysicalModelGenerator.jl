@@ -70,6 +70,16 @@ GeophysicalModelGenerator.create_profile_volume!(prof2, VolData_combined1)
 GeophysicalModelGenerator.create_profile_volume!(prof1, VolData_combined1, Depth_extent = (-300, -100))
 @test extrema(prof1.VolData.depth.val) == (-300.0, -100.0)
 
+# test routines with volumetric data, but with NamedTuple instead of GeoData
+GeophysicalModelGenerator.create_profile_volume!(prof1, Data.Volume)
+@test prof1.VolData.fields.Hua2017_Vp[30, 40] ≈ 9.141520976523731
+
+GeophysicalModelGenerator.create_profile_volume!(prof2, Data.Volume)
+@test prof2.VolData.fields.Hua2017_Vp[30, 40] ≈ 8.177263544536272
+
+GeophysicalModelGenerator.create_profile_volume!(prof1, Data.Volume, Depth_extent = (-300, -100))
+@test extrema(prof1.VolData.depth.val) == (-300.0, -100.0)
+
 # Intersect surface data:
 GeophysicalModelGenerator.create_profile_surface!(prof1, Data.Surface)
 @test prof1.SurfData[1].fields.MohoDepth[80] ≈ -37.58791461075397km
@@ -100,7 +110,7 @@ extract_ProfileData!(prof1, VolData_combined3, Data.Surface, Data.Point)
 extract_ProfileData!(prof2, VolData_combined3, Data.Surface, Data.Point)
 extract_ProfileData!(prof3, VolData_combined3, Data.Surface, Data.Point)
 extract_ProfileData!(prof4, VolData_combined3, Data.Surface, Data.Point)
-extract_ProfileData!(prof5, VolData_combined3, Data.Surface, Data.Point, Data.Screenshot)
+extract_ProfileData!(prof5, VolData_combined3, Data.Surface, Data.Point;ScreenshotData=Data.Screenshot)
 
 
 # Test that it works if only EQ's are provided:
@@ -109,6 +119,16 @@ extract_ProfileData!(prof4, nothing, NamedTuple(), Data.Point)
 @test isnothing(prof4.VolData)
 @test isempty(prof4.SurfData)
 @test length(prof4.PointData[1].depth) == 3280
+
+# nothing / empty tuples are accepted for all data arguments
+prof6 = ProfileData(depth = -20)
+extract_ProfileData!(prof6, (), nothing, Data.Point; TopoData=(), ScreenshotData=nothing)
+@test isnothing(prof6.VolData)
+@test isempty(prof6.SurfData)
+@test length(prof6.PointData[1].depth) == 3280
+prof7 = ProfileData(depth = -20)
+extract_ProfileData!(prof7)
+@test isempty(prof7.SurfData)
 
 @test prof1.SurfData[1].fields[1][80] ≈ -37.58791461075397km
 @test isempty(prof2.SurfData)
