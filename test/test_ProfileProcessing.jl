@@ -53,6 +53,9 @@ VolData_combined2 = combine_vol_data(Data.Volume, dims = (50, 51, 52))
 VolData_combined3 = combine_vol_data(Data.Volume, lon = (1, 22), lat = (40, 52), dims = (50, 51, 52))
 @test isnan(VolData_combined3.fields.Hua2017_Vp[1000])
 
+# ProfileData has a TopoData field, which is empty by default
+@test isnothing(ProfileData(depth = -10).TopoData)
+
 # Define horizontal & vertical profiles
 prof1 = ProfileData(start_lonlat = (5, 45), end_lonlat = (15, 49))
 prof2 = ProfileData(depth = -100)

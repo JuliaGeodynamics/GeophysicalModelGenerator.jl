@@ -603,14 +603,12 @@ function extract_ProfileData(ProfileCoordFile::String, ProfileNumber::Int64, Dat
     # load all Data
     VolData, SurfData, PointData, ScreenshotData, TopoData = load_GMG(Datasets_all)
 
-    # merge VolData:
-    VolData_combined = combine_vol_data(VolData)
-
-    # project data onto profile:
+    # project data onto profile (volume datasets are processed individually, without merging them first):
     extract_ProfileData!(
-        profile, VolData_combined, SurfData, PointData;
+        profile, VolData, SurfData, PointData;
         DimsVolCross = DimsVolCross, DimsSurfCross = DimsSurfCross,
-        Depth_extent = DepthVol, section_width = WidthPointProfile
+        Depth_extent = DepthVol, section_width = WidthPointProfile,
+        ScreenshotData = ScreenshotData, TopoData = TopoData
     )
 
     return profile
