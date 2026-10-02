@@ -110,7 +110,7 @@ extract_ProfileData!(prof1, VolData_combined3, Data.Surface, Data.Point)
 extract_ProfileData!(prof2, VolData_combined3, Data.Surface, Data.Point)
 extract_ProfileData!(prof3, VolData_combined3, Data.Surface, Data.Point)
 extract_ProfileData!(prof4, VolData_combined3, Data.Surface, Data.Point)
-extract_ProfileData!(prof5, VolData_combined3, Data.Surface, Data.Point, Data.Screenshot)
+extract_ProfileData!(prof5, VolData_combined3, Data.Surface, Data.Point;ScreenshotData=Data.Screenshot)
 
 
 # Test that it works if only EQ's are provided:
