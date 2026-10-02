@@ -564,24 +564,33 @@ function read_picked_profiles(ProfileCoordFile::String)
 
     # check the number of columns in the profile data
     if size(profile_data, 2) == 2
-        # we have a horizontal profile, so we only have the depth in the second column
+        # we have horizontal profiles only, so we only have the depth in the second column
         for i in 1:size(profile_data, 1)
             depth = profile_data[i, 2]
             profile = ProfileData(depth = depth)
             push!(profiles, profile)
         end
         elseif size(profile_data, 2) == 5
-        # we have a vertical profile, so we have the start and end lon/lat in
+        # we have mixed horizontal/vertical profiles or vertical profiles only
         for i in 1:size(profile_data, 1)
-            start_lonlat = (profile_data[i, 2:3]...,)
-            end_lonlat = (profile_data[i, 4:5]...,)
-            profile = ProfileData(start_lonlat = start_lonlat, end_lonlat = end_lonlat)
-            push!(profiles, profile)
+            # check whether the current profile is horizontal or vertical
+            if all(isempty.(bla[1,3:5])) # there are only two entries: profile number and depth of the profile, so this is a horizontal profile
+                depth = profile_data[i, 2]
+                profile = ProfileData(depth = depth)
+                push!(profiles, profile)
+            elseif !all(isempty.(bla[7,1:5])) # there are five entries: profile number, start lon/lat, end lon/lat, so this is a vertical profile
+                start_lonlat = (profile_data[i, 2:3]...,)
+                end_lonlat = (profile_data[i, 4:5]...,)
+                profile = ProfileData(start_lonlat = start_lonlat, end_lonlat = end_lonlat)
+                push!(profiles, profile)
+            else
+                error("ProfileCoordFile should have either 2 columns (for horizontal profiles) or 5 columns (for vertical profiles).")
+            end
         end
     else
         error("ProfileCoordFile should have either 2 columns (for horizontal profiles) or 5 columns (for vertical profiles).")
     end
-    
+
     return profiles
 end
 
