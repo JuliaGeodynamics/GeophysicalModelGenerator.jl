@@ -35,7 +35,7 @@ mutable struct ProfileData
     ScreenshotData::Union{Nothing, NamedTuple}
 
     function ProfileData(; kwargs...) # this constructor allows to define only certain fields and leave the others blank
-        K = new(true, nothing, nothing, nothing, nothing, nothing, nothing)
+        K = new(true, nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing)
         for (key, value) in kwargs
             # make sure that start and end point are given as tuples of Float64
             if key == Symbol("start_lonlat")
@@ -617,14 +617,12 @@ function extract_ProfileData(ProfileCoordFile::String, ProfileNumber::Int64, Dat
     # load all Data
     VolData, SurfData, PointData, ScreenshotData, TopoData = load_GMG(Datasets_all)
 
-    # merge VolData:
-    VolData_combined = combine_vol_data(VolData)
-
-    # project data onto profile:
+    # project data onto profile (volume datasets are processed individually, without merging them first):
     extract_ProfileData!(
-        profile, VolData_combined, SurfData, PointData;
+        profile, VolData, SurfData, PointData;
         DimsVolCross = DimsVolCross, DimsSurfCross = DimsSurfCross,
-        Depth_extent = DepthVol, section_width = WidthPointProfile
+        Depth_extent = DepthVol, section_width = WidthPointProfile,
+        ScreenshotData = ScreenshotData, TopoData = TopoData
     )
 
     return profile
