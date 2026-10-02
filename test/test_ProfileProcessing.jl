@@ -120,6 +120,16 @@ extract_ProfileData!(prof4, nothing, NamedTuple(), Data.Point)
 @test isempty(prof4.SurfData)
 @test length(prof4.PointData[1].depth) == 3280
 
+# nothing / empty tuples are accepted for all data arguments
+prof6 = ProfileData(depth = -20)
+extract_ProfileData!(prof6, (), nothing, Data.Point; TopoData=(), ScreenshotData=nothing)
+@test isnothing(prof6.VolData)
+@test isempty(prof6.SurfData)
+@test length(prof6.PointData[1].depth) == 3280
+prof7 = ProfileData(depth = -20)
+extract_ProfileData!(prof7)
+@test isempty(prof7.SurfData)
+
 @test prof1.SurfData[1].fields[1][80] ≈ -37.58791461075397km
 @test isempty(prof2.SurfData)
 @test isnan(prof3.SurfData[1].fields[1][80])
