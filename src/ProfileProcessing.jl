@@ -496,59 +496,31 @@ end
 
 
 """
-    extract_ProfileData!(Profile::ProfileData,VolData::NamedTuple, SurfData::NamedTuple, PointData::NamedTuple; DimsVolCross=(100,100),Depth_extent=nothing,DimsSurfCross=(100,),section_width=50, ScreenshotData=nothing, TopoData=NamedTuple())
+    extract_ProfileData!(Profile::ProfileData, VolData=nothing, SurfData=nothing, PointData=nothing; DimsVolCross=(100,100), Depth_extent=nothing, DimsSurfCross=(100,), section_width=50km, ScreenshotData=nothing, TopoData=nothing)
 
-Extracts data along a vertical or horizontal profile. Allows VolData to be passed as a NamedTuple.
+Extracts data along a vertical or horizontal profile. `VolData` can be a `GeoData`/`AbstractGeneralGrid` or a `NamedTuple` of those; the other data sets are `NamedTuple`s.
+Any data argument can be `nothing` or empty (`NamedTuple()` or `()`), in which case it is skipped.
 """
-function extract_ProfileData!(Profile::ProfileData, VolData::NamedTuple = NamedTuple(),  SurfData::NamedTuple = NamedTuple(), PointData::NamedTuple = NamedTuple(); DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km, ScreenshotData = nothing, TopoData::NamedTuple = NamedTuple())
+function extract_ProfileData!(Profile::ProfileData, VolData = nothing, SurfData = nothing, PointData = nothing; DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km, ScreenshotData = nothing, TopoData = nothing)
 
-    return extract_ProfileData!(Profile, VolData, SurfData, PointData, TopoData, ScreenshotData; DimsVolCross = DimsVolCross, Depth_extent = Depth_extent, DimsSurfCross = DimsSurfCross, section_width = section_width)
-end
-
-# Internal method - called by the main method with ScreenshotData as positional argument, allows VolData as NamedTuple
-function extract_ProfileData!(Profile::ProfileData, VolData::NamedTuple, SurfData::NamedTuple, PointData::NamedTuple, TopoData:: Union{Nothing, NamedTuple},ScreenshotData::Union{Nothing, NamedTuple}; DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km)
-
-    if !isempty(VolData)
+    if !_isnodata(VolData)
         create_profile_volume!(Profile, VolData; DimsVolCross = DimsVolCross, Depth_extent = Depth_extent)
     end
-    create_profile_surface!(Profile, SurfData, DimsSurfCross = DimsSurfCross)
-    create_profile_point!(Profile, PointData, section_width = section_width)
-    if !isnothing(TopoData)
+    create_profile_surface!(Profile, _as_namedtuple(SurfData), DimsSurfCross = DimsSurfCross)
+    create_profile_point!(Profile, _as_namedtuple(PointData), section_width = section_width)
+    if !_isnodata(TopoData)
         create_profile_topo!(Profile, TopoData, DimsSurfCross = 5 .* DimsSurfCross) # we use a larger number of points for the topography, as it is often more detailed than the surface data
     end
-    if !isnothing(ScreenshotData)
+    if !_isnodata(ScreenshotData)
         create_profile_screenshot!(Profile, ScreenshotData)
     end
     return nothing
 end
 
+# helpers: treat `nothing` and empty containers (NamedTuple(), ()) as "no data"
+_isnodata(x) = isnothing(x) || (x isa Union{Tuple, NamedTuple} && isempty(x))
+_as_namedtuple(x) = _isnodata(x) ? NamedTuple() : x
 
-"""
-    extract_ProfileData!(Profile::ProfileData,VolData::GeoData, SurfData::NamedTuple, PointData::NamedTuple; DimsVolCross=(100,100),Depth_extent=nothing,DimsSurfCross=(100,),section_width=50, ScreenshotData=nothing, TopoData=NamedTuple())
-
-Extracts data along a vertical or horizontal profile
-"""
-function extract_ProfileData!(Profile::ProfileData, VolData::GeoData, SurfData::NamedTuple = NamedTuple(), PointData::NamedTuple = NamedTuple(); DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km, ScreenshotData = nothing, TopoData::NamedTuple = NamedTuple())
-
-    return extract_ProfileData!(Profile, VolData, SurfData, PointData, TopoData, ScreenshotData; DimsVolCross = DimsVolCross, Depth_extent = Depth_extent, DimsSurfCross = DimsSurfCross, section_width = section_width)
-end
-
-# Internal method - called by the main method with ScreenshotData as positional argument
-function extract_ProfileData!(Profile::ProfileData, VolData::GeoData, SurfData::NamedTuple, PointData::NamedTuple, TopoData::Union{Nothing, NamedTuple}, ScreenshotData::Union{Nothing, NamedTuple}; DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km)
-
-    if !isnothing(VolData)
-        create_profile_volume!(Profile, VolData; DimsVolCross = DimsVolCross, Depth_extent = Depth_extent)
-    end
-    create_profile_surface!(Profile, SurfData, DimsSurfCross = DimsSurfCross)
-    create_profile_point!(Profile, PointData, section_width = section_width)
-    if !isnothing(TopoData)
-        create_profile_topo!(Profile, TopoData, DimsSurfCross = 5 .* DimsSurfCross) # we use a larger number of points for the topography, as it is often more detailed than the surface data
-    end
-    if !isnothing(ScreenshotData)
-        create_profile_screenshot!(Profile, ScreenshotData)
-    end
-    return nothing
-end
 
 
 
@@ -574,11 +546,11 @@ function read_picked_profiles(ProfileCoordFile::String)
         # we have mixed horizontal/vertical profiles or vertical profiles only
         for i in 1:size(profile_data, 1)
             # check whether the current profile is horizontal or vertical
-            if all(isempty.(bla[1,3:5])) # there are only two entries: profile number and depth of the profile, so this is a horizontal profile
+            if all(isempty.(profile_data[i,3:5])) # there are only two entries: profile number and depth of the profile, so this is a horizontal profile
                 depth = profile_data[i, 2]
                 profile = ProfileData(depth = depth)
                 push!(profiles, profile)
-            elseif !all(isempty.(bla[7,1:5])) # there are five entries: profile number, start lon/lat, end lon/lat, so this is a vertical profile
+            elseif !any(isempty.(profile_data[i,2:5])) # there are five entries: profile number, start lon/lat, end lon/lat, so this is a vertical profile
                 start_lonlat = (profile_data[i, 2:3]...,)
                 end_lonlat = (profile_data[i, 4:5]...,)
                 profile = ProfileData(start_lonlat = start_lonlat, end_lonlat = end_lonlat)
