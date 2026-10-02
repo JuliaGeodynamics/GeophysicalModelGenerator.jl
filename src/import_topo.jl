@@ -282,15 +282,7 @@ topo_cache_dir() = @get_scratch!("topo_tiles")
 Read a global `.grd` grid, returning `(lon, lat, z)`. Filled in by the `NCDatasets`
 extension; the tiled resolutions do not go through here.
 """
-function read_topo_netcdf(file::AbstractString)
-    return error("""
-        reading the global grid $(basename(file)) needs NCDatasets. Either
-
-            using NCDatasets
-
-        or ask for one of the tiled resolutions (05m and finer), which need nothing extra.
-        """)
-end
+function read_topo_netcdf end
 
 """
     download_tile(url, dest)
@@ -485,6 +477,13 @@ function grid_from_single_file(limits, dataset::AbstractString, res::AbstractStr
     lonmin, lonmax, latmin, latmax = limits
     name = "$(dataset)_$(res)_$(reg).grd"
     file = joinpath(topo_cache_dir(), name)
+    isempty(methods(read_topo_netcdf)) && error("""
+        reading the global grid $name needs NCDatasets. Either
+
+            using NCDatasets
+
+        or ask for one of the tiled resolutions (05m and finer), which need nothing extra.
+        """)
     download_tile("$dataset/$name", file; maxattempts = maxattempts) ||
         error("could not download $name from the GMT data server")
 
