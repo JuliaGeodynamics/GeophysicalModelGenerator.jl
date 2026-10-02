@@ -363,9 +363,9 @@ function create_profile_screenshot!(Profile::ProfileData, DataSet::NamedTuple)
     tmp = NamedTuple()             # initialize empty one
     DataSetName = keys(DataSet)    # Names of the datasets
 
-    for idata in 1:num_datasets
+    for idata in eachindex(DataSetName)
         # load data set --> each data set is a single GeoData structure, so we'll only have to get the respective key to load the correct type
-        data_tmp = DataSet[idata]
+        data_tmp = DataSet[DataSetName[idata]]
         if Profile.vertical
             x_profile = flatten_cross_section(data_tmp, Start = Profile.start_lonlat) # compute the distance along the profile
             data_tmp = addfield(data_tmp, "x_profile", x_profile)
