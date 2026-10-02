@@ -287,21 +287,16 @@ end
 
 ### internal function to process screenshot data - contrary to the volume data, we here have to save lon/lat/depth pairs for every screenshot data set, so we create a NamedTuple of GeoData data sets
 function create_profile_screenshot!(Profile::ProfileData, DataSet::NamedTuple)
-    num_datasets = length(DataSet)
-
     tmp = NamedTuple()             # initialize empty one
-    DataSetName = keys(DataSet)    # Names of the datasets
 
-    for idata in 1:num_datasets
-        # load data set --> each data set is a single GeoData structure, so we'll only have to get the respective key to load the correct type
-        data_tmp = DataSet[idata]
+    for (name, data_tmp) in pairs(DataSet)
+        # each data set is a single GeoData structure
         if Profile.vertical
             x_profile = flatten_cross_section(data_tmp, Start = Profile.start_lonlat) # compute the distance along the profile
             data_tmp = addfield(data_tmp, "x_profile", x_profile)
 
             # add the data set as a NamedTuple
-            data_NT = NamedTuple{(DataSetName[idata],)}((data_tmp,))
-            tmp = merge(tmp, data_NT)
+            tmp = merge(tmp, NamedTuple{(name,)}((data_tmp,)))
         else
             # we do not have this implemented
             #error("horizontal profiles not yet implemented")
