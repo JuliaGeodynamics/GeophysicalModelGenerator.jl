@@ -87,10 +87,13 @@ function waterflows(Topo::GeoData, flowdir_fn = WhereTheWaterFlows.d8dir_feature
     nin = zeros(Int8, ni)
     c = zeros(Int64, ni)
 
-    area[:, :, 1], slen[:, :, 1], dir[:, :, 1], nout[:, :, 1], nin[:, :, 1], sinks, pits, c[:, :, 1], bnds = waterflows(
-        dem, cellarea;
-        flowdir_fn, feedback_fn, drain_pits, bnd_as_sink
-    )
+    # WhereTheWaterFlows >= 0.13 takes the flow direction function as a keyword, earlier versions positionally.
+    wtwf = if pkgversion(WhereTheWaterFlows) >= v"0.13"
+        waterflows(dem, cellarea; flowdir_fn, feedback_fn, drain_pits, bnd_as_sink)
+    else
+        waterflows(dem, cellarea, flowdir_fn; feedback_fn, drain_pits, bnd_as_sink)
+    end
+    area[:, :, 1], slen[:, :, 1], dir[:, :, 1], nout[:, :, 1], nin[:, :, 1], sinks, pits, c[:, :, 1], bnds = wtwf
 
     catchment_large = prune_catchments(c, minsize; val = 0)
 
