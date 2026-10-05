@@ -35,7 +35,7 @@ mutable struct ProfileData
     ScreenshotData::Union{Nothing, NamedTuple}
 
     function ProfileData(; kwargs...) # this constructor allows to define only certain fields and leave the others blank
-        K = new(true, nothing, nothing, nothing, nothing, nothing, nothing)
+        K = new(true, nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing)
         for (key, value) in kwargs
             # make sure that start and end point are given as tuples of Float64
             if key == Symbol("start_lonlat")
