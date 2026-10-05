@@ -92,7 +92,7 @@ GeophysicalModelGenerator.create_profile_point!(prof4, Data.Point, section_width
 
 # test screenshot data 
 GeophysicalModelGenerator.create_profile_screenshot!(prof5, Data.Screenshot)
-@test prof5.SurfData[1].fields.x_profile[1,1,1] == 0
+@test prof5.ScreenshotData[1].fields.x_profile[1,1,1] == 0
 
 
 # Test the main profile extraction routines:
@@ -129,6 +129,17 @@ extract_ProfileData!(prof6, (), nothing, Data.Point; TopoData=(), ScreenshotData
 prof7 = ProfileData(depth = -20)
 extract_ProfileData!(prof7)
 @test isempty(prof7.SurfData)
+
+# create_profile_volume! normalizes VolData: nothing / empty containers are no-ops, bad types error
+prof8 = ProfileData(depth = -100)
+for novol in (nothing, NamedTuple(), ())
+    GeophysicalModelGenerator.create_profile_volume!(prof8, novol)
+    @test isnothing(prof8.VolData)
+end
+GeophysicalModelGenerator.create_profile_volume!(prof8, (Hua2017 = Data.Volume[1],))
+@test haskey(prof8.VolData.fields, :Hua2017_Vp)
+@test_throws ArgumentError GeophysicalModelGenerator.create_profile_volume!(prof8, 42)
+@test_throws ArgumentError GeophysicalModelGenerator.create_profile_volume!(prof8, (a = 42,))
 
 @test prof1.SurfData[1].fields[1][80] ≈ -37.58791461075397km
 @test isempty(prof2.SurfData)
