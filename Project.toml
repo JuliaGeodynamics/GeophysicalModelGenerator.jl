@@ -1,6 +1,6 @@
 name = "GeophysicalModelGenerator"
 uuid = "3700c31b-fa53-48a6-808a-ef22d5a84742"
-version = "0.7.23"
+version = "0.8.0"
 authors = ["Boris Kaus", "Marcel Thielmann"]
 
 [deps]
@@ -73,9 +73,9 @@ Scratch = "1"
 SpecialFunctions = "1.0, 2"
 StaticArrays = "1"
 Statistics = "1"
-WhereTheWaterFlows = "0.10, 0.11"
+WhereTheWaterFlows = "0.10, 0.11, 0.13"
 WriteVTK = "1"
-julia = "1.9"
+julia = "1.10"
 
 [extras]
 Chmy = "33a72cf0-4690-46d7-b987-06506c2248b9"
