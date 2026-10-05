@@ -341,6 +341,7 @@ function Base.convert(::Type{ParaviewData}, d::GeoData)
     # Z = R .* sind.( lat );
 
     # In case any of the fields in the tuple has length 3, it is assumed to be a vector, so transfer it
+    fields = d.fields
     field_names = keys(d.fields)
     for i in 1:length(d.fields)
         if typeof(d.fields[i]) <: Tuple
@@ -350,14 +351,16 @@ function Base.convert(::Type{ParaviewData}, d::GeoData)
                 # If the field name contains the string "color" we do not apply a vector transformation as it is supposed to contain RGB colors
                 if !occursin("color", string(field_names[i]))
                     println("Applying a vector transformation to field: $(field_names[i])")
-                    velocity_spherical_to_cartesian!(d, d.fields[i])  # Transfer it to x/y/z format
+                    V = copy.(d.fields[i])                 # rotate a copy; `d` is left unchanged
+                    velocity_spherical_to_cartesian!(d, V)  # Transfer it to x/y/z format
+                    fields = merge(fields, NamedTuple{(field_names[i],)}((V,)))
                 end
             end
         end
     end
 
 
-    return ParaviewData(GeoUnit(X), GeoUnit(Y), GeoUnit(Z), d.fields)
+    return ParaviewData(GeoUnit(X), GeoUnit(Y), GeoUnit(Z), fields)
 end
 
 
@@ -985,13 +988,7 @@ function velocity_spherical_to_cartesian!(Data::GeoData, Velocity::Tuple)
         ]
 
         V_sph = [Velocity[1][i]; Velocity[2][i]; Velocity[3][i] ]
-
-        # Normalize spherical velocity
-        V_mag = sum(sqrt.(V_sph .^ 2))         # magnitude
-        V_norm = V_sph / V_mag
-
-        V_xyz_norm = R * V_norm
-        V_xyz = V_xyz_norm .* V_mag           # scale with magnitude
+        V_xyz = R * V_sph
 
         # in-place saving of rotated velocity
         Velocity[1][i] = V_xyz[1]

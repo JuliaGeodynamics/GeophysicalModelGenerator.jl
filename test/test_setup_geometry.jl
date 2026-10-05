@@ -215,6 +215,12 @@ Temp = ones(Float64, size(Cart)) * 1350;
 add_box!(Phase, Temp, Cart; xlim = (0.0, 600.0), ylim = (0.0, 600.0), zlim = (-80.0, 0.0), StrikeAngle = 0, DipAngle = 45, phase = ConstantPhase(5), T = TsMK);
 @test sum(Temp) ≈ 3.5125017626287365e8
 
+# Origin must be [xmin,ymin,zmax] of the box for a McKenzie thermal structure
+Temp = ones(Float64, size(Cart)) * 1350;
+add_box!(Phase, Temp, Cart; xlim = (0.0, 600.0), ylim = (0.0, 600.0), zlim = (-80.0, 0.0), Origin = (0.0, 0.0, 0.0), phase = ConstantPhase(5), T = TsMK);
+@test sum(Temp) ≈ 3.518172093383281e8
+@test_throws "Origin is not set up correctly for McKenzie_subducting_slab" add_box!(Phase, Temp, Cart; xlim = (0.0, 600.0), ylim = (0.0, 600.0), zlim = (-80.0, 0.0), Origin = (10.0, 0.0, 0.0), phase = ConstantPhase(5), T = TsMK)
+
 
 # horizontal slab, constant T
 T_slab = LinearWeightedTemperature(0, 1, 600.0, :X, ConstantTemp(1000), ConstantTemp(2000));

@@ -1,4 +1,3 @@
-using Base: Int64, Float64, NamedTuple
 using Printf
 using Parameters        # helps setting default parameters in structures
 using SpecialFunctions: erfc
@@ -265,10 +264,10 @@ function add_box!(
         ylim = (minimum(Y), maximum(Y))
     end
 
+    # McKenzie temperature is computed relative to [xmin,ymin,zmax] of the box
     if Origin !== nothing && isa(T, McKenzie_subducting_slab)
-        @warn  "McKenzie temperature does not require the definition of 'Origin' field; if Origin is defined it must be equal to [xmin,ymin,zmax] of the box that has been defined."
         if Origin[1] != xlim[1] || Origin[2] != ylim[1] || Origin[3] != zlim[2]
-            @error  "Origin is not set up correctly. For fixing the problem Origin can be left blank or Origin = [xmin,ymin,zmax] of the box"
+            error("Origin is not set up correctly for McKenzie_subducting_slab. Leave Origin blank or set Origin = [xmin,ymin,zmax] of the box")
         end
     end
 

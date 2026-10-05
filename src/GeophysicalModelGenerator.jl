@@ -1,16 +1,13 @@
 module GeophysicalModelGenerator
 
-using Base: String, show_index, Tuple, FieldDescStorage
-
 # Load & export some useful commands/functions from GeoParams:
 import GeoParams
 using .GeoParams
 export
-    @u_str, uconvert, upreffered, unit, ustrip, NoUnits, #  Units
-    GeoUnit, GEO_units, SI_units, NO_units, AbstractGeoUnits,
-    Nondimensionalize, Nondimensionalize!, Dimensionalize, Dimensionalize!,
+    @u_str, uconvert, unit, ustrip, NoUnits, #  Units
+    GeoUnit, GEO_units, SI_units, NO_units,
     superscript, upreferred, GEO, SI, NONE, isDimensional,
-    km, m, cm, mm, Myrs, yr, s, MPa, Pa, Pas, K, C, kg, mol,
+    km, m, cm, mm, yr, s, MPa, Pa, Pas, K, C, kg, mol,
     isDimensional, Value, NumValue, Unit, UnitValue
 
 export ReadCSV_LatLon, meshgrid, voxel_grav
@@ -93,7 +90,7 @@ export import_GeoTIFF
         visualise
 Interactive widget that allows you to explore a 3D data set `DataSet` in an interactive manner.
 It requires you to load `GLMakie`.
-""";
+"""
 function visualise end
 export visualise
 

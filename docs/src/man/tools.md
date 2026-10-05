@@ -11,9 +11,8 @@ subtract_horizontalmean
 above_surface
 below_surface
 interpolate_data_surface
-interpolate_topography_plane
 parse_columns_CSV
-rotate_translate_scale!
+rotate_translate_scale
 point_to_nearest_grid
 convert2UTMzone
 convert2CartData

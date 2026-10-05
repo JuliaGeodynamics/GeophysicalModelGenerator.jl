@@ -1,6 +1,6 @@
 <h1> <img src="./assets/GMG_Logo_new_noText.png" alt="GeophysicalModelGenerator.jl" width="50"> GeophysicalModelGenerator.jl </h1>
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/stable)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliageodynamics.github.io/GeophysicalModelGenerator.jl/dev/)
 [![Build Status](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/workflows/CI/badge.svg)](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/actions)
 [![codecov](https://codecov.io/gh/JuliaGeodynamics/GeophysicalModelGenerator.jl/graph/badge.svg?token=2gEdE0nfSh)](https://codecov.io/gh/JuliaGeodynamics/GeophysicalModelGenerator.jl)
@@ -46,12 +46,12 @@ First, you need to install julia on your machine. We recommend to use the binari
 Next, start julia and switch to the julia package manager using `]`, after which you can add the package.
 ```julia-repl
 julia> ]
-(@1.6) pkg> add GeophysicalModelGenerator
+(@v1.10) pkg> add GeophysicalModelGenerator
 ```
 You can test whether it works on your system with
 ```julia-repl
 julia> ]
-(@1.6) pkg> test GeophysicalModelGenerator
+(@v1.10) pkg> test GeophysicalModelGenerator
 ```
 and use it with
 ```julia-repl

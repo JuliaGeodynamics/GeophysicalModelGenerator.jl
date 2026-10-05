@@ -2,7 +2,7 @@
 
 export meshgrid, cross_section, cross_section_volume, cross_section_surface, cross_section_points, extract_subvolume, subtract_horizontalmean
 export parse_columns_CSV, votemap, countmap
-export interpolate_datafields_2D, interpolate_datafields, interpolate_topography_plane
+export interpolate_datafields_2D, interpolate_datafields
 export rotate_translate_scale
 export lithostatic_pressure!
 export flatten_cross_section

@@ -113,3 +113,22 @@ end
     wedge = FEData(rand(3, 6), reshape(1:6, 6, 1), NamedTuple(), NamedTuple())
     @test_throws "This element is not yet implemented" write_paraview(wedge, joinpath(dir, "wedge"), verbose = false)
 end
+
+@testset "GeoData to ParaviewData conversion of vector fields" begin
+    Lon, Lat, Depth = lonlatdepth_grid(10:12, 30:32, -10)
+    Ve = ones(size(Lon))
+    Ve[1] = 0.0                         # zero vector at the first point
+    V = (Ve, zeros(size(Lon)), zeros(size(Lon)))
+    d = GeoData(Lon, Lat, Depth, (V = V,))
+
+    pv1 = convert(ParaviewData, d)
+    @test d.fields.V[1] == Ve           # input is not modified
+    @test d.fields.V[1] !== pv1.fields.V[1]
+    pv2 = convert(ParaviewData, d)
+    @test all(pv1.fields.V .== pv2.fields.V)
+    @test [pv1.fields.V[k][1] for k in 1:3] == [0.0, 0.0, 0.0]
+
+    # rotation keeps the magnitude of the vectors
+    mag = sqrt.(pv1.fields.V[1] .^ 2 .+ pv1.fields.V[2] .^ 2 .+ pv1.fields.V[3] .^ 2)
+    @test mag ≈ Ve
+end

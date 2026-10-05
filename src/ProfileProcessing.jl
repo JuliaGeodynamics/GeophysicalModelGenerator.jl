@@ -2,7 +2,7 @@
 # this is ProfileProcessing.jl
 # It contains functions and type definitions to gather selected data for given profiles
 
-export ProfileData, extract_ProfileData, create_ProfileData, GMG_Dataset, load_dataset_file, combine_vol_data
+export ProfileData, extract_ProfileData, GMG_Dataset, load_dataset_file, combine_vol_data
 export extract_ProfileData!, read_picked_profiles
 import Base: show
 

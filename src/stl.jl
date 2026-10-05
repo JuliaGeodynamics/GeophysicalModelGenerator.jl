@@ -5,15 +5,15 @@ using FileIO
 # using GeometryBasics: TriangleP, Mesh, normals, PointMeta, coordinates
 # I removed TriangleP and PointMeta, as they are not existing in GeometryBasics anymore (past 0.5.0)
 # HD, 2024-06-10
-using GeometryBasics: Mesh, normals, coordinates
+using GeometryBasics: Mesh, coordinates
 using LinearAlgebra
 
 # Warning: the TriangleIntersect dependency does not seem to work on different machines, as the developer did not add a version number..
 # That forces us to remove it here, and
 #using TriangleIntersect
 
-export Ray, Intersection, IntersectRayTriangle, load, TriangleNormal, Point, IntersectRayMesh, coordinates
-export STLToSurface, isinside_closed_STL
+export load, coordinates
+export isinside_closed_STL
 
 #=
 # Conversion routines from GeometryBasics triangles to TriangleIntersect triangles:

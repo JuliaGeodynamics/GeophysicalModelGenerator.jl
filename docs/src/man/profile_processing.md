@@ -12,7 +12,6 @@ save_GMG
 cross_section
 ProfileData
 extract_ProfileData
-create_ProfileData
 GMG_Dataset
 load_dataset_file
 combine_vol_data
