@@ -95,8 +95,6 @@ function ReadCSV_LatLon(filename::AbstractString, DepthCon::AbstractString)
     data_tpl = Tuple.(tmp_vec for i in size(tmp_vec, 1)) # convert data to tuple
     tmp = NamedTuple{hdr_tpl}(data_tpl)
 
-    println(typeof(tmp))
-
     # initialize data structure
     importdata = GeoData(LonData, LatData, DepthData, tmp)
 

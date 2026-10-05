@@ -7,34 +7,6 @@ export write_pTatin_mesh, swap_yz_dims
 
 
 """
-    tags = cell_tags_from_gmsh(mesh::GmshDiscreteModel)
-Returns a list with integers that are the tags for each of the cells
-"""
-function cell_tags_from_gmsh(mesh)
-    cell_entities = mesh.face_labeling.d_to_dface_to_entity[4]
-    cell_entities_unique = unique(cell_entities)
-    tag_unique = zeros(Int64, size(cell_entities_unique))
-
-    for i in 1:length(cell_entities_unique)
-        for (n, tag) in enumerate(mesh.face_labeling.tag_to_entities)
-            if any(tag .== cell_entities_unique[i])
-                tag_unique[i] = n
-            end
-        end
-    end
-
-    # create tags for cells
-    tags = zeros(Int64, length(cell_entities))
-    for (i, entity) in enumerate(cell_entities_unique)
-        id = findall(cell_entities .== entity)
-        tags[id] .= tag_unique[i]
-    end
-
-    return tags
-end
-
-
-"""
     write_pTatin_mesh(fe_mesh::FEData; out_file="md.bin", connectivity_zero_based=true)
 
 Write a binary file with the mesh information for pTatin

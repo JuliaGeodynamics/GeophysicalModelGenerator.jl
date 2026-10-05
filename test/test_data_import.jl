@@ -6,25 +6,43 @@ using NCDatasets
 
 
 # test the import of a csv file with depth given as positive values and units in km
+LoadedData = GeophysicalModelGenerator.ReadCSV_LatLon("TestData.csv", "positive")
+@test LoadedData.lat.val == [36.424, 36.194, 36.144, 35.486, 36.106, 35.767, 36.24, 36.301, 36.401, 36.321]
+@test LoadedData.lon.val == [68.74, 71.111, 70.757, 70.38, 71.051, 70.55, 68.95, 71.303, 71.567, 70.829]
+@test LoadedData.depth.val == [-52.04, -60.51, -60.74, -61.0, -75.5, -81.52, -82.55, -84.36, -90.9, -110.41]
+@test keys(LoadedData.fields) == (:local_magnitude_none, :absError_km)
+@test LoadedData.fields.local_magnitude_none == [5.5, 5.6, 5.1, 5.5, 5.1, 5.9, 5.2, 5.1, 5.3, 5.3]
+@test LoadedData.fields.absError_km == [9.7, 10.0, 10.7, 20.4, 6.5, 10.1, 5.5, 3.2, 3.6, 3.6]
 
-# test loaded structure
-# NOTE: currently deactivated these tests -----------------------------
-#LoadedData   =   ReadCSV_LatLon("TestData.csv", "positive");
-#@test LoadedData.lat.name  ==  "lat"
-#@test LoadedData.lat.unit  ==  "deg"
-#@test LoadedData.lat.values  ==  [36.424, 36.194, 36.144, 35.486, 36.106, 35.767, 36.24, 36.301, 36.401, 36.321]
+LoadedData = GeophysicalModelGenerator.ReadCSV_LatLon("TestData.csv", "negative")
+@test LoadedData.depth.val[1] == 52.04
 
-#@test LoadedData.lon.name  ==  "lon"
-#@test LoadedData.lon.unit  ==  "deg"
-#@test LoadedData.lon.values  ==  [68.74, 71.111, 70.757, 70.38, 71.051, 70.55, 68.95, 71.303, 71.567, 70.829]
+# reading a csv file prints nothing
+out = mktemp() do path, io
+    redirect_stdout(io) do
+        GeophysicalModelGenerator.ReadCSV_LatLon("TestData.csv", "positive")
+    end
+    flush(io)
+    read(path, String)
+end
+@test isempty(out)
 
-#@test LoadedData.depth.name  ==  "depth"
-#@test LoadedData.depth.unit  ==  "km"
-#@test LoadedData.depth.values  ==  [-52.04, -60.51, -60.74, -61.0, -75.5, -81.52, -82.55, -84.36, -90.9, -110.41]
+# depth given in m is converted to km; a "%" unit is spelled out in the field name
+csv_file = joinpath(mktempdir(), "TestData_m.csv")
+write(csv_file, "# comment line\nlon(deg),lat(deg),depth(m),porosity(%)\n10.0,45.0,1500.0,12.5\n11.0,46.0,2500.0,7.5\n")
+LoadedData = GeophysicalModelGenerator.ReadCSV_LatLon(csv_file, "positive")
+@test LoadedData.depth.val == [-1.5, -2.5]
+@test keys(LoadedData.fields) == (:porosity_percentage,)
+@test LoadedData.fields.porosity_percentage == [12.5, 7.5]
 
-#@test LoadedData.values.varnames == ["local_magnitude", "absError(km)"]
-#@test LoadedData.values.vals == [5.5   9.7;5.6  10.0;5.1  10.7;5.5  20.4;5.1   6.5;5.9  10.1;5.2   5.5;5.1   3.2;5.3   3.6;5.3   3.6]
-# ---------------------------------------------------------------------
+# variable names & units in csv headers
+@test GeophysicalModelGenerator.GetVariableName(SubString("depth(km)")) == "depth"
+@test GeophysicalModelGenerator.GetVariableName(SubString("depth[m]")) == "depth"
+@test GeophysicalModelGenerator.GetVariableName(SubString("magnitude")) == "magnitude"
+@test GeophysicalModelGenerator.GetVariableUnit(SubString("depth(km)")) == "km"
+@test GeophysicalModelGenerator.GetVariableUnit(SubString("depth[m]")) == "m"
+@test GeophysicalModelGenerator.GetVariableUnit(SubString("error{%}")) == "%"
+@test GeophysicalModelGenerator.GetVariableUnit(SubString("magnitude")) == "none"
 
 
 # test loading images (profiles & mapviews)

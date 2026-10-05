@@ -1334,6 +1334,13 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::HalfspaceCoolingTemp
 
     MantleAdiabaticT = Tmantle .+ Adiabat * abs.(Z)    # Adiabatic temperature of mantle
 
+    return halfspace_cooling_temp!(Temp, Z, ztop, MantleAdiabaticT, Tsurface, Tmantle, ThermalAge, kappa)
+end
+
+# The per-point loops of the thermal structures are separate functions, called with the unpacked
+# parameters, so that they are compiled for the concrete parameter types: the fields of the
+# parameter structs are not concretely typed.
+function halfspace_cooling_temp!(Temp, Z, ztop, MantleAdiabaticT, Tsurface, Tmantle, ThermalAge, kappa)
     for i in eachindex(Temp)
         Temp[i] = (Tsurface .- Tmantle) * erfc((abs.(Z[i] - ztop) * 1.0e3) ./ (2 * sqrt(kappa * ThermalAge))) + MantleAdiabaticT[i]
     end
@@ -1391,6 +1398,10 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp; k
         error("unknown side")
     end
 
+    return spreading_rate_temp!(Temp, Z, Distance, MantleAdiabaticT, Tsurface, Tmantle, SpreadingVel, AgeRidge, maxAge, kappa, SecYear)
+end
+
+function spreading_rate_temp!(Temp, Z, Distance, MantleAdiabaticT, Tsurface, Tmantle, SpreadingVel, AgeRidge, maxAge, kappa, SecYear)
     for i in eachindex(Temp)
         ThermalAge = abs(Distance[i] * 1.0e3 * 1.0e2) / SpreadingVel + AgeRidge * 1.0e6    # Thermal age in years
         if ThermalAge > maxAge * 1.0e6
@@ -1445,6 +1456,10 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp, s
     #Create delimiters
     delimiters = [(segments[i][2], segments[i + 1][1]) for i in 1:(length(segments) - 1)]
 
+    return spreading_rate_segments_temp!(Temp, X, Y, Z, segments, delimiters, MantleAdiabaticT, Tsurface, Tmantle, SpreadingVel, AgeRidge, maxAge, kappa, SecYear)
+end
+
+function spreading_rate_segments_temp!(Temp, X, Y, Z, segments, delimiters, MantleAdiabaticT, Tsurface, Tmantle, SpreadingVel, AgeRidge, maxAge, kappa, SecYear)
     for I in eachindex(X)
         px, py, pz = X[I], Y[I], Z[I]
 

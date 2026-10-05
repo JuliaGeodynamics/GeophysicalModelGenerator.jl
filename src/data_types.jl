@@ -521,24 +521,59 @@ function Base.show(io::IO, d::UTMData)
     end
 end
 
+# The coordinate transformations below loop over every point. They take the
+# coordinate arrays as arguments, rather than the data structures, so that the
+# loops are compiled for the concrete array types: the structure fields
+# (`GeoUnit`) are not concretely typed.
+
+# `depth` in m
+function utm_to_lonlat(EW, NS, depth, zone, northern)
+    Lon = similar(EW, Float64)
+    Lat = similar(EW, Float64)
+    for i in eachindex(Lon, EW, NS, depth, zone, northern)
+        lla_i = LLA(UTMZ(EW[i], NS[i], Float64(ustrip(depth[i])), zone[i], northern[i]), wgs84)
+        Lat[i] = lla_i.lat
+        Lon[i] = lla_i.lon
+    end
+    return Lon, Lat
+end
+
+# `depth` in km; returns depth in m
+function lonlat_to_utm(lon, lat, depth)
+    EW = similar(lon, Float64)
+    NS = similar(lon, Float64)
+    depth_m = similar(lon, Float64)
+    zone = similar(lon, Int64)
+    northern = similar(lon, Bool)
+    for i in eachindex(EW, lon, lat, depth)
+        utmz_i = UTMZ(LLA(lat[i], lon[i], Float64(ustrip(depth[i]) * 1.0e3)), wgs84)
+        EW[i] = utmz_i.x
+        NS[i] = utmz_i.y
+        depth_m[i] = utmz_i.z
+        zone[i] = utmz_i.zone
+        northern[i] = utmz_i.isnorth
+    end
+    return EW, NS, depth_m, zone, northern
+end
+
+# `depth` in km; `trans` projects to a fixed UTM zone
+function lonlat_to_utmzone(lon, lat, depth, trans)
+    EW = similar(lon, Float64)
+    NS = similar(lon, Float64)
+    for i in eachindex(EW, lon, lat, depth)
+        utm_i = trans(LLA(lat[i], lon[i], Float64(ustrip(depth[i]) * 1.0e3)))
+        EW[i] = utm_i.x
+        NS[i] = utm_i.y
+    end
+    return EW, NS
+end
+
 """
 Converts a `UTMData` structure to a `GeoData` structure
 """
 function Base.convert(::Type{GeoData}, d::UTMData)
 
-    Lat = zeros(size(d.EW))
-    Lon = zeros(size(d.EW))
-    for i in eachindex(d.EW.val)
-
-        # Use functions of the Geodesy package to convert to LLA
-        utmz_i = UTMZ(d.EW.val[i], d.NS.val[i], Float64(ustrip.(d.depth.val[i])), d.zone[i], d.northern[i])
-        lla_i = LLA(utmz_i, wgs84)
-        lon = lla_i.lon
-        # if lon<0; lon = 360+lon; end # as GMT expects this
-
-        Lat[i] = lla_i.lat
-        Lon[i] = lon
-    end
+    Lon, Lat = utm_to_lonlat(d.EW.val, d.NS.val, d.depth.val, d.zone, d.northern)
 
     # handle the case where an old GeoData structure is converted
     if any(propertynames(d) .== :atts)
@@ -561,23 +596,7 @@ Converts a `GeoData` structure to a `UTMData` structure
 """
 function Base.convert(::Type{UTMData}, d::GeoData)
 
-    EW = zeros(size(d.lon))
-    NS = zeros(size(d.lon))
-    depth = zeros(size(d.lon))
-    zone = zeros(Int64, size(d.lon))
-    northern = zeros(Bool, size(d.lon))
-    for i in eachindex(d.lon.val)
-
-        # Use functions of the Geodesy package to convert to LLA
-        lla_i = LLA(d.lat.val[i], d.lon.val[i], Float64(ustrip.(d.depth.val[i]) * 1.0e3))
-        utmz_i = UTMZ(lla_i, wgs84)
-
-        EW[i] = utmz_i.x
-        NS[i] = utmz_i.y
-        depth[i] = utmz_i.z
-        zone[i] = utmz_i.zone
-        northern[i] = utmz_i.isnorth
-    end
+    EW, NS, depth, zone, northern = lonlat_to_utm(d.lon.val, d.lat.val, d.depth.val)
 
     # handle the case where an old GeoData structure is converted
     if any(propertynames(d) .== :atts)
@@ -624,22 +643,9 @@ Converts a `GeoData` structure to fixed UTM zone, around a given `ProjectionPoin
 """
 function convert2UTMzone(d::GeoData, proj::ProjectionPoint)
 
-    EW = zeros(size(d.lon))
-    NS = zeros(size(d.lon))
-    zone = zeros(Int64, size(d.lon))
-    northern = zeros(Bool, size(d.lon))
-    trans = UTMfromLLA(proj.zone, proj.isnorth, wgs84)
-    for i in eachindex(d.lon.val)
-
-        # Use functions of the Geodesy package to convert to LLA
-        lla_i = LLA(d.lat.val[i], d.lon.val[i], Float64(ustrip.(d.depth.val[i]) * 1.0e3))
-        utm_i = trans(lla_i)
-
-        EW[i] = utm_i.x
-        NS[i] = utm_i.y
-        zone[i] = proj.zone
-        northern[i] = proj.isnorth
-    end
+    EW, NS = lonlat_to_utmzone(d.lon.val, d.lat.val, d.depth.val, UTMfromLLA(proj.zone, proj.isnorth, wgs84))
+    zone = fill(proj.zone, size(EW))
+    northern = fill(proj.isnorth, size(EW))
 
     # handle the case where an old GeoData structure is converted
     if any(propertynames(d) .== :atts)
@@ -1081,7 +1087,7 @@ end
 Returns 3D coordinate arrays
 """
 function coordinate_grids(Data::ParaviewData; cell = false)
-    X, Y, Z = xyz_grid(NumValue(Data.x), NumValue(Data.y), NumValue(Data.z))
+    X, Y, Z = NumValue(Data.x), NumValue(Data.y), NumValue(Data.z)
     if cell
         X, Y, Z = average_q1(X), average_q1(Y), average_q1(Z)
     end

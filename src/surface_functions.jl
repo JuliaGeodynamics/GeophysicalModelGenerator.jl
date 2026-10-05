@@ -29,12 +29,12 @@ end
 
 # Internal routines
 _addSurfaces(a::_T, b::_T) where {_T <: GeoData} = GeoData(a.lon.val, a.lat.val, a.depth.val + b.depth.val, merge(a.fields, b.fields))
-_addSurfaces(a::_T, b::_T) where {_T <: UTMData} = UTMData(a.EW.val, a.NS.val, a.depth.val + b.depth.val, merge(a.fields, b.fields))
+_addSurfaces(a::_T, b::_T) where {_T <: UTMData} = UTMData(a.EW.val, a.NS.val, a.depth.val + b.depth.val, a.zone, a.northern, merge(a.fields, b.fields))
 _addSurfaces(a::_T, b::_T) where {_T <: CartData} = CartData(a.x.val, a.y.val, a.z.val + b.z.val, merge(a.fields, b.fields))
 _addSurfaces(a::_T, b::_T) where {_T <: ParaviewData} = ParaviewData(a.x.val, a.y.val, a.z.val + b.z.val, merge(a.fields, b.fields))
 
 _subtractSurfaces(a::_T, b::_T) where {_T <: GeoData} = GeoData(a.lon.val, a.lat.val, a.depth.val - b.depth.val, merge(a.fields, b.fields))
-_subtractSurfaces(a::_T, b::_T) where {_T <: UTMData} = UTMData(a.EW.val, a.NS.val, a.depth.val - b.depth.val, merge(a.fields, b.fields))
+_subtractSurfaces(a::_T, b::_T) where {_T <: UTMData} = UTMData(a.EW.val, a.NS.val, a.depth.val - b.depth.val, a.zone, a.northern, merge(a.fields, b.fields))
 _subtractSurfaces(a::_T, b::_T) where {_T <: CartData} = CartData(a.x.val, a.y.val, a.z.val - b.z.val, merge(a.fields, b.fields))
 _subtractSurfaces(a::_T, b::_T) where {_T <: ParaviewData} = ParaviewData(a.x.val, a.y.val, a.z.val - b.z.val, merge(a.fields, b.fields))
 
@@ -160,20 +160,18 @@ This fits the `depth` values of the surface `surf` to the `depth` value of the c
 function fit_surface_to_points(surf::GeoData, lon_pt::Vector, lat_pt::Vector, depth_pt::Vector)
     @assert is_surface(surf)
 
-    idx = nearest_point_indices(NumValue(surf.lon), NumValue(surf.lat), lon_pt, lat_pt)
-    depth = NumValue(surf.depth)
-    depth[idx] .= depth_pt[idx]
+    idx = nearest_point_indices(NumValue(surf.lon), NumValue(surf.lat), lon_pt[:], lat_pt[:])
 
-    surf_new = surf
-    surf_new.depth .= depth
+    surf_new = deepcopy(surf)
+    surf_new.depth.val .= depth_pt[idx]
     return surf_new
 end
 
 
 """
-    surf_new = fit_surface_to_points(surf::CartData, lon_pt::Vector, lat_pt::Vector, depth_pt::Vector)
+    surf_new = fit_surface_to_points(surf::CartData, X_pt::Vector, Y_pt::Vector, Z_pt::Vector)
 
-This fits the `depth` values of the surface `surf` to the `depth` value of the closest-by-points in (`lon_pt`,`lat_pt`, `depth_pt`)
+This fits the `z` values of the surface `surf` to the `z` value of the closest-by-points in (`X_pt`, `Y_pt`, `Z_pt`)
 
 """
 function fit_surface_to_points(surf::CartData, X_pt::Vector, Y_pt::Vector, Z_pt::Vector)
@@ -365,11 +363,8 @@ julia> Surf_interp = interpolate_data_surface(Data, surf)
 function interpolate_data_surface(V::ParaviewData, Surf::ParaviewData)
 
     # Create GeoData structure:
-    V_geo = GeoData(V.x.val, V.y.val, V.z.val, V.fields)
-    V_geo.depth.val = ustrip(V_geo.depth.val)
-
-    Surf_geo = GeoData(Surf.x.val, Surf.y.val, Surf.z.val, Surf.fields)
-    Surf_geo.depth.val = ustrip(Surf_geo.depth.val)
+    V_geo = GeoData(V.x.val, V.y.val, ustrip.(V.z.val), V.fields)
+    Surf_geo = GeoData(Surf.x.val, Surf.y.val, ustrip.(Surf.z.val), Surf.fields)
 
     Surf_interp_geo = interpolate_data_surface(V_geo, Surf_geo)
     Surf_interp = ParaviewData(Surf_interp_geo.lon.val, Surf_interp_geo.lat.val, ustrip.(Surf_interp_geo.depth.val), Surf_interp_geo.fields)
@@ -381,11 +376,8 @@ end
 function interpolate_data_surface(V::CartData, Surf::CartData)
 
     # Create GeoData structure:
-    V_geo = GeoData(V.x.val, V.y.val, V.z.val, V.fields)
-    V_geo.depth.val = ustrip(V_geo.depth.val)
-
-    Surf_geo = GeoData(Surf.x.val, Surf.y.val, Surf.z.val, Surf.fields)
-    Surf_geo.depth.val = ustrip(Surf_geo.depth.val)
+    V_geo = GeoData(V.x.val, V.y.val, ustrip.(V.z.val), V.fields)
+    Surf_geo = GeoData(Surf.x.val, Surf.y.val, ustrip.(Surf.z.val), Surf.fields)
 
     Surf_interp_geo = interpolate_data_surface(V_geo, Surf_geo)
     Surf_interp = CartData(Surf_interp_geo.lon.val, Surf_interp_geo.lat.val, ustrip.(Surf_interp_geo.depth.val), Surf_interp_geo.fields)

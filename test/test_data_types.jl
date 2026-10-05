@@ -181,3 +181,58 @@ q1_data = Q1Data(xyz_grid(1:10, 1:10, 1:8))
 fe_data = convert2FEData(q1_data)
 @test size(fe_data.connectivity) == (8, 567)
 @test size(fe_data.vertices) == (3, 800)
+
+# flip a GeoData set along depth (default) and along longitude
+Lon, Lat, Depth = lonlatdepth_grid(1:2, 1:3, -3:0)
+Data_flip = GeoData(Lon, Lat, Depth, (a = reshape(collect(1.0:24.0), 2, 3, 4),))
+Data_flipped = flip(Data_flip)
+@test ustrip.(Data_flipped.depth.val[1, 1, :]) == [0.0, -1.0, -2.0, -3.0]
+@test Data_flipped.fields.a[1, 1, :] == [19.0, 13.0, 7.0, 1.0]
+@test Data_flipped.lon.val == Data_flip.lon.val
+Data_flipped = flip(Data_flip, 1)
+@test Data_flipped.lon.val[:, 1, 1] == [2.0, 1.0]
+@test Data_flipped.fields.a[:, 1, 1] == [2.0, 1.0]
+
+# coordinate grids of UTMData (vertices and cell centers)
+Data_utm = UTMData(xyz_grid(1:4, 1:5, 0:2)..., 33, true, (a = ones(4, 5, 3),))
+EW_c, NS_c, Z_c = coordinate_grids(Data_utm)
+@test size(EW_c) == (4, 5, 3)
+@test EW_c == Data_utm.EW.val
+@test Z_c[1, 1, :] == [0.0, 1.0, 2.0]
+EW_c, NS_c, Z_c = coordinate_grids(Data_utm, cell = true)
+@test size(EW_c) == (3, 4, 2)
+@test EW_c[:, 1, 1] == [1.5, 2.5, 3.5]
+@test Z_c[1, 1, :] == [0.5, 1.5]
+
+# CartGrid in 1D, and grids specified by their extent
+Grid1D = create_CartGrid(size = 10, x = (0.0, 9.0))
+@test Grid1D.N == (10,)
+@test Grid1D.Δ == (1.0,)
+@test Grid1D.coord1D_cen[1] == 0.5:1.0:8.5
+Grid1D = create_CartGrid(size = 10, extent = 9.0)
+@test Grid1D.L == (9.0,)
+@test Grid1D.min == (0.0,)
+Grid2D = create_CartGrid(size = (10, 5), extent = (9.0, 4.0))
+@test Grid2D.min == (0.0, -4.0)
+@test Grid2D.max == (9.0, 0.0)
+Grid3D = create_CartGrid(size = (10, 5, 3), extent = (9.0, 4.0, 2.0))
+@test Grid3D.L == (9.0, 2.0, 4.0)
+@test Grid3D.min == (0.0, 0.0, -4.0)
+@test Grid3D.max == (9.0, 2.0, 0.0)
+
+# CartGrid with dimensional input is nondimensionalized
+Grid2D = create_CartGrid(size = (10, 20), x = (0.0km, 10km), z = (-20km, 10km), CharDim = GEO_units())
+@test Grid2D.L == (0.01, 0.03)
+@test Grid2D.min == (0.0, -0.02)
+
+# coordinate grids of ParaviewData (vertices and cell centers)
+X, Y, Z = xyz_grid(1:4, 1:5, -5:5)
+Data_pv = ParaviewData(X, Y, Z, (v = Z,))
+X_c, Y_c, Z_c = coordinate_grids(Data_pv)
+@test X_c == X
+@test Y_c == Y
+@test Z_c == Z
+X_c, Y_c, Z_c = coordinate_grids(Data_pv, cell = true)
+@test size(X_c) == (3, 4, 10)
+@test X_c[:, 1, 1] == [1.5, 2.5, 3.5]
+@test Z_c[1, 1, :] == -4.5:1.0:4.5

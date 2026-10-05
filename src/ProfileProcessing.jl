@@ -101,7 +101,7 @@ mutable struct GMG_Dataset
             error("Type should be either: Volume,Surface,Point,Topography or Screenshot. Is: $Type.")
         end
 
-        if DirName[(end - 4):end] == ".jld2"
+        if endswith(DirName, ".jld2")
             DirName = DirName[1:(end - 5)]
         end
         return new(Name, Type, DirName, active)
