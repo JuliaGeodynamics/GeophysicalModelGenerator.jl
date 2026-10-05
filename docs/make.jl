@@ -146,5 +146,5 @@ deploydocs(;
     devbranch = "main",
     devurl = "dev",
     forcepush=true,
-    push_preview = false,
+    push_preview = true,
 )
