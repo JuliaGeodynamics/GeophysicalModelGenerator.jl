@@ -106,7 +106,8 @@ makedocs(;
             "20 - 2D model setups" => "man/Tutorial_NumericalModel_2D.md",
             "21 - 3D model setups" => "man/Tutorial_NumericalModel_3D.md",
             "22 - 3D Volcano setup" => "man/Tutorial_VolcanoModel_3D.md",
-            "23 - Build geometry from polygons" =>  "man/tutorial_Polygon_structures.md"
+            "23 - Build geometry from polygons" =>  "man/tutorial_Polygon_structures.md",
+            "24 - Profiles for the AdriaArrayGeometryPicker" =>  "man/tutorial_AdriaArrayGeometryPicker.md"
         ],
         "User Guide" => Any[
             "Installation" =>  "man/installation.md",
