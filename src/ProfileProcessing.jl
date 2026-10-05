@@ -299,6 +299,11 @@ Creates a cross-section through a volumetric 3D dataset `VolData` with the data 
 """
 function create_profile_volume!(Profile::ProfileData, VolData::NamedTuple; DimsVolCross::NTuple = (100, 100), Depth_extent = nothing)
 
+    _isnodata(VolData) && return nothing # empty NamedTuple: nothing to intersect
+    for (name, data) in pairs(VolData)
+        data isa AbstractGeneralGrid || throw(ArgumentError("VolData.$name must be a GeoData/AbstractGeneralGrid, got $(typeof(data))"))
+    end
+
     datasetnames = String.(keys(VolData)) # get the names of the datasets
 
     if Profile.vertical # take a vertical cross section
@@ -356,6 +361,17 @@ function create_profile_volume!(Profile::ProfileData, VolData::NamedTuple; DimsV
     return nothing
 end
 
+"""
+    create_profile_volume!(Profile::ProfileData, VolData; DimsVolCross::NTuple=(100,100), Depth_extent=nothing)
+
+Fallback that normalizes `VolData`: `nothing` and empty containers (`NamedTuple()`, `()`) are treated as "no volume data" and leave `Profile` unchanged.
+Any other unsupported type throws an `ArgumentError`.
+"""
+function create_profile_volume!(Profile::ProfileData, VolData; DimsVolCross::NTuple = (100, 100), Depth_extent = nothing)
+    _isnodata(VolData) && return nothing
+    throw(ArgumentError("VolData must be a GeoData/AbstractGeneralGrid, a NamedTuple of those, or nothing; got $(typeof(VolData))"))
+end
+
 ### internal function to process screenshot data - contrary to the volume data, we here have to save lon/lat/depth pairs for every screenshot data set, so we create a NamedTuple of GeoData data sets
 function create_profile_screenshot!(Profile::ProfileData, DataSet::NamedTuple)
     num_datasets = length(DataSet)
@@ -378,7 +394,7 @@ function create_profile_screenshot!(Profile::ProfileData, DataSet::NamedTuple)
             #error("horizontal profiles not yet implemented")
         end
     end
-    Profile.SurfData = tmp # assign to profile data structure
+    Profile.ScreenshotData = tmp # assign to profile data structure
     return
 end
 
@@ -503,9 +519,7 @@ Any data argument can be `nothing` or empty (`NamedTuple()` or `()`), in which c
 """
 function extract_ProfileData!(Profile::ProfileData, VolData = nothing, SurfData = nothing, PointData = nothing; DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km, ScreenshotData = nothing, TopoData = nothing)
 
-    if !_isnodata(VolData)
-        create_profile_volume!(Profile, VolData; DimsVolCross = DimsVolCross, Depth_extent = Depth_extent)
-    end
+    create_profile_volume!(Profile, VolData; DimsVolCross = DimsVolCross, Depth_extent = Depth_extent)
     create_profile_surface!(Profile, _as_namedtuple(SurfData), DimsSurfCross = DimsSurfCross)
     create_profile_point!(Profile, _as_namedtuple(PointData), section_width = section_width)
     if !_isnodata(TopoData)
