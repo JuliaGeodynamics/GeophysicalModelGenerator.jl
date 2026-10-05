@@ -10,8 +10,6 @@ This tutorial shows how to create these `.pgmg` files for a whole set of vertica
 
 Both are described in detail below. Some general background on profile processing is given in the [Profile Processing](profile_processing.md) section.
 
-!!! note
-    The AdriaArrayGeometryPicker currently relies on the `profile_processing_mt` branch of GeophysicalModelGenerator. If you install the picker, this branch is installed automatically.
 
 ## 1. The profile file
 The profile file is a comma-separated text file. The first line is a header and is skipped. Every following line defines one profile, which can be either horizontal or vertical:

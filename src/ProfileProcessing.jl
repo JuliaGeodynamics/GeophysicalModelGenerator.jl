@@ -457,8 +457,11 @@ function create_profile_topo!(Profile::ProfileData, DataSet::NamedTuple; DimsSur
             tmp = merge(tmp, data_NT)
 
         else
-            # we do not have this implemented
-            #error("horizontal profiles not yet implemented")
+            # currently, the intersection of topogrpahy with the horizontal profile is not implemented
+            # For now, the entire topography data is saved in Profile.TopoData, and the user can then extract the relevant data from there
+
+            warning("horizontal profiles not yet implemented, saving entire topography data in Profile.TopoData ")
+            tmp = merge(tmp, NamedTuple{(DataSetName[idata],)}((data_tmp,))) # add the entire topography data to the NamedTuple
         end
     end
 
