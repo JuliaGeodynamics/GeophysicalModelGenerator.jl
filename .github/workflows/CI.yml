@@ -84,7 +84,7 @@ jobs:
       # ~/.gmt, which is where GMT used to put them; the UUID is the package's.
       # ~/.gmt is still cached for import_GeoTIFF, which does go through GMT.
       # The decoded .raw files are left out: they are rebuilt from the tiles.
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v6
         id: gmt-cache
         with:
           path: |
@@ -104,7 +104,7 @@ jobs:
         shell: bash
         run: rm -rf ~/.julia/scratchspaces/3700c31b-fa53-48a6-808a-ef22d5a84742/topo_tiles
       - uses: julia-actions/julia-runtest@latest
-      - uses: actions/cache/save@v4
+      - uses: actions/cache/save@v6
         if: always() && steps.gmt-cache.outputs.cache-hit != 'true'
         with:
           path: |
