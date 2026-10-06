@@ -2,7 +2,7 @@
 
 export meshgrid, cross_section, cross_section_volume, cross_section_surface, cross_section_points, extract_subvolume, subtract_horizontalmean
 export parse_columns_CSV, votemap, countmap
-export interpolate_datafields_2D, interpolate_datafields, interpolate_topography_plane
+export interpolate_datafields_2D, interpolate_datafields
 export rotate_translate_scale
 export lithostatic_pressure!
 export flatten_cross_section
@@ -1141,8 +1141,8 @@ function interpolate_datafields(V::UTMData, EW, NS, Depth)
     end
 
 
-    # Create a GeoData struct with the newly interpolated fields
-    Data_profile = UTMData(EW, NS, Depth, fields_new)
+    # Create a UTMData struct with the newly interpolated fields
+    Data_profile = UTMData(EW, NS, Depth, V.zone[1], V.northern[1], fields_new)
 
     return Data_profile
 end
@@ -1326,7 +1326,8 @@ function InterpolateDataFields2D_vecs(EW_vec, NS_vec, depth, fields_new, EW, NS)
             unit_array = zeros(size(data_array))
 
             for j in 1:length(data_tuple)
-                interpol = linear_interpolation((EW_vec, NS_vec), ustrip.(data_tuple[j]), extrapolation_bc = Flat())       # create interpolation object
+                data_j = ndims(data_tuple[j]) == 3 ? data_tuple[j][:, :, 1] : data_tuple[j]
+                interpol = linear_interpolation((EW_vec, NS_vec), ustrip.(data_j), extrapolation_bc = Flat())       # create interpolation object
                 data_array[:, :, 1, j] = interpol.(EW, NS)
             end
             data_new = tuple([data_array[:, :, 1, c] for c in 1:size(data_array, 4)]...)     # transform 3D matrix to tuple

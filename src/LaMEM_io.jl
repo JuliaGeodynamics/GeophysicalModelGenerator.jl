@@ -1,4 +1,3 @@
-using Base: Int64, Float64, NamedTuple
 using Printf
 using Glob
 using Interpolations
@@ -13,7 +12,7 @@ import Base: show, size
 export LaMEM_grid, read_LaMEM_inputfile
 export save_LaMEM_markers_parallel, save_LaMEM_topography
 export get_processor_partitioning, read_data_VTR, read_data_PVTR, create_partitioning_file
-export crop_bounds, get_proc_bound, get_proc_grid, get_particles_distribution, get_LaMEM_grid_info, get_processor_partitioning_info, check_markers_directory, setup_model_domain, LaMEMPartitioningInfo, write_processor_partitioning_LaMEM, insert_cpu_lines_after_nelz, update_nel_xyz_in_file
+export crop_bounds, get_proc_bound, get_proc_grid, get_particles_distribution, get_LaMEM_grid_info, check_markers_directory, setup_model_domain, LaMEMPartitioningInfo, write_processor_partitioning_LaMEM, insert_cpu_lines_after_nelz, update_nel_xyz_in_file
 
 """
 Structure that holds information about the LaMEM partitioning

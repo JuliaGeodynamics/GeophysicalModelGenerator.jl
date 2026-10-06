@@ -6,11 +6,7 @@ import GeophysicalModelGenerator: import_GeoTIFF
 # We do not check `isdefined(Base, :get_extension)` as recommended since
 # Julia v1.9.0 does not load package extensions when their dependency is
 # loaded from the main environment.
-if VERSION >= v"1.9.1"
-    using GMT
-else
-    using ..GMT
-end
+using GMT
 
 using GeophysicalModelGenerator: lonlatdepth_grid, GeoData, UTMData, km, remove_NaN_surface!
 

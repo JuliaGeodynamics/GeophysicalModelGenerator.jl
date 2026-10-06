@@ -169,8 +169,8 @@ function checkInput(X, Y, Z, RHO, refMod, lengthUnit, rhoTol, Topo, outName, pri
     dx = diff(X, dims = 1)[:]
     dy = diff(Y, dims = 2)[:]
     dz = diff(Z, dims = 3)[:]
-    tol = 1.0e-12
-    if !(all(a -> a < dx[1] + tol && a > dx[1] - tol, dx) && all(a -> a < dy[1] + tol && a > dy[1] - tol, dy) && all(a -> a < dz[1] + tol && a > dz[1] - tol, dz))
+    # relative tolerance: the spacing of a regular grid in m carries rounding errors well above 1e-12
+    if !(all(a -> isapprox(a, dx[1]; rtol = 1.0e-8), dx) && all(a -> isapprox(a, dy[1]; rtol = 1.0e-8), dy) && all(a -> isapprox(a, dz[1]; rtol = 1.0e-8), dz))
         error("Non-regular grids are not supported yet")
     end
 
@@ -225,7 +225,7 @@ function checkInput(X, Y, Z, RHO, refMod, lengthUnit, rhoTol, Topo, outName, pri
         elseif refMod == "NW"
             RefMod = RHO[1, end, :]
         elseif refMod == "AVG"
-            RefMod = !mean([1.0, 1.0, 1.0], RHO)
+            RefMod = vec(mean(RHO, dims = (1, 2)))
         else
             error("RefMod should be NE, SE, SW, NW, AVG or a vector with one value for each depth.")
         end

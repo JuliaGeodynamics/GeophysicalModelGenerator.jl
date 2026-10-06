@@ -92,3 +92,67 @@ ind = above_surface(q1data, cartdata2);
 
 ind = below_surface(q1data, cartdata2);
 @test sum(ind) == 140
+
+#-------------
+# Add & subtract ParaviewData surfaces
+pvdata1 = ParaviewData(xyz_grid(1:4, 1:5, 0)..., (a = ones(4, 5, 1),))
+pvdata2 = ParaviewData(xyz_grid(1:4, 1:5, 2)..., (b = ones(4, 5, 1),))
+pvdata3 = pvdata1 + pvdata2
+@test keys(pvdata3.fields) == (:a, :b)
+@test all(pvdata3.z.val .== 2.0)
+pvdata4 = pvdata1 - pvdata2
+@test all(pvdata4.z.val .== -2.0)
+
+# above_surface & below_surface with ParaviewData
+pvvol = ParaviewData(xyz_grid(1:4, 1:5, -5:5)..., (z = ones(4, 5, 11),))
+ind = above_surface(pvvol, pvdata2)
+@test size(ind) == (4, 5, 11)
+@test sum(ind) == 60
+@test all(ind[:, :, end])
+ind = below_surface(pvvol, pvdata2)
+@test sum(ind) == 140
+@test all(ind[:, :, 1])
+
+# interpolate_data_surface with GeoData: a linear field is interpolated exactly on a dipping surface
+Lon, Lat, Depth = lonlatdepth_grid(1:4, 1:5, -5:5)
+geovol = GeoData(Lon, Lat, Depth, (v = 2 .* ustrip.(Depth),))
+Lon, Lat, Depth = lonlatdepth_grid(1.5:1:3.5, 1.5:1:4.5, 0)
+Depth = -0.2 .* Lon .- 0.5 .* Lat
+geosurf = GeoData(Lon, Lat, Depth, (a = zeros(size(Lon)),))
+geosurf_interp = interpolate_data_surface(geovol, geosurf)
+@test size(geosurf_interp.fields.v) == (3, 4, 1)
+@test geosurf_interp.fields.v ≈ 2 .* Depth
+
+# Add & subtract UTMData surfaces
+utmdata1 = UTMData(xyz_grid(1:4, 1:5, 0)..., 33, true, (a = ones(4, 5, 1),))
+utmdata2 = UTMData(xyz_grid(1:4, 1:5, 2)..., 33, true, (b = ones(4, 5, 1),))
+utmdata3 = utmdata1 + utmdata2
+@test keys(utmdata3.fields) == (:a, :b)
+@test all(utmdata3.depth.val .== 2.0)
+@test all(utmdata3.zone .== 33)
+@test all(utmdata3.northern)
+utmdata4 = utmdata1 - utmdata2
+@test all(utmdata4.depth.val .== -2.0)
+
+# fit_surface_to_points with GeoData: every surface point takes the depth of the closest point
+Lon, Lat, Depth = lonlatdepth_grid(1:4, 1:5, 0)
+geosurf0 = GeoData(Lon, Lat, Depth, (a = zeros(size(Lon)),))
+geosurf_fit = fit_surface_to_points(geosurf0, Lon[:], Lat[:], -Lon[:])
+@test geosurf_fit.depth.val ≈ -Lon
+@test all(geosurf0.depth.val .== 0)        # input is not modified
+geosurf_fit = fit_surface_to_points(geosurf0, [1.2, 3.9], [1.1, 4.8], [-3.0, -7.0])
+@test geosurf_fit.depth.val[1, 1] == -3.0
+@test geosurf_fit.depth.val[4, 5] == -7.0
+@test sort(unique(geosurf_fit.depth.val)) == [-7.0, -3.0]
+
+# interpolate_data_surface with CartData and ParaviewData
+X, Y, Z = xyz_grid(1:4, 1:5, -5:5)
+Xs, Ys, _ = xyz_grid(1.5:1:3.5, 1.5:1:4.5, 0)
+Zs = -0.2 .* Xs .- 0.5 .* Ys
+cartsurf_interp = interpolate_data_surface(CartData(X, Y, Z, (v = 2 .* Z,)), CartData(Xs, Ys, Zs, (a = zeros(size(Xs)),)))
+@test cartsurf_interp isa CartData
+@test cartsurf_interp.fields.v ≈ 2 .* Zs
+@test ustrip.(cartsurf_interp.z.val) ≈ Zs
+pvsurf_interp = interpolate_data_surface(ParaviewData(X, Y, Z, (v = 2 .* Z,)), ParaviewData(Xs, Ys, Zs, (a = zeros(size(Xs)),)))
+@test pvsurf_interp isa ParaviewData
+@test pvsurf_interp.fields.v ≈ 2 .* Zs

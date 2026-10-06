@@ -2,7 +2,7 @@
 # this is ProfileProcessing.jl
 # It contains functions and type definitions to gather selected data for given profiles
 
-export ProfileData, extract_ProfileData, create_ProfileData, GMG_Dataset, load_dataset_file, combine_vol_data
+export ProfileData, extract_ProfileData, GMG_Dataset, load_dataset_file, combine_vol_data
 export extract_ProfileData!, read_picked_profiles
 import Base: show
 
@@ -106,7 +106,7 @@ mutable struct GMG_Dataset
             error("Type should be either: Volume,Surface,Point,Topography or Screenshot. Is: $Type.")
         end
 
-        if DirName[(end - 4):end] == ".jld2"
+        if endswith(DirName, ".jld2")
             DirName = DirName[1:(end - 5)]
         end
         return new(Name, Type, DirName, active)
@@ -460,7 +460,7 @@ function create_profile_topo!(Profile::ProfileData, DataSet::NamedTuple; DimsSur
             # currently, the intersection of topogrpahy with the horizontal profile is not implemented
             # For now, the entire topography data is saved in Profile.TopoData, and the user can then extract the relevant data from there
 
-            warning("horizontal profiles not yet implemented, saving entire topography data in Profile.TopoData ")
+            @warn "horizontal profiles not yet implemented, saving entire topography data in Profile.TopoData"
             tmp = merge(tmp, NamedTuple{(DataSetName[idata],)}((data_tmp,))) # add the entire topography data to the NamedTuple
         end
     end

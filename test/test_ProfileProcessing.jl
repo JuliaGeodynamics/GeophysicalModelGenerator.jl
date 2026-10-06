@@ -130,6 +130,11 @@ prof7 = ProfileData(depth = -20)
 extract_ProfileData!(prof7)
 @test isempty(prof7.SurfData)
 
+# horizontal profiles keep the full topography data set
+prof_topo = ProfileData(depth = -20)
+@test_logs (:warn, r"horizontal profiles not yet implemented") GeophysicalModelGenerator.create_profile_topo!(prof_topo, Data.Surface)
+@test prof_topo.TopoData === Data.Surface
+
 # create_profile_volume! normalizes VolData: nothing / empty containers are no-ops, bad types error
 prof8 = ProfileData(depth = -100)
 for novol in (nothing, NamedTuple(), ())

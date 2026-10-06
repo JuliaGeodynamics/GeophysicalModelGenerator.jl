@@ -3,7 +3,7 @@
 GeophysicalModelGenerator.jl is written in the [julia](https://julialang.org) programming language, which is an extremely powerful, modern, scientific computing language. Julia works on all major operating systems, is free, fast, and has a very active user basis (with many useful packages). In case you haven't heard about julia yet, you are not alone. Yet, perhaps a look at [this](https://www.nature.com/articles/d41586-019-02310-3) or [this](https://thenextweb.com/news/watch-out-python-julia-programming-coding-language-coming-for-crown-syndication) article, which explains nicely why it has an enormous potential for computational geosciences as well.
 
 ### 1. Install julia
-In order to use then package you obviously need to install julia. We recommend downloading and installing binaries from the [julia](https://julialang.org) webpage.
+In order to use then package you obviously need to install julia (version 1.10 or later). We recommend downloading and installing binaries from the [julia](https://julialang.org) webpage.
 
 
 ### 2. Install Visual Studio Code
@@ -21,7 +21,7 @@ This will start the command-line interface of julia:
   (_)     | (_) (_)    |
    _ _   _| |_  __ _   |  Type "?" for help, "]?" for Pkg help.
   | | | | | | |/ _` |  |
-  | | |_| | | | (_| |  |  Version 1.6.0 (2021-03-24)
+  | | |_| | | | (_| |  |  Version 1.10
  _/ |\__'_|_|_|\__'_|  |  Official https://julialang.org/ release
 |__/                   |
 
@@ -30,7 +30,7 @@ julia>
 
 From the julia prompt, you start the package manager by typing `]`:
 ```julia-repl
-(@1.6) pkg>
+(@v1.10) pkg>
 ```
 And you return to the command line with a backspace.
 
@@ -44,7 +44,7 @@ In the shell, you can use the normal commands like listing the content of a dire
 shell> ls
 LICENSE         Manifest.toml   Project.toml    README.md       docs            src             test            tutorial
 shell> pwd
-/Users/kausb/.julia/dev/GeophysicalModelGenerator
+~/.julia/dev/GeophysicalModelGenerator
 ```
 As before, return to the main command line (called `REPL`) with a backspace.
 
@@ -97,7 +97,7 @@ This will automatically install various other packages it relies on (using the c
 If you want, you can test if it works on your machine by running the test suite in the package manager:
 ```julia-repl
 julia> ]
-(@1.6) pkg> test GeophysicalModelGenerator
+(@v1.10) pkg> test GeophysicalModelGenerator
 ```
 Note that we run these tests automatically on Windows, Linux and Mac every time we add a new feature to GeophysicalModelGenerator (using different julia versions). This Continuous Integration (CI) ensures that new features do not break others in the package. The results can be seen [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/actions).
 
@@ -106,7 +106,7 @@ The installation of `GMG` only needs to be done once, and will precompile the pa
 If you, at a later stage, want to upgrade to the latest version of `GMG`, you can type:
 ```julia-repl
 julia> ]
-(@1.6) pkg> update GeophysicalModelGenerator
+(@v1.10) pkg> update GeophysicalModelGenerator
 ```
 
 You can load GeophysicalModelGenerator, for example to create cross-sections, with:

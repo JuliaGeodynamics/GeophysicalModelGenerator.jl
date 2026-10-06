@@ -1,1 +1,7 @@
 gmt.history
+node_modules/
+package-lock.json
+src/man/authors.md
+src/man/code_of_conduct.md
+src/man/contributing.md
+src/man/license.md

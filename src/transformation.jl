@@ -46,25 +46,25 @@ function project_CartData(d_cart::CartData, d::GeoData, p::ProjectionPoint)
 end
 
 """
-    d_cart = project_CartData(d_cart::CartData, d::GeoData, p::ProjectionPoint)
+    d_cart = project_CartData(d_cart::CartData, d_cart_data0::CartData)
 
-Projects all datafields from the GeoData struct `d` to the CartData struct `d_cart`, around the projection point `p`.
-`d_cart` *must* be an orthogonal cartesian grid (deformed doesn't work; use `convert2CartData(d, proj)`, where `proj` is a projection point in that case).
+Projects all datafields from the CartData struct `d_cart_data0` to the CartData struct `d_cart`.
+`d_cart_data0` *must* be an orthogonal cartesian grid.
 
-# Note:    
-- If `d_cart` and `d` are horizontal surfaces (3rd dimension has size==1), it also interpolates the depth coordinate.    
+# Note:
+- If `d_cart` is a horizontal surface (3rd dimension has size==1), the depth coordinate of `d_cart_data0` is interpolated as well.
 
 """
 function project_CartData(d_cart::CartData, d_cart_data0::CartData)
 
-    if size(d_cart_data0.x.val, 3) == 1
-        z_new, fields_new = interpolate_datafields_2D(d, d_cart_data0.x.val, d_cart_data0.y.val)
+    if size(d_cart.x.val, 3) == 1
+        z_new, fields_new = interpolate_datafields_2D(d_cart_data0, d_cart.x.val, d_cart.y.val)
 
         # Create new struct
         d_cart = CartData(d_cart.x.val, d_cart.y.val, z_new, fields_new)
 
     else
-        d_data = interpolate_datafields(d, d_cart_data0.x.val, d_cart_data0.y.val, d_cart_data0.z.val)
+        d_data = interpolate_datafields(d_cart_data0, d_cart.x.val, d_cart.y.val, d_cart.z.val)
         d_cart = CartData(d_cart.x.val, d_cart.y.val, d_cart.z.val, d_data.fields)
 
     end

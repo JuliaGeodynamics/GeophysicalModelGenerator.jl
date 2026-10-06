@@ -318,3 +318,112 @@ fe_data = convert2FEData(q1_data)
 
 fe_data = addfield(fe_data, (T1 = ones(Float64, size(fe_data.fields.Z)),))
 @test keys(fe_data.fields) == (:Z, :T, :T1)
+
+@testset "removefield" begin
+    X, Y, Z = xyz_grid(1:3, 1:4, 0)
+    Data_cart = removefield(CartData(X, Y, Z, (a = X, b = Y)), :a)
+    @test Data_cart isa CartData
+    @test keys(Data_cart.fields) == (:b,)
+    @test_throws "removefield is only implemented for GeoData and CartData structures" removefield(UTMData(X, Y, Z, 33, true, (a = X, b = Y)), :a)
+end
+
+@testset "2D interpolation of surfaces" begin
+    # linear fields are interpolated exactly
+    Lon, Lat, Depth = lonlatdepth_grid(0:4, 0:3, 0)
+    Lon_new, Lat_new, _ = lonlatdepth_grid(0.5:1:3.5, 0.5:1:2.5, 0)
+
+    @testset "GeoData onto coordinate arrays" begin
+        # 3D arrays (size 1 in the 3rd dimension)
+        Data_geo = GeoData(Lon, Lat, Depth .+ Lon, (s = 2 .* Lon, v = (Lon, Lat)))
+        depth_new, fields_new = interpolate_datafields_2D(Data_geo, Lon_new, Lat_new)
+        @test depth_new ≈ Lon_new
+        @test fields_new.s ≈ 2 .* Lon_new
+        @test size(fields_new.v[1]) == (4, 3, 1)
+        @test fields_new.v[2] ≈ Lat_new
+
+        # 2D arrays
+        Data_geo = GeoData(Lon[:, :, 1], Lat[:, :, 1], Depth[:, :, 1] .+ Lon[:, :, 1], (s = 2 .* Lon[:, :, 1], v = (Lon[:, :, 1], Lat[:, :, 1])))
+        depth_new, fields_new = interpolate_datafields_2D(Data_geo, [0.5 1.5; 2.5 3.5], [0.5 0.5; 2.5 2.5])
+        @test depth_new ≈ [0.5 1.5; 2.5 3.5]
+        @test fields_new.s ≈ [1.0 3.0; 5.0 7.0]
+        @test fields_new.v[2] ≈ [0.5 0.5; 2.5 2.5]
+    end
+
+    @testset "GeoData onto GeoData" begin
+        Data_geo = GeoData(Lon, Lat, Depth .+ Lon, (s = 2 .* Lon,))
+        Data_new = GeoData(Lon_new, Lat_new, zeros(size(Lon_new)), (a = zeros(size(Lon_new)),))
+        Data_interp = interpolate_datafields_2D(Data_geo, Data_new)
+        @test Data_interp isa GeoData
+        @test Data_interp.fields.s ≈ 2 .* Lon_new
+        @test ustrip.(Data_interp.depth.val) ≈ Lon_new
+    end
+
+    @testset "CartData onto CartData" begin
+        X, Y, Z = xyz_grid(-5:5, -5:5, 0)
+        Data_orig = CartData(X, Y, Z .+ X, (s = 3 .* X .+ Y, v = (X, Y), colors = (X, Y, X)))
+        X_new, Y_new, Z_new = xyz_grid(-2:1.0:2, -2:1.0:2, 0)
+        Data_new = CartData(X_new, Y_new, Z_new, (a = Z_new,))
+
+        Data_interp = interpolate_datafields_2D(Data_orig, Data_new)
+        @test Data_interp.fields.s ≈ 3 .* X_new .+ Y_new
+        @test ustrip.(Data_interp.z.val) ≈ X_new
+        @test vec(Data_interp.fields.v[1]) ≈ vec(X_new)
+        @test vec(Data_interp.fields.v[2]) ≈ vec(Y_new)
+        # colors use the nearest neighbour
+        @test vec(Data_interp.fields.colors[1]) == vec(X_new)
+        @test vec(Data_interp.fields.colors[2]) == vec(Y_new)
+
+        # rotated & translated data sets give the same values as the unrotated ones
+        Data_orig_r = rotate_translate_scale(Data_orig, Rotate = 30, Translate = (1.0, 2.0, 0.0))
+        Data_new_r = rotate_translate_scale(Data_new, Rotate = 30, Translate = (1.0, 2.0, 0.0))
+        Data_interp = interpolate_datafields_2D(Data_orig_r, Data_new_r; Rotate = 30, Translate = (1.0, 2.0, 0.0))
+        @test Data_interp.fields.s ≈ 3 .* X_new .+ Y_new
+        @test Data_interp.x.val ≈ Data_new_r.x.val
+    end
+end
+
+@testset "interpolate_datafields with UTMData" begin
+    # depth decreasing along the 3rd dimension; linear fields are interpolated exactly
+    EW, NS, Depth = xyz_grid(0:1000:4000, 0:1000:3000, 0:-1000:-2000)
+    Data_utm = UTMData(EW, NS, Depth, 33, true, (s = EW .+ Depth, v = (EW, NS)))
+    EW_new, NS_new, Depth_new = xyz_grid(500:1000:3500, 500:1000:2500, -500:-1000:-1500)
+    Data_interp = interpolate_datafields(Data_utm, EW_new, NS_new, Depth_new)
+    @test Data_interp isa UTMData
+    @test Data_interp.fields.s ≈ EW_new .+ Depth_new
+    @test Data_interp.fields.v[2] ≈ NS_new
+    @test all(Data_interp.zone .== 33)
+end
+
+@testset "subtract_horizontalmean (2D)" begin
+    V = [1.0 10.0; 3.0 30.0]
+    @test subtract_horizontalmean(V) == [-1.0 -10.0; 1.0 10.0]
+    @test subtract_horizontalmean(V, Percentage = true) == [-50.0 -50.0; 50.0 50.0]
+end
+
+@testset "lithostatic_pressure!" begin
+    # constant density: P = ρ g depth, zero at the top
+    ρ = fill(3000.0, 2, 2, 5)
+    Plithos = zeros(size(ρ))
+    lithostatic_pressure!(Plithos, ρ, 1000.0)
+    @test Plithos[1, 1, :] ≈ 3000.0 * 9.81 .* (4000.0:-1000.0:0.0)
+    @test all(Plithos[:, :, 1] .== Plithos[1, 1, 1])
+
+    # 2D array with given g
+    ρ = fill(3000.0, 4, 5)
+    Plithos = zeros(size(ρ))
+    lithostatic_pressure!(Plithos, ρ, 10.0; g = 10.0)
+    @test Plithos[1, :] ≈ [1.2e6, 9.0e5, 6.0e5, 3.0e5, 0.0]
+
+    # variable density: pressure is the sum of the overlying layers (excluding the top one)
+    ρ = reshape(collect(1.0:24.0), 3, 2, 4)
+    Plithos = zeros(size(ρ))
+    lithostatic_pressure!(Plithos, ρ, 1.0; g = 1.0)
+    @test Plithos[2, 1, 1] ≈ sum(ρ[2, 1, 1:3])
+    @test Plithos[3, 2, 2] ≈ sum(ρ[3, 2, 2:3])
+end
+
+@testset "parse_columns_CSV" begin
+    # numbers are taken from Float64 entries and from strings that parse as numbers
+    rows = [("st1", 1.0, "2.5", 3.0), ("st2", 4.0, "x", "5.5")]
+    @test GeophysicalModelGenerator.parse_columns_CSV(rows, 3) == [1.0 2.5 3.0; 4.0 5.5 0.0]
+end
