@@ -1,8 +1,53 @@
+```@raw html
+---
+# https://vitepress.dev/reference/default-theme-home-page
+layout: home
+
+hero:
+  name: GeophysicalModelGenerator.jl
+  text: From geophysical data to 3D models
+  tagline: Import, combine, and visualize geophysical data sets, and create input models for geodynamic simulations.
+  actions:
+    - theme: brand
+      text: Getting Started
+      link: /man/Tutorial_Basic
+    - theme: alt
+      text: Tutorials
+      link: /man/tutorials
+    - theme: alt
+      text: API Reference
+      link: /man/listfunctions
+    - theme: alt
+      text: View on GitHub
+      link: https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl
+  image:
+    src: /logo.svg
+    alt: GeophysicalModelGenerator.jl
+
+features:
+  - title: Consistent data structures
+    details: GeoData, CartData and UTMData hold data together with its lon/lat/depth or Cartesian coordinates.
+    link: /man/datastructures
+
+  - title: Data import
+    details: Import seismic tomography, topography, earthquake catalogs, GPS data, and screenshots of published figures.
+    link: /man/dataimport
+
+  - title: Paraview output
+    details: Write points, 2D profiles, and 3D volumes, for scalar and vector data, to VTK files.
+    link: /man/paraview_output
+
+  - title: Numerical model setups
+    details: Create 2D and 3D geodynamic input models for LaMEM, pTatin, and other codes.
+    link: /man/geodynamic_setups
+---
+```
+
 ```@meta
 CurrentModule = GeophysicalModelGenerator
 ```
 
-# GeophysicalModelGenerator
+## What is GeophysicalModelGenerator.jl?
 
 Documentation for [GeophysicalModelGenerator](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl).
 

@@ -1,11 +1,8 @@
-using Documenter
+using Documenter, DocumenterVitepress
 
 push!(LOAD_PATH, dirname(@__DIR__))
 
 using GeophysicalModelGenerator
-
-# Importing these activates package extensions
-using GLMakie, GMT
 
 #DocMeta.setdocmeta!(GeophysicalModelGenerator, :DocTestSetup, :(using GeophysicalModelGenerator); recursive=true)
 
@@ -76,9 +73,10 @@ makedocs(;
     modules=[GeophysicalModelGenerator],
     authors="Boris Kaus, Marcel Thielmann",
     sitename="GeophysicalModelGenerator.jl",
-    format=Documenter.HTML(;
-        prettyurls=get(ENV, "CI", "false") == "true",
-        size_threshold_ignore = ["man/listfunctions.md"]
+    format=DocumenterVitepress.MarkdownVitepress(
+        repo = "github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl",
+        devbranch = "main",
+        devurl = "dev",
     ),
     pages=[
         "Home" => "index.md",
@@ -138,12 +136,11 @@ makedocs(;
     warnonly=true,
 )
 
-deploydocs(;
-    repo="github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl.git",
+DocumenterVitepress.deploydocs(;
+    repo = "github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl",
+    target = joinpath(@__DIR__, "build"),
     branch = "gh-pages",
-    target = "build",
     devbranch = "main",
-    devurl = "dev",
-    forcepush=true,
-    push_preview = false,
+    forcepush = true,
+    push_preview = true,
 )
