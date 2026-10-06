@@ -333,7 +333,7 @@ function cross_section_surface(S::AbstractGeneralGrid; dims = (100,), Interpolat
     end
 
     if !isnothing(Lat_level)   # vertical slice @ given latitude
-        # create a vector that spans the entire dataset @ a given latitutde
+        # create a vector that spans the entire dataset @ a given latitude
         Lon = LinRange(minimum(Lon_vec), maximum(Lon_vec), dims[1])
         Lat = ones(size(Lon)) * Lat_level
     end
