@@ -95,7 +95,7 @@ function waterflows(Topo::GeoData, flowdir_fn = WhereTheWaterFlows.d8dir_feature
     end
     area[:, :, 1], slen[:, :, 1], dir[:, :, 1], nout[:, :, 1], nin[:, :, 1], sinks, pits, c[:, :, 1], bnds = wtwf
 
-    catchment_large = prune_catchments(c, minsize; val = 0)
+    catchment_large = prune_catchments(c, minsize)
 
     _, id_max = findmax(area)
     largest_catchment = catchment_large .== catchment_large[id_max]
