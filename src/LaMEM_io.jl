@@ -634,10 +634,7 @@ function PetscBinaryWrite_Vec(filename, A; add_APS=false)
         write(f, hton(header))               # header
         write(f, hton(Float64(nummark)))     # info about # of markers written
 
-        for i in 2:n
-            write(f, hton(Float64(A[i])))   # Write data itself
-        end
-
+        write(f, hton.(Float64.(@view A[2:n])))   # Write data itself
     end
 
 
