@@ -274,14 +274,13 @@ Determines if points within the 3D `Data_Cart` structure are above the Cartesian
 function above_surface(Data_Cart::Union{Q1Data, CartData}, DataSurface_Cart::CartData; above = true, cell = false)
 
     X, Y, Z = coordinate_grids(Data_Cart, cell = cell)
-    if cell
-        Data = GeoData(ustrip.(X), ustrip.(Y), ustrip.(Z), Data_Cart.cellfields)
-    else
-        Data = GeoData(ustrip.(X), ustrip.(Y), ustrip.(Z), Data_Cart.fields)
-    end
-    DataSurface = GeoData(ustrip.(DataSurface_Cart.x.val), ustrip.(DataSurface_Cart.y.val), ustrip.(DataSurface_Cart.z.val), DataSurface_Cart.fields)
+    xs, ys, zs = ustrip.(DataSurface_Cart.x.val), ustrip.(DataSurface_Cart.y.val), ustrip.(DataSurface_Cart.z.val)
+    size(zs, 3) == 1 || error("It seems that DataSurface is not a surface")
+    surface = linear_interpolation((xs[:, 1, 1], ys[1, :, 1]), zs[:, :, 1])
 
-    return Above = above_surface(Data, DataSurface; above = above)
+    # One fused pass, which also acts as a function barrier for the non-inferable X, Y, Z
+    compare = above ? (>) : (<)
+    return compare.(ustrip.(Z), surface.(ustrip.(X), ustrip.(Y)))
 end
 
 """
