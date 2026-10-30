@@ -1,5 +1,4 @@
 using Printf
-using Glob
 using Interpolations
 
 import Base: show, size
@@ -1133,7 +1132,7 @@ function create_partitioning_file(LaMEM_input::String, NumProc::Int64; LaMEM_dir
 
     # Retrieve newest file
     if success(exit)
-        files = readdir(glob"ProcessorPartitioning_*.bin")
+        files = filter(f -> startswith(f, "ProcessorPartitioning_") && endswith(f, ".bin"), readdir())
         time_modified = zeros(length(files))
         for (i, file) in enumerate(files)
             time_modified[i] = stat(file).mtime
