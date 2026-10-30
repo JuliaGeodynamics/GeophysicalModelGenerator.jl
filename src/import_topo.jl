@@ -110,7 +110,8 @@ function server_index_file()
             try
                 Downloads.download("$root/gmt_data_server.txt", index; timeout = INDEX_TIMEOUT)
                 return index
-            catch
+            catch e
+                e isa InterruptException && rethrow()
                 rm(index; force = true)               # no half-written index
             end
         end
@@ -322,6 +323,7 @@ function download_tile(relative_url::AbstractString, dest::AbstractString;
                 return true
             catch err
                 rm(tmp, force = true)
+                err isa InterruptException && rethrow()
                 # a 404 means there is no such tile, and no mirror will have it either
                 if err isa Downloads.RequestError && err.response.status == 404
                     return false
