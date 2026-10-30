@@ -7,7 +7,7 @@ export point_to_nearest_grid, countmap
     Grid_counts = point_to_nearest_grid(Point::CartData, Grid::CartData; radius_factor=1)
 
 Uses nearest neighbour interpolation to count how many points (given by `Point`) are in the vicinity of a 3D `Grid`. 
-The search radius is `R=radius_factor*(Δx² + Δy² + Δz²)^(1/3)`
+The search radius is `R = radius_factor * sqrt(Δx² + Δy² + Δz²)`, `radius_factor` times the diagonal of a grid cell
 
 `Point` should have 1D coordinate vectors
 
@@ -29,7 +29,7 @@ end
     Grid_counts = point_to_nearest_grid(pt_x,pt_y,pt_z, Grid::CartData; radius_factor=1)
 
 Uses nearest neighbour interpolation to count how many points (given by `pt_x`,`pt_y`,`pt_z` coordinate vectors) are in the 
-vicinity of 3D `CartGrid` specified by `Grid`. The search radius is `R=radius_factor*(Δx² + Δy² + Δz²)^(1/3)`
+vicinity of 3D `CartGrid` specified by `Grid`. The search radius is `R = radius_factor * sqrt(Δx² + Δy² + Δz²)`, `radius_factor` times the diagonal of a grid cell
 
 `Grid_counts` is `Grid` but with an additional field `Count` that has the number of hits
 """
@@ -47,7 +47,7 @@ end
     Grid_counts = point_to_nearest_grid(Point::GeoData, Grid::GeoData; radius_factor=1)
 
 Uses nearest neighbour interpolation to count how many points (given by `Point`) are in the vicinity of a 3D `Grid`. 
-The search radius is `R=radius_factor*(Δx² + Δy² + Δz²)^(1/3)`
+The search radius is `R = radius_factor * sqrt(Δx² + Δy² + Δz²)`, `radius_factor` times the diagonal of a grid cell
 
 `Point` should have 1D coordinate vectors
 
@@ -69,7 +69,7 @@ end
     Grid_counts = point_to_nearest_grid(pt_x,pt_y,pt_z, Grid::GeoData; radius_factor=1)
 
 Uses nearest neighbour interpolation to count how many points (given by `pt_x`,`pt_y`,`pt_z` coordinate vectors) are in the 
-vicinity of 3D `GeoData` specified by `Grid`. The search radius is `R=radius_factor*(Δx² + Δy² + Δz²)^(1/3)`
+vicinity of 3D `GeoData` specified by `Grid`. The search radius is `R = radius_factor * sqrt(Δx² + Δy² + Δz²)`, `radius_factor` times the diagonal of a grid cell
 
 `Grid_counts` is `Grid` but with an additional field `Count` that has the number of hits
 """
@@ -87,7 +87,7 @@ end
 
 This uses nearest neighbour interpolation to count how many points (given by `pt_x`,`pt_y`,`pt_z` coordinate vectors) are in the 
 vicinity of 3D grid point specified by `X`,`Y`,`Z` 3D coordinate arrays, with regular spacing `(Δx,Δy,Δz)`.
-The search radius is `R=radius_factor*(Δx² + Δy² + Δz²)^(1/3)`
+The search radius is `R = radius_factor * sqrt(Δx² + Δy² + Δz²)`, `radius_factor` times the diagonal of a grid cell
 
 """
 function point_to_nearest_grid(pt_x, pt_y, pt_z, X, Y, Z; radius_factor = 1)
@@ -102,7 +102,7 @@ function point_to_nearest_grid(pt_x, pt_y, pt_z, X, Y, Z; radius_factor = 1)
     points = zeros(3, length(X))
     points[1, :], points[2, :], points[3, :] = X[:], Y[:], Z[:]
 
-    radius = radius_factor * (Δx^2 + Δy^2 + Δz^2)^(1 / 3)  # search radius
+    radius = radius_factor * sqrt(Δx^2 + Δy^2 + Δz^2)  # search radius
     idxs = inrange(tree, points, radius)           # find points (NearestNeighbors package)
     le = length.(idxs)                           # number of points
 
