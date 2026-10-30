@@ -1496,7 +1496,7 @@ function subtract_horizontalmean(V::AbstractArray{T, 2}; Percentage = false) whe
         average = mean(filter(!isnan, vec(V[:, iLayer])))
 
         if Percentage
-            V_sub[:, iLayer] = ustrip(V[:, iLayer]) .- ustrip(average)
+            V_sub[:, iLayer] = ustrip.(V[:, iLayer]) .- ustrip(average)
             V_sub[:, iLayer] = V_sub[:, iLayer] ./ ustrip(average) * 100.0      # the result is normalized
         else
             V_sub[:, iLayer] = V[:, iLayer] .- average
