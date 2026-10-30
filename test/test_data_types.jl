@@ -236,3 +236,13 @@ X_c, Y_c, Z_c = coordinate_grids(Data_pv, cell = true)
 @test size(X_c) == (3, 4, 10)
 @test X_c[:, 1, 1] == [1.5, 2.5, 3.5]
 @test Z_c[1, 1, :] == -4.5:1.0:4.5
+
+# GeoData -> UTMData -> CartData keeps depth in km
+let proj = ProjectionPoint(Lat = 40.0, Lon = 14.0)
+    G = GeoData([14.0, 14.1], [40.0, 40.1], [-10.0, -20.0], (a = [1.0, 2.0],))
+    U = convert2UTMzone(G, proj)
+    @test Value(U.depth) == [-10.0e3, -20.0e3] * m
+    C = convert2CartData(U, proj)
+    @test ustrip.(Value(C.z)) ≈ [-10.0, -20.0]
+    @test ustrip.(Value(convert2CartData(G, proj).z)) ≈ [-10.0, -20.0]
+end

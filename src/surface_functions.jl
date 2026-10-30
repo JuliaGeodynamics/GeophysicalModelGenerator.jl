@@ -93,7 +93,6 @@ function drape_on_topo(Topo::GeoData, Data::GeoData)
             data_tuple = Data.fields[i]      # we have a tuple (likely a vector field), so we have to loop
 
             data_array = zeros(typeof(data_tuple[1][1]), size(Topo.lon.val, 1), size(Topo.lon.val, 2), size(Topo.lon.val, 3), length(Data.fields[i]))      # create a 3D array that holds the 2D interpolated values
-            unit_array = zeros(size(data_array))
 
             for j in 1:length(data_tuple)
                 data_field = data_tuple[j]

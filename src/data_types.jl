@@ -58,13 +58,6 @@ function ProjectionPoint(EW::Float64, NS::Float64, Zone::Int64, isnorth::Bool)
 end
 
 
-# data structure for a list of values - TO BE REMOVED
-mutable struct ValueList
-    name::String
-    unit::String
-    values::Vector{Float64}
-end
-
 """
     GeoData(lon::Any, lat:Any, depth::GeoUnit, fields::NamedTuple)
 
@@ -657,7 +650,7 @@ function convert2UTMzone(d::GeoData, proj::ProjectionPoint)
         atts = Dict("note" => "No attributes were given to this dataset") # assign the default
     end
 
-    return UTMData(EW, NS, d.depth.val, zone, northern, d.fields, atts)
+    return UTMData(EW, NS, d.depth.val .* 1.0e3, zone, northern, d.fields, atts)  # depth: km -> m
 
 end
 
@@ -870,11 +863,7 @@ Converts a `GeoData` structure to a `CartData` structure, which essentially tran
 """
 function convert2CartData(d::GeoData, proj::ProjectionPoint)
 
-    d_UTM = convert2UTMzone(d, proj)
-    return CartData(
-        (ustrip.(d_UTM.EW.val) .- proj.EW) ./ 1.0e3, (ustrip.(d_UTM.NS.val) .- proj.NS) ./ 1.0e3,
-        ustrip.(d_UTM.depth.val), d_UTM.fields, d_UTM.atts
-    )
+    return convert2CartData(convert2UTMzone(d, proj), proj)
 end
 
 """
