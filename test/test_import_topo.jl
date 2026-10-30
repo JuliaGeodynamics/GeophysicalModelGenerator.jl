@@ -18,6 +18,13 @@ topo_server_ok = get(ENV, "GMG_TOPO_PREFETCH_OK", "true") == "true" ||
     # the tile addressing, which is where the awkward cases live
     @testset "tile naming" begin
         G = GeophysicalModelGenerator
+        # the SRTM sets live under earth_relief whichever dataset asks for them
+        @test G.tile_url("N28W018.SRTMGL3.jp2", "earth_gebco", "03s", "g") == "earth_relief/earth_relief_03s_g/N28W018.SRTMGL3.jp2"
+        @test G.tile_url("N00W030.earth_gebco_01m_p.jp2", "earth_gebco", "01m", "p") == "earth_gebco/earth_gebco_01m_p/N00W030.earth_gebco_01m_p.jp2"
+        # limits outside the globe or without extent are rejected before any download
+        @test_throws "must satisfy" import_topo([180, 185, 40, 41])
+        @test_throws "must satisfy" import_topo([350, 355, 40, 41])
+        @test_throws "must satisfy" import_topo([10, 10.5, 60, 60])
         # named after the south-west corner, zero padded
         @test G.tile_filename(28, -18, "earth_relief", "03s", "g") == "N28W018.SRTMGL3.jp2"
         @test G.tile_filename(0, -30, "earth_relief", "01m", "p") == "N00W030.earth_relief_01m_p.jp2"

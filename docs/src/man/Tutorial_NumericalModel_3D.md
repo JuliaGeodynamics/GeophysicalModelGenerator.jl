@@ -48,12 +48,13 @@ add_box!(Phases, Temp, Grid; xlim=(-800.0,0.0), ylim=(-400, 400.0), zlim=(-80.0,
         T=SpreadingRateTemp(SpreadingVel=3, MORside="right"), StrikeAngle=30);
 ```
 
-And an an inclined part:
+And an inclined part, with the thermal age the plate has reached at the trench:
 
 ```julia
+AgeTrench = 800e3/(3/100)/1e6;   # 800 km at 3 cm/yr, in Myr
 add_box!(Phases, Temp, Grid; xlim=(0.0,300.0), ylim=(-400.0, 400.0), zlim=(-80.0, 0.0), phase = lith,
-        Origin=(-0,0,0),
-        T=McKenzie_subducting_slab(Tsurface=0,v_cm_yr=3), DipAngle=30, StrikeAngle=30);
+        Origin=(0,0,0),
+        T=HalfspaceCoolingTemp(Age=AgeTrench), DipAngle=30, StrikeAngle=30);
 ```
 
 Add them to the `CartData` dataset:

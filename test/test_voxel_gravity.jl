@@ -105,6 +105,13 @@ using Statistics
         @test gradY_p ≈ permutedims(gradY_m)
     end
 
+    @testset "gradients are per meter" begin
+        # interior gradient equals the finite difference of dg over the 2 km spacing
+        dx = 2000.0
+        @test gradX_m[2, 3] ≈ (dg_m[3, 3] - dg_m[1, 3]) / (2dx) rtol = 0.5
+        @test gradY_m[3, 2] ≈ (dg_m[3, 3] - dg_m[3, 1]) / (2dx) rtol = 0.5
+    end
+
     @testset "reference models" begin
         # a reference-model vector equal to the NE corner column gives the same anomaly
         dg_ref, = voxel_grav(1000 .* X, 1000 .* Y, 1000 .* Z, RHO, refMod = RHO[end, end, :], outName = outName, printing = false)

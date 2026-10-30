@@ -93,7 +93,6 @@ function drape_on_topo(Topo::GeoData, Data::GeoData)
             data_tuple = Data.fields[i]      # we have a tuple (likely a vector field), so we have to loop
 
             data_array = zeros(typeof(data_tuple[1][1]), size(Topo.lon.val, 1), size(Topo.lon.val, 2), size(Topo.lon.val, 3), length(Data.fields[i]))      # create a 3D array that holds the 2D interpolated values
-            unit_array = zeros(size(data_array))
 
             for j in 1:length(data_tuple)
                 data_field = data_tuple[j]
@@ -275,14 +274,13 @@ Determines if points within the 3D `Data_Cart` structure are above the Cartesian
 function above_surface(Data_Cart::Union{Q1Data, CartData}, DataSurface_Cart::CartData; above = true, cell = false)
 
     X, Y, Z = coordinate_grids(Data_Cart, cell = cell)
-    if cell
-        Data = GeoData(ustrip.(X), ustrip.(Y), ustrip.(Z), Data_Cart.cellfields)
-    else
-        Data = GeoData(ustrip.(X), ustrip.(Y), ustrip.(Z), Data_Cart.fields)
-    end
-    DataSurface = GeoData(ustrip.(DataSurface_Cart.x.val), ustrip.(DataSurface_Cart.y.val), ustrip.(DataSurface_Cart.z.val), DataSurface_Cart.fields)
+    xs, ys, zs = ustrip.(DataSurface_Cart.x.val), ustrip.(DataSurface_Cart.y.val), ustrip.(DataSurface_Cart.z.val)
+    size(zs, 3) == 1 || error("It seems that DataSurface is not a surface")
+    surface = linear_interpolation((xs[:, 1, 1], ys[1, :, 1]), zs[:, :, 1])
 
-    return Above = above_surface(Data, DataSurface; above = above)
+    # One fused pass, which also acts as a function barrier for the non-inferable X, Y, Z
+    compare = above ? (>) : (<)
+    return compare.(ustrip.(Z), surface.(ustrip.(X), ustrip.(Y)))
 end
 
 """

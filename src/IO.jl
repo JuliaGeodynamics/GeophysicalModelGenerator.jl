@@ -112,6 +112,7 @@ function download_data(url::String, local_filename = "temp.dat"; dir = pwd(), ma
             end
             break
         catch e
+            e isa InterruptException && rethrow()
             file_ext = []
             @warn "Failed downloading $url on attempt $attempt/$maxattempts: $e"
             if attempt < maxattempts

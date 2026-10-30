@@ -3,10 +3,10 @@ using Test
 
 @testset "Plate Tests" begin
     # Grid parameters
-    nx, ny, nz = 512, 512, 128
-    x = range(-1000, 0, length=nx)
-    y = range(-1000, 1000, length=ny)
-    z = range(-660, 0, length=nz)
+    x = -1000.0:50.0:0.0
+    y = -1000.0:50.0:1000.0
+    z = -300.0:10.0:0.0
+    nx, ny, nz = length(x), length(y), length(z)
     Grid = CartData(xyz_grid(x, y, z))
 
     # Phases and temperature

@@ -3,10 +3,10 @@ using Test
 
 @testset "Ridge Thermal Structure Tests" begin
     # Grid parameters
-    nx, ny, nz = 512, 512, 128
-    x = range(-1000, 1000, length=nx)
-    y = range(-1000, 1000, length=ny)
-    z = range(-660, 0, length=nz)
+    x = -1000.0:100.0:1000.0
+    y = -1000.0:50.0:1000.0
+    z = -100.0:10.0:0.0
+    nx, ny, nz = length(x), length(y), length(z)
     Grid = CartData(xyz_grid(x, y, z))
 
     # Phases and temperature
@@ -27,6 +27,10 @@ using Test
     # Add and save results
     Grid = addfield(Grid, (; Phases, Temp))
     #write_paraview(Grid, "Ridge_Thermal_Structure_test_2")
+
+    ix, iy, iz = findfirst(==(-500.0), x), findfirst(==(-250.0), y), findfirst(==(-10.0), z)
+    @test Temp[ix, iy, iz] ≈ 1350.0 atol=1e-3   # on the ridge (segment 1)
+    @test Temp[ix+3, iy, iz] < 1000.0           # 300 km off the ridge
 
     @test minimum(Temp) >= 0.0  # Minimum temperature
     @test maximum(Temp) <= 1350.0  # Maximum temperature
