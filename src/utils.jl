@@ -1618,11 +1618,15 @@ function votemap(DataSets::Vector{GeoData}, criteria::Vector{String}; dims = (50
 
     # Loop over all datasets, and interpolate the data set to the new (usually smaller) domain
     votemap = zeros(Int64, dims)
+    lon = lat = depth = nothing   # coordinates of the common grid, taken from the first interpolated data set
     for i in 1:numDataSets
         VoteMap_Local = zeros(Int64, dims)
 
         # Interpolate data set to smaller domain
         DataSet = extract_subvolume(DataSets[i]; Interpolate = true, Lon_level = lon_limits, Lat_level = lat_limits, Depth_level = z_limits, dims = dims)
+        if i == 1
+            lon, lat, depth = DataSet.lon.val, DataSet.lat.val, DataSet.depth.val
+        end
 
         # Extract the criteria to evaluate
         expr = Meta.parse(criteria[i])      # the expression, such as Vs>1.0
@@ -1649,10 +1653,8 @@ function votemap(DataSets::Vector{GeoData}, criteria::Vector{String}; dims = (50
         votemap = votemap + VoteMap_Local        # Sum
     end
 
-    DataSet = extract_subvolume(DataSets[1], Interpolate = true, Lon_level = lon_limits, Lat_level = lat_limits, Depth_level = z_limits, dims = dims)
-
     # Construct GeoData set that holds the votemap (makes it easier to write paraview files)
-    VoteData = GeoData(DataSet.lon.val, DataSet.lat.val, DataSet.depth.val, (votemap = votemap,))
+    VoteData = GeoData(lon, lat, depth, (votemap = votemap,))
 
     return VoteData
 end
