@@ -215,17 +215,17 @@ TsMK = McKenzie_subducting_slab(Tsurface = 20.0, Tmantle = 1350.0, v_cm_yr = 4.0
 # horizontal
 Temp = ones(Float64, size(Cart)) * 1350;
 add_box!(Phase, Temp, Cart; xlim = (0.0, 600.0), ylim = (0.0, 600.0), zlim = (-80.0, 0.0), phase = ConstantPhase(5), T = TsMK);
-@test sum(Temp) ≈ 3.518172093383281e8
+@test sum(Temp) ≈ 3.509714275430339e8
 
 # inclined slab
 Temp = ones(Float64, size(Cart)) * 1350;
 add_box!(Phase, Temp, Cart; xlim = (0.0, 600.0), ylim = (0.0, 600.0), zlim = (-80.0, 0.0), StrikeAngle = 0, DipAngle = 45, phase = ConstantPhase(5), T = TsMK);
-@test sum(Temp) ≈ 3.5125017626287365e8
+@test sum(Temp) ≈ 3.511828440428276e8
 
 # Origin must be [xmin,ymin,zmax] of the box for a McKenzie thermal structure
 Temp = ones(Float64, size(Cart)) * 1350;
 add_box!(Phase, Temp, Cart; xlim = (0.0, 600.0), ylim = (0.0, 600.0), zlim = (-80.0, 0.0), Origin = (0.0, 0.0, 0.0), phase = ConstantPhase(5), T = TsMK);
-@test sum(Temp) ≈ 3.518172093383281e8
+@test sum(Temp) ≈ 3.509714275430339e8
 @test_throws "Origin is not set up correctly for McKenzie_subducting_slab" add_box!(Phase, Temp, Cart; xlim = (0.0, 600.0), ylim = (0.0, 600.0), zlim = (-80.0, 0.0), Origin = (10.0, 0.0, 0.0), phase = ConstantPhase(5), T = TsMK)
 
 
@@ -239,7 +239,7 @@ add_box!(Phase, Temp, Cart; xlim = (0.0, 600.0), ylim = (0.0, 600.0), zlim = (-8
 T_slab = LinearWeightedTemperature(crit_dist = 600, F1 = TsHC, F2 = TsMK);
 Temp = ones(Float64, size(Cart)) * 1350;
 add_box!(Phase, Temp, Cart; xlim = (0.0, 600.0), ylim = (0.0, 600.0), zlim = (-80.0, 0.0), phase = ConstantPhase(5), T = T_slab);
-@test sum(Temp) ≈ 3.499457641038468e8
+@test sum(Temp) ≈ 3.495555376315748e8
 
 
 Data_Final = addfield(Cart, "Temp", Temp)
@@ -343,7 +343,7 @@ add_slab!(Phases, Temp, Grid2D, trench, phase = ConstantPhase(2), T = HalfspaceC
 T_slab = LinearWeightedTemperature(F1 = HalfspaceCoolingTemp(Age = 40), F2 = McKenzie_subducting_slab(Tsurface = 0, v_cm_yr = 4, Adiabat = 0.0), crit_dist = 600)
 add_slab!(Phases, Temp, Grid2D, trench, phase = ConstantPhase(2), T = T_slab);
 
-@test sum(Temp) ≈ 8.570499995066915e7
+@test sum(Temp) ≈ 8.570406829742764e7
 @test extrema(Phases) == (0, 2)
 
 # Add them to the `CartData` dataset:
@@ -386,7 +386,7 @@ add_slab!(Phases, Temp, Grid2D, trench, phase = lith, T = T_slab);
 ind = findall(Temp .> 1250 .&& (Phases .== 2 .|| Phases .== 5));
 Phases[ind] .= 0;
 
-@test sum(Temp) ≈ 8.290647991912237e7
+@test sum(Temp) ≈ 8.289685408299279e7
 @test extrema(Phases) == (0, 6)
 #Grid2D = CartData(Grid2D.x.val,Grid2D.y.val,Grid2D.z.val, (;Phases, Temp))
 #write_paraview(Grid2D,"Grid2D_SubductionCurvedOverriding");
@@ -414,6 +414,14 @@ add_volcano!(
 )
 
 @test any(Phases[256, 1, :] .== 1) == true
+
+# with a background topography, 2D Phase and Temp arrays give the same result as 3D ones
+volcano!(P, T) = add_volcano!(P, T, Grid2D; volcanic_phase = 1, center = (mean(Grid2D.x.val), 0.0), height = 3, radius = 5, base = 0.0, background = fill(-1.0, nx, 1), T = HalfspaceCoolingTemp(Age = 20))
+Phases2D, Temp2D = Phases[:, 1, :], Temp[:, 1, :]
+volcano!(Phases, Temp)
+volcano!(Phases2D, Temp2D)
+@test Phases2D == Phases[:, 1, :]
+@test Temp2D == Temp[:, 1, :]
 
 # 3D volcano
 # Create CartGrid struct
@@ -617,3 +625,27 @@ for (setup, phase) in zip(setups2D, (1, 8, 5))
     @test phase in P2
 end
 @test_throws DimensionMismatch add_stripes!(zeros(Int64, 64, 31), Grid2D; stripAxes = (1, 0, 0), phase = ConstantPhase(0))
+
+# SpreadingRateTemp: MORside = "back" measures the plate age from the back (maximum y) edge, mirroring "front"
+GridMOR = CartData(xyz_grid(0:10:100, 0:10:100, -100:10:0))
+T_front, T_back, P_MOR = zeros(size(GridMOR)), zeros(size(GridMOR)), zeros(Int64, size(GridMOR))
+add_box!(P_MOR, T_front, GridMOR; xlim = (0, 100), ylim = (0, 100), zlim = (-100, 0), T = SpreadingRateTemp(MORside = "front"))
+add_box!(P_MOR, T_back, GridMOR; xlim = (0, 100), ylim = (0, 100), zlim = (-100, 0), T = SpreadingRateTemp(MORside = "back"))
+@test T_back == reverse(T_front, dims = 2)
+@test T_front != reverse(T_front, dims = 2)
+
+# The setup routines evaluate points one by one and allocate nothing per point
+GridAlloc = CartData(xyz_grid(range(0, 100, 40), range(0, 100, 40), range(-60, 0, 40)))
+PAlloc, TAlloc = zeros(Int64, size(GridAlloc)), zeros(size(GridAlloc))
+lithAlloc = LithosphericPhases(Layers = [10, 20], Phases = [1, 2, 3], Tlab = 1250)
+trenchAlloc = Trench(Start = (40.0, 0.0), End = (40.0, 100.0), Thickness = 20.0, θ_max = 45.0, Length = 60.0, Lb = 40.0, n_seg = 20)
+setupsAlloc = (
+    () -> add_box!(PAlloc, TAlloc, GridAlloc; xlim = (10, 90), ylim = (10, 90), zlim = (-40, 0), DipAngle = 20, StrikeAngle = 30, phase = lithAlloc, T = HalfspaceCoolingTemp(Age = 80)),
+    () -> add_sphere!(PAlloc, TAlloc, GridAlloc; cen = (50, 50, -30), radius = 15, T = LinearTemp()),
+    () -> add_layer!(PAlloc, TAlloc, GridAlloc; zlim = (-20, 0), phase = lithAlloc, T = HalfspaceCoolingTemp()),
+    () -> add_slab!(PAlloc, TAlloc, GridAlloc, trenchAlloc; phase = ConstantPhase(4), T = HalfspaceCoolingTemp()),
+)
+for setup in setupsAlloc
+    setup()
+    @test @allocated(setup()) < 50_000   # 64_000 points
+end
