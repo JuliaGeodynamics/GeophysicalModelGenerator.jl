@@ -962,7 +962,7 @@ Optional Parameters
 - center - x- and -coordinates of center of volcano
 - height - height of volcano
 - radius - radius of volcano
-- T - temperature structure of the volcano
+- T - temperature structure, applied to every point with a phase > 0 (all rock, not only the volcano; phase 0 is taken as air), with depth measured from the new topography, so that isotherms follow the volcano surface
 - crater - this will create a truncated cone and the option defines the radius of the flat top
 - base - this sets the flat topography around the volcano
 - background - this allows loading in a topography and only adding the volcano on top (also allows stacking of several cones to get a volcano with different slopes)
