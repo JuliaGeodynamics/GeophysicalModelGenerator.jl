@@ -220,6 +220,13 @@ Grid3D = create_CartGrid(size = (10, 5, 3), extent = (9.0, 4.0, 2.0))
 @test Grid3D.min == (0.0, 0.0, -4.0)
 @test Grid3D.max == (9.0, 2.0, 0.0)
 
+# 2D CartGrid: coordinate grids lie in the y = 0 plane; a dimension of size 1 survives cell averaging
+Grid2D = create_CartGrid(size = (5, 4), x = (0.0, 4.0), z = (-3.0, 0.0))
+X2, Y2, Z2 = coordinate_grids(Grid2D)
+@test size(X2) == (5, 1, 4) && all(iszero, Y2)
+@test size(coordinate_grids(Grid2D; cell = true)[1]) == (4, 1, 3)
+@test GeophysicalModelGenerator.average_q1(collect(reshape(1.0:20.0, 5, 1, 4)))[1, 1, 1] == (1 + 2 + 6 + 7) / 4
+
 # integer limits give a floating-point grid
 Grid2D = create_CartGrid(size = (11, 5), x = (0, 10), z = (-2.5, 0))
 @test Grid2D.Δ == (1.0, 0.625)

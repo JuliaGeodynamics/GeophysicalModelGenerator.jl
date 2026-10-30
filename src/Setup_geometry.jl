@@ -37,24 +37,6 @@ function flatten_index_dimensions(Phase, ind_vec::Vector{CartesianIndex{3}})
 end
 
 """
-    ind2D = flatten_index_dimensions(Phase, ind_vec::Vector{CartesianIndex{3}})
-
-This converts the indices to purely 2D indices if the array `phase` is 2D
-"""
-function flatten_index_dimensions(Phase::AbstractArray{T, N}, ind_vec::Array{Bool, 3}) where {T, N}
-    if N == 2
-        ind2D = Vector{CartesianIndex{2}}(undef, length(ind_vec))
-        for (num, ind) in enumerate(ind_vec)
-            ind2D[num] = CartesianIndex(ind[1], ind[3])
-        end
-    else
-        ind2D = ind_vec
-    end
-
-    return ind2D
-end
-
-"""
     add_stripes!(Phase, Grid::AbstractGeneralGrid;
         stripAxes       = (1,1,0),
         stripeWidth     =  0.2,
@@ -142,7 +124,9 @@ function add_stripes!(
 
     Rot3D!(Xrot, Yrot, Zrot, StrikeAngle, DipAngle)
 
-    ph_ind = findall(Phase .== phase.phase)
+    # linear indices, so that a 2D Phase array works with a grid of size (nx, 1, nz)
+    length(Phase) == length(X) || throw(DimensionMismatch("Phase has $(length(Phase)) entries but the grid has $(length(X)) points"))
+    ph_ind = findall(vec(Phase .== phase.phase))
 
     ind = Int64[]
     if stripAxes[1] == 1
@@ -768,10 +752,12 @@ function add_polygon!(
         ind[:, i, :] = ind_slice
     end
     ind .&= ylim_[1] .<= Y .<= ylim_[2]
+    ind = findall(ind)
+    ind_flat = flatten_index_dimensions(Phase, ind)
 
     if !isempty(ind)
         # Compute thermal structure accordingly. See routines below for different options
-        set_temp_phase!(Phase, Temp, ind, X[ind], Y[ind], Z[ind], phase, T; ztop = maximum(zlim_), zbot = minimum(zlim_))
+        set_temp_phase!(Phase, Temp, ind_flat, X[ind], Y[ind], Z[ind], phase, T; ztop = maximum(zlim_), zbot = minimum(zlim_))
     end
 
     return nothing
@@ -2256,7 +2242,7 @@ function add_slab!(
 
         # Compute thermal structure accordingly. See routines below for different options {Future: introducing the length along the trench for having lateral varying properties along the trench}
         # d is the distance perpendicular to the slab: its surface is at d = 0 and its base at d = -Thickness
-        set_temp_phase!(Phase, Temp, ind, ls[ind], Y[ind], d[ind], phase, T; ztop = 0.0, zbot = -trench.Thickness)
+        set_temp_phase!(Phase, Temp, flatten_index_dimensions(Phase, ind), ls[ind], Y[ind], d[ind], phase, T; ztop = 0.0, zbot = -trench.Thickness)
 
         # Add a weak zone on top of the slab (indicated by a phase number but not by temperature)
         if trench.WeakzoneThickness > 0.0
@@ -2265,7 +2251,7 @@ function add_slab!(
             find_slab_distance!(ls_weakzone, d_weakzone, X, Y, Z, WeakZone, Top, trench)
 
             ind = findall((-trench.WeakzoneThickness .<= d_weakzone .<= 0.0) .& (Z .> -trench.d_decoupling))
-            Phase[ind] .= trench.WeakzonePhase
+            Phase[flatten_index_dimensions(Phase, ind)] .= trench.WeakzonePhase
         end
     end
 

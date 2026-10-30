@@ -592,3 +592,20 @@ let
     @test Tm[11, 11, 80] ≈ 20 + 0.5 / 60 * 980
     @test Tm[11, 11, 21] ≈ 20 + 59.5 / 60 * 980
 end
+
+# 2D Phase and Temp arrays of size (nx, nz) give the same result as (nx, 1, nz) arrays
+Grid2D = CartData(xyz_grid(range(-100.0, 100.0, 64), 0, range(-60.0, 5.0, 32)))
+trench2D = Trench(Start = (0.0, -100.0), End = (0.0, 100.0), Thickness = 80.0, θ_max = 45.0, Length = 300, Lb = 200, direction = -1.0)
+setups2D = (
+    (P, T) -> add_slab!(P, T, Grid2D, trench2D; phase = ConstantPhase(1), T = HalfspaceCoolingTemp()),
+    (P, T) -> add_polygon!(P, T, Grid2D; xlim = (20.0, 80.0, 80.0), zlim = (-5.0, -5.0, -40.0), phase = ConstantPhase(8), T = LinearTemp()),
+    (P, T) -> add_stripes!(P, Grid2D; stripAxes = (1, 0, 0), stripeWidth = 2, stripeSpacing = 10, phase = ConstantPhase(8), stripePhase = ConstantPhase(5)),
+)
+P3, T3, P2, T2 = zeros(Int64, 64, 1, 32), zeros(64, 1, 32), zeros(Int64, 64, 32), zeros(64, 32)
+for (setup, phase) in zip(setups2D, (1, 8, 5))
+    setup(P3, T3)
+    setup(P2, T2)
+    @test vec(P2) == vec(P3) && vec(T2) == vec(T3)
+    @test phase in P2
+end
+@test_throws DimensionMismatch add_stripes!(zeros(Int64, 64, 31), Grid2D; stripAxes = (1, 0, 0), phase = ConstantPhase(0))

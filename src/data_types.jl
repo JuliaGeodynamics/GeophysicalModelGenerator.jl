@@ -997,13 +997,13 @@ end
 function average_q1(d::Array)
 
     # we are using multidimensional iterations in julia here following https://julialang.org/blog/2016/02/iteration/
-    out = zeros(eltype(d), size(d) .- 1)
+    out = zeros(eltype(d), max.(size(d) .- 1, 1))   # a dimension of size 1 stays size 1
     R = CartesianIndices(out)
-    Ifirst, Ilast = first(R), last(R)
+    Ifirst, Iend = first(R), last(CartesianIndices(d))
     I1 = oneunit(Ifirst)
     for I in R
         n, s = 0, zero(eltype(out))
-        for J in max(Ifirst, I):min(Ilast + I1, I + I1)
+        for J in max(Ifirst, I):min(Iend, I + I1)
             s += d[J]
             n += 1
         end
@@ -1246,9 +1246,10 @@ Returns 3D coordinate arrays
 """
 function coordinate_grids(Data::CartGrid; cell = false)
 
+    length(Data.coord1D) in (2, 3) || error("coordinate_grids requires a 2D or 3D CartGrid")
     x_vec = NumValue(Data.coord1D[1])
-    y_vec = NumValue(Data.coord1D[2])
-    z_vec = NumValue(Data.coord1D[3])
+    y_vec = length(Data.coord1D) == 2 ? zero(x_vec[1:1]) : NumValue(Data.coord1D[2])   # a 2D grid is the y = 0 plane
+    z_vec = NumValue(Data.coord1D[end])
 
     if cell
         x_vec = (x_vec[2:end] + x_vec[1:(end - 1)]) / 2
