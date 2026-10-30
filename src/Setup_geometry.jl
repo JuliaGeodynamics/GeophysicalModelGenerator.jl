@@ -275,39 +275,29 @@ function add_box!(
         Origin = (xlim[1], ylim[1], zlim[2])  # upper-left corner
     end
 
-    # Perform rotation of 3D coordinates:
-    Xrot = X .- Origin[1]
-    Yrot = Y .- Origin[2]
-    Zrot = Z .- Origin[3]
-
-    Rot3D!(Xrot, Yrot, Zrot, StrikeAngle, DipAngle)
-
     # Set phase number & thermal structure in the full domain
     ztop = maximum(zlim) - Origin[3]
     zbot = minimum(zlim) - Origin[3]
-    ind = findall(
-        (Xrot .>= (minimum(xlim) - Origin[1])) .& (Xrot .<= (maximum(xlim) - Origin[1])) .&
-            (Yrot .>= (minimum(ylim) - Origin[2])) .& (Yrot .<= (maximum(ylim) - Origin[2])) .&
-            (Zrot .>= zbot) .& (Zrot .<= ztop)
-    )
+    xmin, xmax = extrema(xlim) .- Origin[1]
+    ymin, ymax = extrema(ylim) .- Origin[2]
+    ind, Xrot, Yrot, Zrot = rotated_points_inside(X, Y, Z, Origin, StrikeAngle, DipAngle) do (x, y, z)
+        xmin <= x <= xmax && ymin <= y <= ymax && zbot <= z <= ztop
+    end
 
     ind_flat = flatten_index_dimensions(Phase, ind)
 
     if !isempty(ind_flat)
         # Compute thermal structure accordingly. See routines below for different options
-        if T != nothing
-            if isa(T, LithosphericTemp)
-                Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], phase)
-            end
-            if segments !== nothing
-                # segments are given in absolute coordinates
-                Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], X[ind], Y[ind], Zrot[ind], Phase[ind_flat], T, segments; ztop = ztop, zbot = zbot)
-            else
-                Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind_flat], T; ztop = ztop, zbot = zbot)
-            end
+        if isa(T, LithosphericTemp)
+            Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], Xrot, Yrot, Zrot, phase)
         end
-        # Set the phase. Different routines are available for that - see below.
-        Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], phase)
+        if segments !== nothing
+            # segments are given in absolute coordinates; the phase uses the rotated ones
+            isnothing(T) || (Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], X[ind], Y[ind], Zrot, Phase[ind_flat], T, segments; ztop, zbot))
+            Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], Xrot, Yrot, Zrot, phase)
+        else
+            set_temp_phase!(Phase, Temp, ind_flat, Xrot, Yrot, Zrot, phase, T; ztop, zbot)
+        end
     end
 
     return nothing
@@ -435,12 +425,7 @@ function add_layer!(
 
     if !isempty(ind_flat)
         # Compute thermal structure accordingly. See routines below for different options
-        if !isnothing(T)
-            Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], X[ind], Y[ind], Z[ind], Phase[ind_flat], T; ztop = maximum(zlim), zbot = minimum(zlim))
-        end
-
-        # Set the phase. Different routines are available for that - see below.
-        Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], X[ind], Y[ind], Z[ind], phase)
+        set_temp_phase!(Phase, Temp, ind_flat, X[ind], Y[ind], Z[ind], phase, T; ztop = maximum(zlim), zbot = minimum(zlim))
     end
 
     return nothing
@@ -501,18 +486,13 @@ function add_sphere!(
     X, Y, Z = coordinate_grids(Grid, cell = cell)
 
     # Set phase number & thermal structure in the full domain
-    ind = findall(((X .- cen[1]) .^ 2 + (Y .- cen[2]) .^ 2 + (Z .- cen[3]) .^ 2) .^ 0.5 .< radius)
+    ind = findall(sqrt.((X .- cen[1]) .^ 2 .+ (Y .- cen[2]) .^ 2 .+ (Z .- cen[3]) .^ 2) .< radius)
 
     ind_flat = flatten_index_dimensions(Phase, ind)
 
     if !isempty(ind_flat)
         # Compute thermal structure accordingly. See routines below for different options
-        if T != nothing
-            Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], X[ind], Y[ind], Z[ind], Phase[ind_flat], T; ztop = cen[3] + radius, zbot = cen[3] - radius)
-        end
-
-        # Set the phase. Different routines are available for that - see below.
-        Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], X[ind], Y[ind], Z[ind], phase)
+        set_temp_phase!(Phase, Temp, ind_flat, X[ind], Y[ind], Z[ind], phase, T; ztop = cen[3] + radius, zbot = cen[3] - radius)
     end
 
     return nothing
@@ -578,35 +558,20 @@ function add_ellipsoid!(
     # Retrieve 3D data arrays for the grid
     X, Y, Z = coordinate_grids(Grid, cell = cell)
 
-    # Perform rotation of 3D coordinates:
-    Xrot = X .- Origin[1]
-    Yrot = Y .- Origin[2]
-    Zrot = Z .- Origin[3]
-
-    Rot3D!(Xrot, Yrot, Zrot, StrikeAngle, DipAngle)
-
     # Set phase number & thermal structure in the full domain
     x2 = axes[1]^2
     y2 = axes[2]^2
     z2 = axes[3]^2
     cenRot = cen .- Origin
-    ind = findall(
-        (
-            ((Xrot .- cenRot[1]) .^ 2) ./ x2 + ((Yrot .- cenRot[2]) .^ 2) ./ y2 +
-                ((Zrot .- cenRot[3]) .^ 2) ./ z2
-        ) .^ 0.5 .<= 1
-    )
+    ind, Xrot, Yrot, Zrot = rotated_points_inside(X, Y, Z, Origin, StrikeAngle, DipAngle) do (x, y, z)
+        sqrt((x - cenRot[1])^2 / x2 + (y - cenRot[2])^2 / y2 + (z - cenRot[3])^2 / z2) <= 1
+    end
 
     ind_flat = flatten_index_dimensions(Phase, ind)
 
     if !isempty(ind_flat)
         # Compute thermal structure accordingly. See routines below for different options
-        if T != nothing
-            Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], Phase[ind_flat], T; ztop = cenRot[3] + axes[3], zbot = cenRot[3] - axes[3])  # see #135
-        end
-
-        # Set the phase. Different routines are available for that - see below.
-        Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], Xrot[ind], Yrot[ind], Zrot[ind], phase)
+        set_temp_phase!(Phase, Temp, ind_flat, Xrot, Yrot, Zrot, phase, T; ztop = cenRot[3] + axes[3], zbot = cenRot[3] - axes[3])  # see #135
     end
 
     return nothing
@@ -670,36 +635,27 @@ function add_cylinder!(
     # Retrieve 3D data arrays for the grid
     X, Y, Z = coordinate_grids(Grid, cell = cell)
 
-    # distance between grid points and cylinder base
-    dx_b = X .- base[1]
-    dy_b = Y .- base[2]
-    dz_b = Z .- base[3]
-
-    # find normalized parametric coordinate of a point-axis projection
-    t = (axVec[1] .* dx_b .+ axVec[2] .* dy_b .+ axVec[3] .* dz_b) ./ ax2
-
-    # find distance vector between point and axis
-    dx = dx_b .- t .* axVec[1]
-    dy = dy_b .- t .* axVec[2]
-    dz = dz_b .- t .* axVec[3]
-
     # Set phase number & thermal structure in the full domain
-    ind = findall((t .>= 0.0) .& (t .<= 1.0) .& ((dx .^ 2 + dy .^ 2 + dz .^ 2) .^ 0.5 .<= radius))
+    function in_cylinder(x, y, z)
+        # distance between the point and the cylinder base
+        dx_b, dy_b, dz_b = x - base[1], y - base[2], z - base[3]
+        # normalized parametric coordinate of the point-axis projection
+        t = (axVec[1] * dx_b + axVec[2] * dy_b + axVec[3] * dz_b) / ax2
+        # distance vector between the point and the axis
+        dx, dy, dz = dx_b - t * axVec[1], dy_b - t * axVec[2], dz_b - t * axVec[3]
+        return 0 <= t <= 1 && sqrt(dx^2 + dy^2 + dz^2) <= radius
+    end
+    ind = findall(in_cylinder.(X, Y, Z))
 
     ind_flat = flatten_index_dimensions(Phase, ind)
 
     if !isempty(ind_flat)
         # Compute thermal structure accordingly. See routines below for different options
-        if !isnothing(T)
-            # Vertical extent of the cylinder, including the tilt of its circular end caps; see #135
-            zhalf = radius * sqrt(1 - axVec[3]^2 / ax2)
-            ztop = max(base[3], cap[3]) + zhalf
-            zbot = min(base[3], cap[3]) - zhalf
-            Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], X[ind], Y[ind], Z[ind], Phase[ind_flat], T; ztop, zbot)
-        end
-
-        # Set the phase. Different routines are available for that - see below.
-        Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], X[ind], Y[ind], Z[ind], phase)
+        # Vertical extent of the cylinder, including the tilt of its circular end caps; see #135
+        zhalf = radius * sqrt(1 - axVec[3]^2 / ax2)
+        ztop = max(base[3], cap[3]) + zhalf
+        zbot = min(base[3], cap[3]) - zhalf
+        set_temp_phase!(Phase, Temp, ind_flat, X[ind], Y[ind], Z[ind], phase, T; ztop, zbot)
     end
 
     return nothing
@@ -715,6 +671,32 @@ function Rot3D!(X, Y, Z, StrikeAngle, DipAngle)
         X[i], Y[i], Z[i] = Rot3D(X[i], Y[i], Z[i], cosStrikeAngle, sindStrikeAngle, cosDipAngle, sinDipAngle)
     end
 
+    return nothing
+end
+
+# Indices of the points for which `inside((x, y, z))` holds, where x, y, z are the coordinates
+# shifted by `Origin` and rotated, and those rotated coordinates; no full-size temporaries.
+# The broadcast fuses the rotation and the test into one pass that writes a bit mask.
+function rotated_points_inside(inside, X, Y, Z, Origin, StrikeAngle, DipAngle)
+    sinStrike, cosStrike = sincosd(StrikeAngle)
+    sinDip, cosDip = sincosd(-DipAngle)   # same sign convention as Rot3D!
+    rot(x, y, z) = Rot3D(x - Origin[1], y - Origin[2], z - Origin[3], cosStrike, sinStrike, cosDip, sinDip)
+    ind = findall(inside.(rot.(X, Y, Z)))
+    # Keep map: a loop assigning into three arrays here is about 30x slower
+    xyz = map(I -> rot(X[I], Y[I], Z[I]), ind)
+    return ind, getindex.(xyz, 1), getindex.(xyz, 2), getindex.(xyz, 3)
+end
+
+# Sets the thermal structure `T` (unless it is `nothing`) and then `phase` at the points `ind` of
+# `Phase` and `Temp`, whose coordinates are x, y, z, gathering each array once.
+# `args` and `kwargs` are passed on to `compute_thermal_structure`.
+function set_temp_phase!(Phase, Temp, ind, x, y, z, phase, T, args...; kwargs...)
+    P, Tp = Phase[ind], Temp[ind]
+    if !isnothing(T)
+        Tp = compute_thermal_structure(Tp, x, y, z, P, T, args...; kwargs...)
+        Temp[ind] = Tp
+    end
+    Phase[ind] = compute_phase(P, Tp, x, y, z, phase)
     return nothing
 end
 
@@ -789,12 +771,7 @@ function add_polygon!(
 
     if !isempty(ind)
         # Compute thermal structure accordingly. See routines below for different options
-        if T != nothing
-            Temp[ind] = compute_thermal_structure(Temp[ind], X[ind], Y[ind], Z[ind], Phase[ind], T; ztop = maximum(zlim_), zbot = minimum(zlim_))
-        end
-
-        # Set the phase. Different routines are available for that - see below.
-        Phase[ind] = compute_phase(Phase[ind], Temp[ind], X[ind], Y[ind], Z[ind], phase)
+        set_temp_phase!(Phase, Temp, ind, X[ind], Y[ind], Z[ind], phase, T; ztop = maximum(zlim_), zbot = minimum(zlim_))
     end
 
     return nothing
@@ -906,14 +883,7 @@ function add_plate!(
     end
 
     if !isempty(ind)
-        if T != nothing
-            if segments !== nothing
-                Temp[ind] = compute_thermal_structure(Temp[ind], X[ind], Y[ind], Z[ind], Phase[ind], T, segments; ztop = maximum(zlim_), zbot = minimum(zlim_))
-            else
-                Temp[ind] = compute_thermal_structure(Temp[ind], X[ind], Y[ind], Z[ind], Phase[ind], T; ztop = maximum(zlim_), zbot = minimum(zlim_))
-            end
-        end
-        Phase[ind] = compute_phase(Phase[ind], Temp[ind], X[ind], Y[ind], Z[ind], phase)
+        set_temp_phase!(Phase, Temp, ind, X[ind], Y[ind], Z[ind], phase, T, (isnothing(segments) ? () : (segments,))...; ztop = maximum(zlim_), zbot = minimum(zlim_))
     end
 
     return nothing
@@ -1020,22 +990,11 @@ function add_volcano!(
         background = background
     )
 
-    ni = size(Grid.x)
-    ind = fill(false, ni...)
-    depth = similar(Grid.z.val)
-
-    for k in axes(ind, 3)
-        for j in axes(ind, 2), i in axes(ind, 1)
-            depth[i, j, k] = max(H[i, j] - Grid.z.val[i, j, k], 0)
-
-            if Grid.z.val[i, j, k] < H[i, j] && Grid.z.val[i, j, k] ≥ base
-                Phases[i, j, k] = volcanic_phase
-            end
-            if Phases[i, j, k] > 0
-                ind[i, j, k] = true
-            end
-        end
-    end
+    # Broadcasts rather than loops: Grid.z.val is not inferable, so a loop here would dispatch per point
+    Z = Grid.z.val
+    depth = max.(H .- Z, 0)
+    Phases[(Z .< H) .& (Z .≥ base)] .= volcanic_phase
+    ind = findall(Phases .> 0)
 
     ind_flat = flatten_index_dimensions(Phases, ind)
 
@@ -1792,16 +1751,14 @@ function compute_phase(Phase, Temp, X, Y, Z, s::LithosphericPhases; Ztop = 0)
 
     for i in 1:length(Layers)
         Zbot = Ztop - Layers[i]
-        ind = findall((Z .>= Zbot) .& (Z .<= Ztop))
-        Phase[ind] .= Phases[i]
+        Phase[Zbot .<= Z .<= Ztop] .= Phases[i]
 
         Ztop = Zbot
     end
 
     # set phase to mantle if requested
-    if Tlab != nothing
-        ind = findall(Temp .> Tlab)
-        Phase[ind] .= Phases[end]
+    if !isnothing(Tlab)
+        Phase[Temp .> Tlab] .= Phases[end]
     end
 
     return Phase
@@ -1871,15 +1828,12 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::McKenzie_subducting_
     σ = ones(size(Temp))
     # Dividi et impera
     for i in 1:it
-        a = (-1.0) .^ (i) ./ (i .* pi)
-        b = (Re .- (Re .^ 2 .+ i^2.0 .* pi^2.0) .^ (0.5)) .* X .* sc
-        c = sin.(i .* pi .* (1 .- abs.(Zshift .* sc)))
-        e = exp.(b)
-        σ .+= 2 * a .* e .* c
+        a = (-1.0)^i / (i * pi)
+        r = Re - (Re^2 + i^2.0 * pi^2.0)^0.5
+        σ .+= 2 * a .* exp.(r .* X .* sc) .* sin.(i .* pi .* (1 .- abs.(Zshift .* sc)))
     end
 
-    Temp .= Tsurface .+ (Tmantle - Tsurface) .* σ
-    Temp .= Temp + (Adiabat * abs.(Z))
+    Temp .= Tsurface .+ (Tmantle - Tsurface) .* σ .+ Adiabat .* abs.(Z)
 
     return Temp
 end
@@ -2153,6 +2107,11 @@ function find_slab_distance!(ls, d, X, Y, Z, Top, Bottom, trench::Trench)
     l = 0  # length at the trench position
     D = @SVector [Top[1, 2], Bottom[1, 2], Bottom[1, 2], Top[1, 2]]
 
+    # Every segment lies within the bounding box of the whole slab, so only points in it are searched
+    (ymin_slab, ymax_slab), (zmin_slab, zmax_slab) = extrema([Top[:, 1]; Bottom[:, 1]]), extrema([Top[:, 2]; Bottom[:, 2]])
+    ind_slab = findall(0.0 .<= Xrot .<= xb[1] .&& ymin_slab .<= Yrot .<= ymax_slab .&& zmin_slab .<= Z .<= zmax_slab)
+    Y_slab, Z_slab = Yrot[ind_slab], Z[ind_slab]
+
     # Construct the slab
     for i in 1:n_seg
         ln = l + dl
@@ -2171,7 +2130,7 @@ function find_slab_distance!(ls, d, X, Y, Z, Top, Bottom, trench::Trench)
         ymin, ymax = extrema(poly_y)
         zmin, zmax = extrema(poly_z)
 
-        ind_s = findall(0.0 .<= Xrot .<= xb[1] .&& ymin .<= Yrot .<= ymax .&& zmin .<= Z .<= zmax)
+        ind_s = ind_slab[ymin .<= Y_slab .<= ymax .&& zmin .<= Z_slab .<= zmax]
 
         # Find the particles
         yp = Yrot[ind_s]
@@ -2296,13 +2255,8 @@ function add_slab!(
         end
 
         # Compute thermal structure accordingly. See routines below for different options {Future: introducing the length along the trench for having lateral varying properties along the trench}
-        if !isnothing(T)
-            # d is the distance perpendicular to the slab: its surface is at d = 0 and its base at d = -Thickness
-            Temp[ind] = compute_thermal_structure(Temp[ind], ls[ind], Y[ind], d[ind], Phase[ind], T; ztop = 0.0, zbot = -trench.Thickness)
-        end
-
-        # Set the phase
-        Phase[ind] = compute_phase(Phase[ind], Temp[ind], ls[ind], Y[ind], d[ind], phase)
+        # d is the distance perpendicular to the slab: its surface is at d = 0 and its base at d = -Thickness
+        set_temp_phase!(Phase, Temp, ind, ls[ind], Y[ind], d[ind], phase, T; ztop = 0.0, zbot = -trench.Thickness)
 
         # Add a weak zone on top of the slab (indicated by a phase number but not by temperature)
         if trench.WeakzoneThickness > 0.0
@@ -2380,27 +2334,21 @@ function add_fault!(
     # Calculate the fault region based on fault thickness and length
     fault_half_thickness = Fault_thickness / 2
 
-    # Create a mask for the fault region
-    fault_mask = falses(size(X))
-
     # The fault plane contains the strike line through Start and dips about it, towards the
     # horizontal normal (unit_direction[2], -unit_direction[1]) for positive DipAngle.
     sinDip, cosDip = sincosd(DipAngle)
-    for I in eachindex(X)
-        dx = X[I] - Start[1]
-        dy = Y[I] - Start[2]
+    function in_fault(x, y, z)
+        dx = x - Start[1]
+        dy = y - Start[2]
         projection_length = dx * unit_direction[1] + dy * unit_direction[2]
-        if 0 ≤ projection_length ≤ length
-            horizontal_offset = dx * unit_direction[2] - dy * unit_direction[1]
-            # distance to the dipping plane (Z = 0 at the surface)
-            perpendicular_distance = abs(horizontal_offset * cosDip + Z[I] * sinDip)
-            if perpendicular_distance ≤ fault_half_thickness
-                fault_mask[I] = true
-            end
-        end
+        horizontal_offset = dx * unit_direction[2] - dy * unit_direction[1]
+        # distance to the dipping plane (Z = 0 at the surface)
+        perpendicular_distance = abs(horizontal_offset * cosDip + z * sinDip)
+        return 0 ≤ projection_length ≤ length && perpendicular_distance ≤ fault_half_thickness
     end
 
-    ind = findall(fault_mask)
+    # A broadcast, not a loop: X, Y, Z are not inferable, so a loop here would dispatch per point
+    ind = findall(in_fault.(X, Y, Z))
 
     # Apply depth extent if provided
     if !isnothing(Depth_extent)
@@ -2411,14 +2359,9 @@ function add_fault!(
 
     if !isempty(ind_flat)
         # Compute thermal structure accordingly
-        if T != nothing
-            # see #135
-            ztop, zbot = isnothing(Depth_extent) ? (nothing, nothing) : (maximum(Depth_extent), minimum(Depth_extent))
-            Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], X[ind], Y[ind], Z[ind], Phase[ind_flat], T; ztop, zbot)
-        end
-
-        # Set the phase
-        Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], X[ind], Y[ind], Z[ind], phase)
+        # see #135
+        ztop, zbot = isnothing(Depth_extent) ? (nothing, nothing) : (maximum(Depth_extent), minimum(Depth_extent))
+        set_temp_phase!(Phase, Temp, ind_flat, X[ind], Y[ind], Z[ind], phase, T; ztop, zbot)
     end
 
     return nothing
