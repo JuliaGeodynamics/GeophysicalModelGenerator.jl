@@ -265,22 +265,22 @@ function computeBoug(nx, ny, nz, DRHO, d_cube, VG_vox, zCells, rhoTol)
         for jY in 1:(ny - 1)
             for jZ in 1:(nz - 1)
                 if (DRHO[jX, jY, jZ] > rhoTol || DRHO[jX, jY, jZ] < -rhoTol)
-                    for iX in 1:nx
-                        for iY in 1:ny
+                    c = VG_vox * DRHO[jX, jY, jZ] * -zCells[jZ]
+                    for iY in 1:ny   # iX innermost: dg and d_cube are column-major
+                        d_indY = jY - iY
+                        if d_indY < 0
+                            d_indY = abs(d_indY)
+                        else
+                            d_indY = d_indY + 1
+                        end
+                        for iX in 1:nx
                             d_indX = jX - iX
                             if d_indX < 0
                                 d_indX = abs(d_indX)
                             else
                                 d_indX = d_indX + 1
                             end
-                            d_indY = jY - iY
-                            if d_indY < 0
-                                d_indY = abs(d_indY)
-                            else
-                                d_indY = d_indY + 1
-                            end
-                            d_c = d_cube[d_indX, d_indY, jZ]
-                            dg[iX, iY] = dg[iX, iY] + VG_vox * DRHO[jX, jY, jZ] * -zCells[jZ] / d_c
+                            dg[iX, iY] = dg[iX, iY] + c / d_cube[d_indX, d_indY, jZ]
                         end
                     end
                 end
