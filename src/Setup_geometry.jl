@@ -260,7 +260,7 @@ function add_box!(
     #@assert size(X) == size(Phase) == size(Temp)
 
     # Limits of block
-    if ylim == nothing
+    if isnothing(ylim)
         ylim = (minimum(Y), maximum(Y))
     end
 
@@ -271,7 +271,7 @@ function add_box!(
         end
     end
 
-    if Origin == nothing
+    if isnothing(Origin)
         Origin = (xlim[1], ylim[1], zlim[2])  # upper-left corner
     end
 
@@ -551,7 +551,7 @@ function add_ellipsoid!(
         T = nothing, cell = false
     )                             # Sets the thermal structure (various functions are available)
 
-    if Origin == nothing
+    if isnothing(Origin)
         Origin = cen  # center
     end
 

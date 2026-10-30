@@ -840,7 +840,7 @@ function Parse_VTR_Line(line)
     line_strip = lstrip(line)
 
     # Retrieve Type
-    if findfirst("type", line_strip) != nothing
+    if !isnothing(findfirst("type", line_strip))
         id_start = findfirst("type", line_strip)[1] + 6
 
         line_strip = line_strip[id_start:end]
@@ -852,7 +852,7 @@ function Parse_VTR_Line(line)
     end
 
     # Retrieve Name
-    if findfirst("Name", line_strip) != nothing
+    if !isnothing(findfirst("Name", line_strip))
         id_start = findfirst("Name", line_strip)[1] + 6
         line_strip = line_strip[id_start:end]
         id_end = findfirst("\"", line_strip)[1] - 1
@@ -863,7 +863,7 @@ function Parse_VTR_Line(line)
     end
 
     # Retrieve number of components
-    if findfirst("NumberOfComponents", line_strip) != nothing
+    if !isnothing(findfirst("NumberOfComponents", line_strip))
         id_start = findfirst("NumberOfComponents", line_strip)[1] + 20
         line_strip = line_strip[id_start:end]
         id_end = findfirst("\"", line_strip)[1] - 1
@@ -874,7 +874,7 @@ function Parse_VTR_Line(line)
     end
 
     # Offset
-    if findfirst("offset", line_strip) != nothing
+    if !isnothing(findfirst("offset", line_strip))
         id_start = findfirst("offset", line_strip)[1] + 8
         line_strip = line_strip[id_start:end]
         id_end = findfirst("\"", line_strip)[1] - 1
@@ -971,7 +971,7 @@ function read_data_PVTR(fname, dir)
     NamesSymbol = []
     for i in 1:length(Names)
         id = findfirst(" ", Names[i])
-        if id == nothing
+        if isnothing(id)
             Names_Strip = Names[i]
         else
             Names_Strip = Names[i][1:(findfirst(" ", Names[i])[1] - 1)]
