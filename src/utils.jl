@@ -367,7 +367,6 @@ function cross_section_surface(S::AbstractGeneralGrid; dims = (100,), Interpolat
             # vector or anything that contains more than 1 field
             data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop
             data_array = zeros(size(Lon, 1), size(Lon, 2), length(data_tuple))      # create a 2D array that holds the 2D interpolated values
-            unit_array = zeros(size(data_array))
 
             for j in 1:length(data_tuple)
                 interpol = linear_interpolation((Lon_vec, Lat_vec), dropdims(ustrip.(data_tuple[j]), dims = 3), extrapolation_bc = NaN)       # create interpolation object
@@ -478,20 +477,20 @@ function cross_section_points(P::GeoData; Depth_level = nothing, Lat_level = not
         Profile_UTM = convert2UTMzone(Profile, p_Point) # convert to UTM
 
         # compute the unit normal of the profile plane using the cross product
-        # ATTENTION: UTM COORDINATES ARE IN M, WHILE DEPTH IS IN KM !!!
+        # UTM coordinates and depth are all in m
         a1 = Profile_UTM.EW.val[2] - Profile_UTM.EW.val[1]
         a2 = Profile_UTM.NS.val[2] - Profile_UTM.NS.val[1]
-        a3 = (Profile_UTM.depth.val[2] - Profile_UTM.depth.val[1]) * 1.0e3
+        a3 = Profile_UTM.depth.val[2] - Profile_UTM.depth.val[1]
 
         b1 = Profile_UTM.EW.val[3] - Profile_UTM.EW.val[1]
         b2 = Profile_UTM.NS.val[3] - Profile_UTM.NS.val[1]
-        b3 = (Profile_UTM.depth.val[3] - Profile_UTM.depth.val[1]) * 1.0e3
+        b3 = Profile_UTM.depth.val[3] - Profile_UTM.depth.val[1]
 
         nx = a2 * b3 - a3 * b2
         ny = a3 * b1 - a1 * b3
         nz = a1 * b2 - a2 * b1
 
-        t = (nx * Profile_UTM.EW.val[1] .- nx * P_UTM.EW.val .+ ny * Profile_UTM.NS.val[1] .- ny * P_UTM.NS.val .+ nz * Profile_UTM.depth.val[1] * 1.0e3 .- nz * P_UTM.depth.val * 1.0e3) / (nx * nx + ny * ny + nz * nz)
+        t = (nx * Profile_UTM.EW.val[1] .- nx * P_UTM.EW.val .+ ny * Profile_UTM.NS.val[1] .- ny * P_UTM.NS.val .+ nz * Profile_UTM.depth.val[1] .- nz * P_UTM.depth.val) / (nx * nx + ny * ny + nz * nz)
 
         # compute the distance to the plane
         dist = sqrt.((t .* nx) .^ 2 + (t .* ny) .^ 2 + (t .* nz) .^ 2)
@@ -502,7 +501,7 @@ function cross_section_points(P::GeoData; Depth_level = nothing, Lat_level = not
         # project the points on the plane (only the relevant ones)
         px = P_UTM.EW.val[ind] + t[ind] .* nx
         py = P_UTM.NS.val[ind] + t[ind] .* ny
-        pz = P_UTM.depth.val[ind] * 1.0e3 + t[ind] .* nz # convert depth to m
+        pz = P_UTM.depth.val[ind] + t[ind] .* nz
 
         # the projected points are given in UTM coordinates and not in lon/lat/depth
         # therefore we have to recompute the lat/lon/depth values of the projected points
@@ -533,12 +532,7 @@ function cross_section_points(P::GeoData; Depth_level = nothing, Lat_level = not
         if typeof(P.fields[i]) <: Tuple
             # vector or anything that contains more than 1 field
             data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop
-            data_array = zeros(size(ind, 1), length(data_tuple))      # create a 2D array that holds the chosen values
-
-            for j in 1:length(data_tuple)
-                data_array[:, j] = ustrip.(data_tuple[i][ind])
-            end
-            data_new = tuple([data_array[:, :, c] for c in 1:size(data_array, 3)]...)     # transform 2D matrix to tuple, do not consider the unit as it creates an error in GMG (Issue), to add the unit: *unit.(P.fields[i][1][1]
+            data_new = Tuple(ustrip.(d[ind]) for d in data_tuple)   # units are dropped, as they cause errors in GMG
 
         else
             # scalar field
@@ -834,23 +828,26 @@ function extract_subvolume(
         V::CartData;
         Interpolate = true,
         X_level = nothing,
-        X_cross = nothing,
         Y_level = nothing,
         Z_level = nothing,
         dims = (50, 50, 50)
     )
 
-    if isnothing(X_level)
-        X_level = (minimum(V.x.val), maximum(V.x.val))
-    end
-    if isnothing(Y_level)
-        Y_level = (minimum(V.y.val), maximum(V.y.val))
-    end
+    is_cross_section = haskey(V.fields, :FlatCrossSection)
     if isnothing(Z_level)
         Z_level = (minimum(V.z.val), maximum(V.z.val))
     end
 
-    if Interpolate == true && size(V.x.val)[3] > 1
+    if !is_cross_section
+        if isnothing(X_level)
+            X_level = (minimum(V.x.val), maximum(V.x.val))
+        end
+        if isnothing(Y_level)
+            Y_level = (minimum(V.y.val), maximum(V.y.val))
+        end
+    end
+
+    if Interpolate == true && !is_cross_section
         X, Y, Z = lonlatdepth_grid(
             LinRange(X_level[1], X_level[2], dims[1]),
             LinRange(Y_level[1], Y_level[2], dims[2]),
@@ -859,7 +856,7 @@ function extract_subvolume(
 
         Data_extract = interpolate_datafields(V, X, Y, Z)
 
-    elseif size(V.x.val)[3] == 1
+    elseif is_cross_section
 
         # we are dealing with a vertical cross-section through a 3D dataset computed with cross_section(V,Start=.., End=...)
         Xcross = V.fields.FlatCrossSection
@@ -928,7 +925,6 @@ function interpolate_data_fields_cross_section(V::CartData, X, Y, Z, X_cross)
             # vector or anything that contains more than 1 field
             data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop
             data_array = zeros(size(Data_extract.x)..., length(data_tuple))      # create a 3D array that holds the 2D interpolated values
-            unit_array = zeros(size(data_array))
 
             for j in 1:length(data_tuple)
                 interpol = linear_interpolation((V.fields.FlatCrossSection[:, 1, 1], V.z.val[1, :, 1]), ustrip.(data_tuple[j][:, :, 1]), extrapolation_bc = NaN)       # create interpolation object
@@ -938,11 +934,13 @@ function interpolate_data_fields_cross_section(V::CartData, X, Y, Z, X_cross)
 
         else
             # scalar field
-            interpol = linear_interpolation((V.fields.FlatCrossSection[:, 1, 1], V.z.val[1, :, 1]), V.fields[i][:, :, 1], extrapolation_bc = NaN)             # create interpolation object
-            data_new = interpol.(X_cross, Z)                                                  # interpolate data field
-
             if isa(V.fields[i][1], Int64)
-                data_new = round.(Int64, data_new)
+                # categorical data: nearest neighbor, held constant outside the domain (an Int cannot be NaN); see #20, #191
+                interpol = constant_interpolation((V.fields.FlatCrossSection[:, 1, 1], V.z.val[1, :, 1]), V.fields[i][:, :, 1], extrapolation_bc = Flat())
+                data_new = Int64.(interpol.(X_cross, Z))
+            else
+                interpol = linear_interpolation((V.fields.FlatCrossSection[:, 1, 1], V.z.val[1, :, 1]), V.fields[i][:, :, 1], extrapolation_bc = NaN)             # create interpolation object
+                data_new = interpol.(X_cross, Z)                                                  # interpolate data field
             end
         end
         Data_extract = addfield(Data_extract, String(field_names[i]), data_new)
@@ -1041,7 +1039,6 @@ function interpolate_datafields(V::AbstractGeneralGrid, Lon, Lat, Depth)
             # vector or anything that contains more than 1 field
             data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop
             data_array = zeros(size(Lon, 1), size(Lon, 2), size(Lon, 3), length(data_tuple))      # create a 3D array that holds the 2D interpolated values
-            unit_array = zeros(size(data_array))
 
             for j in 1:length(data_tuple)
                 if ReverseData
@@ -1056,16 +1053,18 @@ function interpolate_datafields(V::AbstractGeneralGrid, Lon, Lat, Depth)
 
         else
             # scalar field
+            # categorical data: nearest neighbor, held constant outside the domain (an Int cannot be NaN); see #20, #191
+            isint = isa(V.fields[i][1], Int64)
+            make_interpolation = isint ? constant_interpolation : linear_interpolation
+            bc = isint ? Flat() : NaN
             if ReverseData
                 ndim = length(size(V.fields[i]))
-                interpol = linear_interpolation((Lon_vec, Lat_vec, reverse(Depth_vec)), reverse(V.fields[i], dims = ndim), extrapolation_bc = NaN)             # create interpolation object
+                interpol = make_interpolation((Lon_vec, Lat_vec, reverse(Depth_vec)), reverse(V.fields[i], dims = ndim), extrapolation_bc = bc)             # create interpolation object
             else
-                interpol = linear_interpolation((Lon_vec, Lat_vec, Depth_vec), V.fields[i], extrapolation_bc = NaN)             # create interpolation object
+                interpol = make_interpolation((Lon_vec, Lat_vec, Depth_vec), V.fields[i], extrapolation_bc = bc)             # create interpolation object
             end
             data_new = interpol.(Lon, Lat, ustrip.(Depth))                                                  # interpolate data field
-            if isa(V.fields[i][1], Int64)
-                data_new = round.(Int64, data_new)
-            end
+            isint && (data_new = Int64.(data_new))
         end
 
         # replace the one
@@ -1110,7 +1109,6 @@ function interpolate_datafields(V::UTMData, EW, NS, Depth)
             # vector or anything that contains more than 1 field
             data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop
             data_array = zeros(size(EW, 1), size(EW, 2), size(EW, 3), length(data_tuple))      # create a 3D array that holds the 2D interpolated values
-            unit_array = zeros(size(data_array))
 
             for j in 1:length(data_tuple)
                 if ReverseData
@@ -1164,7 +1162,6 @@ function interpolate_datafields_2D(V::GeoData, Lon, Lat)
             # vector or anything that contains more than 1 field
             data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop
             data_array = zeros(size(Lon, 1), size(Lon, 2), size(Lon, 3), length(data_tuple))      # create a 3D array that holds the 2D interpolated values
-            unit_array = zeros(size(data_array))
 
             for j in 1:length(data_tuple)
                 if length(size(data_tuple[j])) == 3
@@ -1323,7 +1320,6 @@ function InterpolateDataFields2D_vecs(EW_vec, NS_vec, depth, fields_new, EW, NS)
         if (typeof(data_tuple) <: Tuple) & (!contains(String(field_names[i]), "colors"))
             # vector or anything that contains more than 1 field
             data_array = zeros(size(EW, 1), size(EW, 2), size(EW, 3), length(data_tuple))      # create a 3D array that holds the 2D interpolated values
-            unit_array = zeros(size(data_array))
 
             for j in 1:length(data_tuple)
                 data_j = ndims(data_tuple[j]) == 3 ? data_tuple[j][:, :, 1] : data_tuple[j]
@@ -1412,7 +1408,6 @@ function ExtractDataSets(V::AbstractGeneralGrid, iLon, iLat, iDepth)
             # vector or anything that contains more than 1 field
             data_tuple = fields_new[i]      # we have a tuple (likely a vector field), so we have to loop
             data_array = zeros(typeof(data_tuple[1][1]), length(iLon), length(iLat), length(iDepth), length(data_tuple))      # create a 3D array that holds the 2D interpolated values
-            unit_array = zeros(size(data_array))
 
             for j in 1:length(data_tuple)
                 data_field = data_tuple[j]
@@ -1501,7 +1496,7 @@ function subtract_horizontalmean(V::AbstractArray{T, 2}; Percentage = false) whe
         average = mean(filter(!isnan, vec(V[:, iLayer])))
 
         if Percentage
-            V_sub[:, iLayer] = ustrip(V[:, iLayer]) .- ustrip(average)
+            V_sub[:, iLayer] = ustrip.(V[:, iLayer]) .- ustrip(average)
             V_sub[:, iLayer] = V_sub[:, iLayer] ./ ustrip(average) * 100.0      # the result is normalized
         else
             V_sub[:, iLayer] = V[:, iLayer] .- average
@@ -1532,17 +1527,11 @@ function parse_columns_CSV(data_file, num_columns)
     for (row_num, row) in enumerate(data_file)
         num = 0
         for i in 1:length(row)
-            if typeof(row[i]) == Float64
+            ismissing(row[i]) && continue # empty cells from repeated delimiters
+            v = row[i] isa Real ? Float64(row[i]) : tryparse(Float64, row[i])
+            if !isnothing(v)
                 num += 1
-                data[row_num, num] = row[i]
-            else
-
-                try
-                    parse(Float64, row[i])
-                    num += 1
-                    data[row_num, num] = parse(Float64, row[i])
-                catch
-                end
+                data[row_num, num] = v
             end
 
         end
@@ -1629,11 +1618,15 @@ function votemap(DataSets::Vector{GeoData}, criteria::Vector{String}; dims = (50
 
     # Loop over all datasets, and interpolate the data set to the new (usually smaller) domain
     votemap = zeros(Int64, dims)
+    lon = lat = depth = nothing   # coordinates of the common grid, taken from the first interpolated data set
     for i in 1:numDataSets
         VoteMap_Local = zeros(Int64, dims)
 
         # Interpolate data set to smaller domain
         DataSet = extract_subvolume(DataSets[i]; Interpolate = true, Lon_level = lon_limits, Lat_level = lat_limits, Depth_level = z_limits, dims = dims)
+        if i == 1
+            lon, lat, depth = DataSet.lon.val, DataSet.lat.val, DataSet.depth.val
+        end
 
         # Extract the criteria to evaluate
         expr = Meta.parse(criteria[i])      # the expression, such as Vs>1.0
@@ -1660,10 +1653,8 @@ function votemap(DataSets::Vector{GeoData}, criteria::Vector{String}; dims = (50
         votemap = votemap + VoteMap_Local        # Sum
     end
 
-    DataSet = extract_subvolume(DataSets[1], Interpolate = true, Lon_level = lon_limits, Lat_level = lat_limits, Depth_level = z_limits, dims = dims)
-
     # Construct GeoData set that holds the votemap (makes it easier to write paraview files)
-    VoteData = GeoData(DataSet.lon.val, DataSet.lat.val, DataSet.depth.val, (votemap = votemap,))
+    VoteData = GeoData(lon, lat, depth, (votemap = votemap,))
 
     return VoteData
 end
@@ -1778,7 +1769,7 @@ function inpolygon!(INSIDE::Matrix{Bool}, PolyX::Vector{T}, PolyY::Vector{T}, X:
     else
         for j in 1:size(X, 2)
             for i in 1:size(X, 1)
-                INSIDE[i, j] = (inpoly(PolyX, PolyY, X[i, j], Y[i, j]) || inpoly(PolyY, PolyX, Y[i, j], X[i, j]))
+                INSIDE[i, j] = inpoly_either(PolyX, PolyY, X[i, j], Y[i, j])
             end
         end
     end
@@ -1797,10 +1788,13 @@ function inpolygon!(inside::Vector{Bool}, PolyX::AbstractVector{T}, PolyY::Abstr
         end
     else
         for i in eachindex(x)
-            inside[i] = (inpoly(PolyX, PolyY, x[i], y[i]) || inpoly(PolyY, PolyX, y[i], x[i]))
+            inside[i] = inpoly_either(PolyX, PolyY, x[i], y[i])
         end
     end
 end
+
+# In or on the polygon for either order of the axes: the test of `inpolygon!` without `fast`
+inpoly_either(PolyX, PolyY, x, y) = inpoly(PolyX, PolyY, x, y) || inpoly(PolyY, PolyX, y, x)
 
 """
     inpoly(PolyX::Vector, PolyY::Vector, x::Number, y::Number, iSteps::Vector, jSteps::)

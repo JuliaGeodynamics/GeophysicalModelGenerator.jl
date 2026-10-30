@@ -17,3 +17,15 @@ rm(outname1)
 rm(joinpath(dir, outname2))
 rm(joinpath(dir, outname3))
 rm(joinpath(dir, outname4))
+
+# default dir=pwd() with copy_to_current_dir=true must not copy the movie onto itself (#107)
+mktempdir() do tmp
+    for f in readdir(dir)
+        endswith(f, ".png") && cp(joinpath(dir, f), joinpath(tmp, f))
+    end
+    cd(tmp) do
+        @test movie_from_images() == "test_animation.mp4"
+        @test isfile("test_animation.mp4")
+    end
+end
+@test_throws "no images matching" movie_from_images(dir = dir, file = "nonexistent")

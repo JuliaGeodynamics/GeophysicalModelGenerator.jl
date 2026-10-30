@@ -143,7 +143,7 @@ add_box!(Phases, Temp, Grid, xlim = (0, 500), zlim = (-500, 0), phase = Lithosph
 Phases = zeros(Int32, size(Grid.X));
 Temp = ones(Float64, size(Grid.X)) * 1350;
 add_box!(Phases, Temp, Grid, xlim = (0, 500), zlim = (-500, -20), phase = LithosphericPhases(Layers = [15 15 250], Phases = [1 2 3 0], Tlab = 1250), DipAngle = 10, T = SpreadingRateTemp(MORside = "right", SpreadingVel = 3))
-@test sum(Temp) == 1.189394358568891e9
+@test sum(Temp) == 1.1892525087889733e9
 
 Model3D = CartData(Grid, (Phases = Phases, Temp = Temp));
 write_paraview(Model3D, "LaMEM_ModelSetup")                  # Save model to paraview
@@ -346,6 +346,60 @@ Topo = make_volc_topo(Grid, center = [0.0, 0.0], height = 0.8, radius = 0.5, cra
                 end
 
                 @test_throws "You must provide the field :Phases in the structure" save_LaMEM_markers_parallel(CartData(Grid, (Temp = zeros(size(Grid.X)),)); directory = marker_dir, verbose = false)
+
+                # markers outside the partition range raise an error
+                Model_big = CartData(Grid.X .* 2, Grid.Y .* 2, Grid.Z .* 2, (Phases = ones(Int32, size(Grid.X)),))
+                @test_throws "Markers outside the processor partition range" save_LaMEM_markers_parallel(Model_big; PartitioningFile = part_file, directory = joinpath(dir, "markers_big"), verbose = false, is64bit = true)
+
+                # 32-bit partitioning file round trip
+                part32 = redirect_stdout(devnull) do
+                    write_processor_partitioning_LaMEM(P8)
+                end
+                _, _, _, xc32, yc32, zc32, _, _, _ = get_processor_partitioning(part32)
+                @test xc32 ≈ [-5.0, 0.0, 5.0]
+                @test zc32 ≈ [-10.0, -5.0, 0.0]
+
+                # input file parsing: comments, no spaces around "=", exact keyword match
+                parse_file = joinpath(dir, "parse.dat")
+                write(parse_file, "nel_xx = 7\n    nel_x = 32   # c\nnel_y=16\nnel_z = 8# c\n")
+                @test GeophysicalModelGenerator.ParseValue_LaMEM_InputFile(parse_file, "nel_x", Int64) == 32
+                @test GeophysicalModelGenerator.ParseValue_LaMEM_InputFile(parse_file, "nel_y", Int64) == 16
+                @test GeophysicalModelGenerator.ParseValue_LaMEM_InputFile(parse_file, "nel_z", Int64) == 8
+
+                # cpu lines: idempotent, directly after nel_z, and at the end of the file
+                write(parse_file, "nel_z = 8\ncpu_x = 1\ncpu_y = 1\ncpu_z = 1\n")
+                insert_cpu_lines_after_nelz(parse_file, P_coarse)
+                once = read(parse_file, String)
+                insert_cpu_lines_after_nelz(parse_file, P_coarse)
+                @test read(parse_file, String) == once
+                @test count(occursin("cpu_x", l) for l in readlines(parse_file)) == 1
+                @test GeophysicalModelGenerator.ParseValue_LaMEM_InputFile(parse_file, "nel_z", Int64) == 8
+                @test GeophysicalModelGenerator.ParseValue_LaMEM_InputFile(parse_file, "cpu_x", Int64) == P_coarse.nProcX
+                write(parse_file, "nel_x = 4\ncpu_x = 2\n")
+                @test_throws "no `nel_z` line" insert_cpu_lines_after_nelz(parse_file, P_coarse)
+                @test read(parse_file, String) == "nel_x = 4\ncpu_x = 2\n"
+
+                # multi-segment grid keeps numCells + 1 points per segment
+                seg_file = joinpath(dir, "seg.dat")
+                write(
+                    seg_file, """
+                    nseg_x = 2
+                    nseg_y = 1
+                    nseg_z = 1
+                    nel_x = 3 3
+                    nel_y = 2
+                    nel_z = 2
+                    coord_x = -660 0.7 10
+                    coord_y = 0 1
+                    coord_z = 0 1
+                    bias_x = 1.0 1.0
+                    nmark_x = 1
+                    nmark_y = 1
+                    nmark_z = 1
+                    """
+                )
+                @test length(read_LaMEM_inputfile(seg_file).x_vec) == 6
+
             end
         end
     end

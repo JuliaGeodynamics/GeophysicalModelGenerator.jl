@@ -20,10 +20,8 @@ Optional options
 function make_paraview_collection(; dir = pwd(), pvd_name = nothing, files = nothing, file_extension = ".vts", time = nothing)
 
     # if no files are given, use all vtm files in the directory
-    curdir = pwd()
-    cd(dir)
     if isnothing(files)
-        files = filter(endswith(file_extension), readdir())
+        files = sort(filter(endswith(file_extension), readdir(dir)); by = natural_order)
         files = joinpath.(dir, files)
     end
     # if no time is given, use pseudo time steps
@@ -39,12 +37,14 @@ function make_paraview_collection(; dir = pwd(), pvd_name = nothing, files = not
         pvd_name = "full_simulation"
     end
 
-    pvd_name = joinpath(curdir, pvd_name)
+    pvd_name = joinpath(pwd(), pvd_name)
 
     make_paraview_collection(pvd_name, files, time)
-    cd(curdir)  # return to original directory
     return pvd_name
 end
+
+# Sort key that orders the numbers in a name by value, so that "f2" comes before "f10"
+natural_order(name) = [isdigit(m.match[1]) ? (0, parse(Int, m.match), "") : (1, 0, m.match) for m in eachmatch(r"\d+|\D+", name)]
 
 """
     make_paraview_collection(pvd_name::String, files::Vector{String}, time::Vector{String})

@@ -107,10 +107,10 @@ function voxel_grav(
     ############ compute bouguer gradients ############
     if printing
         @printf "Computing Bouguer gradients:"
-        @time gradX, gradY = computeBougGrads(nx, ny, dg)
+        @time gradX, gradY = computeBougGrads(nx, ny, dg, dx, dy)
         @printf "\n"
     else
-        gradX, gradY = computeBougGrads(nx, ny, dg)
+        gradX, gradY = computeBougGrads(nx, ny, dg, dx, dy)
     end
     ###################################################
 
@@ -265,22 +265,22 @@ function computeBoug(nx, ny, nz, DRHO, d_cube, VG_vox, zCells, rhoTol)
         for jY in 1:(ny - 1)
             for jZ in 1:(nz - 1)
                 if (DRHO[jX, jY, jZ] > rhoTol || DRHO[jX, jY, jZ] < -rhoTol)
-                    for iX in 1:nx
-                        for iY in 1:ny
+                    c = VG_vox * DRHO[jX, jY, jZ] * -zCells[jZ]
+                    for iY in 1:ny   # iX innermost: dg and d_cube are column-major
+                        d_indY = jY - iY
+                        if d_indY < 0
+                            d_indY = abs(d_indY)
+                        else
+                            d_indY = d_indY + 1
+                        end
+                        for iX in 1:nx
                             d_indX = jX - iX
                             if d_indX < 0
                                 d_indX = abs(d_indX)
                             else
                                 d_indX = d_indX + 1
                             end
-                            d_indY = jY - iY
-                            if d_indY < 0
-                                d_indY = abs(d_indY)
-                            else
-                                d_indY = d_indY + 1
-                            end
-                            d_c = d_cube[d_indX, d_indY, jZ]
-                            dg[iX, iY] = dg[iX, iY] + VG_vox * DRHO[jX, jY, jZ] * -zCells[jZ] / d_c
+                            dg[iX, iY] = dg[iX, iY] + c / d_cube[d_indX, d_indY, jZ]
                         end
                     end
                 end
@@ -293,7 +293,7 @@ function computeBoug(nx, ny, nz, DRHO, d_cube, VG_vox, zCells, rhoTol)
     return dg
 end
 
-function computeBougGrads(nx, ny, dg)
+function computeBougGrads(nx, ny, dg, dx, dy)
     gradX = zeros(nx, ny)
     gradY = zeros(nx, ny)
 
@@ -301,7 +301,7 @@ function computeBougGrads(nx, ny, dg)
         itp = Interpolations.interpolate(dg[:, iY], BSpline(Quadratic(Reflect(OnCell()))))
         for iX in 1:nx
             grad = Interpolations.gradient(itp, iX)
-            gradX[iX, iY] = grad[1]
+            gradX[iX, iY] = grad[1] / dx
         end
     end
 
@@ -309,7 +309,7 @@ function computeBougGrads(nx, ny, dg)
         itp = Interpolations.interpolate(dg[iX, :], BSpline(Quadratic(Reflect(OnCell()))))
         for iY in 1:ny
             grad = Interpolations.gradient(itp, iY)
-            gradY[iX, iY] = grad[1]
+            gradY[iX, iY] = grad[1] / dy
         end
     end
 

@@ -96,6 +96,17 @@ export visualise
 
 
 """
+    particle_grid(particles; length_unit)
+
+Returns a view of the coordinates of the `JustPIC` particles, in km, that the geometry routines (`add_box!`,
+`add_sphere!`, ...) accept in place of a grid; it copies nothing for particles on the CPU, and particles on a GPU are
+processed in host copies. `length_unit` is the length of one unit of the particle coordinates, for example `1m`, or the characteristic length
+of a nondimensional model. Requires loading `JustPIC`.
+"""
+function particle_grid end
+export particle_grid
+
+"""
     import_Gmsh(fname::String)
 
 Reads a Gmsh file. Requires loading `GridapGmsh`.

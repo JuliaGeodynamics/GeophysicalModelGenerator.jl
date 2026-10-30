@@ -9,7 +9,7 @@ using FFMPEG
 export movie_from_images
 
 """
-    movie_from_images(; dir=pwd(), file=nothing, outfile=nothing, framerate=10, copy_to_current_dir=true, type=:mp4_default, gif=false, collect=true)
+    movie_from_images(; dir=pwd(), file=nothing, outfile=nothing, framerate=10, copy_to_current_dir=true, type=:mp4_default, gif=false)
 
 The typical way to create animations with `Paraview` is to use the `Save Animation` option to save a series of `*.png` images.
 
@@ -27,24 +27,27 @@ Optional options
     -  `:mov_hires`: Higher-resolution quicktime movie (larger filesize & not compatible with windows)
     -  `:gif`: Animated GIF (same as passing `gif=true`).
 - `gif`: if `true`, creates a `*.gif` animation in addition to the `mp4` movie. If `type=:gif`, only a gif is created.
-- `collect`: suppresses output of `FFMPEG` if `true` (default).
 """
 function movie_from_images(; dir = pwd(), file = nothing, outfile = nothing, framerate = 10, copy_to_current_dir = true, type = :mp4_default, gif = false)
     curdir = pwd()
-    cd(dir)
-    files = split.(readdir(), ".")
-    files = files[length.(files) .== 3]     # names should be filename.0001.png or something like that
+    isdir(dir) || error("directory $dir does not exist.")
 
-    filenames = [f[1] for f in files]
-    fileext = files[1][3]
-    le = length(files[1][2])
+    # names should be filename.0001.png or something like that
+    files = filter(f -> length(split(f, ".")) == 3, readdir(dir))
+    filenames = [split(f, ".")[1] for f in files]
 
     # try to determine the filename automatically (works if we have only one name in the director)
     if length(unique(filenames)) > 1 && isnothing(file)
         error("you have more than one image series in the directory $dir; please specify the filename `file`.")
     elseif isnothing(file)
+        isempty(files) && error("no image series (filename.0001.png) found in directory $dir.")
         file = unique(filenames)[1]
     end
+
+    matching = [split(f, ".") for f in files if split(f, ".")[1] == file]
+    isempty(matching) && error("no images matching `$file` found in directory $dir.")
+    fileext = matching[1][3]
+    le = length(matching[1][2])
 
     if isnothing(outfile)
         outfile = file  #use same name as images
@@ -65,40 +68,39 @@ function movie_from_images(; dir = pwd(), file = nothing, outfile = nothing, fra
         error("unknown movie type $type")
     end
 
-    result = nothing
+    cd(dir) do
+        result = nothing
 
-    if type != :gif
-        # run ffmpeg for mp4/mov
-        FFMPEG.exe(cmd, collect = true)
+        if type != :gif
+            # run ffmpeg for mp4/mov
+            FFMPEG.exe(cmd)
 
-        result = joinpath(pwd(), outfile_ext)
-        if copy_to_current_dir
-            result = joinpath(curdir, outfile_ext)
-            cp(outfile_ext, result, force = true)
+            result = joinpath(pwd(), outfile_ext)
+            if copy_to_current_dir
+                result = joinpath(curdir, outfile_ext)
+                abspath(outfile_ext) == abspath(result) || cp(outfile_ext, result, force = true)  # see #107
+            end
+            println("created movie: $result")
         end
-        println("created movie: $result")
-    end
 
-    if gif
-        # create palette for better gif quality, then encode gif
-        outfile_gif = outfile * ".gif"
-        palette = outfile * "_palette.png"
-        cmd_palette = `-y -framerate $framerate -f image2 -i $file.%0$(le)d.$fileext -vf palettegen $palette`
-        cmd_gif     = `-y -framerate $framerate -f image2 -i $file.%0$(le)d.$fileext -i $palette -lavfi paletteuse $outfile_gif`
-        FFMPEG.exe(cmd_palette, collect = true)
-        FFMPEG.exe(cmd_gif, collect = true)
-        rm(palette, force = true)
+        if gif
+            # create palette for better gif quality, then encode gif
+            outfile_gif = outfile * ".gif"
+            palette = outfile * "_palette.png"
+            cmd_palette = `-y -framerate $framerate -f image2 -i $file.%0$(le)d.$fileext -vf palettegen $palette`
+            cmd_gif = `-y -framerate $framerate -f image2 -i $file.%0$(le)d.$fileext -i $palette -lavfi paletteuse $outfile_gif`
+            FFMPEG.exe(cmd_palette)
+            FFMPEG.exe(cmd_gif)
+            rm(palette, force = true)
 
-        result_gif = joinpath(pwd(), outfile_gif)
-        if copy_to_current_dir
-            result_gif = joinpath(curdir, outfile_gif)
-            cp(outfile_gif, result_gif, force = true)
+            result_gif = joinpath(pwd(), outfile_gif)
+            if copy_to_current_dir
+                result_gif = joinpath(curdir, outfile_gif)
+                abspath(outfile_gif) == abspath(result_gif) || cp(outfile_gif, result_gif, force = true)  # see #107
+            end
+            println("created gif: $result_gif")
+            isnothing(result) && (result = result_gif)
         end
-        println("created gif: $result_gif")
-        isnothing(result) && (result = result_gif)
     end
-
-    cd(curdir)  # return to original directory
-
     return isnothing(outfile_ext) ? outfile * ".gif" : outfile_ext
 end
