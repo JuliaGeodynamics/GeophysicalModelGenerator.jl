@@ -88,7 +88,7 @@ function movie_from_images(; dir = pwd(), file = nothing, outfile = nothing, fra
             outfile_gif = outfile * ".gif"
             palette = outfile * "_palette.png"
             cmd_palette = `-y -framerate $framerate -f image2 -i $file.%0$(le)d.$fileext -vf palettegen $palette`
-            cmd_gif     = `-y -framerate $framerate -f image2 -i $file.%0$(le)d.$fileext -i $palette -lavfi paletteuse $outfile_gif`
+            cmd_gif = `-y -framerate $framerate -f image2 -i $file.%0$(le)d.$fileext -i $palette -lavfi paletteuse $outfile_gif`
             FFMPEG.exe(cmd_palette)
             FFMPEG.exe(cmd_gif)
             rm(palette, force = true)

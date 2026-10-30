@@ -381,21 +381,23 @@ Topo = make_volc_topo(Grid, center = [0.0, 0.0], height = 0.8, radius = 0.5, cra
 
                 # multi-segment grid keeps numCells + 1 points per segment
                 seg_file = joinpath(dir, "seg.dat")
-                write(seg_file, """
-                nseg_x = 2
-                nseg_y = 1
-                nseg_z = 1
-                nel_x = 3 3
-                nel_y = 2
-                nel_z = 2
-                coord_x = -660 0.7 10
-                coord_y = 0 1
-                coord_z = 0 1
-                bias_x = 1.0 1.0
-                nmark_x = 1
-                nmark_y = 1
-                nmark_z = 1
-                """)
+                write(
+                    seg_file, """
+                    nseg_x = 2
+                    nseg_y = 1
+                    nseg_z = 1
+                    nel_x = 3 3
+                    nel_y = 2
+                    nel_z = 2
+                    coord_x = -660 0.7 10
+                    coord_y = 0 1
+                    coord_z = 0 1
+                    bias_x = 1.0 1.0
+                    nmark_x = 1
+                    nmark_y = 1
+                    nmark_z = 1
+                    """
+                )
                 @test length(read_LaMEM_inputfile(seg_file).x_vec) == 6
 
             end

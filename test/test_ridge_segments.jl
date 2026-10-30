@@ -29,8 +29,8 @@ using Test
     #write_paraview(Grid, "Ridge_Thermal_Structure_test_2")
 
     ix, iy, iz = findfirst(==(-500.0), x), findfirst(==(-250.0), y), findfirst(==(-10.0), z)
-    @test Temp[ix, iy, iz] ≈ 1350.0 atol=1e-3   # on the ridge (segment 1)
-    @test Temp[ix+3, iy, iz] < 1000.0           # 300 km off the ridge
+    @test Temp[ix, iy, iz] ≈ 1350.0 atol = 1.0e-3   # on the ridge (segment 1)
+    @test Temp[ix + 3, iy, iz] < 1000.0           # 300 km off the ridge
 
     @test minimum(Temp) >= 0.0  # Minimum temperature
     @test maximum(Temp) <= 1350.0  # Maximum temperature

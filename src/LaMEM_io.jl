@@ -1791,7 +1791,7 @@ function insert_cpu_lines_after_nelz(filename::String, P)
     # drop a previously inserted block: its blank line, header, and cpu lines
     drop = [occursin(r"^\s*cpu_[xyz]\s*=", l) || occursin(r"^\s*# Number of processes\s*$", l) for l in lines]
     for i in eachindex(lines)
-        drop[i] && lines[i] != "" && occursin("Number of processes", lines[i]) && i > firstindex(lines) && lines[i-1] == "" && (drop[i-1] = true)
+        drop[i] && lines[i] != "" && occursin("Number of processes", lines[i]) && i > firstindex(lines) && lines[i - 1] == "" && (drop[i - 1] = true)
     end
     lines = lines[.!drop]
     newlines = String[]
