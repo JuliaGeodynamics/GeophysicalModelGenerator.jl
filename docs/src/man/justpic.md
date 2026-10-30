@@ -17,7 +17,7 @@ add_sphere!(pPhases, nothing, pg; cen = (250, 0, -100), radius = 20, phase = Con
 
 ## Particle grid
 
-`particle_grid` collects the active particles once. Every later call reuses it and modifies the particle arrays in place, so build it after `init_particles` and before the particles move.
+`particle_grid` is a view of the particle coordinates, and the geometry routines evaluate every particle in place, leaving empty particle slots unchanged. It copies nothing for particles on the CPU; particles on a GPU are processed in host copies.
 
 - **Units:** `length_unit` is the length of one unit of the particle coordinates, for example `1m`, or the characteristic length of a nondimensional model. Geometry parameters are given in km, as everywhere else in `GMG`.
 - **2D axes:** in 2D, the second particle coordinate is the vertical one and corresponds to `z` in `GMG`.

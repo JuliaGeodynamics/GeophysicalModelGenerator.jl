@@ -70,6 +70,27 @@ end
     add_polygon!(pPhases, nothing, pg; xlim = (2, 8, 8, 2), ylim = (0.0, 4.0), zlim = (-8, -8, -2, -2), phase = ConstantPhase(3))
     @test (active_values(particles, pPhases.data) .== 3) == ((2 .<= x .<= 8) .& (y .<= 4) .& (-8 .<= z .<= -2))
 
+    # a routine with a default thermal structure, and one with a further positional argument, match the grid
+    # method on the active particle coordinates
+    points = CartData(reshape(x, :, 1, 1), reshape(y, :, 1, 1), reshape(z, :, 1, 1), (; z = reshape(z, :, 1, 1)))
+    trench = Trench(Start = (2.0, 0.0), End = (2.0, 10.0), Thickness = 2.0, θ_max = 30.0, Length = 6, Lb = 3)
+    setup!(Phase, Temp, grid) = (
+        add_volcano!(Phase, Temp, grid; volcanic_phase = 4, center = (5, 5, 0), height = -2, radius = 4, base = -6);
+        add_slab!(Phase, Temp, grid, trench; phase = ConstantPhase(5))
+    )
+    fill!(pPhases.data, 0.0)
+    setup!(pPhases, nothing, pg)
+    Phase = zeros(size(points.x))
+    setup!(Phase, zeros(size(points.x)), points)
+    @test active_values(particles, pPhases.data) == vec(Phase)
+    @test any(==(4), Phase) && any(==(5), Phase)
+
+    # particle_grid is a view, and the setup routines evaluate the particles in place
+    @test @allocated(particle_grid(particles; length_unit = 1km)) < 10_000
+    box_setup() = add_box!(pPhases, nothing, pg; xlim = (0, 10), ylim = (0, 4), zlim = (-2, 0), DipAngle = 10, phase = ConstantPhase(2))
+    box_setup()
+    @test @allocated(box_setup()) < 10_000
+
     surf = JustPIC.init_marker_surface(JustPIC.CPU, xv, yv, 0.0)
     Xs, Ys, _ = xyz_grid(-1:0.5:11, -1:0.5:11, 0)
     set_topo_from_array!(surf, CartData(Xs, Ys, Xs ./ 10 .- Ys ./ 20, (Z = Xs,)); length_unit = 1km)
