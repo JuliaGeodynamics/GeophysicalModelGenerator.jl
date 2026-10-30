@@ -220,6 +220,10 @@ Grid3D = create_CartGrid(size = (10, 5, 3), extent = (9.0, 4.0, 2.0))
 @test Grid3D.min == (0.0, 0.0, -4.0)
 @test Grid3D.max == (9.0, 2.0, 0.0)
 
+# integer limits give a floating-point grid
+Grid2D = create_CartGrid(size = (11, 5), x = (0, 10), z = (-2.5, 0))
+@test Grid2D.Δ == (1.0, 0.625)
+
 # CartGrid with dimensional input is nondimensionalized
 Grid2D = create_CartGrid(size = (10, 20), x = (0.0km, 10km), z = (-20km, 10km), CharDim = GEO_units())
 @test Grid2D.L == (0.01, 0.03)

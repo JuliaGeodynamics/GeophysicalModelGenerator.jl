@@ -1101,7 +1101,8 @@ Spacing is assumed to be constant in a given direction
 
 This can also be used for staggered grids, as we also create 1D vectors for the central points. The points you indicate in `size` are the corner points.
 
-Note: since this is mostly for solid Earth geoscience applications, the second dimension is called z (vertical)
+Note: since this is mostly for solid Earth geoscience applications, the second dimension is called z (vertical).
+The `extent` is therefore given as `(Lx, Lz)` in 2D and `(Lx, Lz, Ly)` in 3D, while `size` is `(nx, nz)` in 2D and `(nx, ny, nz)` in 3D.
 
 
 # Examples
@@ -1159,7 +1160,7 @@ function create_CartGrid(;
         end
     end
 
-    FT = typeof(x[1])
+    FT = float(typeof(x[1]))
     if dim == 1
         x = FT.(x)
         L = (x[2] - x[1],)
