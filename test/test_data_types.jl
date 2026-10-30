@@ -220,6 +220,17 @@ Grid3D = create_CartGrid(size = (10, 5, 3), extent = (9.0, 4.0, 2.0))
 @test Grid3D.min == (0.0, 0.0, -4.0)
 @test Grid3D.max == (9.0, 2.0, 0.0)
 
+# 2D CartGrid: coordinate grids lie in the y = 0 plane; a dimension of size 1 survives cell averaging
+Grid2D = create_CartGrid(size = (5, 4), x = (0.0, 4.0), z = (-3.0, 0.0))
+X2, Y2, Z2 = coordinate_grids(Grid2D)
+@test size(X2) == (5, 1, 4) && all(iszero, Y2)
+@test size(coordinate_grids(Grid2D; cell = true)[1]) == (4, 1, 3)
+@test GeophysicalModelGenerator.average_q1(collect(reshape(1.0:20.0, 5, 1, 4)))[1, 1, 1] == (1 + 2 + 6 + 7) / 4
+
+# integer limits give a floating-point grid
+Grid2D = create_CartGrid(size = (11, 5), x = (0, 10), z = (-2.5, 0))
+@test Grid2D.Δ == (1.0, 0.625)
+
 # CartGrid with dimensional input is nondimensionalized
 Grid2D = create_CartGrid(size = (10, 20), x = (0.0km, 10km), z = (-20km, 10km), CharDim = GEO_units())
 @test Grid2D.L == (0.01, 0.03)
@@ -236,3 +247,13 @@ X_c, Y_c, Z_c = coordinate_grids(Data_pv, cell = true)
 @test size(X_c) == (3, 4, 10)
 @test X_c[:, 1, 1] == [1.5, 2.5, 3.5]
 @test Z_c[1, 1, :] == -4.5:1.0:4.5
+
+# GeoData -> UTMData -> CartData keeps depth in km
+let proj = ProjectionPoint(Lat = 40.0, Lon = 14.0)
+    G = GeoData([14.0, 14.1], [40.0, 40.1], [-10.0, -20.0], (a = [1.0, 2.0],))
+    U = convert2UTMzone(G, proj)
+    @test Value(U.depth) == [-10.0e3, -20.0e3] * m
+    C = convert2CartData(U, proj)
+    @test ustrip.(Value(C.z)) ≈ [-10.0, -20.0]
+    @test ustrip.(Value(convert2CartData(G, proj).z)) ≈ [-10.0, -20.0]
+end

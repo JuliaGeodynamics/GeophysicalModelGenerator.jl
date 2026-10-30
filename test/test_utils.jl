@@ -427,3 +427,47 @@ end
     rows = [("st1", 1.0, "2.5", 3.0), ("st2", 4.0, "x", "5.5")]
     @test GeophysicalModelGenerator.parse_columns_CSV(rows, 3) == [1.0 2.5 3.0; 4.0 5.5 0.0]
 end
+
+@testset "integer fields and vector fields in cross sections" begin
+    Lon, Lat, Depth = lonlatdepth_grid(10:20, 30:40, (-300:25:0)km)
+    Phase = fill(1, size(Lon)); Phase[:, :, 7:end] .= 5 # categories 1 and 5 only
+    V3 = GeoData(Lon, Lat, Depth, (Phase = Phase,))
+
+    # diagonal section that leaves the domain: no InexactError, no blended categories (#191, #20)
+    cs = cross_section(V3, Start = (5, 28), End = (25, 42), dims = (60, 40), Interpolate = true)
+    @test eltype(cs.fields.Phase) == Int64
+    @test all(in((1, 5)), cs.fields.Phase)
+
+    # extrapolation outside the data extent returns the nearest value
+    X, Y, Z = lonlatdepth_grid(8:0.5:22, 30:40, (-300:25:0)km)
+    @test all(in((1, 5)), interpolate_datafields(V3, X, Y, Z).fields.Phase)
+
+    # point data: the components of a vector field stay distinct
+    lon = [10.0, 11.0, 12.0]; lat = [35.0, 35.0, 35.0]; depth = [-10.0, -20.0, -30.0]
+    P = GeoData(lon, lat, depth, (Vel = (1.0 .* lon, 2.0 .* lon, 3.0 .* lon),))
+    Pc = cross_section(P, Lat_level = 35.0)
+    @test length(Pc.fields.Vel) == 3
+    @test Pc.fields.Vel[2] == 2.0 .* lon
+    @test Pc.fields.Vel[3] == 3.0 .* lon
+end
+
+@testset "extract_subvolume of cross sections" begin
+    Grid = create_CartGrid(size = (20, 20, 20), x = (0.0km, 99.9km), y = (-10.0km, 20.0km), z = (-40km, 4km))
+    X, Y, Z = xyz_grid(Grid.coord1D...)
+    V = CartData(X, Y, Z, (Depthdata = Z,))
+    cs = cross_section(V, dims = (30, 30), Interpolate = true, Start = (0.0, 19.0), End = (90.0, -9.0))
+    # default X_level spans the along-section distance
+    sub = extract_subvolume(cs, Z_level = (-20, -5), dims = (11, 12))
+    @test !any(isnan, sub.fields.Depthdata)
+
+    # a surface (nz == 1) CartData without cross-section field is not treated as a cross section
+    S = CartData(X[:, :, 1:1], Y[:, :, 1:1], Z[:, :, 1:1], (Z = Z[:, :, 1:1],))
+    @test extract_subvolume(S, Interpolate = false) isa CartData
+end
+
+@testset "parse_columns_CSV integer cells" begin
+    rows = [("st1", 7, 2.5, "3")]
+    @test GeophysicalModelGenerator.parse_columns_CSV(rows, 3) == [7.0 2.5 3.0]
+    rows = [("st1", missing, 10.5, missing, 3)]
+    @test GeophysicalModelGenerator.parse_columns_CSV(rows, 2) == [10.5 3.0]
+end

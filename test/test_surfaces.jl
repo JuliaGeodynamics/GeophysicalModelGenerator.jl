@@ -93,6 +93,11 @@ ind = above_surface(q1data, cartdata2);
 ind = below_surface(q1data, cartdata2);
 @test sum(ind) == 140
 
+# cell = true on CartData evaluates at the cell centers
+cart_vertices = CartData(xyz_grid(1:4, 1:5, -5:5))
+cart_centers = CartData(xyz_grid(1.5:1:3.5, 1.5:1:4.5, -4.5:1:4.5))
+@test above_surface(cart_vertices, cartdata2; cell = true) == above_surface(cart_centers, cartdata2)
+
 #-------------
 # Add & subtract ParaviewData surfaces
 pvdata1 = ParaviewData(xyz_grid(1:4, 1:5, 0)..., (a = ones(4, 5, 1),))

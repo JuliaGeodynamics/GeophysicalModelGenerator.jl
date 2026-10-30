@@ -1,5 +1,4 @@
 using Printf
-using Glob
 using Interpolations
 
 import Base: show, size
@@ -150,23 +149,16 @@ julia> nmark_z = ParseValue_LaMEM_InputFile("SaltModels.dat","nmark_z",Int64, ar
 function ParseValue_LaMEM_InputFile(file, keyword, type; args::Union{String, Nothing} = nothing)
     value = nothing
     for line in eachline(file)
-        line_strip = lstrip(line)       # strip leading tabs/spaces
+        line_strip = strip(split(line, '#')[1])   # drop comment and surrounding whitespace
+        lhs_rhs = split(line_strip, '=', limit = 2)
+        length(lhs_rhs) == 2 || continue
 
-        # Strip comments
-        ind = findfirst("#", line)
-        if isnothing(ind)
-            # no comments
-        else
-            line_strip = line_strip[1:(ind[1] - 2)]
-        end
-        line_strip = rstrip(line_strip)       # strip last tabs/spaces
-
-        if startswith(line_strip, keyword)
-            ind = findfirst("=", line_strip)
+        if strip(lhs_rhs[1]) == keyword
+            tokens = split(lhs_rhs[2])
             if type == String
-                value = split(line_strip)[3:end]
+                value = tokens
             else
-                value = parse.(type, split(line_strip)[3:end])
+                value = parse.(type, tokens)
 
                 if length(value) == 1
                     value = value[1]
@@ -377,7 +369,7 @@ function makeCoordSegment(xStart::Float64, xEnd::Float64, numCells::Int64, bias:
 
     # uniform case
     if bias == 1.0
-        x = Array(xStart:avgSize:xEnd)
+        x = collect(range(xStart, xEnd, length = numCells + 1))
         # non-uniform case
     else
         x = zeros(Float64, numCells + 1)
@@ -492,6 +484,10 @@ function save_LaMEM_markers_parallel(Grid::CartData; PartitioningFile = empty, d
     xi, ix_start, ix_end = get_ind(x, xc, Nprocx)
     yi, iy_start, iy_end = get_ind(y, yc, Nprocy)
     zi, iz_start, iz_end = get_ind(z, zc, Nprocz)
+
+    for (n, i_end, N) in (("x", ix_end, length(x)), ("y", iy_end, length(y)), ("z", iz_end, length(z)))
+        i_end[end] == N || error("Markers outside the processor partition range in $n: $(N - i_end[end]) of $N markers are not assigned to any processor")
+    end
 
     x_start = ix_start[num_i[:]]
     y_start = iy_start[num_j[:]]
@@ -638,10 +634,7 @@ function PetscBinaryWrite_Vec(filename, A; add_APS=false)
         write(f, hton(header))               # header
         write(f, hton(Float64(nummark)))     # info about # of markers written
 
-        for i in 2:n
-            write(f, hton(Float64(A[i])))   # Write data itself
-        end
-
+        write(f, hton.(Float64.(@view A[2:n])))   # Write data itself
     end
 
 
@@ -847,7 +840,7 @@ function Parse_VTR_Line(line)
     line_strip = lstrip(line)
 
     # Retrieve Type
-    if findfirst("type", line_strip) != nothing
+    if !isnothing(findfirst("type", line_strip))
         id_start = findfirst("type", line_strip)[1] + 6
 
         line_strip = line_strip[id_start:end]
@@ -859,7 +852,7 @@ function Parse_VTR_Line(line)
     end
 
     # Retrieve Name
-    if findfirst("Name", line_strip) != nothing
+    if !isnothing(findfirst("Name", line_strip))
         id_start = findfirst("Name", line_strip)[1] + 6
         line_strip = line_strip[id_start:end]
         id_end = findfirst("\"", line_strip)[1] - 1
@@ -870,7 +863,7 @@ function Parse_VTR_Line(line)
     end
 
     # Retrieve number of components
-    if findfirst("NumberOfComponents", line_strip) != nothing
+    if !isnothing(findfirst("NumberOfComponents", line_strip))
         id_start = findfirst("NumberOfComponents", line_strip)[1] + 20
         line_strip = line_strip[id_start:end]
         id_end = findfirst("\"", line_strip)[1] - 1
@@ -881,7 +874,7 @@ function Parse_VTR_Line(line)
     end
 
     # Offset
-    if findfirst("offset", line_strip) != nothing
+    if !isnothing(findfirst("offset", line_strip))
         id_start = findfirst("offset", line_strip)[1] + 8
         line_strip = line_strip[id_start:end]
         id_end = findfirst("\"", line_strip)[1] - 1
@@ -978,7 +971,7 @@ function read_data_PVTR(fname, dir)
     NamesSymbol = []
     for i in 1:length(Names)
         id = findfirst(" ", Names[i])
-        if id == nothing
+        if isnothing(id)
             Names_Strip = Names[i]
         else
             Names_Strip = Names[i][1:(findfirst(" ", Names[i])[1] - 1)]
@@ -1084,7 +1077,7 @@ function write_processor_partitioning_LaMEM(
     filename = "ProcessorPartitioning_$(P.nProcX*P.nProcY*P.nProcZ)cpu_$(P.nProcX).$(P.nProcY).$(P.nProcZ).bin"
     typ = is64bit ? Int64 : Int32
     open(filename, "w") do io
-        # Write processor counts (Int64, big-endian)
+        # Write processor counts (big-endian)
         write(io, hton(typ(P.nProcX)))
         write(io, hton(typ(P.nProcY)))
         write(io, hton(typ(P.nProcZ)))
@@ -1092,10 +1085,10 @@ function write_processor_partitioning_LaMEM(
         write(io, hton(typ(P.nNodeX)))
         write(io, hton(typ(P.nNodeY)))
         write(io, hton(typ(P.nNodeZ)))
-        # Write indexes for each processor division (Int64, big-endian)
-        write(io, hton.(P.ix .- 1))
-        write(io, hton.(P.iy .- 1))
-        write(io, hton.(P.iz .- 1))
+        # Write indexes for each processor division (big-endian)
+        write(io, hton.(typ.(P.ix .- 1)))
+        write(io, hton.(typ.(P.iy .- 1)))
+        write(io, hton.(typ.(P.iz .- 1)))
         # Write scaling (use 1.0)
         write(io, hton(Float64(1.0)))
         # Write coordinates (Float64, big-endian)
@@ -1136,7 +1129,7 @@ function create_partitioning_file(LaMEM_input::String, NumProc::Int64; LaMEM_dir
 
     # Retrieve newest file
     if success(exit)
-        files = readdir(glob"ProcessorPartitioning_*.bin")
+        files = filter(f -> startswith(f, "ProcessorPartitioning_") && endswith(f, ".bin"), readdir())
         time_modified = zeros(length(files))
         for (i, file) in enumerate(files)
             time_modified[i] = stat(file).mtime
@@ -1289,7 +1282,7 @@ end
     p_dist:      LaMEMPartitioningInfo
     proc_bounds: bounds of the current processor
     proc_num:    processor number
-    RandomNoise: add random noise to the grid (0/1)
+    RandomNoise: must be 0; random noise is not supported
  Returns a LaMEM_grid object with the local grid for the current processor
 """
 function get_proc_grid(Grid_info, p_dist, proc_bounds, proc_num, RandomNoise)
@@ -1317,26 +1310,7 @@ function get_proc_grid(Grid_info, p_dist, proc_bounds, proc_num, RandomNoise)
     L = y_proc_bound[2] - y_proc_bound[1]
     H = z_proc_bound[2] - z_proc_bound[1]
 
-    if RandomNoise == 1
-        dx = x[2] - x[1]
-        dy = y[2] - y[1]
-        dz = z[2] - z[1]
-        dXNoise = zeros(size(X)) + dx
-        dYNoise = zeros(size(Y)) + dy
-        dZNoise = zeros(size(Z)) + dz
-        
-        dXNoise = dXNoise .* (rand(size(dXNoise)) - 0.5)
-        dYNoise = dYNoise .* (rand(size(dYNoise)) - 0.5)
-        dZNoise = dZNoise .* (rand(size(dZNoise)) - 0.5)
-        
-        X .+= dXNoise
-        Y .+= dYNoise
-        Z .+= dZNoise
-        x = X(1, :, 1)
-        y = Y(:, 1, 1)
-        z = Z(1, 1, :)
-    
-    end
+    RandomNoise == 0 || error("RandomNoise = $RandomNoise is not supported; use 0")
 
     Grid = LaMEM_grid(
         Grid_info.nmark_x, Grid_info.nmark_y, Grid_info.nmark_z,
@@ -1813,43 +1787,25 @@ run_lamem(ParamFile_name,n_ranks)
 """
 function insert_cpu_lines_after_nelz(filename::String, P)
     lines = readlines(filename)
+    any(l -> occursin(r"^\s*nel_z\s*=", l), lines) || error("no `nel_z` line in $filename; cannot place the cpu_x/y/z block")
+    # drop a previously inserted block: its blank line, header, and cpu lines
+    drop = [occursin(r"^\s*cpu_[xyz]\s*=", l) || occursin(r"^\s*# Number of processes\s*$", l) for l in lines]
+    for i in eachindex(lines)
+        drop[i] && lines[i] != "" && occursin("Number of processes", lines[i]) && i > firstindex(lines) && lines[i - 1] == "" && (drop[i - 1] = true)
+    end
+    lines = lines[.!drop]
     newlines = String[]
-    inserted = false
-    skip_next_lines = 0
-    
-    for (i, line) in enumerate(lines)
-        if skip_next_lines > 0
-            skip_next_lines -= 1
-            continue
-        end
-        
+    for line in lines
         push!(newlines, line)
-        
-        if !inserted && occursin("nel_z", line)
-            # Check if CPU lines already exist in the next few lines
-            if i + 4 <= length(lines) &&
-               occursin("cpu_x", lines[i+1]) &&
-               occursin("cpu_y", lines[i+2]) &&
-               occursin("cpu_z", lines[i+3])
-                # Replace existing lines
-                newlines[end] = ""  # Replace the current line with empty line
-                push!(newlines, "# Number of processes")
-                push!(newlines, "    cpu_x   =  $(P.nProcX)")
-                push!(newlines, "    cpu_y   =  $(P.nProcY)")
-                push!(newlines, "    cpu_z   =  $(P.nProcZ)")
-                skip_next_lines = 3  # Skip the next 3 lines (cpu_x, cpu_y, cpu_z)
-            else
-                # Insert new lines
-                push!(newlines, "")
-                push!(newlines, "# Number of processes")
-                push!(newlines, "    cpu_x   =  $(P.nProcX)")
-                push!(newlines, "    cpu_y   =  $(P.nProcY)")
-                push!(newlines, "    cpu_z   =  $(P.nProcZ)")
-            end
-            inserted = true
+        if occursin(r"^\s*nel_z\s*=", line)
+            push!(newlines, "")
+            push!(newlines, "# Number of processes")
+            push!(newlines, "    cpu_x   =  $(P.nProcX)")
+            push!(newlines, "    cpu_y   =  $(P.nProcY)")
+            push!(newlines, "    cpu_z   =  $(P.nProcZ)")
         end
     end
-    
+
     open(filename, "w") do io
         for line in newlines
             println(io, line)
