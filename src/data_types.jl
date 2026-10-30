@@ -148,11 +148,7 @@ struct GeoData <: AbstractGeneralGrid
     function GeoData(lon, lat, depth, fields, atts = nothing)
 
         # check depth & convert it to units of km in case no units are given or it has different length units
-        if unit.(depth[1]) == NoUnits
-            depth = depth * km                # in case depth has no dimensions
-        end
-        depth = uconvert.(km, depth)         # convert to km
-        depth = GeoUnit(depth)              # convert to GeoUnit structure with units of km
+        depth = convert!(depth, km)
 
         if isa(lat, StepRangeLen)
             lat = Vector(lat)
@@ -419,11 +415,7 @@ struct UTMData <: AbstractGeneralGrid
     function UTMData(EW, NS, depth, zone, northern, fields, atts = nothing)
 
         # check depth & convert it to units of km in case no units are given or it has different length units
-        if unit.(depth)[1] == NoUnits
-            depth = depth * m                # in case depth has no dimensions
-        end
-        depth = uconvert.(m, depth)         # convert to meters
-        depth = GeoUnit(depth)             # convert to GeoUnit structure with units of meters
+        depth = convert!(depth, m)
 
         # Check ordering of the arrays in case of 3D
         if sum(size(EW) .> 1) == 3
@@ -966,29 +958,29 @@ Therefore, if you want to display or color that correctly in Paraview, you need 
 function velocity_spherical_to_cartesian!(Data::GeoData, Velocity::Tuple)
     # Note: This is partly based on scripts originally written by Tobias Baumann, Uni Mainz
 
-    for i in eachindex(Data.lat.val)
-        az = Data.lon.val[i]
-        el = Data.lat.val[i]
+    return rotate_velocity_to_cartesian!(Data.lon.val, Data.lat.val, Velocity...)
+end
 
-        R = [
-            -sind(az) -sind(el) * cosd(az) cosd(el) * cosd(az);
-            cosd(az) -sind(el) * sind(az) cosd(el) * sind(az);
-            0.0       cosd(el)          sind(el)
-        ]
+# Function barrier: the coordinate fields of GeoData are not inferable
+function rotate_velocity_to_cartesian!(Lon, Lat, Ve, Vn, Vz)
+    for i in eachindex(Lon, Lat, Ve, Vn, Vz)
+        sa, ca = sind(Lon[i]), cosd(Lon[i])
+        se, ce = sind(Lat[i]), cosd(Lat[i])
+        e, n, u = Ve[i], Vn[i], Vz[i]
 
-        V_sph = [Velocity[1][i]; Velocity[2][i]; Velocity[3][i] ]
-        V_xyz = R * V_sph
-
-        # in-place saving of rotated velocity
-        Velocity[1][i] = V_xyz[1]
-        Velocity[2][i] = V_xyz[2]
-        Velocity[3][i] = V_xyz[3]
+        # rotation matrix R = [-sa -se*ca ce*ca; ca -se*sa ce*sa; 0 ce se] applied to (e, n, u)
+        Ve[i] = -sa * e + (-se * ca) * n + (ce * ca) * u
+        Vn[i] = ca * e + (-se * sa) * n + (ce * sa) * u
+        Vz[i] = 0.0 * e + ce * n + se * u   # 0.0 * e propagates NaN and Inf, as R[3, 1] * e does
     end
     return
 end
 
 # Internal function that converts arrays to a GeoUnit with certain units
 function convert!(d, u)
+    # Unitless Float64 data needs only one copy; the general path below makes four
+    d isa Array{Float64} && !isempty(d) && return GeoUnit{typeof(d), typeof(u)}(copy(d), u, true)
+
     if unit.(d)[1] == NoUnits
         d = d * u                # in case it has no dimensions
     end
