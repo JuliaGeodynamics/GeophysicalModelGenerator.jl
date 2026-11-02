@@ -6,6 +6,7 @@ import JustPIC: fill_chain_from_vertices!, set_topo_from_array!
 
 using GeophysicalModelGenerator: CartData, AbstractGeneralGrid, Trench, km, uconvert, ustrip
 import GeophysicalModelGenerator: coordinate_grids
+using GeophysicalModelGenerator: surface_interpolation
 using GeophysicalModelGenerator.Interpolations: linear_interpolation
 import GeophysicalModelGenerator: particle_grid
 import GeophysicalModelGenerator: add_box!, add_sphere!, add_ellipsoid!, add_cylinder!, add_layer!, add_polygon!
@@ -113,8 +114,7 @@ for (fn, sel) in ((:above_surface, true), (:below_surface, false))
         of `pg = particle_grid(particles; length_unit)` $($(sel ? "above" : "below")) the surface `DataSurface_Cart`.
         """
         function $fn(pg::ParticleGrid, DataSurface_Cart::CartData)
-            xs, ys, zs = ustrip.(DataSurface_Cart.x.val), ustrip.(DataSurface_Cart.y.val), ustrip.(DataSurface_Cart.z.val)
-            surface = linear_interpolation((xs[:, 1, 1], ys[1, :, 1]), zs[:, :, 1])
+            surface = surface_interpolation(DataSurface_Cart)
             compare = $sel ? (>) : (<)
             return ((x, y, z) -> !isnan(z) && compare(z, surface(x, y))).(coordinate_grids(pg)...)
         end

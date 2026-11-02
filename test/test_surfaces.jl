@@ -98,6 +98,15 @@ cart_vertices = CartData(xyz_grid(1:4, 1:5, -5:5))
 cart_centers = CartData(xyz_grid(1.5:1:3.5, 1.5:1:4.5, -4.5:1:4.5))
 @test above_surface(cart_vertices, cartdata2; cell = true) == above_surface(cart_centers, cartdata2)
 
+# evenly and unevenly spaced surface coordinates; a plane is interpolated exactly
+plane(x, y) = 0.3 * x - 0.2 * y - 1
+pts = CartData(xyz_grid(0.25:0.5:9.75, 0.25:0.5:9.75, -4.9:0.2:4.9))
+for xs in (0:0.5:10, [0, 1, 1.5, 4, 7, 10])
+    Xs, Ys, _ = xyz_grid(xs, -1:1:11, 0)
+    surf = CartData(Xs, Ys, plane.(Xs, Ys), (Z = Xs,))
+    @test above_surface(pts, surf) == (pts.z.val .> plane.(pts.x.val, pts.y.val))
+end
+
 #-------------
 # Add & subtract ParaviewData surfaces
 pvdata1 = ParaviewData(xyz_grid(1:4, 1:5, 0)..., (a = ones(4, 5, 1),))

@@ -38,6 +38,7 @@ Data_set4 = GeoData(Lat, Lon, Depth, (Data,), att_dict)
 # check that an error is thrown if a different size input is given for depth
 Depth2 = (-100:10:1.0)               # no units
 @test_throws ErrorException GeoData(Lat, Lon, Depth2, (FakeData = Data, Data2 = Data .+ 1.0))
+@test_throws "must contain at least one data field" GeoData(Lat, Lon, Depth, (;))
 
 # Convert 1D vector to cartesian structure
 Data_cart = convert(ParaviewData, Data_set)

@@ -181,6 +181,7 @@ struct GeoData <: AbstractGeneralGrid
             end
         end
 
+        isempty(fields) && throw(ArgumentError("`fields` must contain at least one data field"))
         DataField = fields[1]
         if typeof(DataField) <: Tuple
             DataField = DataField[1]            # in case we have velocity vectors as input
@@ -440,6 +441,7 @@ struct UTMData <: AbstractGeneralGrid
             end
         end
 
+        isempty(fields) && throw(ArgumentError("`fields` must contain at least one data field"))
         DataField = fields[1]
         if typeof(DataField) <: Tuple
             DataField = DataField[1]            # in case we have velocity vectors as input
@@ -736,6 +738,7 @@ struct CartData <: AbstractGeneralGrid
             end
         end
 
+        isempty(fields) && throw(ArgumentError("`fields` must contain at least one data field"))
         DataField = fields[1]
         if typeof(DataField) <: Tuple
             DataField = DataField[1]            # in case we have velocity vectors as input
@@ -1331,6 +1334,7 @@ struct Q1Data <: AbstractGeneralGrid
             end
         end
 
+        isempty(fields) && throw(ArgumentError("`fields` must contain at least one data field"))
         DataField = fields[1]
         if typeof(DataField) <: Tuple
             DataField = DataField[1]            # in case we have velocity vectors as input
