@@ -10,7 +10,7 @@ Lets start with creating a 3D model setup in Cartesian coordinates, which uses t
 =#
 using GeophysicalModelGenerator
 
-nx,ny,nz = 512,512,128
+nx, ny, nz = 512, 512, 128
 x = range(-1000,1000, nx);
 y = range(-1000,1000, ny);
 z = range(-660,0,    nz);
@@ -29,22 +29,26 @@ Temp = fill(1350.0, nx,ny,nz);
 #
 # We use a lithospheric structure, which can be specified with the `LithosphericPhases` structure, where you can indicate `Layers` (the thickness of each lithospheric layer, starting from the top), and `Phases` the phases of the corresponding layers.
 # Note that if the lowermost layer has the same phase as the mantle, you can define `Tlab` as the lithosphere-asthenosphere boundary which will automatically adjust the phase depending on temperature
-lith = LithosphericPhases(Layers=[15 45 10], Phases=[0 1 2], Tlab=1250)
-add_box!(Phases, Temp, Grid; xlim=(-800.0,0.0), ylim=(-400, 400.0), zlim=(-80.0, 0.0), phase = lith,
-        Origin=(-0,0,0),
-        T=SpreadingRateTemp(SpreadingVel=3, MORside="right"), StrikeAngle=30);
+lith = LithosphericPhases(Layers = [15 45 10], Phases = [0 1 2], Tlab = 1250)
+add_box!(
+    Phases, Temp, Grid; xlim = (-800.0, 0.0), ylim = (-400, 400.0), zlim = (-80.0, 0.0), phase = lith,
+    Origin = (-0, 0, 0),
+    T = SpreadingRateTemp(SpreadingVel = 3, MORside = "right"), StrikeAngle = 30
+);
 
 # And an inclined part, with the thermal age the plate has reached at the trench:
-AgeTrench = 800e3/(3/100)/1e6;   # 800 km at 3 cm/yr, in Myr
-add_box!(Phases, Temp, Grid; xlim=(0.0,300.0), ylim=(-400.0, 400.0), zlim=(-80.0, 0.0), phase = lith,
-        Origin=(0,0,0),
-        T=HalfspaceCoolingTemp(Age=AgeTrench), DipAngle=30, StrikeAngle=30);
+AgeTrench = 800.0e3 / (3 / 100) / 1.0e6;   # 800 km at 3 cm/yr, in Myr
+add_box!(
+    Phases, Temp, Grid; xlim = (0.0, 300.0), ylim = (-400.0, 400.0), zlim = (-80.0, 0.0), phase = lith,
+    Origin = (0, 0, 0),
+    T = HalfspaceCoolingTemp(Age = AgeTrench), DipAngle = 30, StrikeAngle = 30
+);
 
 # Add them to the `CartData` dataset:
 Grid = addfield(Grid,(;Phases, Temp))
 
 # Which looks like
-write_paraview(Grid,"Grid3D_FreeSubduction");
+write_paraview(Grid, "Grid3D_FreeSubduction");
 
 # ![Mechanical3D_Tutorial_1](../assets/img/Mechanical3D_Tutorial_1.png)
 #
@@ -62,12 +66,12 @@ Temp = fill(1350.0, nx,ny,nz);
 
 # Overriding plate with a 30 km crust and mantle lithosphere that where T<1250 celsius
 lith_cont = LithosphericPhases(Layers=[30 200 50], Phases=[3 4 2], Tlab=1250)
-add_box!(Phases, Temp, Grid; xlim=(400.0,1000.0), ylim=(-1000.0, 0.0), zlim=(-240.0, 0.0), phase = lith_cont, T=HalfspaceCoolingTemp(Age=150));
-add_box!(Phases, Temp, Grid; xlim=(200.0,1000.0), ylim=(-1000.0, 0.0), zlim=(-80.0, 0.0), phase = lith_cont,  T=HalfspaceCoolingTemp(Age=150));
+add_box!(Phases, Temp, Grid; xlim = (400.0, 1000.0), ylim = (-1000.0, 0.0), zlim = (-240.0, 0.0), phase = lith_cont, T = HalfspaceCoolingTemp(Age = 150));
+add_box!(Phases, Temp, Grid; xlim = (200.0, 1000.0), ylim = (-1000.0, 0.0), zlim = (-80.0, 0.0), phase = lith_cont, T = HalfspaceCoolingTemp(Age = 150));
 
 lith_cont = LithosphericPhases(Layers=[30 200 10], Phases=[6 7 2], Tlab=1250)
-add_box!(Phases, Temp, Grid; xlim=(400.0,1000.0), ylim=(0.0, 1000.0),    zlim=(-240.0, 0.0), phase = lith_cont, T=HalfspaceCoolingTemp(Age=200));
-add_box!(Phases, Temp, Grid; xlim=(200.0,1000.0), ylim=(0.0, 1000.0),    zlim=( -80.0, 0.0), phase = lith_cont, T=HalfspaceCoolingTemp(Age=200));
+add_box!(Phases, Temp, Grid; xlim = (400.0, 1000.0), ylim = (0.0, 1000.0), zlim = (-240.0, 0.0), phase = lith_cont, T = HalfspaceCoolingTemp(Age = 200));
+add_box!(Phases, Temp, Grid; xlim = (200.0, 1000.0), ylim = (0.0, 1000.0), zlim = (-80.0, 0.0), phase = lith_cont, T = HalfspaceCoolingTemp(Age = 200));
 
 # Accretionary wedge
 add_polygon!(Phases, Temp, Grid; xlim=[250., 500., 350.], ylim=[-1000., 0.], zlim=[0., 0., -80.], phase = ConstantPhase(5), T=HalfspaceCoolingTemp(Age=200))
@@ -75,14 +79,14 @@ add_polygon!(Phases, Temp, Grid; xlim=[250., 500., 350.], ylim=[-1000., 0.], zli
 # Define an oceanic plate with ridge
 v_spread_cm_yr = 3      #spreading velocity
 lith = LithosphericPhases(Layers=[15 45 10], Phases=[0 1 2], Tlab=1250)
-add_box!(Phases, Temp, Grid; xlim=(-800.0 , 200.0), ylim=(-1000.0, -400.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
-add_box!(Phases, Temp, Grid; xlim=(-1000.0,-800.0), ylim=(-1000.0, -400.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3,MORside="right"));
+add_box!(Phases, Temp, Grid; xlim = (-800.0, 200.0), ylim = (-1000.0, -400.0), zlim = (-80.0, 0.0), phase = lith, T = SpreadingRateTemp(SpreadingVel = 3));
+add_box!(Phases, Temp, Grid; xlim = (-1000.0, -800.0), ylim = (-1000.0, -400.0), zlim = (-80.0, 0.0), phase = lith, T = SpreadingRateTemp(SpreadingVel = 3, MORside = "right"));
 
-add_box!(Phases, Temp, Grid; xlim=(-700.0,  200.0), ylim=(-400.0, 200.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
-add_box!(Phases, Temp, Grid; xlim=(-1000.0,-700.0), ylim=(-400.0, 200.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3,MORside="right"));
+add_box!(Phases, Temp, Grid; xlim = (-700.0, 200.0), ylim = (-400.0, 200.0), zlim = (-80.0, 0.0), phase = lith, T = SpreadingRateTemp(SpreadingVel = 3));
+add_box!(Phases, Temp, Grid; xlim = (-1000.0, -700.0), ylim = (-400.0, 200.0), zlim = (-80.0, 0.0), phase = lith, T = SpreadingRateTemp(SpreadingVel = 3, MORside = "right"));
 
-add_box!(Phases, Temp, Grid; xlim=(-650.0,  200.0), ylim=(200.0, 1000.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3));
-add_box!(Phases, Temp, Grid; xlim=(-1000.0,-650.0), ylim=(200.0, 1000.0), zlim=(-80.0, 0.0), phase = lith, T=SpreadingRateTemp(SpreadingVel=3,MORside="right"));
+add_box!(Phases, Temp, Grid; xlim = (-650.0, 200.0), ylim = (200.0, 1000.0), zlim = (-80.0, 0.0), phase = lith, T = SpreadingRateTemp(SpreadingVel = 3));
+add_box!(Phases, Temp, Grid; xlim = (-1000.0, -650.0), ylim = (200.0, 1000.0), zlim = (-80.0, 0.0), phase = lith, T = SpreadingRateTemp(SpreadingVel = 3, MORside = "right"));
 
 # Subducting parts of the oceanic plate
 #
