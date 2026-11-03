@@ -264,6 +264,14 @@ add_polygon!(Phase, Temp, Cart; xlim = (500.0, 200.0, 500.0), ylim = (100.0, 400
 @test minimum(Temp) ≈ 20.22486772486773
 @test sum(Phase) == 293264
 
+# vector limits give the same polygon as tuples
+Phase_v = ones(Int32, size(Phase));
+Temp_v = fill(1350.0, size(Temp));
+add_box!(Phase_v, Temp_v, Cart; xlim = (0.0, 600.0), ylim = (0.0, 600.0), zlim = (-80.0, 0.0), phase = ConstantPhase(5), T = ConstantTemp(120.0));
+add_polygon!(Phase_v, Temp_v, Cart; xlim = [500.0, 200.0, 500.0], ylim = [100.0, 400.0], zlim = [-5.0, -5.0, -65.0], phase = ConstantPhase(8), T = LinearTemp(Ttop = 20, Tbot = 30))
+@test Phase_v == Phase
+@test Temp_v == Temp
+
 # Test the Bending slab geometry
 
 # Create CartGrid struct
