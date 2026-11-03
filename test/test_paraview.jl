@@ -81,6 +81,10 @@ end
     write_paraview(UTMData(EW, NS, Depth, 33, true, (Depth = Depth,)), "utm"; directory = dir, verbose = false)
     @test isfile(joinpath(dir, "utm.vts"))
 
+    Lon, Lat, Depth = lonlatdepth_grid(10:12, 30:32, -10:5:0)
+    write_paraview(GeoData(Lon, Lat, Depth, (Depth = Depth,)), "geo"; directory = dir, verbose = false)
+    @test isfile(joinpath(dir, "geo.vts"))
+
     # Q1Data with vertex & cell fields, scalar & vector
     Xc, Yc, Zc = xyz_grid(1.5:3.5, 1.5:4.5, -2.5:-0.5)
     q1 = Q1Data(X, Y, Z, (Z = Z * km, V = V), (Zc = Zc * km, Vc = (Xc, Yc, Zc)))

@@ -304,57 +304,21 @@ function create_profile_volume!(Profile::ProfileData, VolData::NamedTuple; DimsV
         data isa AbstractGeneralGrid || throw(ArgumentError("VolData.$name must be a GeoData/AbstractGeneralGrid, got $(typeof(data))"))
     end
 
-    datasetnames = String.(keys(VolData)) # get the names of the datasets
+    # The first dataset defines the profile grid; every other dataset is interpolated onto it.
+    if Profile.vertical
+        cross_tmp = cross_section(first(VolData), dims = DimsVolCross, Start = Profile.start_lonlat, End = Profile.end_lonlat, Depth_extent = Depth_extent)
+        shared = (x_profile = flatten_cross_section(cross_tmp, Start = Profile.start_lonlat),)
+    else
+        cross_tmp = cross_section(first(VolData), Depth_level = Profile.depth, Interpolate = true, dims = DimsVolCross)
+        shared = (FlatCrossSection = cross_tmp.fields.FlatCrossSection,)
+    end
+    cross_add = GeoData(cross_tmp.lon.val, cross_tmp.lat.val, cross_tmp.depth.val, shared)
 
-    if Profile.vertical # take a vertical cross section
-
-        # process the first dataset, and create the cross_add structure
-        #-----------------------------------------------------------------------
-        cross_tmp = cross_section(VolData[1], dims = DimsVolCross, Start = Profile.start_lonlat, End = Profile.end_lonlat, Depth_extent = Depth_extent)        # create the cross section
-        # flatten cross section and add this data to the structure
-        x_profile = flatten_cross_section(cross_tmp, Start = Profile.start_lonlat) # in the first iteration, we create the x_profile field, which is the same for all datasets, so we only need to do this once
-        cross_tmp = addfield(cross_tmp, "x_profile", x_profile)
-
-        # the issue is now that the fields do not contain any information about the originating dataset, so we add the name of the dataset to the field names
-        # we now do this by creating a new data structure named cross_add, which is then built up in the first iteration, and then merged with the next datasets in the following iterations
-
-        cross_add = GeoData(cross_tmp.lon.val, cross_tmp.lat.val, cross_tmp.depth.val, (x_profile = cross_tmp.fields.x_profile,)) # create a new GeoData structure with the x_profile field
-                
-        names_fields = String.(keys(cross_tmp.fields))
-        for ifield in eachindex(names_fields)
-            name_new_field = datasetnames[1] * "_" * names_fields[ifield] # name of new field includes name of dataset
-            cross_add = addfield(cross_add, name_new_field, ustrip.(cross_tmp.fields[ifield])) # Note: we use ustrip here, and thereby remove the units, as the cross-section routine made problems
-        end
-
-        # loop over the remaining datasets and add the result to the cross_add structure
-        for ivol in eachindex(datasetnames)[2:end] 
-            cross_tmp = cross_section(VolData[ivol], dims = DimsVolCross, Start = Profile.start_lonlat, End = Profile.end_lonlat, Depth_extent = Depth_extent)        # create the cross section
-            # add new fields to the cross_add structure, which already contains the data from the previous datasets
-            names_fields = String.(keys(cross_tmp.fields))
-            for ifield in eachindex(names_fields)               
-                name_new_field = datasetnames[ivol] * "_" * names_fields[ifield] # name of new field includes name of dataset
-                cross_add = addfield(cross_add, name_new_field, ustrip.(cross_tmp.fields[ifield])) # Note: we use ustrip here, and thereby remove the units, as the cross-section routine made problems
-            end
-        end
-    
-    else # take a horizontal cross section
-
-        # process the first dataset, and create the cross_add structure
-        cross_tmp = cross_section(VolData[1], Depth_level = Profile.depth, Interpolate = true, dims =  DimsVolCross) # create a horizontal cross section
-        cross_add = GeoData(cross_tmp.lon.val, cross_tmp.lat.val, cross_tmp.depth.val, (FlatCrossSection = cross_tmp.fields.FlatCrossSection,)) # create a basic cross section  structure with the FlatCrossSection field
-        names_fields = String.(keys(cross_tmp.fields))
-        for ifield in eachindex(names_fields)
-            name_new_field = datasetnames[1] * "_" * names_fields[ifield] # name of new field    includes name of dataset
-            cross_add = addfield(cross_add, name_new_field, ustrip.(cross_tmp.fields[ifield])) # Note: we use ustrip here, and thereby remove the units, as the cross-section routine  made problems
-        end
-
-        for ivol in eachindex(datasetnames)[2:end] # loop over the remaining datasets and create a cross section through each of them
-            cross_tmp = cross_section(VolData[ivol], Depth_level = Profile.depth, Interpolate = true,   dims = DimsVolCross) # create a horizontal cross section
-            names_fields = String.(keys(cross_tmp.fields))
-            for ifield in eachindex(names_fields)
-                name_new_field = datasetnames[ivol] * "_" * names_fields[ifield] # name of new field    includes name of dataset
-                cross_add = addfield(cross_add, name_new_field, ustrip.(cross_tmp.fields[ifield])) # Note: we use ustrip here, and thereby remove the units, as the cross-section routine  made problems
-            end
+    for (i, (name, data)) in enumerate(pairs(VolData))
+        cut = i == 1 ? cross_tmp : interpolate_datafields(data, cross_tmp.lon.val, cross_tmp.lat.val, cross_tmp.depth.val)
+        for field in keys(data.fields)
+            # ustrip: the cross-section routine has problems with units
+            cross_add = addfield(cross_add, "$(name)_$(field)", ustrip.(cut.fields[field]))
         end
     end
     Profile.VolData = cross_add # assign to Profile data structure
@@ -374,8 +338,6 @@ end
 
 ### internal function to process screenshot data - contrary to the volume data, we here have to save lon/lat/depth pairs for every screenshot data set, so we create a NamedTuple of GeoData data sets
 function create_profile_screenshot!(Profile::ProfileData, DataSet::NamedTuple)
-    num_datasets = length(DataSet)
-
     tmp = NamedTuple()             # initialize empty one
     DataSetName = keys(DataSet)    # Names of the datasets
 
@@ -595,11 +557,6 @@ function extract_ProfileData(ProfileCoordFile::String, ProfileNumber::Int64, Dat
     profile_list = read_picked_profiles(ProfileCoordFile)
     profile = profile_list[ProfileNumber]
 
-    println("lon start ", profile.start_lonlat[1])
-    println("lat start ", profile.start_lonlat[2])
-    println("lon end ", profile.end_lonlat[1])
-    println("lat end ", profile.end_lonlat[2])
-
     # read all datasets:
     Datasets_all = load_dataset_file(DataSetFile)
 
@@ -620,76 +577,3 @@ function extract_ProfileData(ProfileCoordFile::String, ProfileNumber::Int64, Dat
 end
 
 
-#=
-
-# Boris: I don't know exactly in which format you have your current files;
-### wrapper function to extract data for a single profile
-function extract_ProfileData(ProfileCoordFile,ProfileNumber,DataSetName,DataSetFile,DataSetType,DimsVolCross,DepthVol,DimsSurfCross,WidthPointProfile)
-
-    # start and end points are saved in a text file
-    profile_data = readdlm(ProfileCoordFile,skipstart=1,',')
-
-    NUM = profile_data[ProfileNumber,1]
-    LON_START = profile_data[ProfileNumber,2]
-    LAT_START = profile_data[ProfileNumber,3]
-    LON_END   = profile_data[ProfileNumber,4]
-    LAT_END   = profile_data[ProfileNumber,5]
-
-    println("lon start ",LON_START)
-    println("lat start ",LAT_START)
-    println("lon end ",LON_END)
-    println("lat end ",LAT_END)
-
-    # create the cross section data set with the given lat and lon data (rest will be added later)
-    Profile = ProfileData(start_lonlat=(LON_START,LAT_START),end_lonlat=(LON_END,LAT_END))
-
-    # Determine the number of volume, surface and point data sets
-    ind_vol    = findall( x -> x .== "Volume", DataSetType)
-    ind_surf   = findall( x -> x .== "Surface", DataSetType)
-    ind_point  = findall( x -> x .== "Point", DataSetType)
-
-    # extract volume data
-    create_profile_volume!(Profile,DataSetName[ind_vol],DataSetFile[ind_vol],DimsVolCross,DepthVol)
-
-    # extract surface data
-    create_profile_surface!(Profile,DataSetName[ind_surf],DataSetFile[ind_surf],DimsSurfCross)
-
-    # extract point data
-    create_profile_point!(Profile,DataSetName[ind_point],DataSetFile[ind_point],WidthPointProfile)
-
-    return Profile
-end
-
-### wrapper function to read the profile numbers+coordinates from a text file, the dataset names+locations+types from another text file
-### once this is done, the different datasets are projected onto the profiles
-
-### currently, the function is quite slow, as the different data sets are reloaded for each profile.
-### a faster way would be to load one data set and create the profiles from it and then move on to the next one. However, this would require to hold all the profile data in memory, which may be a bit much...
-
-function create_ProfileData(file_profiles,file_datasets;Depth_extent=(-300,0),DimsVolCross=(500,300),DimsSurfCross = (100,),WidthPointProfile = 20km)
-    # get the number of profiles
-    profile_data = readdlm(file_profiles,skipstart=1,',')
-    NUM          = convert.(Int,profile_data[:,1]);
-
-    ProfileNumber = NUM; # profile number, can also be a sequence of numbers
-
-    # get dataset info
-    datasets = readdlm(file_datasets,',',skipstart =1); # read information on datasets to be used from text file
-
-    DataSetName = rstrip.(datasets[:,1]);
-    DataSetFile = rstrip.(datasets[:,2]);
-    DataSetType = rstrip.(datasets[:,3]);
-
-    for iprofile = 1:length(ProfileNumber)
-
-        # 2. process the profiles
-        ExtractedData = extract_ProfileData(file_profiles,ProfileNumber[iprofile],DataSetName,DataSetFile,DataSetType,DimsVolCross,Depth_extent,DimsSurfCross,WidthPointProfile)
-
-        # 3. save data as JLD2
-        fn = "Profile"*string(ProfileNumber[iprofile])
-        jldsave(fn*".jld2";ExtractedData)
-
-    end
-
-end
-=#

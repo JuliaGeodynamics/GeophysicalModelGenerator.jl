@@ -110,7 +110,8 @@ function server_index_file()
             try
                 Downloads.download("$root/gmt_data_server.txt", index; timeout = INDEX_TIMEOUT)
                 return index
-            catch
+            catch e
+                e isa InterruptException && rethrow()
                 rm(index; force = true)               # no half-written index
             end
         end
@@ -189,6 +190,17 @@ The directory on the server that holds the tiles of this set.
 function tile_directory(dataset::AbstractString, res::AbstractString, reg::AbstractString)
     res in ("03s", "01s") && return "earth_relief_$(res)_g"
     return "$(dataset)_$(res)_$(reg)"
+end
+
+"""
+    tile_url(name, dataset, res, reg)
+
+The path of tile `name` relative to the server's `earth` directory. The SRTM sets are
+published only under `earth_relief`, whichever dataset they are requested through.
+"""
+function tile_url(name::AbstractString, dataset::AbstractString, res::AbstractString, reg::AbstractString)
+    top = res in ("03s", "01s") ? "earth_relief" : dataset
+    return "$top/$(tile_directory(dataset, res, reg))/$name"
 end
 
 """
@@ -311,6 +323,7 @@ function download_tile(relative_url::AbstractString, dest::AbstractString;
                 return true
             catch err
                 rm(tmp, force = true)
+                err isa InterruptException && rethrow()
                 # a 404 means there is no such tile, and no mirror will have it either
                 if err isa Downloads.RequestError && err.response.status == 404
                     return false
@@ -380,15 +393,15 @@ function grid_from_tiles(limits, dataset::AbstractString, res::AbstractString, r
     Z = zeros(Int16, length(lats) * step + (tile_reg == "g"),
                      length(lons) * step + (tile_reg == "g"))
     dir = topo_cache_dir()
-    sub = tile_directory(dataset, res, tile_reg)
+    filler = filler_dataset(dataset, res, tile_reg)
 
-    missing_tiles = Tuple{Int, Int}[]
     for (j, la) in enumerate(lats), (i, lo) in enumerate(lons)
         name = tile_filename(la, lo, dataset, res, tile_reg)
         file = joinpath(dir, name)
-        if !download_tile("$dataset/$sub/$name", file; maxattempts = maxattempts)
-            push!(missing_tiles, (la, lo))      # filled from the coarser set below
-            continue
+        if !download_tile(tile_url(name, dataset, res, tile_reg), file; maxattempts = maxattempts)
+            # without a filler set a missing tile would silently read as sea level
+            isnothing(filler) && error("tile $name of $dataset at resolution $res is not on the GMT data server")
+            continue                            # filled from the coarser set below
         end
         A = decode_jp2(file, n)
         Z[((j - 1) * step + 1):((j - 1) * step + n),
@@ -413,7 +426,6 @@ function grid_from_tiles(limits, dataset::AbstractString, res::AbstractString, r
     # where a tile was missing there is no data at all, only the zeros we started with.
     # Fill those from the coarser set that the server names for the purpose, so the sea has
     # its depth rather than being flat.
-    filler = filler_dataset(dataset, res, tile_reg)
     if !isnothing(filler)
         # SRTM records the sea as a flat zero rather than leaving it out, and has no tile at
         # all where there is no land, so both cases have to be filled -- every zero, not only
@@ -544,6 +556,8 @@ function import_topo(limits; dataset::AbstractString = "earth_relief",
     if limits[3] > limits[4]
         limits[3], limits[4] = limits[4], limits[3]
     end
+    (-180 <= limits[1] < limits[2] <= 180 && -90 <= limits[3] < limits[4] <= 90) ||
+        error("limits = [lonmin, lonmax, latmin, latmax] must satisfy -180 <= lonmin < lonmax <= 180 and -90 <= latmin < latmax <= 90, got $limits")
 
     lon, lat, Z = isnothing(tile_size_deg(dataset, res, native_registration(dataset, res, reg))) ?
         grid_from_single_file(limits, dataset, res, reg; maxattempts = maxattempts) :

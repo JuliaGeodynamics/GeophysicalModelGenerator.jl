@@ -152,42 +152,32 @@ end
 Projects a FEData object with tetrahedrons (e.g., from Gmsh) to a Cartesian grid
 """
 function project_FEData_CartData(data_cart::CartData, data_fe::FEData)
+    regions = tetrahedron_regions(data_cart.x.val, data_cart.y.val, data_cart.z.val, data_fe.vertices, data_fe.connectivity, data_fe.cellfields.regions)
+    return addfield(data_cart, (regions = regions,))
+end
 
-    cellfields_regions = data_fe.cellfields.regions
-    regions = zeros(Int64, size(data_cart.x.val))
+# Region of the last tetrahedron that contains each point of (X, Y, Z), or 0.
+# On a rectilinear grid with ascending axes, only the points within each tetrahedron's
+# bounding box are tested; otherwise every point is tested against every tetrahedron.
+function tetrahedron_regions(X, Y, Z, vertices, connectivity, cellfields_regions)
+    regions = zeros(Int64, size(X))
+    x, y, z = X[:, 1, 1], Y[1, :, 1], Z[1, 1, :]
+    rectilinear = all(issorted, (x, y, z)) && all(I -> X[I] == x[I[1]] && Y[I] == y[I[2]] && Z[I] == z[I[3]], CartesianIndices(X))
 
-    for i in 1:size(data_fe.connectivity, 2) # loop over tetrahedrons
-        tetra = data_fe.connectivity[:, i]
-
-        a = data_fe.vertices[:, tetra[1]]
-        b = data_fe.vertices[:, tetra[2]]
-        c = data_fe.vertices[:, tetra[3]]
-        d = data_fe.vertices[:, tetra[4]]
-
-        xmin = min(a[1], b[1], c[1], d[1])
-        xmax = max(a[1], b[1], c[1], d[1])
-        ymin = min(a[2], b[2], c[2], d[2])
-        ymax = max(a[2], b[2], c[2], d[2])
-        zmin = min(a[3], b[3], c[3], d[3])
-        zmax = max(a[3], b[3], c[3], d[3])
-
-        ind = findall(
-            data_cart.x.val .>= xmin .&& data_cart.x.val .<= xmax .&&
-                data_cart.y.val .>= ymin .&& data_cart.y.val .<= ymax .&&
-                data_cart.z.val .>= zmin .&& data_cart.z.val .<= zmax
-        )
-
-        for I in ind
-            x = data_cart.x.val[I]
-            y = data_cart.y.val[I]
-            z = data_cart.z.val[I]
-            p = [x, y, z]
-            if point_in_tetrahedron(p, a, b, c, d)
+    for i in axes(connectivity, 2) # loop over tetrahedrons
+        a, b, c, d = (vertices[:, connectivity[k, i]] for k in 1:4)
+        lo, hi = min.(a, b, c, d), max.(a, b, c, d)
+        candidates = if rectilinear
+            CartesianIndices((searchsortedfirst(x, lo[1]):searchsortedlast(x, hi[1]), searchsortedfirst(y, lo[2]):searchsortedlast(y, hi[2]), searchsortedfirst(z, lo[3]):searchsortedlast(z, hi[3])))
+        else
+            CartesianIndices(X)
+        end
+        for I in candidates
+            if point_in_tetrahedron([X[I], Y[I], Z[I]], a, b, c, d)
                 regions[I] = cellfields_regions[i]
             end
         end
-
     end
 
-    return addfield(data_cart, (regions = regions,))
+    return regions
 end

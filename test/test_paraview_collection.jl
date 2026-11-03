@@ -51,6 +51,15 @@ end
     @test isfile("test3.pvd")
     @test check_pvd("test3.pvd", 2)
 
+    # files with numbers in their names are ordered by value, and the working directory does not change
+    numbered = mktempdir()
+    foreach(n -> touch(joinpath(numbered, "f$n.vts")), (10, 2, 1))
+    pvd = make_paraview_collection(; dir = numbered, pvd_name = joinpath(numbered, "numbered"))
+    @test [m[1] for m in eachmatch(r"file=\"[^\"]*(f\d+)\.vts\"", read("$pvd.pvd", String))] == ["f1", "f2", "f10"]
+    cwd = pwd()
+    @test_throws AssertionError make_paraview_collection(; dir = numbered, file_extension = ".vtr")
+    @test pwd() == cwd
+
     rm("test.pvd")
     rm("full_simulation.pvd")
     rm("test_files/test_depth3D.vts")
