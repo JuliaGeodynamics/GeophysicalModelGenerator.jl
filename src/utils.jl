@@ -1769,7 +1769,7 @@ function inpolygon!(INSIDE::Matrix{Bool}, PolyX::Vector{T}, PolyY::Vector{T}, X:
     else
         for j in 1:size(X, 2)
             for i in 1:size(X, 1)
-                INSIDE[i, j] = (inpoly(PolyX, PolyY, X[i, j], Y[i, j]) || inpoly(PolyY, PolyX, Y[i, j], X[i, j]))
+                INSIDE[i, j] = inpoly_either(PolyX, PolyY, X[i, j], Y[i, j])
             end
         end
     end
@@ -1788,10 +1788,13 @@ function inpolygon!(inside::Vector{Bool}, PolyX::AbstractVector{T}, PolyY::Abstr
         end
     else
         for i in eachindex(x)
-            inside[i] = (inpoly(PolyX, PolyY, x[i], y[i]) || inpoly(PolyY, PolyX, y[i], x[i]))
+            inside[i] = inpoly_either(PolyX, PolyY, x[i], y[i])
         end
     end
 end
+
+# In or on the polygon for either order of the axes: the test of `inpolygon!` without `fast`
+inpoly_either(PolyX, PolyY, x, y) = inpoly(PolyX, PolyY, x, y) || inpoly(PolyY, PolyX, y, x)
 
 """
     inpoly(PolyX::Vector, PolyY::Vector, x::Number, y::Number, iSteps::Vector, jSteps::)

@@ -4,68 +4,89 @@ module JustPIC_utils
 using JustPIC: Particles, MarkerChain, MarkerSurface
 import JustPIC: fill_chain_from_vertices!, set_topo_from_array!
 
-using GeophysicalModelGenerator: CartData, km, uconvert, ustrip
+using GeophysicalModelGenerator: CartData, AbstractGeneralGrid, Trench, km, uconvert, ustrip
+import GeophysicalModelGenerator: coordinate_grids
 using GeophysicalModelGenerator.Interpolations: linear_interpolation
 import GeophysicalModelGenerator: particle_grid
 import GeophysicalModelGenerator: add_box!, add_sphere!, add_ellipsoid!, add_cylinder!, add_layer!, add_polygon!
 import GeophysicalModelGenerator: add_plate!, add_slab!, add_volcano!, add_fault!, add_stripes!
 import GeophysicalModelGenerator: above_surface, below_surface
 
-struct ParticleGrid{G, I, S, D}
-    grid::G         # CartData of size (n, 1, 1) holding the n active particles, in km
-    active::I       # linear indices of the active particles in the data of the particle CellArrays
-    scratch::S      # zero temperatures, for calls that only set phases
-    datasize::D     # size of the data of the particle CellArrays
+# Particle coordinates in km, read lazily from the particle cell arrays; NaN for empty particle slots, so
+# that every shape test of the setup routines is false there and empty slots are left unchanged
+struct ParticleCoordinate{T, A, I} <: AbstractArray{T, 3}
+    data::A     # coordinate data of the particle cell array
+    active::I   # index data of the particle cell array: true for active particles
+    scale::T    # km per unit of the particle coordinates
+end
+Base.size(c::ParticleCoordinate) = size(c.data)
+Base.IndexStyle(::Type{<:ParticleCoordinate}) = IndexLinear()
+Base.getindex(c::ParticleCoordinate, i::Int) = c.active[i] ? c.scale * c.data[i] : oftype(c.scale, NaN)
+
+# Zero temperatures for calls that only set phases; never written to
+struct Zeros{N} <: AbstractArray{Float64, N}
+    size::NTuple{N, Int}
+end
+Base.size(z::Zeros) = z.size
+Base.IndexStyle(::Type{<:Zeros}) = IndexLinear()
+Base.getindex(z::Zeros, i::Int) = 0.0
+
+struct ParticleGrid{X, Y, Z} <: AbstractGeneralGrid
+    X::X
+    Y::Y
+    Z::Z
 end
 
-km_per_unit(length_unit) = ustrip(uconvert(km, length_unit))
+function coordinate_grids(pg::ParticleGrid; cell = false)
+    cell && error("particle grids have no cell centers")
+    return pg.X, pg.Y, pg.Z
+end
 
+km_per_unit(length_unit) = float(ustrip(uconvert(km, length_unit)))
+
+# The setup routines index arrays point by point, so particle arrays on a GPU are processed in host copies
 cpu(A) = A isa Array ? A : Array(A)
 
 function particle_grid(particles::Particles; length_unit)
     s = km_per_unit(length_unit)
-    active = findall(vec(cpu(particles.index.data)))
-    coords = map(c -> reshape(s .* view(vec(cpu(c.data)), active), :, 1, 1), particles.coords)
-    X = coords[1]
-    # in 2D, JustPIC's second coordinate is vertical
-    Y, Z = length(coords) == 2 ? (zero(X), coords[2]) : (coords[2], coords[3])
-    return ParticleGrid(CartData(X, Y, Z, (Z = Z,)), active, zero(X), size(particles.index.data))
+    active = cpu(particles.index.data)
+    coord(k) = cpu(particles.coords[k].data)
+    X = ParticleCoordinate(coord(1), active, s)
+    # in 2D, JustPIC's second coordinate is vertical, and y is 0 (zero times the active x coordinate)
+    if length(particles.coords) == 2
+        return ParticleGrid(X, ParticleCoordinate(coord(1), active, zero(s)), ParticleCoordinate(coord(2), active, s))
+    end
+    return ParticleGrid(X, ParticleCoordinate(coord(2), active, s), ParticleCoordinate(coord(3), active, s))
 end
 
-# Calls f with the values of the active particles of the particle CellArray A, shaped like the particle grid.
-# CPU data is modified in place; other data is copied to the CPU and written back afterwards.
-function with_active_values(f, A, pg::ParticleGrid)
-    data = cpu(A.data)
-    f(reshape(view(vec(data), pg.active), :, 1, 1))
-    data === A.data || copyto!(A.data, data)
-    return nothing
-end
-
+# routine and the types of its positional arguments after the grid
 function_names = (
-    :add_box!, :add_sphere!, :add_ellipsoid!, :add_cylinder!, :add_layer!, :add_polygon!,
-    :add_plate!, :add_slab!, :add_volcano!, :add_fault!,
+    (:add_box!, ()), (:add_sphere!, ()), (:add_ellipsoid!, ()), (:add_cylinder!, ()), (:add_layer!, ()), (:add_polygon!, ()),
+    (:add_plate!, ()), (:add_slab!, (:Trench,)), (:add_volcano!, ()), (:add_fault!, ()),
 )
 
-for fn in function_names
+for (fn, types) in function_names
+    args = [Symbol(:arg, i) for i in eachindex(types)]
+    signature = join(("pPhases", "pT", "pg", lowercase.(string.(types))...), ", ")
     @eval begin
         """
-            $($fn)(pPhases, pT, pg; kwargs...)
+            $($fn)($($signature); kwargs...)
 
         Applies `$($fn)` to the particles collected in `pg = particle_grid(particles; length_unit)`, using their own
         coordinates rather than those of a grid, so that interfaces are resolved at particle resolution.
         `pPhases` and `pT` are particle `CellArray`s, as created by `init_cell_arrays`. With `pT = nothing` only phases
         are set, and passing a thermal structure `T` is an error. Geometry parameters are given in km.
         """
-        function $fn(pPhases, pT, pg::ParticleGrid; kwargs...)
-            with_active_values(pPhases, pg) do Phase
-                if isnothing(pT)
-                    isnothing(get(kwargs, :T, nothing)) ||
-                        error("$($fn): a thermal structure `T` requires a particle temperature array `pT`")
-                    $fn(Phase, pg.scratch, pg.grid; kwargs..., T = nothing)
-                else
-                    with_active_values(Temp -> $fn(Phase, Temp, pg.grid; kwargs...), pT, pg)
-                end
-            end
+        function $fn(pPhases, pT, pg::ParticleGrid, $((:($a::$t) for (a, t) in zip(args, types))...); kwargs...)
+            isnothing(pT) && !isnothing(get(kwargs, :T, nothing)) &&
+                error("$($fn): a thermal structure `T` requires a particle temperature array `pT`")
+            Phase = cpu(pPhases.data)
+            Temp = isnothing(pT) ? Zeros(size(Phase)) : cpu(pT.data)
+            # without `pT`, `T = nothing` overrides the default thermal structure of the grid method
+            kw = isnothing(pT) ? (; kwargs..., T = nothing) : kwargs
+            invoke($fn, Tuple{Any, Any, AbstractGeneralGrid, $(types...)}, Phase, Temp, pg, $(args...); kw...)
+            Phase === pPhases.data || copyto!(pPhases.data, Phase)
+            isnothing(pT) || Temp === pT.data || copyto!(pT.data, Temp)
             return nothing
         end
     end
@@ -77,7 +98,9 @@ end
 Applies `add_stripes!` to the particles collected in `pg = particle_grid(particles; length_unit)`.
 """
 function add_stripes!(pPhases, pg::ParticleGrid; kwargs...)
-    with_active_values(Phase -> add_stripes!(Phase, pg.grid; kwargs...), pPhases, pg)
+    Phase = cpu(pPhases.data)
+    invoke(add_stripes!, Tuple{Any, AbstractGeneralGrid}, Phase, pg; kwargs...)
+    Phase === pPhases.data || copyto!(pPhases.data, Phase)
     return nothing
 end
 
@@ -90,9 +113,10 @@ for (fn, sel) in ((:above_surface, true), (:below_surface, false))
         of `pg = particle_grid(particles; length_unit)` $($(sel ? "above" : "below")) the surface `DataSurface_Cart`.
         """
         function $fn(pg::ParticleGrid, DataSurface_Cart::CartData)
-            mask = falses(pg.datasize)
-            vec(mask)[pg.active] = vec(above_surface(pg.grid, DataSurface_Cart; above = $sel))
-            return mask
+            xs, ys, zs = ustrip.(DataSurface_Cart.x.val), ustrip.(DataSurface_Cart.y.val), ustrip.(DataSurface_Cart.z.val)
+            surface = linear_interpolation((xs[:, 1, 1], ys[1, :, 1]), zs[:, :, 1])
+            compare = $sel ? (>) : (<)
+            return ((x, y, z) -> !isnan(z) && compare(z, surface(x, y))).(coordinate_grids(pg)...)
         end
     end
 end

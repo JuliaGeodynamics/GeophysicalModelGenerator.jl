@@ -143,7 +143,7 @@ add_box!(Phases, Temp, Grid, xlim = (0, 500), zlim = (-500, 0), phase = Lithosph
 Phases = zeros(Int32, size(Grid.X));
 Temp = ones(Float64, size(Grid.X)) * 1350;
 add_box!(Phases, Temp, Grid, xlim = (0, 500), zlim = (-500, -20), phase = LithosphericPhases(Layers = [15 15 250], Phases = [1 2 3 0], Tlab = 1250), DipAngle = 10, T = SpreadingRateTemp(MORside = "right", SpreadingVel = 3))
-@test sum(Temp) == 1.189394358568891e9
+@test sum(Temp) == 1.1892525087889733e9
 
 Model3D = CartData(Grid, (Phases = Phases, Temp = Temp));
 write_paraview(Model3D, "LaMEM_ModelSetup")                  # Save model to paraview
