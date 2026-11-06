@@ -5,7 +5,7 @@
 
 # ## 1. Load data
 
-# We start with loading the required packages, which includes `GMT` to download topography (an optional dependency for `GeophysicalModelGenerator`)
+# We start with loading the required packages, which includes `GMT` to read the GeoTIFF file (an optional dependency for `GeophysicalModelGenerator`)
 using GeophysicalModelGenerator, GMT
 
 # Download the topography with:

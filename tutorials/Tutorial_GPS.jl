@@ -123,9 +123,9 @@ Vmagnitude          =   sqrt.(Ve.^2 + Vn.^2 + Vz.^2)  # velocity magnitude in mm
 # ## 4. Interpolate topography on grid
 
 # Finally, it would be nice to put the data points on the topography.
-# The elevation of the points is not given in the GPS dataset, so we use GMT to extract a topographic grid
+# The elevation of the points is not given in the GPS dataset, so we use `import_topo` to download a topographic grid
 # and interpolate the elevation on the GPS grid locations 
-using GMT, Interpolations
+using Interpolations
 
 # We use the `import_topo` function to read the topography from a file:
 Elevation   =   import_topo([3,17,42,50], file="@earth_relief_01m.grd");
@@ -134,7 +134,7 @@ Elevation   =   import_topo([3,17,42,50], file="@earth_relief_01m.grd");
 Lon_vec     =   NumValue(Elevation.lon)[:,1,1];
 Lat_vec     =   NumValue(Elevation.lat)[1,:,1];
 interpol    =   LinearInterpolation((Lon_vec, Lat_vec), NumValue(Elevation.depth)[:,:,1]);      # create interpolation object
-height      =   interpol.(lon,lat)/1e3
+height      =   interpol.(lon,lat)
 
 
 # At this stage we have `lon/lat/height` of all points as well as velocity components

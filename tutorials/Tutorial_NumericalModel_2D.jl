@@ -95,7 +95,7 @@ write_paraview(Grid2D,"Grid2D_SubductionRidge");
 # ![Mechanical2D_Tutorial_4](../assets/img/Mechanical2D_Tutorial_4.png) 
 
 # #### Overriding slab and weak layer 
-# Ok, lets add an overriding slab as well. For this, we use the `AddLayer!` function
+# Ok, lets add an overriding slab as well. For this, we use the `add_box!` function
 lith = LithosphericPhases(Layers=[15 20 55], Phases=[3 4 5], Tlab=1250)
 add_box!(Phases, Temp, Grid2D; xlim=(0,1000), zlim=(-80.0, 0.0), phase = lith, T=HalfspaceCoolingTemp(Age=80));
 
@@ -186,10 +186,10 @@ write_paraview(Grid2D,"Grid2D_SubductionCurvedOverriding");
 # ### Other geometries
 # We have a number of other functions to help create a geometry, specifically:
 # 
-# - `AddLayer!`
-# - `AddSphere!`
-# - `AddEllipsoid!`
-# - `AddCylinder!`
+# - `add_layer!`
+# - `add_sphere!`
+# - `add_ellipsoid!`
+# - `add_cylinder!`
 #
 # The help functions are quite self-explanatory, so we won't show it in detail here.
 # If you have a topography surface or any other horizontal surface, you can intersect the surface with the cartesian grid with `above_surface` or `below_surface`.

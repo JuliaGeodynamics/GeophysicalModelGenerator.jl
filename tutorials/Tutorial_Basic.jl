@@ -57,7 +57,7 @@ data_200km_exact = cross_section(Tomo_Alps, Depth_level=-200, Interpolate=true)
 # help?> cross_section
 # search: cross_section cross_section_volume cross_section_points cross_section_surface flatten_cross_section
 #
-#   cross_section(DataSet::AbstractGeneralGrid; dims=(100,100), Interpolate=false, Depth_level=nothing, Lat_level=nothing, Lon_level=nothing, Start=nothing, End=nothing, Depth_extent=nothing, section_width=50km)
+#   cross_section(DataSet::AbstractGeneralGrid; dims=(100,100), Interpolate=nothing, Depth_level=nothing, Lat_level=nothing, Lon_level=nothing, Start=nothing, End=nothing, Depth_extent=nothing, section_width=50km)
 #
 #   Creates a cross-section through a GeoData object.
 #
@@ -69,14 +69,16 @@ data_200km_exact = cross_section(Tomo_Alps, Depth_level=-200, Interpolate=true)
 #
 #     1. Volume data: data will be interpolated or directly extracted from the data set.
 #
-#     2. Surface data: surface data will be interpolated or directly extracted from the data set
+#     2. Surface data: surface data will be interpolated
 #
 #     3. Point data: data will be projected to the chosen profile. Only data within a chosen distance (default is 50 km) will be used
 #
-#     •  Interpolate indicates whether we want to simply extract the data from the data set (default) or whether we want to linearly interpolate it on a new grid, which has dimensions as specified in dims NOTE: THIS ONLY APPLIES TO VOLUMETRIC AND SURFACE DATA
-#        SETS
+#     •  Interpolate indicates whether we want to simply extract the data from a volumetric data set (default) or whether we want to linearly interpolate it on a new grid, which has dimensions as specified in dims.
+#        Surface data are always interpolated (Interpolate=false throws an error); point data ignore Interpolate.
 #
-#     •  'section_width' indicates the maximal distance within which point data will be projected to the profile
+#     •  section_width is the width of the band around the profile within which point data are projected onto it. It can be given with length units; a plain number is in km.
+#
+#     •  Depth_level and Depth_extent can be given with length units; plain numbers are in km.
 #
 #   Example:
 #   ≡≡≡≡≡≡≡≡

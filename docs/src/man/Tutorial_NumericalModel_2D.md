@@ -186,7 +186,7 @@ Saved file: Grid2D_SubductionRidge.vts
 ![Mechanical2D_Tutorial_4](../assets/img/Mechanical2D_Tutorial_4.png)
 
 #### Overriding slab and weak layer
-Ok, lets add an overriding slab as well. For this, we use the `add_layer!` function
+Ok, lets add an overriding slab as well. For this, we use the `add_box!` function
 
 ```julia
 lith = LithosphericPhases(Layers=[15 20 55], Phases=[3 4 5], Tlab=1250)
@@ -345,10 +345,10 @@ The result is a smooth transition in thermal structure around the subduction zon
 ### Other geometries
 We have a number of other functions to help create a geometry, specifically:
 
-- `AddLayer!`
-- `AddSphere!`
-- `AddEllipsoid!`
-- `AddCylinder!`
+- `add_layer!`
+- `add_sphere!`
+- `add_ellipsoid!`
+- `add_cylinder!`
 
 The help functions are quite self-explanatory, so we won't show it in detail here.
 If you have a topography surface or any other horizontal surface, you can surface with the Cartesian grid with `above_surface` or `below_surface`.

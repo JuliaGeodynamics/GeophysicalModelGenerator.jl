@@ -14,19 +14,7 @@ This is a tutorial to:
 This is a rather lengthy tutorial that combines different other tutorials, but it will guide you through all the steps necessary to obtain a somewhat comprehensive view of the European Alps and their subsurface from a geodynamical point of view.
 
 ## 1. Surface Topography
-In many cases, we want to add topographic data to our visualization. Here we use [GMT.jl](https://github.com/GenericMappingTools/GMT.jl) to download data from a certain region, and transfer that to `GMG`.
-To add the GMT package, simply add it with the julia package manager:
-```julia
-julia> ]
-(@v1.10) pkg> add GMT
-```
-and load both `GMG` and `GMT` with:
-
-```julia
-using GeophysicalModelGenerator, GMT
-```
-
-When loading both packages, several `GMT` routines within `GMG` will be loaded. One of these routines is the function `import_topo`, where one simply has to provide the region for which to download the topographic data and the data source.
+In many cases, we want to add topographic data to our visualization. The function `import_topo` downloads data from a certain region and transfers it to `GMG`; one simply has to provide the region and the data source.
 
 ```julia
 Topo = import_topo([4,20,37,50], file="@earth_relief_01m")
@@ -34,7 +22,7 @@ Topo = import_topo([4,20,37,50], file="@earth_relief_01m")
 
 The data is available in different resolutions; see [here](http://gmt.soest.hawaii.edu/doc/latest/grdimage.html) for an overview. Generally, it is advisable to not use the largest resolution if you have a large area, as the files become very large.
 
-If you have issues with loading the topography with `GMT`, there is also the alternative to download the data yourself and import it using `Rasters.jl`.
+If you have issues with downloading the topography, there is also the alternative to download the data yourself and import it using `Rasters.jl`.
 
 We can now export this data to a `VTK` format so that we can visualize it with `Paraview`. To do so, `GMG` provides the function `write_paraview`:
 

@@ -10,10 +10,10 @@
 #  1) Topography
 #  2) Earthquake locations
 
-# We start with loading the required packages, which includes `GMT` to download topography (an optional dependency for `GeophysicalModelGenerator`)
-using GeophysicalModelGenerator, GMT, DelimitedFiles
+# We start with loading the required packages, which includes `DelimitedFiles` to read the seismicity
+using GeophysicalModelGenerator, DelimitedFiles
 
-# We will use GMT to download the topography with:
+# We download the topography with:
 Topo = import_topo(lon = [-18.2, -17.5], lat=[28.4, 29.0], file="@earth_relief_15s.grd")
 
 # Next, lets load the seismicity. The earthquake data is available on [https://www.ign.es/web/ign/portal/vlc-catalogo](https://www.ign.es/web/ign/portal/vlc-catalogo). 

@@ -55,7 +55,6 @@ Inputs are:
 - `files`: Vector of desired files to be included in the `*.pvd` file.
 - `time`: Vector of time steps (numbers or strings) corresponding to the `files` vector.
 """
-
 function make_paraview_collection(pvd_name::String, files::Vector{String}, time::AbstractVector)
     # Check that the arrays have the same length
     @assert length(time) == length(files)

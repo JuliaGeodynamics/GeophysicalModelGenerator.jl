@@ -9,7 +9,7 @@ In this tutorial, your will learn how to use drape a geological map on top of a 
 
 ## 1. Load data
 
-We start with loading the required packages, which includes `GMT` to download topography (an optional dependency for `GeophysicalModelGenerator`)
+We start with loading the required packages, which includes `GMT` to read the GeoTIFF file (an optional dependency for `GeophysicalModelGenerator`)
 
 ```julia
 using GeophysicalModelGenerator, GMT
