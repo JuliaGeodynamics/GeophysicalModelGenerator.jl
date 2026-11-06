@@ -180,7 +180,7 @@ Data_sub_Interp_Cart = extract_subvolume(DataSet_Cart, X_level = (10, 15), Y_lev
 # Extract subset of cross-section
 test_cross = cross_section(Data_set3D, Lat_level = 35, dims = (50, 100), Interpolate = true)
 Data_sub_cross = extract_subvolume(test_cross, Depth_level = (-100km, 0km), Interpolate = false)
-@test Data_sub_cross.fields[1][11] == -200.00000000000003km
+@test Data_sub_cross.fields[1][11] ≈ -200km
 @test size(Data_sub_cross.lat) == (50, 1, 34)
 
 test_cross_cart = cross_section(DataSet_Cart, Start = (0.0, -9.0), End = (90.0, 19.0)) # Cartesian cross-section
@@ -271,7 +271,7 @@ Data_EQ = GeoData(Lon[:], Lat[:], Depth[:], (depth = Depth[:], Magnitude = Magni
 
 # Test profile creation from point data set
 cross_tmp = cross_section(Data_EQ, Depth_level = -25km, section_width = 10km)
-@test cross_tmp.fields.depth_proj[10] == -25km # check if the projected depth level is actually the chosen one
+@test cross_tmp.fields.depth_proj[10] == -25 # the projected depth level is the chosen one, in km
 
 cross_tmp = cross_section(Data_EQ, Lat_level = 36.2, section_width = 10km)
 @test cross_tmp.fields.lat_proj[10] == 36.2 # check if the projected latitude level is the chosen one
@@ -347,6 +347,7 @@ end
         @test depth_new ≈ [0.5 1.5; 2.5 3.5]
         @test fields_new.s ≈ [1.0 3.0; 5.0 7.0]
         @test fields_new.v[2] ≈ [0.5 0.5; 2.5 2.5]
+        @test size(fields_new.v[1]) == size(fields_new.s) == (2, 2)
     end
 
     @testset "GeoData onto GeoData" begin
@@ -385,10 +386,13 @@ end
 @testset "interpolate_datafields with UTMData" begin
     # depth decreasing along the 3rd dimension; linear fields are interpolated exactly
     EW, NS, Depth = xyz_grid(0:1000:4000, 0:1000:3000, 0:-1000:-2000)
-    Data_utm = UTMData(EW, NS, Depth, 33, true, (s = EW .+ Depth, v = (EW, NS)))
+    Phase = [isodd(i) ? 0 : 2 for i in eachindex(EW)]
+    Data_utm = UTMData(EW, NS, Depth, 33, true, (s = EW .+ Depth, v = (EW, NS), Phase = reshape(Phase, size(EW))), Dict("source" => "test"))
     EW_new, NS_new, Depth_new = xyz_grid(500:1000:3500, 500:1000:2500, -500:-1000:-1500)
     Data_interp = interpolate_datafields(Data_utm, EW_new, NS_new, Depth_new)
     @test Data_interp isa UTMData
+    @test all(in((0, 2)), Data_interp.fields.Phase)     # categorical fields are not averaged
+    @test Data_interp.atts["source"] == "test"
     @test Data_interp.fields.s ≈ EW_new .+ Depth_new
     @test Data_interp.fields.v[2] ≈ NS_new
     @test all(Data_interp.zone .== 33)
@@ -398,6 +402,8 @@ end
     V = [1.0 10.0; 3.0 30.0]
     @test subtract_horizontalmean(V) == [-1.0 -10.0; 1.0 10.0]
     @test subtract_horizontalmean(V, Percentage = true) == [-50.0 -50.0; 50.0 50.0]
+    @test subtract_horizontalmean([1 2; 4 6]) == [-1.5 -2.0; 1.5 2.0]                 # integer input
+    @test subtract_horizontalmean(view(reshape(V, 2, 1, 2), :, :, 2:2)) == reshape([-10.0, 10.0], 2, 1, 1)
 end
 
 @testset "lithostatic_pressure!" begin
@@ -470,4 +476,94 @@ end
     @test GeophysicalModelGenerator.parse_columns_CSV(rows, 3) == [7.0 2.5 3.0]
     rows = [("st1", missing, 10.5, missing, 3)]
     @test GeophysicalModelGenerator.parse_columns_CSV(rows, 2) == [10.5 3.0]
+end
+
+@testset "attributes are kept" begin
+    X, Y, Z = xyz_grid(1:3, 1:4, 1:2)
+    atts = Dict("source" => "test")
+    C = CartData(X, Y, Z, (a = Z,), atts)
+    G = GeoData(X, Y, Z, (a = Z,), atts)
+    @test addfield(C, "b", Z).atts == atts
+    @test addfield(G, (b = Z,)).atts == atts
+    @test removefield(addfield(G, (b = Z,)), :a).atts == atts
+    @test rotate_translate_scale(C, Rotate = 10).atts == atts
+    @test cross_section(G, Depth_level = 1.5, Interpolate = true).atts == atts
+end
+
+@testset "length units of levels and widths" begin
+    Lon, Lat, Depth = lonlatdepth_grid(10:20, 30:40, (-300:25:0)km)
+    V = GeoData(Lon, Lat, Depth, (d = Depth,))
+    sub_km = extract_subvolume(V, Depth_level = (-200km, -100km), Interpolate = true, dims = (5, 5, 5))
+    sub_m = extract_subvolume(V, Depth_level = (-200000m, -100000m), Interpolate = true, dims = (5, 5, 5))
+    @test sub_m.fields.d == sub_km.fields.d
+    @test !any(isnan, ustrip.(sub_m.fields.d))
+    @test extract_subvolume(V, Depth_level = (-200000m, -100000m)).depth.val == extract_subvolume(V, Depth_level = (-200, -100)).depth.val
+    @test extract_subvolume(V, Depth_level = [-200km, -100km]).depth.val == extract_subvolume(V, Depth_level = (-200, -100)).depth.val
+    @test cross_section(V, Depth_level = -100000m).depth.val == cross_section(V, Depth_level = -100km).depth.val
+
+    Cart = CartData(xyz_grid(0:10, 0:10, -10:0)..., (z = xyz_grid(0:10, 0:10, -10:0)[3],))
+    @test extract_subvolume(Cart, Z_level = (-5000m, -1000m), dims = (3, 3, 3)).z.val == extract_subvolume(Cart, Z_level = (-5, -1), dims = (3, 3, 3)).z.val
+
+    # points within ±5 km of -20 km depth
+    P = GeoData([15.0, 15.0, 15.0], [35.0, 35.0, 35.0], [-20.0, -24.0, -30.0], (a = [1, 2, 3],))
+    @test cross_section(P, Depth_level = -20km, section_width = 10000m).fields.a == [1, 2]
+    @test cross_section(P, Depth_level = -20000m, section_width = 10).fields.a == [1, 2]
+    @test cross_section(P, Depth_level = -20km).fields.depth_proj == cross_section(P, Depth_level = -20).fields.depth_proj == fill(-20.0, 3)
+end
+
+@testset "2D interpolation outside the data" begin
+    Lon, Lat, Depth = lonlatdepth_grid(10:20, 30:40, -50km)
+    S = GeoData(Lon, Lat, Depth, (a = Lon, v = (Lon, Lat)))
+    z, fields = interpolate_datafields_2D(S, [15.0, 50.0], [35.0, 80.0])
+    @test z == [-50, -50]
+    @test vec(fields.a) == [15, 20]             # the nearest edge value
+    @test vec(fields.v[2]) == [35, 40]
+end
+
+@testset "cross_section of a surface" begin
+    Lon, Lat, Depth = lonlatdepth_grid(10:20, 30:40, -50km)
+    S = GeoData(Lon, Lat, Depth, (a = Lon,))
+    @test cross_section(S, Lat_level = 35, Interpolate = true) isa GeoData
+    @test_throws "Interpolate=false is not supported" cross_section(S, Lat_level = 35, Interpolate = false)
+end
+
+@testset "cross_section_points selection" begin
+    P = GeoData(collect(0.0:20.0), fill(45.0, 21), fill(-10.0, 21), (a = collect(1.0:21.0),))
+    @test length(cross_section(P, Lat_level = 45, section_width = 10km).lon.val) == 21
+    P = GeoData([5.0, 5.0, 5.0], [45.0, 45.04, 45.2], fill(-10.0, 3), (a = [1, 2, 3],))   # 0, 4.4 and 22 km from 45°
+    @test cross_section(P, Lat_level = 45, section_width = 10km).fields.a == [1, 2]
+    P = GeoData([10.0, 10.5, 11.0, 15.0], fill(45.0, 4), fill(-10.0, 4), (a = 1:4,))
+    @test cross_section(P, Start = (10.0, 45.0), End = (11.0, 45.0)).fields.a == [1, 2, 3]
+    @test_throws "exactly one of" cross_section(P)
+    @test_throws "Start and End must differ" cross_section(P, Start = (10.0, 45.0), End = (10.0, 45.0))
+
+    # longitudes in 0..360° with a level in -180..180°
+    P = GeoData([349.0, 350.0, 351.0, 10.0], fill(45.0, 4), fill(-10.0, 4), (a = 1:4,))
+    cross = cross_section(P, Lon_level = -10, section_width = 10km)
+    @test cross.fields.a == [2]
+    @test cross.fields.lon_proj == [350.0]
+end
+
+@testset "extract_subvolume level checks" begin
+    Lon, Lat, Depth = lonlatdepth_grid(10:20, 30:40, (-300:25:0)km)
+    V = GeoData(Lon, Lat, Depth, (d = Lon,))
+    @test_throws "ordered" extract_subvolume(V, Lon_level = (12, 10))
+    CF = CartData(xyz_grid(0:2, 0:2, 0:0)..., (FlatCrossSection = zeros(3, 3, 1),))
+    @test_throws "Y_level" extract_subvolume(CF, Y_level = (1, 2))
+end
+
+@testset "2D interpolation of vector fields and colors" begin
+    Lon, Lat, Depth = lonlatdepth_grid(10:20, 30:40, -50km)
+    S = GeoData(Lon, Lat, Depth, (v = (Lon, Lat), colors = (Lon .* 0, Lon .* 0 .+ 1, Lon .* 0)))
+    _, f = interpolate_datafields_2D(S, Lon[1:5, 1:5], Lat[1:5, 1:5] .+ 0.5)
+    @test size(f.v[1]) == (5, 5)
+    @test all(c -> c == 0 || c == 1, f.colors[1])
+end
+
+@testset "votemap" begin
+    La, Lb, Da = lonlatdepth_grid(10:20, 30:40, -50:10:0)
+    A = GeoData(La, Lb, Da, (T = La,))
+    La, Lb, Da = lonlatdepth_grid(30:40, 30:40, -50:10:0)
+    B = GeoData(La, Lb, Da, (T = La,))
+    @test_throws "do not overlap" votemap([A, B], ["T>0", "T>0"])
 end

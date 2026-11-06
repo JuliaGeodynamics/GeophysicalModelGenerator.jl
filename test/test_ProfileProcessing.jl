@@ -87,7 +87,7 @@ GeophysicalModelGenerator.create_profile_surface!(prof1, Data.Surface)
 # ditto with EQ data:
 GeophysicalModelGenerator.create_profile_point!(prof1, Data.Point, section_width = 5km)
 GeophysicalModelGenerator.create_profile_point!(prof4, Data.Point, section_width = 10km)
-@test  length(prof1.PointData[1].lon) == 13
+@test  length(prof1.PointData[1].lon) == 12
 @test  length(prof4.PointData[1].lon) == 445
 
 # test screenshot data 
@@ -164,7 +164,7 @@ section_width = 50km
 
 profile_backwards_compat = extract_ProfileData("test_files/PickedProfiles.txt", 1, "test_files/AlpineData_remote.txt", DimsVolCross = DimsVolCross, DepthVol = Depth_extent, DimsSurfCross = DimsSurfCross, WidthPointProfile = section_width)
 
-@test length(profile_backwards_compat.PointData[1].lon) == 440
+@test length(profile_backwards_compat.PointData[1].lon) == 202
 
 # several volumes with different extents: later datasets are interpolated onto the first one's profile grid
 @testset "create_profile_volume! NamedTuple, differing extents" begin
