@@ -27,6 +27,8 @@ Optional options
     -  `:mov_hires`: Higher-resolution quicktime movie (larger filesize & not compatible with windows)
     -  `:gif`: Animated GIF (same as passing `gif=true`).
 - `gif`: if `true`, creates a `*.gif` animation in addition to the `mp4` movie. If `type=:gif`, only a gif is created.
+
+Returns the path of the created movie (or gif): relative to the current directory if `copy_to_current_dir=true`, and inside `dir` otherwise.
 """
 function movie_from_images(; dir = pwd(), file = nothing, outfile = nothing, framerate = 10, copy_to_current_dir = true, type = :mp4_default, gif = false)
     curdir = pwd()
@@ -68,18 +70,19 @@ function movie_from_images(; dir = pwd(), file = nothing, outfile = nothing, fra
         error("unknown movie type $type")
     end
 
+    # Path of a created file as returned to the caller; with `copy_to_current_dir` the file is copied there.
+    function finish(name)
+        copy_to_current_dir || return joinpath(dir, name)
+        dst = joinpath(curdir, name)
+        abspath(name) == abspath(dst) || cp(name, dst, force = true)  # see #107 (called inside `cd(dir)`)
+        return name
+    end
+
+    result = nothing
     cd(dir) do
-        result = nothing
-
         if type != :gif
-            # run ffmpeg for mp4/mov
             FFMPEG.exe(cmd)
-
-            result = joinpath(pwd(), outfile_ext)
-            if copy_to_current_dir
-                result = joinpath(curdir, outfile_ext)
-                abspath(outfile_ext) == abspath(result) || cp(outfile_ext, result, force = true)  # see #107
-            end
+            result = finish(outfile_ext)
             println("created movie: $result")
         end
 
@@ -93,14 +96,10 @@ function movie_from_images(; dir = pwd(), file = nothing, outfile = nothing, fra
             FFMPEG.exe(cmd_gif)
             rm(palette, force = true)
 
-            result_gif = joinpath(pwd(), outfile_gif)
-            if copy_to_current_dir
-                result_gif = joinpath(curdir, outfile_gif)
-                abspath(outfile_gif) == abspath(result_gif) || cp(outfile_gif, result_gif, force = true)  # see #107
-            end
+            result_gif = finish(outfile_gif)
             println("created gif: $result_gif")
             isnothing(result) && (result = result_gif)
         end
     end
-    return isnothing(outfile_ext) ? outfile * ".gif" : outfile_ext
+    return result
 end
