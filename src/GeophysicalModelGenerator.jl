@@ -113,9 +113,18 @@ export import_GeoTIFF
 # GLMakie routines
 
 """
-        visualise
-Interactive widget that allows you to explore a 3D data set `DataSet` in an interactive manner.
-It requires you to load `GLMakie`.
+    fig = visualise(DataSet; Topography=nothing, Topo_range=nothing)
+
+Starts an interactive widget that allows you to explore the 3D data set `DataSet` (a `GeoData` set or an orthogonal `CartData` set)
+and returns the `Figure`, which can be saved with `save("file.png", fig)`. All fields of the data set can be explored.
+`CartData` sets that are not on an orthogonal grid need to be projected first with `project_CartData`.
+The isosurface is off by default and can be toggled in the widget. Vector fields (tuples) are not offered.
+
+Keywords:
+- `Topography` : optional topography data set that is drawn on top of `DataSet` (default=nothing)
+- `Topo_range` : optional range of the topography color scale (default: symmetric about 0, ± the largest absolute topography)
+
+Requires loading `GLMakie`.
 """
 function visualise end
 export visualise
