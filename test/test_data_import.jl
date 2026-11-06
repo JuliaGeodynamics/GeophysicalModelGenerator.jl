@@ -105,7 +105,7 @@ data_Image = screenshot_to_UTMData(filename, Corner_LowerLeft, Corner_UpperRight
 # download_data("http://www.isc.ac.uk/cgi-bin/web-db-run?request=COLLECTED&req_agcy=ISC-EHB&out_format=QuakeML&ctr_lat=&ctr_lon=&radius=&max_dist_units=deg&searchshape=RECT&top_lat=49&bot_lat=37&left_lon=4&right_lon=20&srn=&grn=&start_year=2000&start_month=1&start_day=01&start_time=00%3A00%3A00&end_year=2005&end_month=12&end_day=31&end_time=00%3A00%3A00&min_dep=&max_dep=&min_mag=5.8&max_mag=&req_mag_type=Any&req_mag_agcy=Any&min_def=&max_def=&include_magnitudes=on&include_links=on&include_headers=on&include_comments=on&table_owner=iscehb","ISCTest.xml")
 Data_ISC = getlonlatdepthmag_QuakeML("test_files/ISCTest.xml");
 @test Value(Data_ISC.depth[1]) == -13.0km
-@test Data_ISC.fields.Magnitude[1] == 5.8
+@test Data_ISC.fields.Magnitude[1] == 5.5   # the event's preferredMagnitudeID
 
 # test the import of a seismic tomography model from a NetCDF file
 tomo_file = "test_files/test_tomo_data.nc"
@@ -119,3 +119,45 @@ test_array = [i for i in 0:1:10]
 for i in eachindex(test_array)
     @test Tomo_data.fields.vel[i,i,i] ≈ i
 end
+# QuakeML: <value> is read even when <uncertainty> comes first; the preferred origin/magnitude is used
+mktemp() do path, io
+    write(io, """<?xml version="1.0"?>
+<q:quakeml xmlns:q="http://quakeml.org/xmlns/quakeml/1.2"><eventParameters><event>
+<preferredOriginID>o2</preferredOriginID><preferredMagnitudeID>m2</preferredMagnitudeID>
+<origin publicID="o1"><longitude><value>1.0</value></longitude><latitude><value>2.0</value></latitude><depth><value>3000</value></depth></origin>
+<origin publicID="o2"><longitude><uncertainty>0.1</uncertainty><value>10.0</value></longitude><latitude><uncertainty>0.5</uncertainty><value>45.0</value></latitude><depth><uncertainty>9</uncertainty><value>5000</value></depth></origin>
+<magnitude publicID="m1"><mag><value>1.5</value></mag></magnitude>
+<magnitude publicID="m2"><mag><value>4.5</value></mag></magnitude>
+</event></eventParameters></q:quakeml>""")
+    close(io)
+    D = GeophysicalModelGenerator.getlonlatdepthmag_QuakeML(path)
+    @test D.lat.val[1] == 45.0
+    @test D.lon.val[1] == 10.0
+    @test D.depth.val[1] == -5.0
+    @test D.fields.Magnitude[1] == 4.5
+end
+
+# QuakeML: a preferred origin that the event does not contain is an error
+mktemp() do path, io
+    write(
+        io, """<?xml version="1.0"?>
+        <q:quakeml xmlns:q="http://quakeml.org/xmlns/quakeml/1.2"><eventParameters><event>
+        <preferredOriginID>o9</preferredOriginID>
+        <origin publicID="o1"><longitude><value>1.0</value></longitude><latitude><value>2.0</value></latitude><depth><value>3000</value></depth></origin>
+        <magnitude publicID="m1"><mag><value>1.5</value></mag></magnitude>
+        </event></eventParameters></q:quakeml>"""
+    )
+    close(io)
+    @test_throws "names preferredOriginID \"o9\"" GeophysicalModelGenerator.getlonlatdepthmag_QuakeML(path)
+end
+
+# ReadCSV_LatLon validates the depth convention and the required columns
+@test_throws "DepthCon must be" GeophysicalModelGenerator.ReadCSV_LatLon("TestData.csv", "Positive")
+mktemp() do path, io
+    write(io, "lon,lat,val\n1,2,3\n")
+    close(io)
+    @test_throws "no depth column" GeophysicalModelGenerator.ReadCSV_LatLon(path, "positive")
+end
+
+# screenshot_to_UTMData without a zone reaches the explicit error
+@test_throws "UTMzone" screenshot_to_UTMData("test.png", (18.0, 51.0, -590.0), (9.0, 42.0, 0.0))
