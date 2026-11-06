@@ -86,14 +86,14 @@ end
 Structure that stores info about a GMG Dataset, which is useful to collect a wide variety of datasets.
 
 - Name    :: String          # Name of the dataset
-- Type    :: String          # Volumetric, Surface, Point, Screenshot
+- Type    :: String          # Volume, Surface, Point, Screenshot or Topography (any other value throws an error)
 - DirName :: String          # Directory name or url of dataset
 - active  :: Bool            # should this data be loaded or not?
 
 """
 mutable struct GMG_Dataset
     Name::String          # Name of the dataset
-    Type::String          # Volumetric, Surface, Point, Screenshot
+    Type::String          # Volume, Surface, Point, Screenshot or Topography
     DirName::String          # Directory name or url of dataset
     active::Bool            # active in the GUI or not?
 
@@ -102,7 +102,7 @@ mutable struct GMG_Dataset
         Name = strip(Name)
         DirName = strip(DirName)
 
-        if !any(occursin.(Type, ["Volume", "Surface", "Point", "Screenshot", "Topography"]))
+        if !(Type in ("Volume", "Surface", "Point", "Screenshot", "Topography"))
             error("Type should be either: Volume,Surface,Point,Topography or Screenshot. Is: $Type.")
         end
 
@@ -153,8 +153,10 @@ Note that the first line of the file is skipped.
 Here, the meaning of the variables is:
 - `Name`: The name of the dataset to be loaded
 - `Location`: the location of the file (directory and filename) on your local machine, or an url where we can download the file from the web. The url is expected to start with "http".
-- `Type`: type of the dataset (Volume, Surface, Point, Screenshot)
+- `Type`: type of the dataset (Volume, Surface, Point, Screenshot, Topography)
 - `Active`: Do we want this file to be loaded or not? Optional parameter that defaults to `true`
+
+A file with fewer than 3 or more than 4 columns throws an error.
 
 """
 function load_dataset_file(file_datasets::String)
@@ -168,6 +170,8 @@ function load_dataset_file(file_datasets::String)
         active = Bool.(active)
     elseif size(datasets, 2) == 3
         active = ones(Bool, n)
+    else
+        error("The dataset file $file_datasets should have 3 or 4 columns (Name, Location, Type, [Active]); it has $(size(datasets, 2)).")
     end
 
     Datasets = Vector{GMG_Dataset}()
@@ -221,9 +225,11 @@ end
 
 This takes different volumetric datasets (specified in `VolData`) & merges them into a single one.
 You need to either provide the "reference" dataset within the NamedTuple (`dataset_preferred`), or the lat/lon/depth and dimensions of the new dataset.
+`VolData` must contain at least one dataset.
 
 """
 function combine_vol_data(VolData::NamedTuple; lat = nothing, lon = nothing, depth = nothing, dims = (100, 100, 100), dataset_preferred = 1)
+    isempty(VolData) && error("combine_vol_data requires at least one volumetric dataset; VolData is empty.")
 
     # Get dimensions of new Data_set
     i = dataset_preferred
@@ -352,8 +358,7 @@ function create_profile_screenshot!(Profile::ProfileData, DataSet::NamedTuple)
             data_NT = NamedTuple{(DataSetName[idata],)}((data_tmp,))
             tmp = merge(tmp, data_NT)
         else
-            # we do not have this implemented
-            #error("horizontal profiles not yet implemented")
+            @warn "horizontal profiles not yet implemented, screenshot data set $(DataSetName[idata]) is not added to the profile"
         end
     end
     Profile.ScreenshotData = tmp # assign to profile data structure
@@ -384,8 +389,7 @@ function create_profile_surface!(Profile::ProfileData, DataSet::NamedTuple; Dims
             tmp = merge(tmp, data_NT)
 
         else
-            # we do not have this implemented
-            #error("horizontal profiles not yet implemented")
+            @warn "horizontal profiles not yet implemented, surface data set $(DataSetName[idata]) is not added to the profile"
         end
     end
 
@@ -419,8 +423,8 @@ function create_profile_topo!(Profile::ProfileData, DataSet::NamedTuple; DimsSur
             tmp = merge(tmp, data_NT)
 
         else
-            # currently, the intersection of topogrpahy with the horizontal profile is not implemented
-            # For now, the entire topography data is saved in Profile.TopoData, and the user can then extract the relevant data from there
+            # The intersection of topography with a horizontal profile is not implemented;
+            # the entire topography data is saved in Profile.TopoData, from which the user can extract the relevant part
 
             @warn "horizontal profiles not yet implemented, saving entire topography data in Profile.TopoData"
             tmp = merge(tmp, NamedTuple{(DataSetName[idata],)}((data_tmp,))) # add the entire topography data to the NamedTuple
@@ -434,6 +438,7 @@ end
 
 ### function to process point data - contrary to the volume data, we here have to save lon/lat/depth pairs for every point data set
 function create_profile_point!(Profile::ProfileData, DataSet::NamedTuple; section_width = 50km)
+    Profile.PointData = nothing   # stays nothing if no point falls into the profile
     num_datasets = length(DataSet)
 
     tmp = NamedTuple()             # initialize empty one
@@ -484,6 +489,7 @@ Any data argument can be `nothing` or empty (`NamedTuple()` or `()`), in which c
 """
 function extract_ProfileData!(Profile::ProfileData, VolData = nothing, SurfData = nothing, PointData = nothing; DimsVolCross = (100, 100), Depth_extent = nothing, DimsSurfCross = (100,), section_width = 50km, ScreenshotData = nothing, TopoData = nothing)
 
+    Profile.vertical && Profile.start_lonlat == Profile.end_lonlat && error("Profile has zero length")
     create_profile_volume!(Profile, VolData; DimsVolCross = DimsVolCross, Depth_extent = Depth_extent)
     create_profile_surface!(Profile, _as_namedtuple(SurfData), DimsSurfCross = DimsSurfCross)
     create_profile_point!(Profile, _as_namedtuple(PointData), section_width = section_width)
@@ -512,6 +518,7 @@ function read_picked_profiles(ProfileCoordFile::String)
 
     profiles = Vector{ProfileData}()
     profile_data = readdlm(ProfileCoordFile, skipstart = 1, ',')
+    profile_data = profile_data[sortperm(profile_data[:, 1]), :]   # order by the Num column
 
     # check the number of columns in the profile data
     if size(profile_data, 2) == 2
@@ -545,11 +552,13 @@ function read_picked_profiles(ProfileCoordFile::String)
     return profiles
 end
 
-# this is mostly for backwards compatibility
 """
     extract_ProfileData(ProfileCoordFile::String,ProfileNumber::Int64,DataSetFile::String; DimsVolCross=(100,100),DepthVol=nothing,DimsSurfCross=(100,),WidthPointProfile=50km)
 
-This is a convenience function (mostly for backwards compatibility with the MATLAB GUI) that loads the data from file & projects it onto a profile
+This is a convenience function (used by the MATLAB GUI) that loads the data from file & projects it onto a profile.
+The first volumetric dataset is cut along the profile and the others are interpolated at its points, with fields named `<dataset>_<field>`;
+surface, point, screenshot and topography datasets are projected as well.
+If the dataset file lists no volumetric dataset, `VolData` of the returned profile remains `nothing`.
 """
 function extract_ProfileData(ProfileCoordFile::String, ProfileNumber::Int64, DataSetFile::String; DimsVolCross = (100, 100), DepthVol = nothing, DimsSurfCross = (100,), WidthPointProfile = 50km)
 
@@ -563,14 +572,12 @@ function extract_ProfileData(ProfileCoordFile::String, ProfileNumber::Int64, Dat
     # load all Data
     VolData, SurfData, PointData, ScreenshotData, TopoData = load_GMG(Datasets_all)
 
-    # merge VolData:
-    VolData_combined = combine_vol_data(VolData)
-
-    # project data onto profile:
+    # project data onto profile; the volumes are interpolated at the profile points only, without merging them first
     extract_ProfileData!(
-        profile, VolData_combined, SurfData, PointData;
+        profile, VolData, SurfData, PointData;
         DimsVolCross = DimsVolCross, DimsSurfCross = DimsSurfCross,
-        Depth_extent = DepthVol, section_width = WidthPointProfile
+        Depth_extent = DepthVol, section_width = WidthPointProfile,
+        ScreenshotData, TopoData
     )
 
     return profile

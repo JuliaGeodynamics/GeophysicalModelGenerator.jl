@@ -1,10 +1,19 @@
 using Test
 using GeophysicalModelGenerator
 
-pkg_dir = pkgdir(GeophysicalModelGenerator)
-cd(joinpath(pkg_dir, "test"))
+# The datasets below are downloaded. If the server is unreachable, skip on a push/PR run;
+# the scheduled run insists, so a real breakage is caught.
+remote_ok = try
+    load_GMG(GMG_Dataset("Hua2017", "Volume", "https://seafile.rlp.net/f/1fb68b74e5d742d39e62/?dl=1", true))
+    true
+catch err
+    # only a failed download means "server unreachable"; anything else is a bug
+    (err isa ErrorException && occursin("Could not download", err.msg)) || rethrow()
+    get(ENV, "GITHUB_EVENT_NAME", "") == "schedule" && rethrow()
+    false
+end
 
-# Test profile processing dataset routines
+if remote_ok
 data_Surf = GMG_Dataset("Mrozek_Moho_Grid_EU", "Surface", "https://seafile.rlp.net/f/483d9c7c808a4087ba9e/?dl=1", true)
 @test data_Surf.DirName == "https://seafile.rlp.net/f/483d9c7c808a4087ba9e/?dl=1"
 @test data_Surf.Type == "Surface"
@@ -30,17 +39,17 @@ VolData = merge(VolData, load_GMG(data_Vol2))
 
 # Combine all Datasets into one file
 Datasets = [data_Vol1, data_Vol2, data_Surf, data_EQ, data_SS]
+Data = load_GMG(Datasets)
 
 # Some tests with the loaded datasets
 @test SurfData.Mrozek_Moho_Grid_EU.fields.MohoDepth[100, 100] ≈ -58.6889km
 @test keys(VolData) == (:Hua2017, :Plomerova2022)
 
 # read datasets from file
-Datasets_temp = load_dataset_file("test_files/AlpineData.txt")
+Datasets_temp = load_dataset_file(joinpath(@__DIR__, "test_files", "AlpineData.txt"))
 @test Datasets_temp[2].DirName == GMG_Dataset("INGV", "Point", "./Seismicity/CLASS/class_seis_alps.jld2", true).DirName
 
 # Load data of all Datasets & split them in type of data
-Data = load_GMG(Datasets)
 @test keys(Data.Volume) == (:Hua2017, :Plomerova2022)
 
 # Combine volumetric datasets into one
@@ -152,7 +161,7 @@ GeophysicalModelGenerator.create_profile_volume!(prof8, (Hua2017 = Data.Volume[1
 @test isempty(prof4.SurfData)
 
 # Read profiles from file
-profile_list = read_picked_profiles("test_files/PickedProfiles.txt")
+profile_list = read_picked_profiles(joinpath(@__DIR__, "test_files", "PickedProfiles.txt"))
 @test profile_list[5].start_lonlat == ProfileData(start_lonlat = (9.40627872242647, 45.5128223429144), end_lonlat = (7.85480813419117, 47.8635353553922)).start_lonlat
 
 # Try the convenience function
@@ -162,9 +171,12 @@ Depth_extent = nothing
 DimsSurfCross = (100,)
 section_width = 50km
 
-profile_backwards_compat = extract_ProfileData("test_files/PickedProfiles.txt", 1, "test_files/AlpineData_remote.txt", DimsVolCross = DimsVolCross, DepthVol = Depth_extent, DimsSurfCross = DimsSurfCross, WidthPointProfile = section_width)
+profile_backwards_compat = extract_ProfileData(joinpath(@__DIR__, "test_files", "PickedProfiles.txt"), 1, joinpath(@__DIR__, "test_files", "AlpineData_remote.txt"), DimsVolCross = DimsVolCross, DepthVol = Depth_extent, DimsSurfCross = DimsSurfCross, WidthPointProfile = section_width)
 
 @test length(profile_backwards_compat.PointData[1].lon) == 202
+else
+    @test_skip "profile test datasets could not be downloaded"
+end
 
 # several volumes with different extents: later datasets are interpolated onto the first one's profile grid
 @testset "create_profile_volume! NamedTuple, differing extents" begin
@@ -178,4 +190,53 @@ profile_backwards_compat = extract_ProfileData("test_files/PickedProfiles.txt", 
     @test keys(prof.VolData.fields) == (:x_profile, :A_a, :B_b)
     @test extrema(prof.VolData.depth.val) == (-100.0, 0.0)
     @test prof.VolData.fields.B_b ≈ prof.VolData.depth.val
+end
+
+@testset "dataset files and profile loading" begin
+    @test_throws "Type should be either" GMG_Dataset("a", "Vol", "dir")
+    @test_throws "Type should be either" GMG_Dataset("a", "", "dir")
+    @test_throws "requires at least one volumetric dataset" combine_vol_data(NamedTuple())
+
+    dir = mktempdir()
+    file5 = joinpath(dir, "five_columns.txt")
+    write(file5, "Name,Location,Type,Active,Extra\nTopo,topo,Topography,true,1\n")
+    @test_throws "should have 3 or 4 columns" load_dataset_file(file5)
+
+    # topography and screenshot data, but no volume data
+    Lon, Lat, Depth = lonlatdepth_grid(0:0.5:10, 40:0.5:50, 0)
+    save_GMG("topo", GeoData(Lon, Lat, Depth, (Topography = Depth,)); dir)
+    Lon, Lat, Depth = lonlatdepth_grid(2:8, 45, -50:10:0)
+    save_GMG("screenshot", GeoData(Lon, Lat, Depth, (Depth = Depth,)); dir)
+    datasets = joinpath(dir, "datasets.txt")
+    write(datasets, "Name,Location,Type,Active\nTopo,$(joinpath(dir, "topo")),Topography,true\nShot,$(joinpath(dir, "screenshot")),Screenshot,true\n")
+    profiles = joinpath(dir, "profiles.txt")
+    write(profiles, "Num,LonStart,LatStart,LonEnd,LatEnd\n1,2.0,45.0,8.0,45.0\n")
+    profile = extract_ProfileData(profiles, 1, datasets)
+    @test keys(profile.TopoData) == (:Topo,)
+    @test keys(profile.ScreenshotData) == (:Shot,)
+    @test isnothing(profile.VolData)
+end
+
+@testset "profile edge cases" begin
+    @test_throws "zero length" extract_ProfileData!(ProfileData(start_lonlat = (5, 45), end_lonlat = (5, 45)))
+
+    # horizontal profiles warn that surface and screenshot data are not added
+    Lon, Lat, Depth = lonlatdepth_grid(0:1.0:10, 40:1.0:50, 0)
+    surf = (S = GeoData(Lon, Lat, Depth, (Z = Depth,)),)
+    @test_logs (:warn, r"surface data set S") GeophysicalModelGenerator.create_profile_surface!(ProfileData(depth = -10), surf)
+    @test_logs (:warn, r"screenshot data set S") GeophysicalModelGenerator.create_profile_screenshot!(ProfileData(depth = -10), surf)
+
+    # a profile without nearby points carries no stale point data
+    pts = (P = GeoData([1.0, 1.5, 2.0], [41.0, 41.0, 41.0], [-5.0, -5.0, -5.0], (Z = [1.0, 2.0, 3.0],)),)
+    prof = ProfileData(start_lonlat = (1, 41), end_lonlat = (2, 41))
+    GeophysicalModelGenerator.create_profile_point!(prof, pts, section_width = 5km)
+    @test length(prof.PointData.P.lon) == 3
+    prof.start_lonlat = (0.0, 80.0); prof.end_lonlat = (1.0, 80.0)
+    GeophysicalModelGenerator.create_profile_point!(prof, pts, section_width = 5km)
+    @test isnothing(prof.PointData)
+
+    # profiles are ordered by their number
+    file = joinpath(mktempdir(), "profiles.txt")
+    write(file, "Num,LonStart,LatStart,LonEnd,LatEnd\n2,3.0,4.0,5.0,6.0\n1,1.0,2.0,3.0,4.0\n")
+    @test read_picked_profiles(file)[1].start_lonlat == (1.0, 2.0)
 end
