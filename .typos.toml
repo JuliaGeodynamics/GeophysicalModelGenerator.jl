@@ -7,6 +7,7 @@ iy = "iy"
 iz = "iz"
 nin = "nin"
 tect = "tect"
+Monserrat = "Monserrat" # misspelling corrected by _pubbot (author_fixes)
 
 [files]
 extend-exclude = ["tutorials/*.pvsm","docs/paper/paper.bib"]

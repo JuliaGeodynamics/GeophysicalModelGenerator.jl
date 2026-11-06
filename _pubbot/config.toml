@@ -1,0 +1,44 @@
+# Publication bot settings (see README.md).
+
+# A paper names the package when its title, abstract or full text contains `match` as a whole
+# word (case-sensitive). Citing one of `dois` alone only puts it up for review.
+match = "GeophysicalModelGenerator"
+dois = [
+    "10.21105/joss.06763",  # Kaus et al. (2024), the reference given in the README
+]
+# Developers, by ORCID: their recent papers are checked too.
+developers = [
+    "0000-0002-0247-8660",  # Boris Kaus
+    "0000-0003-1185-3730",  # Marcel Thielmann
+    "0009-0008-9039-5646",  # Pascal Aellig
+    "0000-0003-1694-3735",  # Albert de Montserrat
+]
+
+# How far back each scan looks. DOIs already on the page or in seen_dois.txt are skipped.
+lookback_months = 18
+# OpenAlex work types considered publications.
+types = ["article", "preprint", "conference-paper", "book-chapter", "review", "letter"]
+# Repository copies and data deposits of papers, never listed.
+ignore_doi_prefixes = [
+    "10.5281/",   # Zenodo
+    "10.3929/",   # ETH Research Collection
+    "10.17863/",  # Cambridge Apollo
+    "10.14459/",  # mediaTUM
+    "10.6084/",   # figshare
+]
+# Titles never listed (regular expressions, case-insensitive).
+ignore_titles = ['^thank you to our', '^comment on ', '^reply to ', '^correction to ', '^erratum']
+
+# Preprint servers: DOI prefix => name used in the entry ("<name> (preprint)").
+[preprint_servers]
+"10.5194/egusphere-" = "EGUsphere"
+"10.48550/arxiv." = "arXiv"
+"10.22541/essoar." = "ESS Open Archive"
+"10.1002/essoar." = "ESS Open Archive"
+"10.21203/rs." = "Research Square"
+"10.31223/" = "EarthArXiv"
+"10.2139/ssrn." = "SSRN"
+
+# Misspelled author names found in publisher metadata: wrong => right.
+[author_fixes]
+"de Monserrat" = "de Montserrat"
