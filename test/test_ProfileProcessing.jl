@@ -187,7 +187,7 @@ end
     vol = (A = A, B = B)
     prof = ProfileData(start_lonlat = (2.0, 5.0), end_lonlat = (8.0, 5.0))
     GeophysicalModelGenerator.create_profile_volume!(prof, vol, DimsVolCross = (11, 21))
-    @test keys(prof.VolData.fields) == (:x_profile, :A_a, :B_b)
+    @test keys(prof.VolData.fields) == (:FlatCrossSection, :x_profile, :A_a, :B_b)
     @test extrema(prof.VolData.depth.val) == (-100.0, 0.0)
     @test prof.VolData.fields.B_b ≈ prof.VolData.depth.val
 end

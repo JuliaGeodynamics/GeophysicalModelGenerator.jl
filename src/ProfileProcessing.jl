@@ -313,7 +313,7 @@ function create_profile_volume!(Profile::ProfileData, VolData::NamedTuple; DimsV
     # The first dataset defines the profile grid; every other dataset is interpolated onto it.
     if Profile.vertical
         cross_tmp = cross_section(first(VolData), dims = DimsVolCross, Start = Profile.start_lonlat, End = Profile.end_lonlat, Depth_extent = Depth_extent)
-        shared = (x_profile = flatten_cross_section(cross_tmp, Start = Profile.start_lonlat),)
+        shared = (FlatCrossSection = cross_tmp.fields.FlatCrossSection, x_profile = flatten_cross_section(cross_tmp, Start = Profile.start_lonlat))
     else
         cross_tmp = cross_section(first(VolData), Depth_level = Profile.depth, Interpolate = true, dims = DimsVolCross)
         shared = (FlatCrossSection = cross_tmp.fields.FlatCrossSection,)

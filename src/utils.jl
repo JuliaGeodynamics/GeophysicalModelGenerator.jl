@@ -1013,6 +1013,24 @@ function check_data_set(DataSet::CartData)
 end
 
 
+# Indices of the sorted (ascending or descending) axis `v` that enclose all `targets` except NaN
+# (±Inf reaches the end of the axis), with one more node on each side, so that the range has at
+# least two nodes.
+function covering_range(v, targets)
+    lo, hi = Inf, -Inf
+    for t in targets
+        t = ustrip(t)
+        isnan(t) || (lo = min(lo, t); hi = max(hi, t))
+    end
+    lo > hi && return eachindex(v)                      # all targets are NaN
+    if first(v) > last(v)
+        i1, i2 = searchsortedlast(v, hi; rev = true), searchsortedfirst(v, lo; rev = true)
+    else
+        i1, i2 = searchsortedlast(v, lo), searchsortedfirst(v, hi)
+    end
+    return max(firstindex(v), i1 - 1):min(lastindex(v), i2 + 1)
+end
+
 """
     Data_interp = interpolate_datafields(V::AbstractGeneralGrid, Lon, Lat, Depth)
 
@@ -1054,6 +1072,12 @@ function interpolate_datafields(V::AbstractGeneralGrid, Lon, Lat, Depth)
         ReverseData = false
     end
 
+    # only the block of V that encloses the target points is interpolated, so that a profile or a
+    # small region does not copy every field of a large volume
+    ix, iy, iz = covering_range(Lon_vec, Lon), covering_range(Lat_vec, Lat), covering_range(Depth_vec, Depth)
+    Lon_vec, Lat_vec, Depth_vec = Lon_vec[ix], Lat_vec[iy], Depth_vec[iz]
+    block(A) = view(A, ix, iy, iz)
+
     fields_new = V.fields
     field_names = keys(fields_new)
     for i in 1:length(V.fields)
@@ -1065,9 +1089,9 @@ function interpolate_datafields(V::AbstractGeneralGrid, Lon, Lat, Depth)
             for j in 1:length(data_tuple)
                 if ReverseData
                     ndim = length(size(data_tuple[j]))
-                    interpol = linear_interpolation((Lon_vec, Lat_vec, reverse(Depth_vec)), reverse(ustrip.(data_tuple[j]), dims = ndim), extrapolation_bc = NaN)       # create interpolation object
+                    interpol = linear_interpolation((Lon_vec, Lat_vec, reverse(Depth_vec)), reverse(ustrip.(block(data_tuple[j])), dims = ndim), extrapolation_bc = NaN)       # create interpolation object
                 else
-                    interpol = linear_interpolation((Lon_vec, Lat_vec, Depth_vec), ustrip.(data_tuple[j]), extrapolation_bc = NaN)       # create interpolation object
+                    interpol = linear_interpolation((Lon_vec, Lat_vec, Depth_vec), ustrip.(block(data_tuple[j])), extrapolation_bc = NaN)       # create interpolation object
                 end
                 data_array[:, :, :, j] = interpol.(Lon, Lat, ustrip.(Depth))
             end
@@ -1081,9 +1105,9 @@ function interpolate_datafields(V::AbstractGeneralGrid, Lon, Lat, Depth)
             bc = isint ? Flat() : NaN
             if ReverseData
                 ndim = length(size(V.fields[i]))
-                interpol = make_interpolation((Lon_vec, Lat_vec, reverse(Depth_vec)), reverse(V.fields[i], dims = ndim), extrapolation_bc = bc)             # create interpolation object
+                interpol = make_interpolation((Lon_vec, Lat_vec, reverse(Depth_vec)), reverse(block(V.fields[i]), dims = ndim), extrapolation_bc = bc)             # create interpolation object
             else
-                interpol = make_interpolation((Lon_vec, Lat_vec, Depth_vec), V.fields[i], extrapolation_bc = bc)             # create interpolation object
+                interpol = make_interpolation((Lon_vec, Lat_vec, Depth_vec), block(V.fields[i]), extrapolation_bc = bc)             # create interpolation object
             end
             data_new = interpol.(Lon, Lat, ustrip.(Depth))                                                  # interpolate data field
             isint && (data_new = Int64.(data_new))

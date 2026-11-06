@@ -567,3 +567,29 @@ end
     B = GeoData(La, Lb, Da, (T = La,))
     @test_throws "do not overlap" votemap([A, B], ["T>0", "T>0"])
 end
+
+@testset "interpolation on the block around the targets" begin
+    covering_range = GeophysicalModelGenerator.covering_range
+    v = 0.0:1.0:10.0
+    @test covering_range(v, [2.5, 4.2]) == 2:7              # enclosing nodes 3:6, one more on each side
+    @test covering_range(reverse(v), [2.5, 4.2]) == 5:10
+    @test covering_range(v, [20.0]) == 10:11                # beyond the axis: the last two nodes
+    @test covering_range(v, [NaN]) == 1:11                  # only NaN targets: the whole axis
+    @test covering_range(v, [5.0, Inf]) == 5:11             # ±Inf reaches the end of the axis
+    @test covering_range(reverse(v), [-Inf, 5.0]) == 5:11
+
+    # an Int field takes the value at the edge of the volume for a target beyond it
+    Lon, Lat, Depth = lonlatdepth_grid(0:1:10, 0:1:10, -10:1:0)
+    ph = [i + 100j + 10000k for i in 1:11, j in 1:11, k in 1:11]
+    V = GeoData(Lon, Lat, Depth, (ph = ph,))
+    @test interpolate_datafields(V, [5.0, Inf], [5.0, 5.0], [-5.0, -5.0]).fields.ph == [ph[6, 6, 6], ph[11, 6, 6]]
+
+    # a linear field is reproduced exactly on a small region, for ascending and descending depth
+    f(x, y, z) = x + 2y + 3z
+    for depth in (-100:10:0, 0:-10:-100)
+        Lon, Lat, Depth = lonlatdepth_grid(0:1:20, 30:1:50, depth)
+        V = GeoData(Lon, Lat, Depth, (f = f.(Lon, Lat, Depth),))
+        T = lonlatdepth_grid(3.3:0.7:5.4, 41.2:0.5:42.7, -55.0:7.0:-20.0)
+        @test interpolate_datafields(V, T...).fields.f ≈ f.(T[1], T[2], ustrip.(T[3]))
+    end
+end
