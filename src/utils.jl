@@ -489,8 +489,16 @@ function cross_section_points(P::GeoData; Depth_level = nothing, Lat_level = not
         # choose projection point based on Start and End coordinates of the profile
         p_Point = ProjectionPoint(Lat = 0.5 * (Start[2] + End[2]), Lon = 0.5 * (Start[1] + End[1]))
 
-        # convert P to UTM Data
-        P_UTM = convert2UTMzone(P, p_Point) # convert to UTM
+        # only points within a lon/lat box around the profile, widened by the band, are converted to UTM:
+        # points far from the profile cannot be (the transverse Mercator projection fails beyond 50° in longitude)
+        dlat = 0.6 * section_width / (π / 180 * 6371.0)        # half the band width plus a margin, in degrees
+        lat1, lat2 = min(Start[2], End[2]) - dlat, max(Start[2], End[2]) + dlat
+        dlon = dlat / max(cosd(max(abs(lat1), abs(lat2))), 1.0e-3)
+        lonc, halfspan = 0.5 * (Start[1] + End[1]), 0.5 * abs(End[1] - Start[1]) + dlon
+        near = findall((lat1 .<= P.lat.val .<= lat2) .& (abs.(mod.(P.lon.val .- lonc .+ 180, 360) .- 180) .<= halfspan))
+        isempty(near) && return nothing
+        P_near = length(near) == length(P.lat.val) ? P : GeoData(P.lon.val[near], P.lat.val[near], P.depth.val[near], (depth = P.depth.val[near],))
+        P_UTM = convert2UTMzone(P_near, p_Point)
 
         # create a GeoData set containing the points that create the profile plane (we need three points to uniquely define that plane)
         # here, we define the points in a way that the angle between P1-P2 and P1-P3 vectors is 90° --> useful for the cross product
@@ -526,6 +534,7 @@ function cross_section_points(P::GeoData; Depth_level = nothing, Lat_level = not
         px = P_UTM.EW.val[ind] + t[ind] .* nx
         py = P_UTM.NS.val[ind] + t[ind] .* ny
         pz = P_UTM.depth.val[ind] + t[ind] .* nz
+        ind = near[ind]                                            # indices into P
 
         # the projected points are given in UTM coordinates and not in lon/lat/depth
         # therefore we have to recompute the lat/lon/depth values of the projected points

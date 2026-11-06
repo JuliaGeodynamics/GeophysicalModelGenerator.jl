@@ -593,3 +593,16 @@ end
         @test interpolate_datafields(V, T...).fields.f ≈ f.(T[1], T[2], ustrip.(T[3]))
     end
 end
+
+# a point profile through global data: points far from the profile are not projected (see #160)
+@testset "cross_section_points with global data" begin
+    lon, lat = repeat(-180.0:10:170, 13), repeat(-60.0:10:60, inner = 36)
+    lon = [lon; 9.5:0.1:10.5]; lat = [lat; fill(45.0, 11)]
+    P = GeoData(lon, lat, fill(-10.0, length(lon)), (a = collect(1.0:length(lon)),))
+    local_pts = findall(i -> abs(lon[i] - 10) < 20 && 30 <= lat[i] <= 70, eachindex(lon))
+    P_local = GeoData(lon[local_pts], lat[local_pts], fill(-10.0, length(local_pts)), (a = Float64.(local_pts),))
+    prof = cross_section(P, Start = (10.0, 40.0), End = (10.0, 60.0), section_width = 50km)
+    prof_local = cross_section(P_local, Start = (10.0, 40.0), End = (10.0, 60.0), section_width = 50km)
+    @test prof.fields.a == prof_local.fields.a && prof.fields.lat_proj == prof_local.fields.lat_proj
+    @test isnothing(cross_section(P, Start = (100.5, 1.0), End = (100.5, 2.0), section_width = 1km))
+end
