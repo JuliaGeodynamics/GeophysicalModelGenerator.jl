@@ -1,11 +1,7 @@
-# Downloads topography from the GMT data server without going through GMT itself.
+# Downloads topography from the GMT data server and decodes it without GMT.
 #
 # The server publishes its grids in two forms: the coarse resolutions (06m and coarser) as
-# single NetCDF files, and the finer ones as tiles of JPEG2000. Both are plain HTTP
-# downloads, so the only thing GMT was really needed for was decoding -- which `OpenJpeg_jll`
-# does. That matters because GMT pulls in GDAL_jll, whose HDF5 bounds conflict with the
-# PETSc-based stack that LaMEM uses, and because GMT's own share directory is not reliably
-# relocatable.
+# single NetCDF files, and the finer ones as tiles of JPEG2000, which `OpenJpeg_jll` decodes.
 
 using Downloads, OpenJpeg_jll, Scratch
 
@@ -42,10 +38,10 @@ too, and a run that should fail in a minute takes hours.
 const SERVER_RETRY_AFTER = 600.0
 
 """
-    tile_size_deg(res)
+    tile_size_deg(dataset, res, reg)
 
-The width and height, in degrees, of one tile at resolution `res`, or `nothing` if that
-resolution is published as a single global file rather than as tiles.
+The width and height, in degrees, of one tile of this set, or `nothing` if the set is
+published as a single global file rather than as tiles.
 """
 function tile_size_deg(dataset::AbstractString, res::AbstractString, reg::AbstractString)
     e = server_entry(dataset, res, reg)
@@ -102,21 +98,60 @@ the mirrors.
 """
 function server_index_file()
     index = joinpath(topo_cache_dir(), "gmt_data_server.txt")
-    (isfile(index) && filesize(index) > 0) && return index
+    isfile(index) && is_valid_download(index) && return index
     if !SERVER_INDEX_TRIED[] && server_down_for() == 0
         SERVER_INDEX_TRIED[] = true
         for server in GMT_SERVERS
             root = replace(server, "/server/earth" => "")
             try
-                Downloads.download("$root/gmt_data_server.txt", index; timeout = INDEX_TIMEOUT)
+                download_validated("$root/gmt_data_server.txt", index; timeout = INDEX_TIMEOUT)
                 return index
             catch e
                 e isa InterruptException && rethrow()
-                rm(index; force = true)               # no half-written index
             end
         end
     end
     return BUNDLED_SERVER_INDEX
+end
+
+"""
+    is_valid_download(file)
+
+Whether `file` holds what its name says it does: a JPEG2000 image for `.jp2`, a NetCDF
+(classic or HDF5-based) grid for `.grd`, and a server index with its tab-separated lines for
+`.txt`. An error page that the server delivers with status 200
+fails this check, so it is never mistaken for a tile.
+"""
+function is_valid_download(file::AbstractString)
+    magic = open(io -> read(io, 12), file)
+    if endswith(file, ".jp2")
+        return magic == b"\0\0\0\x0cjP  \r\n\x87\n"
+    elseif endswith(file, ".grd")
+        return length(magic) >= 8 && (magic[1:3] == b"CDF" || magic[1:8] == b"\x89HDF\r\n\x1a\n")
+    elseif endswith(file, ".txt")
+        return any(l -> !startswith(l, "#") && count(==('\t'), l) >= 10, eachline(file))
+    end
+    return error("no validity check for the downloaded file $file")
+end
+
+"""
+    download_validated(url, dest; timeout=Inf, valid=is_valid_download)
+
+Download `url` to `dest`. The transfer goes to a temporary file of its own beside `dest` and
+is moved into place only once `valid(file)` accepts it, so an existing `dest` survives a
+failed download, concurrent processes never see each other's partial files and a corrupt
+download never enters the cache.
+"""
+function download_validated(url::AbstractString, dest::AbstractString; timeout::Real = Inf, valid = is_valid_download)
+    tmp = tempname(dirname(dest)) * splitext(dest)[2]   # same extension, for the check
+    try
+        Downloads.download(url, tmp; timeout)
+        valid(tmp) || error("$url did not deliver a valid $(basename(dest)) (it begins with $(repr(String(open(io -> read(io, 64), tmp)))))")
+        mv(tmp, dest; force = true)
+    finally
+        rm(tmp; force = true)
+    end
+    return dest
 end
 
 """
@@ -144,9 +179,17 @@ end
     reset_topo_server()
 
 Forget that the GMT data server was unreachable, so that the next `import_topo` asks it
-again right away rather than after `SERVER_RETRY_AFTER` seconds.
+again right away rather than after `SERVER_RETRY_AFTER` seconds, and forget the tiles it
+answered with 404 (the `*.absent` markers), so that those are requested again too.
 """
-reset_topo_server() = rm(joinpath(topo_cache_dir(), "server_unreachable_until"); force = true)
+function reset_topo_server()
+    dir = topo_cache_dir()
+    rm(joinpath(dir, "server_unreachable_until"); force = true)
+    for f in readdir(dir; join = true)
+        endswith(f, ".absent") && rm(f; force = true)
+    end
+    return nothing
+end
 
 """
     tile_size_px(res, deg, reg)
@@ -211,8 +254,8 @@ publishes these in `gmt_data_server.txt`, one line per set: `earth_relief_15s_p`
 half metres, for instance, while the SRTM sets are stored directly in metres. Reading them
 rather than assuming keeps this correct if a set is ever re-encoded.
 
-Falls back to `(1, 0)` if the index cannot be fetched, which is right for every set that is
-not scaled.
+Falls back to `(1, 0)` for a set that the index does not list, which is right for every set
+that is not scaled.
 """
 function dataset_scale(dataset::AbstractString, res::AbstractString, reg::AbstractString)
     e = server_entry(dataset, res, reg)
@@ -235,6 +278,12 @@ function filler_dataset(dataset::AbstractString, res::AbstractString, reg::Abstr
     (isempty(e.filler) || e.filler == "-") && return nothing
     m = match(r"^(.*)_(\d+[dms])_([gp])$", e.filler)
     return isnothing(m) ? nothing : (String(m[1]), String(m[2]), String(m[3]))
+end
+
+# The resolutions at which the server index lists `dataset`.
+function server_resolutions(dataset)
+    ms = [match(Regex("^$(dataset)_(\\d+[dms])_[gp]"), replace(get(split(l, '\t'), 2, ""), "/" => "")) for l in eachline(server_index_file())]
+    return unique(String[r[1] for r in ms if !isnothing(r)])
 end
 
 """
@@ -305,12 +354,17 @@ so a tile that is entirely ocean simply does not exist.
 """
 function download_tile(relative_url::AbstractString, dest::AbstractString;
                       maxattempts::Integer = 5, timeout::Real = TILE_TIMEOUT)
-    isfile(dest) && filesize(dest) > 0 && return true       # cached
+    absent = dest * ".absent"                               # remembers a tile the server does not have
+    isfile(absent) && return false
+    if isfile(dest)
+        is_valid_download(dest) && return true              # cached
+        rm(dest)                                            # corrupt: fetch it again
+    end
 
     wait = server_down_for()
     wait > 0 && error("the GMT data server could not be reached a moment ago, so $(basename(dest)) was not requested; it will be tried again in $(round(Int, wait)) s. To retry now, call GeophysicalModelGenerator.reset_topo_server().")
 
-    tmp = dest * ".part"                                    # never leave a half file behind
+    last_err = nothing
     for attempt in 1:max(1, maxattempts)
         for server in GMT_SERVERS
             try
@@ -318,14 +372,14 @@ function download_tile(relative_url::AbstractString, dest::AbstractString;
                 # when several jobs pull tiles at once -- which is exactly what CI does --
                 # and without a timeout a throttled connection hangs the whole run rather
                 # than failing over to the next mirror.
-                Downloads.download("$server/$relative_url", tmp; timeout = timeout)
-                mv(tmp, dest; force = true)
+                download_validated("$server/$relative_url", dest; timeout)
                 return true
             catch err
-                rm(tmp, force = true)
                 err isa InterruptException && rethrow()
+                last_err = err
                 # a 404 means there is no such tile, and no mirror will have it either
                 if err isa Downloads.RequestError && err.response.status == 404
+                    touch(absent)
                     return false
                 end
             end
@@ -338,7 +392,7 @@ function download_tile(relative_url::AbstractString, dest::AbstractString;
     # same as a tile that does not exist (which is filled with sea level), so it is an error
     # -- and it is remembered, so the next call does not wait all of this out again.
     mark_server_down()
-    return error("could not download $relative_url from any GMT data server mirror in $maxattempts attempts")
+    return error("could not download $relative_url from any GMT data server mirror in $maxattempts attempts; the last attempt failed with: $(sprint(showerror, last_err))")
 end
 
 """
@@ -350,7 +404,17 @@ comes with `OpenJpeg_jll`. The file stores its rows from north to south.
 function decode_jp2(file::AbstractString, n::Integer)
     raw = file * ".raw"
     if !(isfile(raw) && filesize(raw) == n * n * 2)
-        run(pipeline(`$(opj_decompress()) -i $file -o $raw`, stdout = devnull, stderr = devnull))
+        tmp = tempname(dirname(file)) * ".raw"           # opj_decompress picks the format by extension
+        msg = IOBuffer()
+        try
+            success(pipeline(`$(opj_decompress()) -i $file -o $tmp`, stdout = devnull, stderr = msg)) ||
+                error("opj_decompress could not decode $file:\n$(String(take!(msg)))")
+            filesize(tmp) == n * n * 2 ||
+                error("decoding $file gave $(filesize(tmp)) bytes rather than the $(n * n * 2) of a $n x $n tile")
+            mv(tmp, raw; force = true)
+        finally
+            rm(tmp; force = true)
+        end
     end
     A = Array{Int16}(undef, n, n)
     read!(raw, A)
@@ -403,7 +467,17 @@ function grid_from_tiles(limits, dataset::AbstractString, res::AbstractString, r
             isnothing(filler) && error("tile $name of $dataset at resolution $res is not on the GMT data server")
             continue                            # filled from the coarser set below
         end
-        A = decode_jp2(file, n)
+        A = try
+            decode_jp2(file, n)
+        catch err
+            err isa InterruptException && rethrow()
+            # a cached tile that does not decode is corrupt: download it again, once
+            @warn "Downloading $name again, as the cached copy could not be decoded" exception = err
+            rm(file)
+            download_tile(tile_url(name, dataset, res, tile_reg), file; maxattempts) ||
+                error("tile $name of $dataset at resolution $res is no longer on the GMT data server")
+            decode_jp2(file, n)
+        end
         Z[((j - 1) * step + 1):((j - 1) * step + n),
           ((i - 1) * step + 1):((i - 1) * step + n)] = A[end:-1:1, :]
     end
@@ -511,10 +585,12 @@ function grid_from_single_file(limits, dataset::AbstractString, res::AbstractStr
 end
 
 """
-    import_topo(limits; dataset="earth_relief", res="01m", reg="p")
+    import_topo(limits; dataset="earth_relief", res="01m", reg="g")
 
 Download topography (and bathymetry) for the region `limits = [lonmin, lonmax, latmin, latmax]`
 from the GMT data server, and return it as `GeoData` whose `Topography` field is in km.
+Longitudes are in `-180..180` with `lonmin < lonmax`; regions that cross the antimeridian
+(±180°) are not supported and raise an error.
 
 This does not require `GMT`: the grids are fetched over HTTP and decoded here.
 
@@ -543,16 +619,18 @@ function import_topo(limits; dataset::AbstractString = "earth_relief",
                      file::Union{Nothing, AbstractString} = nothing,
                      maxattempts::Integer = 5)
 
-    # accept the `file="@earth_relief_01m"` spelling that this function used to take
+    # accept the `file="@earth_relief_01m"` spelling
     if !isnothing(file)
         dataset, res, reg = parse_topo_file(file)
     end
 
-    # longitudes west of Greenwich may be given either way round
+    resolutions = server_resolutions(dataset)
+    isempty(resolutions) && error("dataset \"$dataset\" is not on the GMT data server; available are e.g. \"earth_relief\", \"earth_gebco\" and \"earth_synbath\"")
+    res in resolutions || error("res must be one of $(join(resolutions, ", "))")
+
     limits = collect(float.(limits))
-    if limits[1] > limits[2]
-        limits[1], limits[2] = limits[2], limits[1]
-    end
+    limits[1] > limits[2] &&
+        error("lonmin = $(limits[1]) is larger than lonmax = $(limits[2]): regions that cross the antimeridian (±180°) are not supported, and the longitudes must be given in increasing order")
     if limits[3] > limits[4]
         limits[3], limits[4] = limits[4], limits[3]
     end
@@ -579,13 +657,12 @@ that name it on the server.
 """
 function parse_topo_file(file::AbstractString)
     s = lstrip(file, '@')
-    # the tutorials write "@earth_relief_01m.grd"; the suffix names the format GMT used to
-    # download into and says nothing about which set is wanted
+    # a ".grd" or ".nc" suffix names a file format and says nothing about which set is wanted
     endswith(s, ".grd") && (s = s[1:(end - 4)])
     endswith(s, ".nc") && (s = s[1:(end - 3)])
     m = match(r"^(.*)_(\d+[dms])(?:_([gp]))?$", s)
     isnothing(m) && error("cannot make sense of the topography file name \"$file\"")
-    # a name without a trailing _g/_p leaves the registration open, and GMT then serves
-            # whichever the set has, preferring gridline -- the same default as `reg`
-            return String(m[1]), String(m[2]), isnothing(m[3]) ? "g" : String(m[3])
+    # a name without a trailing _g/_p leaves the registration open: gridline is preferred,
+    # the same default as `reg`
+    return String(m[1]), String(m[2]), isnothing(m[3]) ? "g" : String(m[3])
 end

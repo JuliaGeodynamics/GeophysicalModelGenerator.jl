@@ -78,10 +78,10 @@ jobs:
       # server. The key changes with the prefetch list; `restore-keys` then
       # still restores the previous tiles, so only the new ones are fetched
       # rather than every job of the matrix fetching everything at once (the
-      # server throttles that, and a throttled job used to run for two hours).
+      # server throttles that, and a throttled job runs into the job timeout).
       #
       # `import_topo` keeps the tiles in its own scratch space rather than in
-      # ~/.gmt, which is where GMT used to put them; the UUID is the package's.
+      # ~/.gmt, which is where GMT puts its own; the UUID is the package's.
       # ~/.gmt is still cached for import_GeoTIFF, which does go through GMT.
       # The decoded .raw files are left out: they are rebuilt from the tiles.
       - uses: actions/cache/restore@v6
@@ -90,7 +90,7 @@ jobs:
           path: |
             ~/.julia/scratchspaces/3700c31b-fa53-48a6-808a-ef22d5a84742/topo_tiles
             !~/.julia/scratchspaces/3700c31b-fa53-48a6-808a-ef22d5a84742/topo_tiles/*.raw
-            !~/.julia/scratchspaces/3700c31b-fa53-48a6-808a-ef22d5a84742/topo_tiles/*.part
+            !~/.julia/scratchspaces/3700c31b-fa53-48a6-808a-ef22d5a84742/topo_tiles/jl_*
             !~/.julia/scratchspaces/3700c31b-fa53-48a6-808a-ef22d5a84742/topo_tiles/server_unreachable_until
             ~/.gmt
           key: gmt-topo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('test/topo_prefetch.jl') }}
@@ -110,7 +110,7 @@ jobs:
           path: |
             ~/.julia/scratchspaces/3700c31b-fa53-48a6-808a-ef22d5a84742/topo_tiles
             !~/.julia/scratchspaces/3700c31b-fa53-48a6-808a-ef22d5a84742/topo_tiles/*.raw
-            !~/.julia/scratchspaces/3700c31b-fa53-48a6-808a-ef22d5a84742/topo_tiles/*.part
+            !~/.julia/scratchspaces/3700c31b-fa53-48a6-808a-ef22d5a84742/topo_tiles/jl_*
             !~/.julia/scratchspaces/3700c31b-fa53-48a6-808a-ef22d5a84742/topo_tiles/server_unreachable_until
             ~/.gmt
           key: gmt-topo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('test/topo_prefetch.jl') }}
