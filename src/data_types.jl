@@ -317,18 +317,7 @@ end
 function Base.convert(::Type{ParaviewData}, d::GeoData)
 
     # Utilize the Geodesy.jl package & use the Cartesian Earth-Centered-Earth-Fixed (ECEF) coordinate system
-    lon = Array(ustrip.(d.lon.val))
-    lat = Array(ustrip.(d.lat.val))
-    LLA_Data = LLA.(lat, lon, Array(ustrip.(d.depth.val)) * 1000)             # convert to LLA from Geodesy package
-    X, Y, Z = zeros(size(lon)), zeros(size(lon)), zeros(size(lon))
-
-    # convert to cartesian ECEF reference frame. Note that we use kilometers and the wgs84
-    for i in eachindex(X)
-        data_xyz = ECEF(LLA_Data[i], wgs84)
-        X[i] = data_xyz.x / 1.0e3
-        Y[i] = data_xyz.y / 1.0e3
-        Z[i] = data_xyz.z / 1.0e3
-    end
+    X, Y, Z = ecef_km(NumValue(d.lon), NumValue(d.lat), NumValue(d.depth))
 
 
     # In case any of the fields in the tuple has length 3, it is assumed to be a vector, so transfer it
