@@ -93,33 +93,25 @@ end
 This uses nearest neighbour interpolation to count how many points (given by `pt_x`,`pt_y`,`pt_z` coordinate vectors) are in the 
 vicinity of 3D grid point specified by `X`,`Y`,`Z` 3D coordinate arrays.
 The search radius is `R = radius_factor * sqrt(Δx² + Δy² + Δz²)`, `radius_factor` times the diagonal of the first grid cell,
-where `Δx`, `Δy` and `Δz` are the lengths of its edges along the three grid directions
+where `Δx`, `Δy` and `Δz` are the lengths of its edges along the three grid directions (zero along a direction in which the grid has a single point).
 
 """
 function point_to_nearest_grid(pt_x, pt_y, pt_z, X, Y, Z; radius_factor = 1)
 
-    data = zeros(3, length(pt_x))
-    data[1, :], data[2, :], data[3, :] = pt_x[:], pt_y[:], pt_z[:]
-    tree = BallTree(data)                               # Generate tree with EQ data
+    tree = KDTree([SVector{3, Float64}(p) for p in zip(pt_x, pt_y, pt_z)])
 
     # Edge lengths of the first grid cell, measured along the grid directions, so that grids
     # that are not aligned with the coordinate axes (such as ECEF coordinates) also work
-    edge(I) = sqrt((X[I] - X[1])^2 + (Y[I] - Y[1])^2 + (Z[I] - Z[1])^2)
-    Δx, Δy, Δz = edge(CartesianIndex(2, 1, 1)), edge(CartesianIndex(1, 2, 1)), edge(CartesianIndex(1, 1, 2))
-
-    points = zeros(3, length(X))
-    points[1, :], points[2, :], points[3, :] = X[:], Y[:], Z[:]
+    I0 = first(CartesianIndices(X))
+    function edge(dim)
+        size(X, dim) == 1 && return 0.0                  # the grid is flat in this direction
+        I = I0 + CartesianIndex(ntuple(==(dim), 3))
+        return sqrt((X[I] - X[I0])^2 + (Y[I] - Y[I0])^2 + (Z[I] - Z[I0])^2)
+    end
+    Δx, Δy, Δz = edge(1), edge(2), edge(3)
 
     radius = radius_factor * sqrt(Δx^2 + Δy^2 + Δz^2)  # search radius
-    idxs = inrange(tree, points, radius)           # find points (NearestNeighbors package)
-    le = length.(idxs)                           # number of points
-
-    count = zeros(Int64, size(X))
-    for i in eachindex(X)
-        count[i] = le[i]
-    end
-
-    return count
+    return map((x, y, z) -> inrangecount(tree, SVector{3, Float64}(x, y, z), radius), X, Y, Z)
 end
 
 """

@@ -51,6 +51,10 @@ Grid_Count = point_to_nearest_grid(NumValue(EQ_geo.lon), NumValue(EQ_geo.lat), N
 # Test in case the EQ data is also specified as GeoData
 @test point_to_nearest_grid(EQ_geo, Grid_geo; radius_factor = 2).fields.Count == Grid_Count.fields.Count
 
+# A horizontal grid with a single point in z: the search radius is the diagonal of the 1×1 km cell
+X2, Y2, Z2 = xyz_grid(0:1:10, 0:1:10, 0)
+@test point_to_nearest_grid([5.0, 5.5, 5.0], [5.0, 5.5, 8.0], [0.0, 0.0, 0.0], X2, Y2, Z2)[6, 6, 1] == 2
+
 # Test countmap
 Data_countMap = countmap(Data_set2D, "Count", 5, 5)
 @test Data_countMap.fields.countmap[1, 1] == 1.0
