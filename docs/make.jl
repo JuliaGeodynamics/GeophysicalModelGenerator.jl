@@ -129,6 +129,7 @@ makedocs(;
             "LaMEM" => "man/lamem.md",
             "pTatin" => "man/ptatin.md",
             "Chmy" => "man/Tutorial_Chmy_MPI.md",
+            "JustPIC" => "man/justpic.md",
             "Profile Processing" => "man/profile_processing.md",
             "Gmsh" => "man/gmsh.md",
             "Movies" => "man/movies.md",

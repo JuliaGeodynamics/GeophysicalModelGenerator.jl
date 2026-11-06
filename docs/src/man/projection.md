@@ -11,14 +11,14 @@ Yet, if you do geodynamic calculations the chances are that the geodynamic code 
 Converting from one coordinate system to the other is straightforward. Let's use Europe as an example:
 
 ```julia-repl
-julia> using GeophysicalModelGenerator, GMT
-julia> Topo = import_topo(lon = [-10, 45], lat=[25, 50], file="@earth_relief_20m")
+julia> using GeophysicalModelGenerator
+julia> Topo = import_topo(lon = [-10, 45], lat = [25, 50], res = "05m")
 GeoData
-  size  : (165, 75, 1)
-  lon   ϵ [ -10.0 : 44.666666666666664]
-  lat   ϵ [ 25.0 : 49.666666666666664]
-  depth ϵ [ -4.9855 km : 3.123 km]
-  fields: (:Topography,)
+  size      : (661, 301, 1)
+  lon       ϵ [ -10.0 : 45.0]
+  lat       ϵ [ 25.0 : 50.0]
+  depth     ϵ [ -4.9645 : 3.859]
+  fields    : (:Topography,)
 julia> write_paraview(Topo,"Topo")
 Saved file: Topo.vts
 ```
@@ -30,11 +30,11 @@ You can convert this to UTM zone as:
 julia> convert(UTMData, Topo)
 UTMData
   UTM zone : 29-38 North
-    size   : (165, 75, 1)
-    EW     ϵ [ 197181.31221507967 : 769155.4572884373]
-    NS     ϵ [ 2.7649477474783654e6 : 5.505892073781423e6]
-    depth  ϵ [ -4985.5 m : 3123.0 m]
-    fields : (:Topography,)
+    size    : (661, 301, 1)
+    EW      ϵ [ 399086.9733044696 : 500000.0]
+    NS      ϵ [ 2.7653199440362463e6 : 5.538630702867476e6]
+  depth     ϵ [ -4964.5 : 3859.0]
+    fields  : (:Topography,)
 ```
 As the area is large, it covers a range of `UTM` zones (and every point has a UTM zone attached). Within each zone, the coordinates are approximately orthogonal. Plotting this to Paraview does *not* result in a sensible dataset.
 
@@ -50,26 +50,26 @@ Projecting the `GeoData` set using this projection point is done with:
 julia> convert2UTMzone(Topo,p)
 UTMData
   UTM zone : 33-33 North
-    size   : (165, 75, 1)
-    EW     ϵ [ -2.0750691599137965e6 : 3.581351293385453e6]
-    NS     ϵ [ 2.7649477474783654e6 : 5.938114212160672e6]
-    depth  ϵ [ -4985.5 m : 3123.0 m]
-    fields : (:Topography,)
+    size    : (661, 301, 1)
+    EW      ϵ [ -2.0750691599137965e6 : 2.628602856709278e6]
+    NS      ϵ [ 3.0130123963628556e6 : 5.984118092128813e6]
+  depth     ϵ [ -4964.5 : 3859.0]
+    fields  : (:Topography,)
 ```
-Whereas this is now in UTM Data (in meters), it is distorted.
+Whereas this is now in UTM Data (in meters, including the depth), it is distorted.
 ![Topo_Europe_UTMData](../assets/img/Topo_Europe_UTMData.png)
 
 Often it is more convenient to have this in `CartData`, which is done in a similar manner:
 ```julia-repl
 julia> Topo_Cart = convert2CartData(Topo,p)
 CartData
-    size   : (165, 75, 1)
-    x      ϵ [ -2778.3805979523936 km : 2878.039855346856 km]
-    y      ϵ [ -1387.8785405466067 km : 1785.2879241356998 km]
-    z      ϵ [ -4.9855 km : 3.123 km]
-    fields : (:Topography,)
+    size    : (661, 301, 1)
+    x       ϵ [ -2778.3805979523936 : 2914.683925107035]
+    y       ϵ [ -1387.8785405466067 : 1831.291804103841]
+    z       ϵ [ -4.9645 : 3.859]
+    fields  : (:Topography,)
 ```
-This shows that the model is ~5600 by 3000 km.
+This shows that the model is ~5700 by 3200 km.
 ![Topo_Europe_CartData](../assets/img/Topo_Europe_CartData.png)
 
 Whereas this is ok to look at and compare with a LaMEM model setup, we cannot use it to perform internal calculations (or to generate a LaMEM model setup), because the `x` and `y` coordinates are distorted and not orthogonal.
@@ -79,21 +79,21 @@ For use with LaMEM, you would need an orthogonal Cartesian grid. From the last c
 ```julia-repl
 julia> Topo_Cart_orth  = CartData(xyz_grid(-2000:20:2000,-1000:20:1000,0))
 CartData
-    size   : (201, 101, 1)
-    x      ϵ [ -2000.0 km : 2000.0 km]
-    y      ϵ [ -1000.0 km : 1000.0 km]
-    z      ϵ [ 0.0 km : 0.0 km]
-    fields : (:Z,)
+    size    : (201, 101, 1)
+    x       ϵ [ -2000.0 : 2000.0]
+    y       ϵ [ -1000.0 : 1000.0]
+    z       ϵ [ 0.0 : 0.0]
+    fields  : (:Z,)
 ```
 Next, we can project the topographic data (in `GeoData` format) on this orthogonal grid
 ```julia-repl
 julia> Topo_Cart_orth  = project_CartData(Topo_Cart_orth, Topo, p)
 CartData
-    size   : (201, 101, 1)
-    x      ϵ [ -2000.0 km : 2000.0 km]
-    y      ϵ [ -1000.0 km : 1000.0 km]
-    z      ϵ [ -4.485650671162607 km : 2.5909655318121865 km]
-    fields : (:Topography,)
+    size    : (201, 101, 1)
+    x       ϵ [ -2000.0 : 2000.0]
+    y       ϵ [ -1000.0 : 1000.0]
+    z       ϵ [ -4.8233135883454485 : 3.0882537630018256]
+    fields  : (:Topography,)
 julia> write_paraview(Topo_Cart_orth,"Topo_Cart_orth");
 ```
 ![Topo_Europe_CartData_Proj](../assets/img/Topo_Europe_CartData_Proj.png)

@@ -129,7 +129,7 @@ function write_paraview(DataSet::ParaviewData, filename = "test"; PointsData = f
 end
 
 # Multiple dispatch such that we can also call the routine with GeoData input:
-write_paraview(DataSet::GeoData, filename::Any; PointsData = false, pvd = nothing, time = nothing, directory = nothing) = write_paraview(convert(ParaviewData, DataSet), filename, PointsData = PointsData, pvd = pvd, time = time, directory = directory);
+write_paraview(DataSet::GeoData, filename::Any; PointsData = false, pvd = nothing, time = nothing, directory = nothing, verbose = true) = write_paraview(convert(ParaviewData, DataSet), filename; PointsData, pvd, time, directory, verbose)
 
 """
     write_paraview(DataSet::UTMData, filename::Any; PointsData=false, pvd=nothing, time=nothing, directory=nothing, verbose=true) 

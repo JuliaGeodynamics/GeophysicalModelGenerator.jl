@@ -80,6 +80,11 @@ regions = data_cart.fields.regions
 @test regions[1, 1, 1] == 1
 @test regions[3, 3, 3] == 2
 @test regions[2, 2, 2] == 0
+
+# a grid that is not rectilinear gives the same regions
+Xp, Yp, Zp = xyz_grid(0.1:0.4:0.9, 0.1:0.4:0.9, 0.1:0.4:0.9)
+Xp[2, 2, 2] += 1.0e-3
+@test project_FEData_CartData(CartData(Xp, Yp, Zp, (Z = Zp,)), data_fe).fields.regions == regions
 @test count(==(1), regions) == 4
 @test count(==(2), regions) == 4
 

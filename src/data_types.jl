@@ -58,13 +58,6 @@ function ProjectionPoint(EW::Float64, NS::Float64, Zone::Int64, isnorth::Bool)
 end
 
 
-# data structure for a list of values - TO BE REMOVED
-mutable struct ValueList
-    name::String
-    unit::String
-    values::Vector{Float64}
-end
-
 """
     GeoData(lon::Any, lat:Any, depth::GeoUnit, fields::NamedTuple)
 
@@ -155,11 +148,7 @@ struct GeoData <: AbstractGeneralGrid
     function GeoData(lon, lat, depth, fields, atts = nothing)
 
         # check depth & convert it to units of km in case no units are given or it has different length units
-        if unit.(depth[1]) == NoUnits
-            depth = depth * km                # in case depth has no dimensions
-        end
-        depth = uconvert.(km, depth)         # convert to km
-        depth = GeoUnit(depth)              # convert to GeoUnit structure with units of km
+        depth = convert!(depth, km)
 
         if isa(lat, StepRangeLen)
             lat = Vector(lat)
@@ -426,11 +415,7 @@ struct UTMData <: AbstractGeneralGrid
     function UTMData(EW, NS, depth, zone, northern, fields, atts = nothing)
 
         # check depth & convert it to units of km in case no units are given or it has different length units
-        if unit.(depth)[1] == NoUnits
-            depth = depth * m                # in case depth has no dimensions
-        end
-        depth = uconvert.(m, depth)         # convert to meters
-        depth = GeoUnit(depth)             # convert to GeoUnit structure with units of meters
+        depth = convert!(depth, m)
 
         # Check ordering of the arrays in case of 3D
         if sum(size(EW) .> 1) == 3
@@ -657,7 +642,7 @@ function convert2UTMzone(d::GeoData, proj::ProjectionPoint)
         atts = Dict("note" => "No attributes were given to this dataset") # assign the default
     end
 
-    return UTMData(EW, NS, d.depth.val, zone, northern, d.fields, atts)
+    return UTMData(EW, NS, d.depth.val .* 1.0e3, zone, northern, d.fields, atts)  # depth: km -> m
 
 end
 
@@ -870,11 +855,7 @@ Converts a `GeoData` structure to a `CartData` structure, which essentially tran
 """
 function convert2CartData(d::GeoData, proj::ProjectionPoint)
 
-    d_UTM = convert2UTMzone(d, proj)
-    return CartData(
-        (ustrip.(d_UTM.EW.val) .- proj.EW) ./ 1.0e3, (ustrip.(d_UTM.NS.val) .- proj.NS) ./ 1.0e3,
-        ustrip.(d_UTM.depth.val), d_UTM.fields, d_UTM.atts
-    )
+    return convert2CartData(convert2UTMzone(d, proj), proj)
 end
 
 """
@@ -977,29 +958,29 @@ Therefore, if you want to display or color that correctly in Paraview, you need 
 function velocity_spherical_to_cartesian!(Data::GeoData, Velocity::Tuple)
     # Note: This is partly based on scripts originally written by Tobias Baumann, Uni Mainz
 
-    for i in eachindex(Data.lat.val)
-        az = Data.lon.val[i]
-        el = Data.lat.val[i]
+    return rotate_velocity_to_cartesian!(Data.lon.val, Data.lat.val, Velocity...)
+end
 
-        R = [
-            -sind(az) -sind(el) * cosd(az) cosd(el) * cosd(az);
-            cosd(az) -sind(el) * sind(az) cosd(el) * sind(az);
-            0.0       cosd(el)          sind(el)
-        ]
+# Function barrier: the coordinate fields of GeoData are not inferable
+function rotate_velocity_to_cartesian!(Lon, Lat, Ve, Vn, Vz)
+    for i in eachindex(Lon, Lat, Ve, Vn, Vz)
+        sa, ca = sind(Lon[i]), cosd(Lon[i])
+        se, ce = sind(Lat[i]), cosd(Lat[i])
+        e, n, u = Ve[i], Vn[i], Vz[i]
 
-        V_sph = [Velocity[1][i]; Velocity[2][i]; Velocity[3][i] ]
-        V_xyz = R * V_sph
-
-        # in-place saving of rotated velocity
-        Velocity[1][i] = V_xyz[1]
-        Velocity[2][i] = V_xyz[2]
-        Velocity[3][i] = V_xyz[3]
+        # rotation matrix R = [-sa -se*ca ce*ca; ca -se*sa ce*sa; 0 ce se] applied to (e, n, u)
+        Ve[i] = -sa * e + (-se * ca) * n + (ce * ca) * u
+        Vn[i] = ca * e + (-se * sa) * n + (ce * sa) * u
+        Vz[i] = 0.0 * e + ce * n + se * u   # 0.0 * e propagates NaN and Inf, as R[3, 1] * e does
     end
     return
 end
 
 # Internal function that converts arrays to a GeoUnit with certain units
 function convert!(d, u)
+    # Unitless Float64 data needs only one copy; the general path below makes four
+    d isa Array{Float64} && !isempty(d) && return GeoUnit{typeof(d), typeof(u)}(copy(d), u, true)
+
     if unit.(d)[1] == NoUnits
         d = d * u                # in case it has no dimensions
     end
@@ -1016,13 +997,13 @@ end
 function average_q1(d::Array)
 
     # we are using multidimensional iterations in julia here following https://julialang.org/blog/2016/02/iteration/
-    out = zeros(eltype(d), size(d) .- 1)
+    out = zeros(eltype(d), max.(size(d) .- 1, 1))   # a dimension of size 1 stays size 1
     R = CartesianIndices(out)
-    Ifirst, Ilast = first(R), last(R)
+    Ifirst, Iend = first(R), last(CartesianIndices(d))
     I1 = oneunit(Ifirst)
     for I in R
         n, s = 0, zero(eltype(out))
-        for J in max(Ifirst, I):min(Ilast + I1, I + I1)
+        for J in max(Ifirst, I):min(Iend, I + I1)
             s += d[J]
             n += 1
         end
@@ -1120,7 +1101,8 @@ Spacing is assumed to be constant in a given direction
 
 This can also be used for staggered grids, as we also create 1D vectors for the central points. The points you indicate in `size` are the corner points.
 
-Note: since this is mostly for solid Earth geoscience applications, the second dimension is called z (vertical)
+Note: since this is mostly for solid Earth geoscience applications, the second dimension is called z (vertical).
+The `extent` is therefore given as `(Lx, Lz)` in 2D and `(Lx, Lz, Ly)` in 3D, while `size` is `(nx, nz)` in 2D and `(nx, ny, nz)` in 3D.
 
 
 # Examples
@@ -1178,7 +1160,7 @@ function create_CartGrid(;
         end
     end
 
-    FT = typeof(x[1])
+    FT = float(typeof(x[1]))
     if dim == 1
         x = FT.(x)
         L = (x[2] - x[1],)
@@ -1264,9 +1246,10 @@ Returns 3D coordinate arrays
 """
 function coordinate_grids(Data::CartGrid; cell = false)
 
+    length(Data.coord1D) in (2, 3) || error("coordinate_grids requires a 2D or 3D CartGrid")
     x_vec = NumValue(Data.coord1D[1])
-    y_vec = NumValue(Data.coord1D[2])
-    z_vec = NumValue(Data.coord1D[3])
+    y_vec = length(Data.coord1D) == 2 ? zero(x_vec[1:1]) : NumValue(Data.coord1D[2])   # a 2D grid is the y = 0 plane
+    z_vec = NumValue(Data.coord1D[end])
 
     if cell
         x_vec = (x_vec[2:end] + x_vec[1:(end - 1)]) / 2

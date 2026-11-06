@@ -5,7 +5,7 @@ EditURL = "../../../tutorials/Tutorial_Votemaps.jl"
 # Votemaps
 
 ## Aim
-In this tutorial, your will learn how to create Votemaps that compare different tomographic models and look for similarities between different models.
+In this tutorial, you will learn how to create Votemaps that compare different tomographic models and look for similarities between different models.
 
 ## Steps
 
@@ -13,8 +13,9 @@ In this tutorial, your will learn how to create Votemaps that compare different 
 We assume that you have all tomographic models already available as *.JLD2 files. In our example we use the data uploaded to
 [https://seafile.rlp.net/d/22b0fb85550240758552/](https://seafile.rlp.net/d/22b0fb85550240758552/)
 
-Specifically, we will use the tomographic models of Paffrath, Zhao and Koulakov, as we have them all available in processed form
-Download the corresponding `*.jld2` files to the same directory
+Specifically, we will use the tomographic models of Paffrath, Zhao and Koulakov, as we have them all available in processed form.
+Download the archives `Paffrath_Pwave_Alps_SE_2021.zip`, `Zhao_etal_2016_data.zip` and `Koulakov_EuropeAsia_data.zip`,
+and extract `Paffrath_Pwave.jld2`, `Zhao_Pwave.jld2` and `Koulakov_Europe.jld2` into the same directory.
 
 ```julia
 using JLD2, GeophysicalModelGenerator
@@ -36,7 +37,7 @@ GeoData
   fields: (:dVp_Percentage, :Vp, :Resolution)
 
 PSwave_Koulakov
-  GeoData
+GeoData
   size  : (108, 81, 35)
   lon   ϵ [ 4.0 : 20.049999999999997]
   lat   ϵ [ 37.035928143712574 : 49.01197604790419]
@@ -47,13 +48,13 @@ PSwave_Koulakov
 #### 2. Creating a votemap
 The idea of `Votemaps` is rather simple:
 - assume that a certain perturbation describes a feature (say, P wave anomalies >3% are interpreted to be slabs in the model of Paffrath)
-- Everything that fulfills this criteria gets the number 1, everything else 0.
-- Do the same with other tomographic models (using the same criteria or a different one).
+- Everything that fulfills this criterion gets the number 1, everything else 0.
+- Do the same with other tomographic models (using the same criterion or a different one).
 - Make sure that all tomographic models are interpolated to the same grid.
 - Sum up the 3 models.
 - The resulting 3D map will have the number `3` at locations where all 3 models see a high-velocity anomaly (say a slab), implying that this feature is consistent between all models. Features that have a number 1 or 2 are only seen in a single or in 2/3 models.
 
-The result of this gives a feeling which features are consistent between the 3 models. It is ofcourse still subjective, as you still have to choose a criteria and as we are assuming in this that the 3 tomographic models are comparable (which they are not as they are produced using different amounts of datam, etc. etc.)
+The result of this gives a feeling which features are consistent between the 3 models. It is of course still subjective, as you still have to choose a criterion and as we are assuming in this that the 3 tomographic models are comparable (which they are not as they are produced using different amounts of data, etc. etc.)
 
 So how do we create Votemaps?
 Doing this is rather simple:
@@ -63,7 +64,7 @@ Data_VoteMap = votemap( [Pwave_Paffrath,       PSwave_Koulakov,    Pwave_Zhao],
                         ["dVp_Percentage>3.0","dVp_percentage>2.0","dVp_Percentage>2.0"], dims=(100,100,100))
 ```
 
-This will look at the common `lon`,`lat`,`depth` ranges between all 3 models, interpret each of the models to a common grid of size `(100,100,100)` and apply each of the criteria specified
+This will look at the common `lon`,`lat`,`depth` ranges between all 3 models, interpolate each of the models to a common grid of size `(100,100,100)` and apply each of the criteria specified
 The resulting `GeoData` struct looks like:
 
 ```julia
@@ -84,7 +85,7 @@ write_paraview(Data_VoteMap, "VoteMap_Alps")
 In paraview, this gives
 ![Tutorial_VoteMap](../assets/img/Tutorial_VoteMap.png)
 
-You can ofcourse argue that newer tomographic models include more data & should therefore count more
+You can of course argue that newer tomographic models include more data and should therefore count more.
 A simple way to take that into account is to list the model twice:
 
 ```julia

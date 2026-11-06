@@ -165,3 +165,17 @@ section_width = 50km
 profile_backwards_compat = extract_ProfileData("test_files/PickedProfiles.txt", 1, "test_files/AlpineData_remote.txt", DimsVolCross = DimsVolCross, DepthVol = Depth_extent, DimsSurfCross = DimsSurfCross, WidthPointProfile = section_width)
 
 @test length(profile_backwards_compat.PointData[1].lon) == 440
+
+# several volumes with different extents: later datasets are interpolated onto the first one's profile grid
+@testset "create_profile_volume! NamedTuple, differing extents" begin
+    Lon, Lat, Z1 = lonlatdepth_grid(0:1:10, 0:1:10, -100:10:0)
+    A = GeoData(Lon, Lat, Z1, (a = Z1,))
+    Lon, Lat, Z2 = lonlatdepth_grid(0:1:10, 0:1:10, -400:10:0)
+    B = GeoData(Lon, Lat, Z2, (b = Z2,))
+    vol = (A = A, B = B)
+    prof = ProfileData(start_lonlat = (2.0, 5.0), end_lonlat = (8.0, 5.0))
+    GeophysicalModelGenerator.create_profile_volume!(prof, vol, DimsVolCross = (11, 21))
+    @test keys(prof.VolData.fields) == (:x_profile, :A_a, :B_b)
+    @test extrema(prof.VolData.depth.val) == (-100.0, 0.0)
+    @test prof.VolData.fields.B_b ≈ prof.VolData.depth.val
+end

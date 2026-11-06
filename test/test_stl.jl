@@ -19,3 +19,17 @@ end
 
 #Data_Cat = ParaviewData(X,Y,Z, (Phase=Phase,))
 #write_paraview(Data_Cat,"Data_Cat")
+
+# Closed tetrahedron with known inside/outside points
+@testset "isinside_closed_STL tetrahedron" begin
+    using GeometryBasics: Point3f, TriangleFace, Mesh
+    pts = Point3f[(0, 0, 0), (4, 0, 0), (0, 4, 0), (0, 0, 4)]
+    faces = TriangleFace.([(1, 3, 2), (1, 2, 4), (1, 4, 3), (2, 3, 4)])
+    tet = Mesh(pts, faces)
+    @test isinside_closed_STL(tet, [1.0, 1.0, 1.0])
+    @test !isinside_closed_STL(tet, [3.0, 3.0, 3.0])
+    @test !isinside_closed_STL(tet, [-1.0, 1.0, 1.0])
+    @test !isinside_closed_STL(tet, [10.0, 0.5, 0.5])
+    @test isinside_closed_STL(tet, [0.5, 0.5, 2.5])
+    @test isinside_closed_STL(tet, [3.0, 0.5, 0.4])
+end
