@@ -92,3 +92,9 @@ end
     @test occursin("right to left", s)
     @test !occursin("Weakzone phase", s)
 end
+
+@testset "show with all-NaN depth" begin
+    Lon, Lat, Depth = lonlatdepth_grid(10:12, 30:32, -10.0:-9)
+    Depth .= NaN
+    @test occursin("has NaN's", showstr(GeoData(Lon, Lat, Depth, (Vp = Depth,))))
+end
