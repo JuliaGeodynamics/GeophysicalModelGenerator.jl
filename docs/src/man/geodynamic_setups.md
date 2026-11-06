@@ -8,6 +8,12 @@ The routines provided here have the following functionality:
 - Add lithospheric structure
 - Add various 1D thermal structures (and possibilities to combine them)
 
+Map-view outlines of plates, weak zones, faults and trenches can be drawn in any vector graphics program, such as
+Inkscape, Affinity or Illustrator, exported as SVG and read with `read_outlines`, which returns them in drawing order,
+ready for `add_plate!`. Name each shape (or its layer) after the outline it represents, and draw a reference line whose
+end points have known model coordinates, or let the page span the model domain. `write_outlines` stores outlines as a
+CSV file.
+
 ```@docs
 GeophysicalModelGenerator.add_box!
 GeophysicalModelGenerator.add_layer!
@@ -27,4 +33,6 @@ GeophysicalModelGenerator.compute_phase
 GeophysicalModelGenerator.LithosphericPhases
 GeophysicalModelGenerator.McKenzie_subducting_slab
 GeophysicalModelGenerator.LinearWeightedTemperature
+GeophysicalModelGenerator.read_outlines
+GeophysicalModelGenerator.write_outlines
 ```
