@@ -76,3 +76,16 @@ add_box!(Phases2D_C, Temp2D_C, grid, xlim = (0, 1.0), zlim = (-2, 0), phase = Co
 
 add_sphere!(Phases2D_C, Temp2D_C, grid, cen = (0, 0, -1), radius = 2.5, phase = ConstantPhase(3), T = ConstantTemp(800))
 @test extrema(Phases2D_C) == (0, 3)
+
+# ylevel sets the position of the 2D grid along y
+@test create_CartGrid(grid, ylevel = 5.0).coord1D[2] == [5.0]
+@test create_CartGrid(grid, ylevel = 5.0).coord1D_cen[2] == [5.0]
+
+# a Float32 grid (e.g. on Metal) keeps its number type in the added y direction
+grid32 = UniformGrid(arch; origin = (-1.0f0, -1.0f0), extent = (2.0f0, 2.0f0), dims = (4, 4))
+@test eltype(create_CartGrid(grid32, ylevel = 5.0).coord1D[2]) == Float32
+@test eltype(create_CartGrid(grid32).Δ[2]) == Float32
+
+# Phase and Temp must live on the same location
+Temp2D_V = Field(backend, grid, Vertex())
+@test_throws "must have the same location" add_box!(Phases2D_C, Temp2D_V, grid, xlim = (0, 1.0), zlim = (-2, 0), phase = ConstantPhase(2))

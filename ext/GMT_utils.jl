@@ -13,26 +13,13 @@ using GeophysicalModelGenerator: lonlatdepth_grid, GeoData, UTMData, km, remove_
 println("Loading GMT routines within GMG")
 
 
-"""
-  data_GMT = import_GeoTIFF(fname::String; fieldname=:layer1, negative=false, iskm=true, NorthernHemisphere=true, constantDepth=false, removeNaN_z=false, removeNaN_field=false)
-
-This imports a GeoTIFF dataset (usually containing a surface of some sort) using GMT.
-The file should either have `UTM` coordinates of `longlat` coordinates. If it doesn't, you can 
-use QGIS to convert it to `longlat` coordinates.
-
-Optional keywords:
-- `fieldname` : name of the field (default=:layer1)
-- `negative`  : if true, the depth is multiplied by -1 (default=false)
-- `iskm`      : if true, the depth is multiplied by 1e-3 (default=true)
-- `NorthernHemisphere`: if true, the UTM zone is set to be in the northern hemisphere (default=true); only relevant if the data uses UTM projection
-- `constantDepth`: if true we will not warp the surface by z-values, but use a constant value instead
-- `removeNaN_z`  : if true, we will remove NaN values from the z-dataset
-"""
 function import_GeoTIFF(fname::String; fieldname = :layer1, negative = false, iskm = true, NorthernHemisphere = true, constantDepth = false, removeNaN_z = false, removeNaN_field = false)
     G = gmtread(fname)
 
     # Transfer to GeoData
-    nx, ny = length(G.x) - 1, length(G.y) - 1
+    # pixel-registered grids have one more coordinate than pixels
+    drop = G.registration == 1 ? 1 : 0
+    nx, ny = length(G.x) - drop, length(G.y) - drop
     Lon, Lat, Depth = lonlatdepth_grid(G.x[1:nx], G.y[1:ny], 0)
     if hasfield(typeof(G), :z)
         Depth[:, :, 1] = G.z'

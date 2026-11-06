@@ -7,15 +7,6 @@ using NCDatasets: nc_create, NC_NETCDF4, NC_CLOBBER, NC_NOWRITE, nc_def_dim, nc_
 import GeophysicalModelGenerator: write_ASAGI, read_ASAGI, tomo_2_GeoData, read_topo_netcdf
 using GeophysicalModelGenerator: CartData, GeoData, lonlatdepth_grid, xyz_grid
 
-"""
-    write_ASAGI(fname::String, Data::CartData;
-                        fields::Union{Nothing, Tuple}=nothing,
-                        km_to_m::Bool=false)
-
-Writes a CartData structure `Data` to an ASAGI file, which can be read by SeisSol or ExaHype.
-You can optionally pass a tuple with fields to be written. Note that we can only write individual (scalar) fields to disk,
-so vector or tensor fields needs to be split first
-"""
 function write_ASAGI(
         fname::String, Data::CartData;
         fields::Union{Nothing, Tuple} = nothing,
@@ -82,41 +73,27 @@ function fields_to_namedtuple(fields::NamedTuple, selected_fields)
     if !isnothing(selected_fields)
         names = selected_fields
     end
-    nfield = length(names)
-    ndim = length(size(fields[1]))
-
-    s2 = NamedTuple{names}(zeros(nfield))
-
-    # check that they are all DiskArrays
-    for ifield in 1:nfield
-        if !isa(getproperty(fields, names[ifield]), Array)
-            @show typeof(getproperty(fields, names[ifield]))
-            error("Field $(names[ifield]) is not an Array but instead a $(typeof(getproperty(fields, names[ifield]))); only Arrays are supported")
-        end
+    for n in names
+        haskey(fields, n) || error("Field $n is not in the data set; available fields: $(keys(fields))")
+        isa(fields[n], Array) ||
+            error("Field $n is not an Array but instead a $(typeof(fields[n])); only Arrays are supported")
     end
 
-    material = Array{typeof(s2), ndim}(undef, size(fields[1]))
-    for I in eachindex(material)
-        data_local = []
-        for ifield in 1:nfield
-            push!(data_local, getproperty(fields, names[ifield])[I])
-        end
+    arrays = map(n -> fields[n], Tuple(names))
+    allequal(map(size, arrays)) || error("The fields $(Tuple(names)) must have the same size, got $(map(size, arrays))")
 
-        local_tup = NamedTuple{names}(data_local)
-
-        material[I] = local_tup
-    end
-
-    return material
+    # element type of each field is kept (e.g. Int32 phases stay Int32)
+    return records(NamedTuple{Tuple(names), Tuple{map(eltype, arrays)...}}, arrays...)
 end
 
+# The inverse of `records`: one array per field of the NamedTuple records in `data`
+split_records(data::AbstractArray{NamedTuple{N, T}}) where {N, T} =
+    NamedTuple{N}(ntuple(i -> map(r -> getfield(r, i), data), Val(length(N))))
 
-"""
-    data::CartData = read_ASAGI(fname_asagi::String)
+# One record of type `T` per point; `T` is a type parameter so that the loop is compiled for it
+records(::Type{T}, arrays...) where {T} = map((x...) -> T(x), arrays...)
 
-This reads a 3D ASAGI NetCDF file, which is used as input for a number of codes such as SeisSol.
-It returns a CartData dataset
-"""
+
 function read_ASAGI(fname_asagi::String)
 
     @assert fname_asagi[(end - 2):end] == ".nc"
@@ -166,21 +143,8 @@ function read_ASAGI(fname_asagi::String)
     data = Array{T2, 3}(undef, nx, ny, nz)
     nc_get_var!(ds.ncid, varid, data)
 
-    # At this stage, data is an array of NamedTuple with correct names & types
-    #
-    # Now split them into separate fields.
-    read_fields_data = ()
-    for ifield in 1:numfields
-        data_1 = zeros(types[ifield], nx, ny, nz)
-
-        for I in CartesianIndices(data)
-            loc = data[I]
-            data_1[I] = getproperty(loc, cnames[ifield])
-        end
-
-        read_fields_data = (read_fields_data..., data_1)
-    end
-    read_fields = NamedTuple{(cnames...,)}(read_fields_data)
+    # data is an array of NamedTuples with the names and types of the fields; split it into one array per field
+    read_fields = split_records(data)
 
     close(ds)
 
@@ -188,32 +152,18 @@ function read_ASAGI(fname_asagi::String)
 end
 
 
-"""
-    tomo_2_GeoData(filename::String; vel_type::String = "vs")
-
-Reads a seismic tomography dataset from a NetCDF file as a GeoData object. The keyword argument `vel_type::String` allows you to specify the type of velocity data to extract (default is "vs" for shear wave velocity).
-The function assumes that the NetCDF file contains variables for depth, longitude, latitude, and the specified velocity type.
-
-tomodata = tomo_2_GeoData("path/to/tomo_data.nc")
-"""
 function tomo_2_GeoData(filename::String; vel_type::String = "vs")
-
-    # Open the NetCDF file
-    data = NCDataset(filename)
-
-    # Extract the variables
-    depth = data["depth"][:]
-    lon = data["longitude"][:]
-    lat = data["latitude"][:]
-    vel = data[vel_type][:, :, :]
+    depth, lon, lat, vel = NCDataset(filename) do data
+        vel = data[vel_type][:, :, :]
+        T = float(nonmissingtype(eltype(vel)))
+        (nomissing(data["depth"][:]), nomissing(data["longitude"][:]), nomissing(data["latitude"][:]),
+         map(v -> ismissing(v) ? T(NaN) : T(v), vel))
+    end
 
     # create lon, lat, depth grid
     Lon, Lat, Depth = lonlatdepth_grid(lon, lat, .- depth)
 
-    # create GeoData struct
-    Tomo_data = GeoData(Lon, Lat, Depth, (vel = vel,))
-
-    return Tomo_data
+    return GeoData(Lon, Lat, Depth, (vel = vel,))
 end
 
 
@@ -229,9 +179,10 @@ function read_topo_netcdf(file::AbstractString)
     return NCDataset(file) do ds
         lon = Array(ds["lon"][:])
         lat = Array(ds["lat"][:])
-        z = Array(ds["z"][:, :])
+        z = ds["z"][:, :]
+        any(ismissing, z) && error("$file has missing elevations")
         # the file stores z as (lon, lat); the rest of the code wants (lat, lon)
-        (lon, lat, permutedims(coalesce.(z, 0.0f0)))
+        (lon, lat, permutedims(nomissing(z)))
     end
 end
 
