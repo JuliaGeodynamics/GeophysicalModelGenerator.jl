@@ -12,7 +12,8 @@ const Outline = @NamedTuple{name::String, closed::Bool, x::Vector{Float64}, y::V
 Reads named map-view outlines, such as plate boundaries, weak zones and trenches, from a file. Returns a vector of
 named tuples `(; name, closed, x, y)` in the order of the file, which is the drawing order of an SVG file, so that
 later outlines can be painted over earlier ones. A closed outline is a polygon, e.g. for
-`add_plate!(Phase, Temp, Grid; xlim = o.x, ylim = o.y, ...)`.
+`add_plate!(Phase, Temp, Grid; xlim = o.x, ylim = o.y, ...)`; only an open outline is valid as `Trace` of `add_fault!`
+or of a `Trench`, which also reject traces that turn by more than 90° between consecutive segments.
 
 The format follows from the extension of `filename`:
 - `.csv`: one row per vertex with the columns `id,name,closed,x,y`, as written by [`write_outlines`](@ref); the rows of

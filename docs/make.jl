@@ -112,6 +112,8 @@ makedocs(;
             "22 - 3D Volcano setup" => "man/Tutorial_VolcanoModel_3D.md",
             "23 - Build geometry from polygons" =>  "man/tutorial_Polygon_structures.md",
             "24 - Profiles for the AdriaArrayGeometryPicker" =>  "man/tutorial_AdriaArrayGeometryPicker.md",
+            "25 - Curved layers, faults and plumes" => "man/Tutorial_NumericalModel_Geometries.md",
+            "26 - Slab break-off" => "man/Tutorial_SlabBreakoff.md",
             "27 - Quick look with GLMakie" => "man/Tutorial_Visualise.md",
         ],
         "User Guide" => Any[

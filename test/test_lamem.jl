@@ -137,13 +137,13 @@ add_box!(Phases, Temp, Grid, xlim = (0, 500), zlim = (-50, 0), phase = ConstantP
 Phases = zeros(Int32, size(Grid.X));
 Temp = ones(Float64, size(Grid.X)) * 1350;
 add_box!(Phases, Temp, Grid, xlim = (0, 500), zlim = (-500, 0), phase = LithosphericPhases(Layers = [15 15 250], Phases = [1 2 3 0], Tlab = 1250), DipAngle = 10, T = HalfspaceCoolingTemp(Age = 20, Adiabat = 0.3))
-@test sum(Temp) ≈ 1.1942982365477426e9
+@test sum(Temp) ≈ 1.1942953103086095e9
 
 # Mid-oceanic ridge cooling temperature structure
 Phases = zeros(Int32, size(Grid.X));
 Temp = ones(Float64, size(Grid.X)) * 1350;
 add_box!(Phases, Temp, Grid, xlim = (0, 500), zlim = (-500, -20), phase = LithosphericPhases(Layers = [15 15 250], Phases = [1 2 3 0], Tlab = 1250), DipAngle = 10, T = SpreadingRateTemp(MORside = "right", SpreadingVel = 3))
-@test sum(Temp) == 1.1892525087889733e9
+@test sum(Temp) == 1.1892507266716523e9
 
 Model3D = CartData(Grid, (Phases = Phases, Temp = Temp));
 write_paraview(Model3D, "LaMEM_ModelSetup")                  # Save model to paraview

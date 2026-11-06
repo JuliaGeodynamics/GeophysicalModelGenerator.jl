@@ -21,7 +21,8 @@ mktempdir() do dir
     overshoot = file("overshoot.svg", """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path id="c" d="M 10,50 C 90,50 -40,50 50,50"/></svg>""")
     @test length(read_outlines(overshoot; bounds = (0, 100, 0, 100), tolerance = 1.0)[1].x) > 2
 
-    # plates in drawing order, so that later outlines are painted over earlier ones
+    # plates in drawing order, so that later outlines are painted over earlier ones, and a slab along a trench
+    outline(name) = only(filter(o -> o.name == name, outlines))
     Grid = CartData(xyz_grid(0:50.0:6000, 0:50.0:3500, -300:25.0:0))
     Phases, Temp = zeros(Int, size(Grid)), zeros(size(Grid))
     for (i, o) in enumerate(outlines)
@@ -29,6 +30,9 @@ mktempdir() do dir
     end
     phase_at(x, y) = outlines[Phases[findfirst(≈(x), Grid.x.val[:, 1, 1]), findfirst(≈(y), Grid.y.val[1, :, 1]), end]].name
     @test phase_at(2500, 300) == "Africa" && phase_at(2800, 1600) == "Adria" && phase_at(5700, 2850) == "EuropeAsia"
+    alps = outline("trench_Alps")
+    add_slab!(Phases, Temp, Grid, Trench(; Trace = collect(zip(alps.x, alps.y)), Bending = [(20.0, 150.0)], Thickness = 90.0); phase = ConstantPhase(100))
+    @test any(==(100), Phases)
 
     # a plain SVG, as written by any editor (e.g. Affinity): shapes named by their own or their group's id or data-name,
     # with transforms, mapped by a named reference line or by `bounds` on the viewBox; `defs` are not outlines
@@ -68,7 +72,7 @@ mktempdir() do dir
     )
     @test_throws "Z takes no numbers" read_outlines(file("z.svg", """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><path d="M0,0 L1,1 Z 5,5"/></svg>"""); bounds = (0, 1, 0, 1))
 
-    # no consecutive duplicate points
+    # no consecutive duplicate points, so that outlines can be used as `Trace`
     dup = read_outlines(
         file(
             "dup.svg", """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
