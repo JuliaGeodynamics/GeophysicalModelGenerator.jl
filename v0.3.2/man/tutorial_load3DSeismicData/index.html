@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>3D seismic tomography from ASCII · GeophysicalModelGenerator.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">GeophysicalModelGenerator.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../tutorials/">Overview</a></li><li class="is-active"><a class="tocitem" href>3D seismic tomography from ASCII</a><ul class="internal"><li><a class="tocitem" href="#Goal"><span>Goal</span></a></li><li><a class="tocitem" href="#Steps"><span>Steps</span></a></li></ul></li><li><a class="tocitem" href="../tutorial_loadregular3DSeismicData_netCDF/">3D seismic tomography from netCDF</a></li><li><a class="tocitem" href="../tutorial_MohoTopo/">Visualize Moho topography</a></li><li><a class="tocitem" href="../tutorial_GMT_Topography/">Create GMT-based topography</a></li><li><a class="tocitem" href="../tutorial_Coastlines/">Coastlines</a></li><li><a class="tocitem" href="../tutorial_Screenshot_To_Paraview/">Import screenshots</a></li><li><a class="tocitem" href="../tutorial_loadirregular3DSeismicData/">Interpolate irregular 3D seismic tomography</a></li><li><a class="tocitem" href="../tutorial_GMT_Topography_GeologicalMap/">ETOPO1 Topography and geological maps</a></li><li><a class="tocitem" href="../tutorial_ISC_data/">ISC earthquake data</a></li><li><a class="tocitem" href="../tutorial_GPS/">Plot GPS vectors</a></li></ul></li><li><span class="tocitem">User Guide</span><ul><li><a class="tocitem" href="../installation/">Installation</a></li><li><a class="tocitem" href="../datastructures/">Data Structures</a></li><li><a class="tocitem" href="../dataimport/">Data Import</a></li><li><a class="tocitem" href="../paraview_output/">Paraview output</a></li><li><a class="tocitem" href="../tools/">Tools</a></li><li><a class="tocitem" href="../gravity_code/">Gravity code</a></li><li><a class="tocitem" href="../lamem/">LaMEM</a></li></ul></li><li><a class="tocitem" href="../listfunctions/">List of functions</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>3D seismic tomography from ASCII</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>3D seismic tomography from ASCII</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/master/docs/src/man/tutorial_load3DSeismicData.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="D-tomography-model-in-CSV-formation"><a class="docs-heading-anchor" href="#D-tomography-model-in-CSV-formation">3D tomography model in CSV formation</a><a id="D-tomography-model-in-CSV-formation-1"></a><a class="docs-heading-anchor-permalink" href="#D-tomography-model-in-CSV-formation" title="Permalink"></a></h1><h2 id="Goal"><a class="docs-heading-anchor" href="#Goal">Goal</a><a id="Goal-1"></a><a class="docs-heading-anchor-permalink" href="#Goal" title="Permalink"></a></h2><p>This explains how to load a 3D P-wave model and plot it in Paraview as a 3D volumetric data set. It also shows how you can create horizontal or vertical cross-sections through the data in a straightforward manner and how you can extract subsets of the data; The example is the P-wave velocity model of the Alps as described in: </p><p>Zhao, L., Paul, A., Malusà, M.G., Xu, X., Zheng, T., Solarino, S., Guillot, S., Schwartz, S., Dumont, T., Salimbeni, S., Aubert, C., Pondrelli, S., Wang, Q., Zhu, R., 2016. <em>Continuity of the Alpine slab unraveled by high-resolution P wave tomography</em>. Journal of Geophysical Research: Solid Earth 121, 8720–8737. <a href="https://doi.org/10.1002/2016JB013310">doi:10.1002/2016JB013310</a></p><p>The data is given in ASCII format with longitude/latitude/depth/velocity anomaly (percentage) format.</p><h2 id="Steps"><a class="docs-heading-anchor" href="#Steps">Steps</a><a id="Steps-1"></a><a class="docs-heading-anchor-permalink" href="#Steps" title="Permalink"></a></h2><h4 id=".-Download-data"><a class="docs-heading-anchor" href="#.-Download-data">1. Download data</a><a id=".-Download-data-1"></a><a class="docs-heading-anchor-permalink" href="#.-Download-data" title="Permalink"></a></h4><p>The data is can be downloaded from <a href="https://seafile.rlp.net/d/a50881f45aa34cdeb3c0/">https://seafile.rlp.net/d/a50881f45aa34cdeb3c0/</a>, where you should download the file <code>Zhao_etal_JGR_2016_Pwave_Alps_3D_k60.txt</code>. Do that and start julia from the directory where it was downloaded.</p><h4 id=".-Read-data-into-Julia"><a class="docs-heading-anchor" href="#.-Read-data-into-Julia">2. Read data into Julia</a><a id=".-Read-data-into-Julia-1"></a><a class="docs-heading-anchor-permalink" href="#.-Read-data-into-Julia" title="Permalink"></a></h4><p>The dataset has no comments, and the data values in every row are separated by a space. In order to read this into julia as a matrix, we can use the build-in julia package <code>DelimitedFiles</code>.    We want the resulting data to be stored as double precision values (<code>Float64</code>), and the end of every line is a linebreak (<code>\n</code>).</p><pre><code class="language-julia">julia&gt; using DelimitedFiles
+julia&gt; data=readdlm(&quot;Zhao_etal_JGR_2016_Pwave_Alps_3D_k60.txt&quot;,&#39; &#39;,Float64,&#39;\n&#39;, skipstart=0,header=false)
+1148774×4 Matrix{Float64}:
+  0.0   38.0   -1001.0  -0.113
+  0.15  38.0   -1001.0  -0.081
+  0.3   38.0   -1001.0  -0.069
+  0.45  38.0   -1001.0  -0.059
+  0.6   38.0   -1001.0  -0.055
+  0.75  38.0   -1001.0  -0.057
+  ⋮                     
+ 17.25  51.95     -1.0  -0.01
+ 17.4   51.95     -1.0  -0.005
+ 17.55  51.95     -1.0   0.003
+ 17.7   51.95     -1.0   0.007
+ 17.85  51.95     -1.0   0.006
+ 18.0   51.95     -1.0   0.003</code></pre><p>Next, extract vectors from it:</p><pre><code class="language-julia">julia&gt; lon        = data[:,1];
+julia&gt; lat        = data[:,2];
+julia&gt; depth      = data[:,3];
+julia&gt; dVp_perc   = data[:,4];</code></pre><p>Note that depth needs to with negative numbers.</p><h4 id=".-Reformat-the-data"><a class="docs-heading-anchor" href="#.-Reformat-the-data">3. Reformat the data</a><a id=".-Reformat-the-data-1"></a><a class="docs-heading-anchor-permalink" href="#.-Reformat-the-data" title="Permalink"></a></h4><p>Let&#39;s first have a look at the depth range of the data set:</p><pre><code class="language-julia">julia&gt; Depth_vec = unique(depth)
+101-element Vector{Float64}:
+ -1001.0
+  -991.0
+  -981.0
+  -971.0
+  -961.0
+  -951.0
+     ⋮
+   -51.0
+   -41.0
+   -31.0
+   -21.0
+   -11.0
+    -1.0</code></pre><p>So the data has a vertical spacing of 10 km. Next, let&#39;s check if the data is spaced in a regular manner in Lon/Lat direction.  For that, we read the data at a given depth level (say -101km) and plot it using the <code>Plots</code> package (you may have to install that first on your machine).</p><pre><code class="language-julia">julia&gt; using Plots
+julia&gt; ind=findall(x -&gt; x==-101.0, depth)
+julia&gt; scatter(lon[ind],lat[ind],marker_z=dVp_perc[ind], ylabel=&quot;latitude&quot;,xlabel=&quot;longitude&quot;,markersize=2.5, c = :roma)</code></pre><p><img src="../../assets/img/Tutorial_Zhao_LatLon_data.png" alt="DataPoints"/></p><p>Note that we employ the scientific colormap <code>roma</code> here. <a href="https://docs.juliaplots.org/latest/generated/colorschemes/">This</a> gives an overview of available colormaps. You can download the colormaps for Paraview <a href="https://www.fabiocrameri.ch/visualisation/">here</a>.  </p><p>Clearly, the data is given as regular Lat/Lon points:</p><pre><code class="language-julia">julia&gt; unique(lon[ind])
+121-element Vector{Float64}:
+  0.0
+  0.15
+  0.3
+  0.45
+  0.6
+  0.75
+  ⋮
+ 17.25
+ 17.4
+ 17.55
+ 17.7
+ 17.85
+ 18.0
+julia&gt; unique(lat[ind])
+94-element Vector{Float64}:
+ 38.0
+ 38.15
+ 38.3
+ 38.45
+ 38.6
+ 38.75
+  ⋮
+ 51.2
+ 51.35
+ 51.5
+ 51.65
+ 51.8
+ 51.95</code></pre><h4 id=".1-Reshape-data-and-save-to-paraview"><a class="docs-heading-anchor" href="#.1-Reshape-data-and-save-to-paraview">3.1 Reshape data and save to paraview</a><a id=".1-Reshape-data-and-save-to-paraview-1"></a><a class="docs-heading-anchor-permalink" href="#.1-Reshape-data-and-save-to-paraview" title="Permalink"></a></h4><p>Next, we reshape the vectors with lon/lat/depth data into 3D matrixes:</p><pre><code class="language-none">julia&gt; resolution =  (length(unique(lon)), length(unique(lat)), length(unique(depth)))
+(121, 94, 101)
+julia&gt; Lon          = reshape(lon,      resolution);
+julia&gt; Lat          = reshape(lat,      resolution);
+julia&gt; Depth        = reshape(depth,    resolution);
+julia&gt; dVp_perc_3D  = reshape(dVp_perc, resolution);</code></pre><p>Check that the results are consistent</p><pre><code class="language-julia">julia&gt; iz=findall(x -&gt; x==-101.0, Depth[1,1,:])
+1-element Vector{Int64}:
+ 91
+julia&gt; data=dVp_perc_3D[:,:,iz];
+julia&gt; heatmap(unique(lon), unique(lat),data[:,:,1]&#39;, c=:roma,title=&quot;$(Depth[1,1,iz]) km&quot;)</code></pre><p><img src="../../assets/img/Tutorial_Zhao_LatLon_data_101km.png" alt="DataPoints"/></p><p>So this looks good.</p><p>Next we create a paraview file:</p><pre><code class="language-julia">julia&gt; using GeophysicalModelGenerator
+julia&gt; Data_set    =   GeoData(Lon,Lat,Depth,(dVp_Percentage=dVp_perc_3D,))
+GeoData 
+  size  : (121, 94, 101)
+  lon   ϵ [ 0.0 - 18.0]
+  lat   ϵ [ 38.0 - 51.95]
+  depth ϵ [ -1001.0 km - -1.0 km]
+  fields: (:dVp_Percentage,)
+julia&gt; Write_Paraview(Data_set, &quot;Zhao_etal_2016_dVp_percentage&quot;)
+1-element Vector{String}:
+ &quot;Zhao_etal_2016_dVp_percentage.vts&quot;</code></pre><h4 id=".-Plotting-data-in-Paraview"><a class="docs-heading-anchor" href="#.-Plotting-data-in-Paraview">4. Plotting data in Paraview</a><a id=".-Plotting-data-in-Paraview-1"></a><a class="docs-heading-anchor-permalink" href="#.-Plotting-data-in-Paraview" title="Permalink"></a></h4><p>In paraview you should open the <code>*.vts</code> file, and press <code>Apply</code> (left menu) after doing that. Once you did that you can select <code>dVp_Percentage</code> and <code>Surface</code> (see red ellipses below)/. In paraview you can open the file and visualize it. </p><p><img src="../../assets/img/Tutorial_Zhao_Paraview_1.png" alt="Paraview_1"/></p><p>This visualisation employs the default colormap, which is not particularly good.</p><p>You can change that by importing the roma colormap (using the link described earlier). For this, open the colormap editor and click the one with the heart on the right hand side. Next, import roma and select it.</p><p><img src="../../assets/img/Tutorial_Zhao_Paraview_2.png" alt="Paraview_2"/></p><p>In order to change the colorrange select the button in the red ellipse and change the lower/upper bound. <img src="../../assets/img/Tutorial_Zhao_Paraview_3.png" alt="Paraview_3"/></p><p>If you want to create a horizontal cross-section @ 200 km depth, you need to select the <code>Slice</code> tool, select <code>Sphere</code> as a clip type, set the center to <code>[0,0,0]</code> and set the radius to <code>6171</code> (=radius earth - 200 km).</p><p><img src="../../assets/img/Tutorial_Zhao_Paraview_4.png" alt="Paraview_4"/></p><p>After pushing <code>Apply</code>, you&#39;ll see this:</p><p><img src="../../assets/img/Tutorial_Zhao_Paraview_5.png" alt="Paraview_5"/></p><p>If you want to plot iso-surfaces (e.g. at -3%), you can use the <code>Clip</code> option again, but this time select <code>scalar</code> and don&#39;t forget to unclick <code>invert</code>.</p><p><img src="../../assets/img/Tutorial_Zhao_Paraview_6.png" alt="Paraview_6"/></p><h4 id=".-Extract-and-plot-cross-sections-of-the-data"><a class="docs-heading-anchor" href="#.-Extract-and-plot-cross-sections-of-the-data">5. Extract and plot cross-sections of the data</a><a id=".-Extract-and-plot-cross-sections-of-the-data-1"></a><a class="docs-heading-anchor-permalink" href="#.-Extract-and-plot-cross-sections-of-the-data" title="Permalink"></a></h4><p>In many cases you would like to create cross-sections through the 3D data sets as well, and visualize that in Paraview. That is in principle possible in Paraview as well (using the <code>Slice</code> tool, as described above). Yet, in many cases we want to have it at a specific depth, or through pre-defined <code>lon/lat</code> coordinates.</p><p>There is a simple way to achieve this using the <code>CrossSection</code> function. To make a cross-section at a given depth:</p><pre><code class="language-julia">julia&gt; Data_cross  =   CrossSection(Data_set, Depth_level=-100km)  
+GeoData 
+  size  : (121, 94, 1)
+  lon   ϵ [ 0.0 : 18.0]
+  lat   ϵ [ 38.0 : 51.95]
+  depth ϵ [ -101.0 km : -101.0 km]
+  fields: (:dVp_Percentage,)
+julia&gt; Write_Paraview(Data_cross, &quot;Zhao_CrossSection_100km&quot;)
+1-element Vector{String}:
+ &quot;Zhao_CrossSection_100km.vts&quot;</code></pre><p>Or at a specific longitude:</p><pre><code class="language-julia">julia&gt; Data_cross  =   CrossSection(Data_set, Lon_level=10)
+GeoData 
+  size  : (1, 94, 101)
+  lon   ϵ [ 10.05 : 10.05]
+  lat   ϵ [ 38.0 : 51.95]
+  depth ϵ [ -1001.0 km : -1.0 km]
+  fields: (:dVp_Percentage,) 
+julia&gt; Write_Paraview(Data_cross, &quot;Zhao_CrossSection_Lon10&quot;)
+1-element Vector{String}:
+ &quot;Zhao_CrossSection_Lon10.vts&quot;</code></pre><p>As you see, this cross-section is not taken at exactly 10 degrees longitude. That is because by default we don&#39;t interpolate the data, but rather use the closest point in longitude in the original data set.</p><p>If you wish to interpolate the data, specify <code>Interpolate=true</code>:</p><pre><code class="language-julia">julia&gt; Data_cross  =   CrossSection(Data_set, Lon_level=10, Interpolate=true)
+GeoData 
+  size  : (1, 100, 100)
+  lon   ϵ [ 10.0 : 10.0]
+  lat   ϵ [ 38.0 : 51.95]
+  depth ϵ [ -1001.0 km : -1.0 km]
+  fields: (:dVp_Percentage,)
+julia&gt; Write_Paraview(Data_cross, &quot;Zhao_CrossSection_Lon10_interpolated&quot;);</code></pre><p>as you see, this causes the data to be interpolated on a <code>(100,100)</code> grid (which can be changed by adding a <code>dims</code> input parameter).</p><p>We can also create a diagonal cut through the model:</p><pre><code class="language-julia">julia&gt; Data_cross  =   CrossSection(Data_set, Start=(1.0,39), End=(18,50))
+GeoData 
+  size  : (100, 100, 1)
+  lon   ϵ [ 1.0 : 18.0]
+  lat   ϵ [ 39.0 : 50.0]
+  depth ϵ [ -1001.0 km : -1.0 km]
+  fields: (:dVp_Percentage,)
+julia&gt; Write_Paraview(Data_cross, &quot;Zhao_CrossSection_diagonal&quot;)</code></pre><p>Here an image that shows the resulting cross-sections: </p><p><img src="../../assets/img/Tutorial_Zhao_Paraview_7.png" alt="Paraview_7"/></p><h4 id=".-Extract-a-(3D)-subset-of-the-data"><a class="docs-heading-anchor" href="#.-Extract-a-(3D)-subset-of-the-data">6. Extract a (3D) subset of the data</a><a id=".-Extract-a-(3D)-subset-of-the-data-1"></a><a class="docs-heading-anchor-permalink" href="#.-Extract-a-(3D)-subset-of-the-data" title="Permalink"></a></h4><p>Sometimes, the data set covers a large region (e.g., the whole Earth), and you are only interested in a subset of this data for your project. You can obviously cut your data to the correct size in Paraview. Yet, an even easier way is the routine <code>ExtractSubvolume</code>:</p><pre><code class="language-julia">julia&gt; Data_subset     =   ExtractSubvolume(Data_set,Lon_level=(5,12), Lat_level=(40,45))
+GeoData 
+  size  : (48, 35, 101)
+  lon   ϵ [ 4.95 : 12.0]
+  lat   ϵ [ 39.95 : 45.05]
+  depth ϵ [ -1001.0 km : -1.0 km]
+  fields: (:dVp_Percentage,)
+julia&gt; Write_Paraview(Data_subset, &quot;Zhao_Subset&quot;)</code></pre><p>This gives the resulting image. You can obviously use that new, smaller, data set to create cross-sections etc. <img src="../../assets/img/Tutorial_Zhao_Paraview_8.png" alt="Paraview_8"/></p><p>By default, we extract the original data and do not interpolate it on a new grid. In some cases, you will want to interpolate the data on a different grid. Use the <code>Interpolate=true</code> option for that:</p><pre><code class="language-julia">julia&gt; Data_subset_interp     =   ExtractSubvolume(Data_set,Lon_level=(5,12), Lat_level=(40,45), Interpolate=true)
+GeoData 
+  size  : (50, 50, 50)
+  lon   ϵ [ 5.0 : 12.0]
+  lat   ϵ [ 40.0 : 45.0]
+  depth ϵ [ -1001.0 km : -1.0 km]
+  fields: (:dVp_Percentage,)
+julia&gt; Write_Paraview(Data_subset, &quot;Zhao_Subset_interp&quot;)</code></pre><h4 id=".-Load-and-save-data-to-disk"><a class="docs-heading-anchor" href="#.-Load-and-save-data-to-disk">7. Load and save data to disk</a><a id=".-Load-and-save-data-to-disk-1"></a><a class="docs-heading-anchor-permalink" href="#.-Load-and-save-data-to-disk" title="Permalink"></a></h4><p>It would be useful to save the 3D data set we just created to disk, such that we can easily load it again at a later stage and create cross-sections etc, or compare it with other models.  It is quite easy to do so with the <a href="https://github.com/JuliaIO/JLD2.jl">JLD2.jl</a> package:</p><pre><code class="language-julia">julia&gt; using JLD2
+julia&gt; jldsave(&quot;Zhao_Pwave.jld2&quot;; Data_set)</code></pre><p>If you, at a later stage, want to load this file again do it as follows:</p><pre><code class="language-julia">julia&gt; using JLD2, GeophysicalModelGenerator
+julia&gt; Data_set_Zhao2016_Vp = load_object(&quot;Zhao_Pwave.jld2&quot;)</code></pre><h4 id=".-Julia-script"><a class="docs-heading-anchor" href="#.-Julia-script">8. Julia script</a><a id=".-Julia-script-1"></a><a class="docs-heading-anchor-permalink" href="#.-Julia-script" title="Permalink"></a></h4><p>The full julia script that does it all is given <a href="https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/main/tutorial/Alps_VpModel_Zhao_etal_JGR2016.jl">here</a>. You need to be in the same directory as in the data file, after which you can run it in julia with</p><pre><code class="language-julia">julia&gt; include(&quot;Alps_VpModel_Zhao_etal_JGR2016.jl&quot;)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../tutorials/">« Overview</a><a class="docs-footer-nextpage" href="../tutorial_loadregular3DSeismicData_netCDF/">3D seismic tomography from netCDF »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Saturday 16 October 2021 20:09">Saturday 16 October 2021</span>. Using Julia version 1.6.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
