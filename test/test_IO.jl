@@ -34,6 +34,10 @@ withenv("TMPDIR" => tmp, "TMP" => tmp, "TEMP" => tmp) do
     @test load_GMG("file://" * joinpath(dir, "test.jld2")).depth.val[20] == -15.0
 end
 @test isempty(readdir(tmp))
+# a binary download (a PNG header, not valid UTF-8) is accepted
+png = joinpath(dir, "image.png")
+write(png, UInt8[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0xff, 0xfe, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48])
+@test read(download_data("file://" * png, "copy.png"; dir, maxattempts = 1)) == read(png)
 write(joinpath(dir, "bad.jld2"), "<html>not found</html>")
 @test_throws "Could not download" load_GMG("file://" * joinpath(dir, "bad.jld2"); maxattempts = 1)
 

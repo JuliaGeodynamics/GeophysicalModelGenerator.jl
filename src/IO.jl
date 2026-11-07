@@ -72,9 +72,10 @@ end
 
 is_url(name::AbstractString) = startswith(name, r"(https?|file)://")
 
-# Rejects empty files and the HTML error pages that servers deliver with status 200.
+# Rejects empty files and the HTML error pages that servers deliver with status 200. Bytes outside
+# ASCII, which cannot start an HTML page, are replaced so that binary files can be compared as text.
 function is_data_file(file::AbstractString)
-    head = lowercase(String(open(io -> read(io, 15), file)))
+    head = lowercase(String(map(b -> b < 0x80 ? b : UInt8('?'), open(io -> read(io, 15), file))))
     return !isempty(head) && !startswith(head, "<!doctype html") && !startswith(head, "<html")
 end
 
