@@ -42,9 +42,22 @@ add_box!(Phases, Temp, Grid; xlim=(0.0,300.0), ylim=(-400.0, 400.0), zlim=(-80.0
 
 # Add them to the `CartData` dataset:
 Grid = addfield(Grid,(;Phases, Temp))
+# ```
+# CartData
+#     size    : (512, 512, 128)
+#     x       ϵ [ -1000.0 : 1000.0]
+#     y       ϵ [ -1000.0 : 1000.0]
+#     z       ϵ [ -660.0 : 0.0]
+#     fields  : (:Z, :Phases, :Temp)
+#
+# ```
 
 # Which looks like
 write_paraview(Grid,"Grid3D_FreeSubduction");
+# ```
+# Saved file: Grid3D_FreeSubduction.vts
+#
+# ```
 
 # ![Mechanical3D_Tutorial_1](../assets/img/Mechanical3D_Tutorial_1.png)
 #
@@ -109,6 +122,10 @@ add_stripes!(Phases, Grid; stripAxes = (1,1,0), phase = ConstantPhase(0), stripe
 # Finally, we can add all this to the `CartData` dataset:
 Grid = addfield(Grid,(;Phases, Temp))
 write_paraview(Grid,"Grid3D_Ridges");
+# ```
+# Saved file: Grid3D_Ridges.vts
+#
+# ```
 
 # And the resulting image looks like
 # ![Mechanical3D_Tutorial_2](../assets/img/Mechanical3D_Tutorial_2.png)

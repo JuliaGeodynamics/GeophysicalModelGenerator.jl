@@ -157,7 +157,3 @@ mpiexecjl -n 4 --project=. julia Tutorial_Chmy_MPI.jl
 ```
 
 The full file can be downloaded [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/main/tutorials/Tutorial_Chmy_MPI.jl)
-
----
-
-*This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*

@@ -1,16 +1,13 @@
-"""
-This is Tutorial_Flegrei.jl. It contains all the necessary commands to import the data files from
-geophysical models at the volcano and represent them in cartesian and UTM coordinates.
-The following steps are performed:
-1. Export earthquake data with a time label in both formats. 
-2. Export a velocity models in both formats. 
-3. Scale and interpolate a shear-wave model and export in both formats.
-
-You will need to download the zipped folder containing all files from:
-[https://seafile.rlp.net/f/ff2c8424274c4d56b1f7/](https://ngdc.noaa.gov/mgg/global/global.html)
-Remember to work in the downloaded directory.
-
-"""
+# This is Tutorial_Flegrei.jl. It contains all the necessary commands to import the data files from
+# geophysical models at the volcano and represent them in cartesian and UTM coordinates.
+# The following steps are performed:
+# 1. Export earthquake data with a time label in both formats.
+# 2. Export a velocity models in both formats.
+# 3. Scale and interpolate a shear-wave model and export in both formats.
+#
+# You will need to download the zipped folder containing all files from:
+# [https://seafile.rlp.net/f/ff2c8424274c4d56b1f7/](https://seafile.rlp.net/f/ff2c8424274c4d56b1f7/)
+# Remember to work in the downloaded directory.
 using DelimitedFiles, GeophysicalModelGenerator, Glob, GeoStats
 
 # 1. define where the two files are located on your computer

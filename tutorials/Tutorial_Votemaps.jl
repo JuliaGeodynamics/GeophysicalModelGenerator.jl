@@ -19,18 +19,16 @@ PSwave_Koulakov = load("Koulakov_Europe.jld2","DataKoulakov_Alps")
 Pwave_Paffrath = load("Paffrath_Pwave.jld2","Data_set_Paffrath2021_Vp")
 
 # The 3 data sets all contain tomographic models for roughly the alpine area, but as you can see, they all have a different resolution and the fields are sometimes called different as well:
-Pwave_Paffrath
-# ```
+# ```julia
+# Pwave_Paffrath
 # GeoData
 #   size  : (162, 130, 42)
 #   lon   ϵ [ -13.3019 : 35.3019]
 #   lat   ϵ [ 30.7638 : 61.2362]
 #   depth ϵ [ -606.0385 km : 31.0385 km]
 #   fields: (:dVp_Percentage, :Vp, :Resolution)
-# ```
-
-PSwave_Koulakov
-# ```
+#
+# PSwave_Koulakov
 # GeoData
 #   size  : (108, 81, 35)
 #   lon   ϵ [ 4.0 : 20.049999999999997]
@@ -57,7 +55,7 @@ Data_VoteMap = votemap( [Pwave_Paffrath,       PSwave_Koulakov,    Pwave_Zhao],
 
 # This will look at the common `lon`,`lat`,`depth` ranges between all 3 models, interpolate each of the models to a common grid of size `(100,100,100)` and apply each of the criteria specified
 # The resulting `GeoData` struct looks like:
-# ```
+# ```julia
 # GeoData
 #   size  : (100, 100, 100)
 #   lon   ϵ [ 4.0 : 18.0]

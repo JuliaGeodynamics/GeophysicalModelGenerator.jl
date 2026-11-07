@@ -10,9 +10,11 @@
 # This is a rather lengthy tutorial that combines different other tutorials, but it will guide you through all the steps necessary to obtain a somewhat comprehensive view of the European Alps and their subsurface from a geodynamical point of view.
 
 # ## 1. Surface Topography
+using GeophysicalModelGenerator
+
 # In many cases, we want to add topographic data to our visualization. The function `import_topo` downloads data from a certain region and transfers it to `GMG`; one simply has to provide the region and the data source.
 
-Topo = import_topo([4,20,37,50], file="@earth_relief_01m.grd")
+Topo = import_topo([4,20,37,50], file="@earth_relief_01m")
 # The data is available in different resolutions; see [here](http://gmt.soest.hawaii.edu/doc/latest/grdimage.html) for an overview. Generally, it is advisable to not use the largest resolution if you have a large area, as the files become very large.
 
 # If you have issues with downloading the topography, there is also the alternative to download the data yourself and import it using `Rasters.jl`.

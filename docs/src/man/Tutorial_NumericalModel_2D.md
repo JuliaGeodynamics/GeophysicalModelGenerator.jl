@@ -20,15 +20,15 @@ z = range(-660,0,    nz);
 Grid2D = CartData(xyz_grid(x,0,z))
 ```
 
-````
-CartData 
+```
+CartData
     size    : (512, 1, 128)
     x       ϵ [ -1000.0 : 1000.0]
     y       ϵ [ 0.0 : 0.0]
     z       ϵ [ -660.0 : 0.0]
     fields  : (:Z,)
 
-````
+```
 
 Now we create an integer array that will hold the `Phases` information (which usually refers to the material or rock type in the simulation)
 
@@ -62,15 +62,15 @@ Add them to the `CartData` dataset:
 Grid2D = addfield(Grid2D,(;Phases, Temp))
 ```
 
-````
-CartData 
+```
+CartData
     size    : (512, 1, 128)
     x       ϵ [ -1000.0 : 1000.0]
     y       ϵ [ 0.0 : 0.0]
     z       ϵ [ -660.0 : 0.0]
     fields  : (:Z, :Phases, :Temp)
 
-````
+```
 
 Which looks like
 
@@ -78,11 +78,10 @@ Which looks like
 write_paraview(Grid2D,"Grid2D_SubductionMechanical");
 ```
 
-````
+```
 Saved file: Grid2D_SubductionMechanical.vts
 
-````
-
+```
 ![Mechanical2D_Tutorial_1](../assets/img/Mechanical2D_Tutorial_1.png)
 
 #### Add lithospheric layers
@@ -93,9 +92,9 @@ We can use the function `LithosphericPhases` for this, which is a simple way to 
 lith = LithosphericPhases(Layers=[15 55], Phases=[1 2])
 ```
 
-````
+```
 LithosphericPhases([15 55], [1 2], nothing)
-````
+```
 
 and set the slab again:
 
@@ -111,11 +110,10 @@ Grid2D = addfield(Grid2D,(;Phases, Temp))
 write_paraview(Grid2D,"Grid2D_SubductionMechanicalLayered");
 ```
 
-````
+```
 Saved file: Grid2D_SubductionMechanicalLayered.vts
 
-````
-
+```
 ![Mechanical2D_Tutorial_2](../assets/img/Mechanical2D_Tutorial_2.png)
 
 #### Add halfspace cooling thermal structure
@@ -135,11 +133,10 @@ Grid2D = addfield(Grid2D,(;Phases, Temp))
 write_paraview(Grid2D,"Grid2D_SubductionHalfspaceCooling");
 ```
 
-````
+```
 Saved file: Grid2D_SubductionHalfspaceCooling.vts
 
-````
-
+```
 ![Mechanical2D_Tutorial_3](../assets/img/Mechanical2D_Tutorial_3.png)
 
 Note that you can specify other 1D thermal profiles, such as
@@ -178,11 +175,10 @@ Grid2D = addfield(Grid2D,(;Phases, Temp))
 write_paraview(Grid2D,"Grid2D_SubductionRidge");
 ```
 
-````
+```
 Saved file: Grid2D_SubductionRidge.vts
 
-````
-
+```
 ![Mechanical2D_Tutorial_4](../assets/img/Mechanical2D_Tutorial_4.png)
 
 #### Overriding slab and weak layer
@@ -217,11 +213,10 @@ Grid2D = addfield(Grid2D,(;Phases, Temp))
 write_paraview(Grid2D,"Grid2D_SubductionOverriding");
 ```
 
-````
+```
 Saved file: Grid2D_SubductionOverriding.vts
 
-````
-
+```
 ![Mechanical2D_Tutorial_5](../assets/img/Mechanical2D_Tutorial_5.png)
 
 #### Curved slab - mechanics
@@ -240,7 +235,7 @@ add_box!(Phases, Temp, Grid2D; xlim=(-800.0,0.0), zlim=(-80.0, 0.0), phase = Con
 ```
 
 Next, we should define a `Trench` structure, which contains info about the trench which goes in 3D from `Start` - `End` coordinates (`x`,`y`)-coordinates respectively. As we are dealing with a 2D model, we set the `y`-coordinates to -100.0 and 100.0 respectively.
-Other parameters to be specified are `Thickness` (Slab thickness), `θ_max` (maximum slab dip angle), `Length` (length of slab), and `Lb` length of bending zoneof slab
+Other parameters to be specified are `Thickness` (Slab thickness), `θ_max` (maximum slab dip angle), `Length` (length of slab), and `Lb` (length of slab bending zone).
 
 ```julia
 trench = Trench(Start=(0.0,-100.0), End=(0.0,100.0), Thickness=80.0, θ_max=45.0, Length=300, Lb=200, direction=-1.0);
@@ -254,11 +249,10 @@ Grid2D = addfield(Grid2D,(;Phases, Temp))
 write_paraview(Grid2D,"Grid2D_SubductionCurvedMechanical");
 ```
 
-````
+```
 Saved file: Grid2D_SubductionCurvedMechanical.vts
 
-````
-
+```
 ![Mechanical2D_Tutorial_6](../assets/img/Mechanical2D_Tutorial_6.png)
 
 #### Curved slab - thermo-mechanics
@@ -277,9 +271,9 @@ Temp = fill(1350.0, nx, 1, nz);
 lith = LithosphericPhases(Layers=[15 20 55], Phases=[3 4 5], Tlab=1250)
 ```
 
-````
+```
 LithosphericPhases([15 20 55], [3 4 5], 1250)
-````
+```
 
 Lets start with defining the horizontal part of the overriding plate. Note that we define this twice with different thickness to deal with the bending subduction area:
 
@@ -302,9 +296,9 @@ Yet, now we add a trench as well. The starting thermal age at the trench is that
 AgeTrench_Myrs = 800e3/(v_spread_cm_yr/1e2)/1e6    #plate age @ trench
 ```
 
-````
+```
 26.666666666666668
-````
+```
 
 We want to add a smooth transition from a halfspace cooling 1D thermal profile to a slab that is heated by the surrounding mantle below a decoupling depth `d_decoupling`.
 
@@ -312,9 +306,9 @@ We want to add a smooth transition from a halfspace cooling 1D thermal profile t
 T_slab = LinearWeightedTemperature( F1=HalfspaceCoolingTemp(Age=AgeTrench_Myrs), F2=McKenzie_subducting_slab(Tsurface=0,v_cm_yr=v_spread_cm_yr, Adiabat = 0.0))
 ```
 
-````
+```
 LinearWeightedTemperature(0.0, 1.0, 100.0, :X, HalfspaceCoolingTemp(0, 1350, 26.666666666666668, 0), McKenzie_subducting_slab(0.0, 1350.0, 0.0, 3.0, 1.0e-6, 36))
-````
+```
 
 in this case, we have a more reasonable slab thickness:
 
@@ -334,11 +328,10 @@ Grid2D = addfield(Grid2D,(;Phases, Temp))
 write_paraview(Grid2D,"Grid2D_SubductionCurvedOverriding");
 ```
 
-````
+```
 Saved file: Grid2D_SubductionCurvedOverriding.vts
 
-````
-
+```
 The result is a smooth transition in thermal structure around the subduction zone:
 ![Mechanical2D_Tutorial_7](../assets/img/Mechanical2D_Tutorial_7.png)
 
@@ -351,11 +344,6 @@ We have a number of other functions to help create a geometry, specifically:
 - `add_cylinder!`
 
 The help functions are quite self-explanatory, so we won't show it in detail here.
-If you have a topography surface or any other horizontal surface, you can surface with the Cartesian grid with `above_surface` or `below_surface`.
+If you have a topography surface or any other horizontal surface, you can intersect the surface with the Cartesian grid with `above_surface` or `below_surface`.
 
 Also, if you wish to take a seismic tomography as inspiration to set a slab geometry, you can interpolate it to a `CartGrid` with the same dimensions and use that with the julia `findall` function.
-
----
-
-*This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
-

@@ -9,7 +9,7 @@
 using GeophysicalModelGenerator, GMT
 
 # Download the topography with:
-Topo = import_topo(lat=[45.5,47.7], lon=[5, 8.1], file="@earth_relief_03s.grd")
+Topo = import_topo(lat=[45.5,47.7], lon=[5, 8.1], file="@earth_relief_03s")
 
 
 # Next, we drape the geological map on top of the topography. 
@@ -23,7 +23,7 @@ download_data("https://zenodo.org/records/10726801/files/SchoriM_Encl_01_Jura-ma
 lowerleft  = [4.54602510460251, 45.27456049638056, 0.0]
 upperright = [8.948117154811715, 47.781282316442606, 0.0]
 
-# We can now import the map with the `screenshot_To_GeoData` function:
+# We can now import the map with the `screenshot_to_GeoData` function:
 Geology  = screenshot_to_GeoData("SchoriM_Encl_01_Jura-map_A1.png", lowerleft, upperright, fieldname=:geology_colors) # name should have "colors" in it
 
 # You can "drape" this image on the topographic map with
@@ -62,8 +62,8 @@ CrossSection_1 = screenshot_to_GeoData("Schori_2020_Ornans-Miserey-v2_whiteBG.pn
 
 # Note that we slightly modified the image to save it with a white instead of a transparent background
 
-# # 2. Project the data to a cartesian grid
-# At this stage, we have all data in geographic coordinates. In most cases it is more useful to have them in cartesian coordinates.
+# # 2. Project the data to a Cartesian grid
+# At this stage, we have all data in geographic coordinates. In most cases it is more useful to have them in Cartesian coordinates.
 # Moreover, the resolution of the grids is different. Whereas the `TopoGeology` has a size of `(3721, 2641, 1)`,  `Basement` has size `(2020, 1751, 1)`.
 # It is often useful to have them on exactly the same size grid
 #
@@ -120,7 +120,7 @@ Basement_cart = project_CartData(TopoGeology_cart, Basement, proj)
 #     fields  : (:Basement,)
 # ```
 
-# Finally, we can also transfer the cross-section to cartesian coordinates. As this is just for visualization, we will
+# Finally, we can also transfer the cross-section to Cartesian coordinates. As this is just for visualization, we will
 # use `convert2CartData` in this case
 CrossSection_1_cart = convert2CartData(CrossSection_1,proj)
 

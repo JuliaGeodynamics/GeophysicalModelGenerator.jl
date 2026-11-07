@@ -128,7 +128,7 @@ Vmagnitude          =   sqrt.(Ve.^2 + Vn.^2 + Vz.^2)  # velocity magnitude in mm
 using Interpolations
 
 # We use the `import_topo` function to read the topography from a file:
-Elevation   =   import_topo([3,17,42,50], file="@earth_relief_01m.grd");
+Elevation   =   import_topo([3,17,42,50], file="@earth_relief_01m");
 
 # We now want to interpolate the elevation on the GPS grid locations.
 Lon_vec     =   NumValue(Elevation.lon)[:,1,1];

@@ -42,7 +42,6 @@ The data sets start at line 39. We read this into julia as:
 ```julia
 data            = readdlm("Moho_Map_Data-WesternAlps-SpadaETAL2013_Moho1.txt",' ',Float64,'\n', skipstart=38,header=false)
 lon, lat, depth = data[:,1], data[:,2], -data[:,3];
-nothing #hide
 ```
 
 Note that depth is made negative.
@@ -57,7 +56,7 @@ scatter(lon,lat,marker_z=depth, ylabel="latitude",xlabel="longitude",markersize=
 ```
 
 ![DataPoints](../assets/img/Tutorial_MohoSpada_LonLat.png)
-What we can see nicely here is that the data is reasonably regular but also that there are obviously locations where no data is define.
+What we can see nicely here is that the data is reasonably regular but also that there are obviously locations where no data is defined.
 
 The easiest way to transfer this to Paraview is to simply save this as 3D data points:
 
@@ -131,8 +130,3 @@ The result is shown here, where the previous points are colored white and are a 
 
 ## 5. Julia script
 The full julia script that does it all is given [here](https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/tree/main/tutorials/Tutorial_MohoTopo_Spada.jl).
-
----
-
-*This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
-

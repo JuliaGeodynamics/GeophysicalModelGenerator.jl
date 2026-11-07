@@ -164,7 +164,6 @@ We use the `import_topo` function to read the topography from a file:
 
 ```julia
 Elevation   =   import_topo([3,17,42,50], file="@earth_relief_01m");
-nothing #hide
 ```
 
 We now want to interpolate the elevation on the GPS grid locations.
@@ -182,7 +181,7 @@ At this stage we have `lon/lat/height` of all points as well as velocity compone
 GPS_Sanchez_grid        =   GeoData(lon,lat,height,(Velocity_mm_year=(Ve,Vn,Vz),V_north=Vn*mm/yr, V_east=Ve*mm/yr, V_vertical=Vz*mm/yr, Vmagnitude = Vmagnitude*mm/yr, Topography = height*km))
 ```
 
-Save paraview is as always:
+Save to paraview as always:
 
 ```julia
 write_paraview(GPS_Sanchez_grid, "GPSAlps_Sanchez_2017_grid")
@@ -195,8 +194,3 @@ In order to plot the velocities as arrows, you need to select the `Glyph` tool (
 ![Tutorial_GPS_4](../assets/img/Tutorial_GPS_4.png)
 
 The arrows can now be colored by the individual velocity components or its magnitude.
-
----
-
-*This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
-
