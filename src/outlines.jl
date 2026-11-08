@@ -318,13 +318,13 @@ end
 # Points of a cubic Bézier segment after the first, except one equal to the last point of `pts`, subdivided until its
 # control points are within `tol` of its chord
 function svg_flatten!(pts, seg, tol)
-    p0, pn = first(seg), last(seg)
-    dx, dy = pn .- p0
+    p0, pend = first(seg), last(seg)
+    dx, dy = pend .- p0
     L = hypot(dx, dy)
     along(q) = L == 0 ? 0.0 : (dx * (q[1] - p0[1]) + dy * (q[2] - p0[2])) / L^2   # projection onto the chord, 0 to 1 between its ends
     dist(q) = L == 0 ? hypot((q .- p0)...) : abs(dx * (q[2] - p0[2]) - dy * (q[1] - p0[1])) / L
     if all(q -> dist(q) <= tol && -1.0e-9 <= along(q) <= 1 + 1.0e-9, seg[2:(end - 1)])
-        pn == pts[end] || push!(pts, pn)
+        pend == pts[end] || push!(pts, pend)
     else   # de Casteljau at t = 1/2
         levels = [collect(seg)]
         while length(levels[end]) > 1

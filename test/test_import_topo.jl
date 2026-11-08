@@ -153,5 +153,5 @@ end
     touch(dest * ".absent")          # a remembered 404
     @test G.download_tile("earth_relief/earth_relief_03s_g/N00E000.SRTMGL3.jp2", dest) == false
     @test_throws "res must be one of" import_topo([10, 11, 40, 41], res = "07m")
-    @test_throws "dataset \"earth_releif\" is not on the GMT data server" import_topo([10, 11, 40, 41], dataset = "earth_releif")
+    @test_throws "dataset \"earth_unknown\" is not on the GMT data server" import_topo([10, 11, 40, 41], dataset = "earth_unknown")
 end

@@ -797,10 +797,10 @@ let
     @test all(==(-1), Tm[:, y .>= 250, z .<= 0][:, gap[y .>= 250, :]])        # the gap keeps the temperature before
     # the neck warms as it thins, T = T0 + φ (T_slab - T0): with T0 the base temperature of the slab, the temperature
     # within the neck changes between cells along z by at most (Tbot - Ttop) A max|∂φ/∂z| Δz = 1000 A √(2/e) / Width × 5
-    Pn, Tn = slab(tear(100, 250); T0 = 1000.0)
+    _, Tneck = slab(tear(100, 250); T0 = 1000.0)
     k = findall(-180 .<= z .<= -20)
     for j in findall(>(100), y)
-        @test maximum(abs, diff(Tn[:, j, k], dims = 2)) <= 1000 * (y[j] - 100) / 150 * sqrt(2 / ℯ) / 40 * 5
+        @test maximum(abs, diff(Tneck[:, j, k], dims = 2)) <= 1000 * (y[j] - 100) / 150 * sqrt(2 / ℯ) / 40 * 5
     end
     @test occursin("[Tear]", sprint(show, tear(100, 250)))
 
