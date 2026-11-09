@@ -47,10 +47,6 @@ jobs:
             arch: aarch64
             version: '1'
             allow_failure: false
-          - os: macOS-latest
-            arch: aarch64
-            version: '1.12'
-            allow_failure: true
           # Julia 1.13 is the current stable release; test it explicitly on Linux
           # so a regression there is visible independently of the '1' alias.
           - os: ubuntu-latest
