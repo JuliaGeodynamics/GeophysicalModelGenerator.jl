@@ -678,10 +678,10 @@ let
     @test mean(r[slab .& (Z .== -100)]) < mean(r[slab .& (Z .== -40)]) < 300
     @test occursin("71 points", sprint(show, Trench(; Trace = arc)))
 
-    # a straight trench given as a trace places the slab like Start and End, up to rounding at its boundary
+    # a straight trench given as a trace places the slab like Start and End; x = 101 keeps grid nodes off the end planes, where rounding decides
     P1, P2 = zeros(Int, size(Grid)), zeros(Int, size(Grid))
-    add_slab!(P1, Tm, Grid, Trench(; Start = (100.0, 100.0), End = (500.0, 400.0), kw...))
-    add_slab!(P2, Tm, Grid, Trench(; Trace = [(100.0, 100.0), (500.0, 400.0)], kw...))
+    add_slab!(P1, Tm, Grid, Trench(; Start = (101.0, 100.0), End = (501.0, 400.0), kw...))
+    add_slab!(P2, Tm, Grid, Trench(; Trace = [(101.0, 100.0), (501.0, 400.0)], kw...))
     @test count(P1 .!= P2) <= 1.0e-3 * count(==(1), P1)
 end
 
@@ -794,7 +794,7 @@ let
     P0, T0 = slab(Trench(; kw...))
     @test Ph[:, y .<= 100, :] == P0[:, y .<= 100, :] && Tm[:, y .<= 100, :] == T0[:, y .<= 100, :]   # no tear before Start
     @test Ph[:, y .> 100, :] != P0[:, y .> 100, :]
-    @test all(==(-1), Tm[:, y .>= 250, z .<= 0][:, gap[y .>= 250, :]])        # the gap keeps the temperature before
+    @test all(==(-1), Tm[:, y .>= 250, z .<= 0][:, findall(gap[y .>= 250, :])])        # the gap keeps the temperature before
     # the neck warms as it thins, T = T0 + φ (T_slab - T0): with T0 the base temperature of the slab, the temperature
     # within the neck changes between cells along z by at most (Tbot - Ttop) A max|∂φ/∂z| Δz = 1000 A √(2/e) / Width × 5
     _, Tneck = slab(tear(100, 250); T0 = 1000.0)

@@ -61,7 +61,7 @@ function server_entry(dataset::AbstractString, res::AbstractString, reg::Abstrac
     index = server_index_file()
     isnothing(index) && return nothing
     want = "$(dataset)_$(res)_$(reg)"
-    for line in eachline(index)
+    for line in readlines(index)
         startswith(line, "#") && continue
         f = split(line, '\t')
         length(f) < 11 && continue
@@ -129,7 +129,7 @@ function is_valid_download(file::AbstractString)
     elseif endswith(file, ".grd")
         return length(magic) >= 8 && (magic[1:3] == b"CDF" || magic[1:8] == b"\x89HDF\r\n\x1a\n")
     elseif endswith(file, ".txt")
-        return any(l -> !startswith(l, "#") && count(==('\t'), l) >= 10, eachline(file))
+        return any(l -> !startswith(l, "#") && count(==('\t'), l) >= 10, readlines(file))
     end
     return error("no validity check for the downloaded file $file")
 end

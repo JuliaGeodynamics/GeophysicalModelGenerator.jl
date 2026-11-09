@@ -148,7 +148,7 @@ julia> nmark_z = ParseValue_LaMEM_InputFile("SaltModels.dat","nmark_z",Int64, ar
 """
 function ParseValue_LaMEM_InputFile(file, keyword, type; args::Union{String, Nothing} = nothing)
     value = nothing
-    for line in eachline(file)
+    for line in readlines(file)   # not eachline: an early break would leave the file open
         line_strip = strip(split(line, '#')[1])   # drop comment and surrounding whitespace
         lhs_rhs = split(line_strip, '=', limit = 2)
         length(lhs_rhs) == 2 || continue
@@ -657,36 +657,32 @@ function get_processor_partitioning(filename; is64bit = false)
     else
         typ = Int32
     end
-    io = open(filename, "r")
+    return open(filename, "r") do io
+        nProcX = ntoh(read(io, typ))
+        nProcY = ntoh(read(io, typ))
+        nProcZ = ntoh(read(io, typ))
 
+        nNodeX = ntoh(read(io, typ))
+        nNodeY = ntoh(read(io, typ))
+        nNodeZ = ntoh(read(io, typ))
 
-    nProcX = ntoh(read(io, typ))
-    nProcY = ntoh(read(io, typ))
-    nProcZ = ntoh(read(io, typ))
+        iX = [ntoh(read(io, typ)) for i in 1:(nProcX + 1)]
+        iY = [ntoh(read(io, typ)) for i in 1:(nProcY + 1)]
+        iZ = [ntoh(read(io, typ)) for i in 1:(nProcZ + 1)]
 
-    nNodeX = ntoh(read(io, typ))
-    nNodeY = ntoh(read(io, typ))
-    nNodeZ = ntoh(read(io, typ))
+        CharLength = ntoh(read(io, Float64))
+        xcoor = [ntoh(read(io, Float64)) for i in 1:nNodeX] .* CharLength
+        ycoor = [ntoh(read(io, Float64)) for i in 1:nNodeY] .* CharLength
+        zcoor = [ntoh(read(io, Float64)) for i in 1:nNodeZ] .* CharLength
 
-    iX = [ntoh(read(io, typ)) for i in 1:(nProcX + 1)]
-    iY = [ntoh(read(io, typ)) for i in 1:(nProcY + 1)]
-    iZ = [ntoh(read(io, typ)) for i in 1:(nProcZ + 1)]
+        xc = xcoor[iX .+ 1]
+        yc = ycoor[iY .+ 1]
+        zc = zcoor[iZ .+ 1]
 
-    CharLength = ntoh(read(io, Float64))
-    xcoor = [ntoh(read(io, Float64)) for i in 1:nNodeX] .* CharLength
-    ycoor = [ntoh(read(io, Float64)) for i in 1:nNodeY] .* CharLength
-    zcoor = [ntoh(read(io, Float64)) for i in 1:nNodeZ] .* CharLength
-
-    xc = xcoor[iX .+ 1]
-    yc = ycoor[iY .+ 1]
-    zc = zcoor[iZ .+ 1]
-
-    close(io)
-
-    return nProcX, nProcY, nProcZ,
-        xc, yc, zc,
-        nNodeX, nNodeY, nNodeZ
-
+        return nProcX, nProcY, nProcZ,
+            xc, yc, zc,
+            nNodeX, nNodeY, nNodeZ
+    end
 end
 
 
@@ -713,85 +709,85 @@ end
 # (components × full grid, allocated here if `nothing`), converting to Float64 while copying.
 # Returns `Data, Name_Vec, NumComp_Vec, ix, iy, iz`.
 function read_vtr_piece!(coords, Data, fname, FullSize, origin)
-    file = open(fname, "r")
+    return open(fname, "r") do file
 
-    vtk_types = Dict("Float32" => Float32, "Float64" => Float64, "UInt8" => UInt8,
-                     "Int32" => Int32, "Int64" => Int64, "UInt32" => UInt32, "UInt64" => UInt64)
-    header_type = UInt32                    # the VTK default
-    PieceExtent = Int64[]
-    CoordOffset = zeros(Int64, 3); CoordType = fill("Float32", 3)
-    Offset_Vec = Int64[]; Name_Vec = String[]; Type_Vec = String[]; NumComp_Vec = Int64[]
-    while true
-        line_strip = lstrip(readline(file))
-        eof(file) && error("$fname has no <AppendedData> section")
-
-        if startswith(line_strip, "<VTKFile")
-            (occursin("compressor=", line_strip) || occursin("BigEndian", line_strip)) && error("$fname is compressed or big-endian; only uncompressed little-endian files are supported.")
-            m = match(r"header_type=\"(\w+)\"", line_strip)
-            isnothing(m) || (header_type = vtk_types[m[1]])
-        end
-        if startswith(line_strip, "<Piece Extent=")
-            id_start = findfirst("\"", line_strip)[1] + 1
-            id_end = findlast("\"", line_strip)[1] - 1
-            PieceExtent = parse.(Int64, split(line_strip[id_start:id_end]))
-        end
-        if startswith(line_strip, "<Coordinates>")
-            # Read info where the coordinates are stored
-            for d in 1:3
-                CoordType[d], _, _, CoordOffset[d] = Parse_VTR_Line(readline(file))
-            end
-        end
-
-        if startswith(line_strip, "<PointData>")
+        vtk_types = Dict("Float32" => Float32, "Float64" => Float64, "UInt8" => UInt8,
+                         "Int32" => Int32, "Int64" => Int64, "UInt32" => UInt32, "UInt64" => UInt64)
+        header_type = UInt32                    # the VTK default
+        PieceExtent = Int64[]
+        CoordOffset = zeros(Int64, 3); CoordType = fill("Float32", 3)
+        Offset_Vec = Int64[]; Name_Vec = String[]; Type_Vec = String[]; NumComp_Vec = Int64[]
+        while true
             line_strip = lstrip(readline(file))
-            while !startswith(line_strip, "</PointData>")
-                Type, Name, NumberOfComponents, Offset = Parse_VTR_Line(line_strip)
-                push!(Offset_Vec, Offset)
-                push!(Name_Vec, Name)
-                push!(Type_Vec, Type)
-                push!(NumComp_Vec, NumberOfComponents)
-                line_strip = lstrip(readline(file))
+            eof(file) && error("$fname has no <AppendedData> section")
+
+            if startswith(line_strip, "<VTKFile")
+                (occursin("compressor=", line_strip) || occursin("BigEndian", line_strip)) && error("$fname is compressed or big-endian; only uncompressed little-endian files are supported.")
+                m = match(r"header_type=\"(\w+)\"", line_strip)
+                isnothing(m) || (header_type = vtk_types[m[1]])
             end
+            if startswith(line_strip, "<Piece Extent=")
+                id_start = findfirst("\"", line_strip)[1] + 1
+                id_end = findlast("\"", line_strip)[1] - 1
+                PieceExtent = parse.(Int64, split(line_strip[id_start:id_end]))
+            end
+            if startswith(line_strip, "<Coordinates>")
+                # Read info where the coordinates are stored
+                for d in 1:3
+                    CoordType[d], _, _, CoordOffset[d] = Parse_VTR_Line(readline(file))
+                end
+            end
+
+            if startswith(line_strip, "<PointData>")
+                line_strip = lstrip(readline(file))
+                while !startswith(line_strip, "</PointData>")
+                    Type, Name, NumberOfComponents, Offset = Parse_VTR_Line(line_strip)
+                    push!(Offset_Vec, Offset)
+                    push!(Name_Vec, Name)
+                    push!(Type_Vec, Type)
+                    push!(NumComp_Vec, NumberOfComponents)
+                    line_strip = lstrip(readline(file))
+                end
+            end
+
+            if startswith(line_strip, "<CellData>")
+                startswith(lstrip(readline(file)), "</CellData>") ||
+                    error("$fname contains cell data, which read_data_VTR does not support")
+            end
+
+            startswith(line_strip, "<AppendedData ") && break
         end
 
-        if startswith(line_strip, "<CellData>")
-            startswith(lstrip(readline(file)), "</CellData>") ||
-                error("$fname contains cell data, which read_data_VTR does not support")
+        # The raw data begins after an underscore. Each array is preceded by a header of type
+        # `header_type` that holds its size in bytes, and the offsets point at those headers.
+        while read(file, UInt8) != UInt8('_')
+        end
+        start_bin = position(file) + sizeof(header_type)
+
+        # indices of this piece in the full grid
+        ix = (PieceExtent[1]:PieceExtent[2]) .- (origin[1] - 1)
+        iy = (PieceExtent[3]:PieceExtent[4]) .- (origin[2] - 1)
+        iz = (PieceExtent[5]:PieceExtent[6]) .- (origin[3] - 1)
+        numPoints = length(ix) * length(iy) * length(iz)
+
+        for (full, idx, d) in zip(coords, (ix, iy, iz), 1:3)
+            full[idx] = read_raw(file, start_bin + CoordOffset[d], vtk_types[CoordType[d]], length(idx))
         end
 
-        startswith(line_strip, "<AppendedData ") && break
-    end
-
-    # The raw data begins after an underscore. Each array is preceded by a header of type
-    # `header_type` that holds its size in bytes, and the offsets point at those headers.
-    while read(file, UInt8) != UInt8('_')
-    end
-    start_bin = position(file) + sizeof(header_type)
-
-    # indices of this piece in the full grid
-    ix = (PieceExtent[1]:PieceExtent[2]) .- (origin[1] - 1)
-    iy = (PieceExtent[3]:PieceExtent[4]) .- (origin[2] - 1)
-    iz = (PieceExtent[5]:PieceExtent[6]) .- (origin[3] - 1)
-    numPoints = length(ix) * length(iy) * length(iz)
-
-    for (full, idx, d) in zip(coords, (ix, iy, iz), 1:3)
-        full[idx] = read_raw(file, start_bin + CoordOffset[d], vtk_types[CoordType[d]], length(idx))
-    end
-
-    Data === nothing && (Data = zeros(Float64, sum(NumComp_Vec), FullSize...))
-    row = 0
-    for i in eachindex(Name_Vec)
-        T = get(vtk_types, Type_Vec[i]) do
-            error("data array $(Name_Vec[i]) in $fname has the unsupported type $(Type_Vec[i])")
+        Data === nothing && (Data = zeros(Float64, sum(NumComp_Vec), FullSize...))
+        row = 0
+        for i in eachindex(Name_Vec)
+            T = get(vtk_types, Type_Vec[i]) do
+                error("data array $(Name_Vec[i]) in $fname has the unsupported type $(Type_Vec[i])")
+            end
+            nc = NumComp_Vec[i]
+            buf = read_raw(file, start_bin + Offset_Vec[i], T, nc * numPoints)
+            Data[(row + 1):(row + nc), ix, iy, iz] .= reshape(buf, nc, length(ix), length(iy), length(iz))
+            row += nc
         end
-        nc = NumComp_Vec[i]
-        buf = read_raw(file, start_bin + Offset_Vec[i], T, nc * numPoints)
-        Data[(row + 1):(row + nc), ix, iy, iz] .= reshape(buf, nc, length(ix), length(iy), length(iz))
-        row += nc
-    end
-    close(file)
 
-    return Data, Name_Vec, NumComp_Vec, ix, iy, iz
+        return Data, Name_Vec, NumComp_Vec, ix, iy, iz
+    end
 end
 
 # `n` values of type `T` from position `pos` of `file`
