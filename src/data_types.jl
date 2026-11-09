@@ -255,7 +255,7 @@ function Base.show(io::IO, d::GeoData)
     end
     println(io, "  fields    : $(keys(d.fields))")
 
-    show_atts(io, d.atts)
+    return show_atts(io, d.atts)
 end
 
 
@@ -310,7 +310,7 @@ function Base.show(io::IO, d::ParaviewData)
         println(io, "  z     ϵ [ $(z_vals[1]) : $(z_vals[2])]")
     end
 
-    println(io, "  fields: $(keys(d.fields))")
+    return println(io, "  fields: $(keys(d.fields))")
 end
 
 # conversion function from GeoData -> ParaviewData
@@ -447,7 +447,7 @@ function Base.show(io::IO, d::UTMData)
 
     println(io, "    fields  : $(keys(d.fields))")
 
-    show_atts(io, d.atts)
+    return show_atts(io, d.atts)
 end
 
 # The coordinate transformations below loop over every point. They take the
@@ -667,7 +667,7 @@ function Base.show(io::IO, d::CartData)
 
     println(io, "    fields  : $(keys(d.fields))")
 
-    show_atts(io, d.atts)
+    return show_atts(io, d.atts)
 end
 
 """
@@ -1148,7 +1148,7 @@ function Base.show(io::IO, d::Q1Data)
     println(io, "      fields  : $(keys(d.fields))")
     println(io, "  cellfields  : $(keys(d.cellfields))")
 
-    show_atts(io, d.atts)
+    return show_atts(io, d.atts)
 end
 
 

@@ -368,5 +368,3 @@ function getlonlatdepthmag_QuakeML(filename::String)
     Data_ISC = GeoData(lon, lat, -1 * depth / 1.0e3, (Magnitude = mag, Depth = -1 * depth / 1.0e3 * km))
     return Data_ISC
 end
-
-

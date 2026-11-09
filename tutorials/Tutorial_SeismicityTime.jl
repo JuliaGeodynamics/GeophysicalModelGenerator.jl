@@ -12,46 +12,46 @@ Remember to work in the downloaded directory.
 using DelimitedFiles, GeophysicalModelGenerator, Dates
 
 # Seismicity movie
-p2                  = @__FILE__;
-p2last              = findlast("/",p2);
-p3=chop(p2,head=0,tail = length(p2)-p2last[1]+1);
-output_path         = string(p3,"/");
-movie               = movie_paraview(name=string(p3,"/TemporalSeismicity"), Initialize=true);
-if isdir(string(p3,"/TemporalSeismicity"))==0
-    mkdir(string(p3,"/TemporalSeismicity"));
+p2 = @__FILE__;
+p2last = findlast("/", p2);
+p3 = chop(p2, head = 0, tail = length(p2) - p2last[1] + 1);
+output_path = string(p3, "/");
+movie = movie_paraview(name = string(p3, "/TemporalSeismicity"), Initialize = true);
+if isdir(string(p3, "/TemporalSeismicity")) == 0
+    mkdir(string(p3, "/TemporalSeismicity"))
 end
 
 # 1. define where the two files are located on your computer
-data                = readdlm("SeismicLocations/Seismicity_UTM_1983_1984.txt", '\t', skipstart=0, header=false);
-l = length(data[:,1]);
-dates = Date.(zeros(l,1))
-for i = 1:l
-    df                     = DateFormat("yyyymmdd");
-    t1                     = string("19",@sprintf("%5.o", data[i,1]));
-    t2                     = Date(t1[1:8],df);
-    dates[i,1]              = t2;
+data = readdlm("SeismicLocations/Seismicity_UTM_1983_1984.txt", '\t', skipstart = 0, header = false);
+l = length(data[:, 1]);
+dates = Date.(zeros(l, 1))
+for i in 1:l
+    df = DateFormat("yyyymmdd")
+    t1 = string("19", @sprintf("%5.o", data[i, 1]))
+    t2 = Date(t1[1:8], df)
+    dates[i, 1] = t2
 end
-WE                  = data[:,2];
-SN                  = data[:,3];
-depth               = data[:,4];
-dates_num           = dates - dates[1];
+WE = data[:, 2];
+SN = data[:, 3];
+depth = data[:, 4];
+dates_num = dates - dates[1];
 
 # time steps
-nt                  = 50;
-dt                  = Dates.Day(nt);
-t                   = minimum(dates):dt:maximum(dates);
+nt = 50;
+dt = Dates.Day(nt);
+t = minimum(dates):dt:maximum(dates);
 
-for itime = 1:length(t)-1
-    name            = string(p3,"/TemporalSeismicity/", string(itime));
-    tt=findall(x->(x>=t[itime]) & (x<=t[itime+1]),dates);
-    we             = WE[tt];
-    sn             = SN[tt];
-    Depth1          = depth[tt];
-    DN              = dates_num[tt];
-    label_time      = Dates.value(DN[end]);
-    if size(tt,1)>1
-        Data_set    = UTMData(we, sn, Depth1, 33, true, (Depth=Depth1*km,Timedata=DN));
-        movie       = write_paraview(Data_set, name,pvd=movie,time=label_time,PointsData=true);
+for itime in 1:(length(t) - 1)
+    name = string(p3, "/TemporalSeismicity/", string(itime))
+    tt = findall(x -> (x >= t[itime]) & (x <= t[itime + 1]), dates)
+    we = WE[tt]
+    sn = SN[tt]
+    Depth1 = depth[tt]
+    DN = dates_num[tt]
+    label_time = Dates.value(DN[end])
+    if size(tt, 1) > 1
+        Data_set = UTMData(we, sn, Depth1, 33, true, (Depth = Depth1 * km, Timedata = DN))
+        movie = write_paraview(Data_set, name, pvd = movie, time = label_time, PointsData = true)
     end
 end
-movie_paraview(pvd=movie, Finalize=true)
+movie_paraview(pvd = movie, Finalize = true)

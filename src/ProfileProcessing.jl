@@ -507,10 +507,6 @@ _isnodata(x) = isnothing(x) || (x isa Union{Tuple, NamedTuple} && isempty(x))
 _as_namedtuple(x) = _isnodata(x) ? NamedTuple() : x
 
 
-
-
-
-
 """
 This reads the picked profiles from disk and returns a vector of ProfileData
 """
@@ -528,15 +524,15 @@ function read_picked_profiles(ProfileCoordFile::String)
             profile = ProfileData(depth = depth)
             push!(profiles, profile)
         end
-        elseif size(profile_data, 2) == 5
+    elseif size(profile_data, 2) == 5
         # we have mixed horizontal/vertical profiles or vertical profiles only
         for i in 1:size(profile_data, 1)
             # check whether the current profile is horizontal or vertical
-            if all(isempty.(profile_data[i,3:5])) # there are only two entries: profile number and depth of the profile, so this is a horizontal profile
+            if all(isempty.(profile_data[i, 3:5])) # there are only two entries: profile number and depth of the profile, so this is a horizontal profile
                 depth = profile_data[i, 2]
                 profile = ProfileData(depth = depth)
                 push!(profiles, profile)
-            elseif !any(isempty.(profile_data[i,2:5])) # there are five entries: profile number, start lon/lat, end lon/lat, so this is a vertical profile
+            elseif !any(isempty.(profile_data[i, 2:5])) # there are five entries: profile number, start lon/lat, end lon/lat, so this is a vertical profile
                 start_lonlat = (profile_data[i, 2:3]...,)
                 end_lonlat = (profile_data[i, 4:5]...,)
                 profile = ProfileData(start_lonlat = start_lonlat, end_lonlat = end_lonlat)
@@ -582,5 +578,3 @@ function extract_ProfileData(ProfileCoordFile::String, ProfileNumber::Int64, Dat
 
     return profile
 end
-
-

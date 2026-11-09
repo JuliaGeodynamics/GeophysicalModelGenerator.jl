@@ -6,7 +6,7 @@
 # ## Steps
 #
 # #### 1. Load data
-# We assume that you have all tomographic models already available as *.JLD2 files. In our example we use the data uploaded to 
+# We assume that you have all tomographic models already available as *.JLD2 files. In our example we use the data uploaded to
 # [https://seafile.rlp.net/d/22b0fb85550240758552/](https://seafile.rlp.net/d/22b0fb85550240758552/)
 #
 # Specifically, we will use the tomographic models of Paffrath, Zhao and Koulakov, as we have them all available in processed form.
@@ -14,9 +14,9 @@
 # and extract `Paffrath_Pwave.jld2`, `Zhao_Pwave.jld2` and `Koulakov_Europe.jld2` into the same directory.
 using JLD2, GeophysicalModelGenerator
 
-Pwave_Zhao = load("Zhao_Pwave.jld2","Data_set_Zhao2016_Vp")
-PSwave_Koulakov = load("Koulakov_Europe.jld2","DataKoulakov_Alps")
-Pwave_Paffrath = load("Paffrath_Pwave.jld2","Data_set_Paffrath2021_Vp")
+Pwave_Zhao = load("Zhao_Pwave.jld2", "Data_set_Zhao2016_Vp")
+PSwave_Koulakov = load("Koulakov_Europe.jld2", "DataKoulakov_Alps")
+Pwave_Paffrath = load("Paffrath_Pwave.jld2", "Data_set_Paffrath2021_Vp")
 
 # The 3 data sets all contain tomographic models for roughly the alpine area, but as you can see, they all have a different resolution and the fields are sometimes called different as well:
 # ```julia
@@ -43,15 +43,17 @@ Pwave_Paffrath = load("Paffrath_Pwave.jld2","Data_set_Paffrath2021_Vp")
 # - Everything that fulfills this criterion gets the number 1, everything else 0.
 # - Do the same with other tomographic models (using the same criterion or a different one).
 # - Make sure that all tomographic models are interpolated to the same grid.
-# - Sum up the 3 models. 
+# - Sum up the 3 models.
 # - The resulting 3D map will have the number `3` at locations where all 3 models see a high-velocity anomaly (say a slab), implying that this feature is consistent between all models. Features that have a number 1 or 2 are only seen in a single or in 2/3 models.
 #
 # The result of this gives a feeling which features are consistent between the 3 models. It is of course still subjective, as you still have to choose a criterion and as we are assuming in this that the 3 tomographic models are comparable (which they are not as they are produced using different amounts of data, etc. etc.).
 #
-# So how do we create Votemaps? 
+# So how do we create Votemaps?
 # Doing this is rather simple:
-Data_VoteMap = votemap( [Pwave_Paffrath,       PSwave_Koulakov,    Pwave_Zhao],
-                        ["dVp_Percentage>3.0","dVp_percentage>2.0","dVp_Percentage>2.0"], dims=(100,100,100))
+Data_VoteMap = votemap(
+    [Pwave_Paffrath, PSwave_Koulakov, Pwave_Zhao],
+    ["dVp_Percentage>3.0", "dVp_percentage>2.0", "dVp_Percentage>2.0"], dims = (100, 100, 100)
+)
 
 # This will look at the common `lon`,`lat`,`depth` ranges between all 3 models, interpolate each of the models to a common grid of size `(100,100,100)` and apply each of the criteria specified
 # The resulting `GeoData` struct looks like:
@@ -72,11 +74,10 @@ write_paraview(Data_VoteMap, "VoteMap_Alps")
 
 # You can of course argue that newer tomographic models include more data and should therefore count more.
 # A simple way to take that into account is to list the model twice:
-Data_VoteMap = votemap( [Pwave_Paffrath,       Pwave_Paffrath,       PSwave_Koulakov,    Pwave_Zhao],
-                        ["dVp_Percentage>3.0","dVp_Percentage>3.0", "dVp_percentage>2.0","dVp_Percentage>2.0"], 
-                        dims=(100,100,100))
+Data_VoteMap = votemap(
+    [Pwave_Paffrath, Pwave_Paffrath, PSwave_Koulakov, Pwave_Zhao],
+    ["dVp_Percentage>3.0", "dVp_Percentage>3.0", "dVp_percentage>2.0", "dVp_Percentage>2.0"],
+    dims = (100, 100, 100)
+)
 
 # Similarly, you could only look at a single model (even when that is perhaps easier done directly in paraview, where you can simply select a different isocontour value)
-
-
-

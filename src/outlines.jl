@@ -231,9 +231,9 @@ function arc_beziers(p0, rx, ry, φ, large, sweep, p)
     α = 4 / 3 * tan(δ / 4)
     return [
         (
-                i == 1 ? p0 : point(θ0 + (i - 1) * δ), point(θ0 + (i - 1) * δ) .+ α .* tangent(θ0 + (i - 1) * δ),
-                point(θ0 + i * δ) .- α .* tangent(θ0 + i * δ), i == n ? p : point(θ0 + i * δ),
-            ) for i in 1:n
+            i == 1 ? p0 : point(θ0 + (i - 1) * δ), point(θ0 + (i - 1) * δ) .+ α .* tangent(θ0 + (i - 1) * δ),
+            point(θ0 + i * δ) .- α .* tangent(θ0 + i * δ), i == n ? p : point(θ0 + i * δ),
+        ) for i in 1:n
     ]
 end
 

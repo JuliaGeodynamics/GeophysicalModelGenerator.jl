@@ -112,23 +112,25 @@ tomo_file = "test_files/test_tomo_data.nc"
 Tomo_data = tomo_2_GeoData(tomo_file)
 test_array = [i for i in 0:1:10]
 
-@test Tomo_data.lon.val[:,1,1] ≈ test_array
-@test Tomo_data.lat.val[1,:,1] ≈ test_array
-@test Tomo_data.depth.val[1,1,:] ≈ .- test_array
+@test Tomo_data.lon.val[:, 1, 1] ≈ test_array
+@test Tomo_data.lat.val[1, :, 1] ≈ test_array
+@test Tomo_data.depth.val[1, 1, :] ≈ .- test_array
 
 for i in eachindex(test_array)
-    @test Tomo_data.fields.vel[i,i,i] ≈ i
+    @test Tomo_data.fields.vel[i, i, i] ≈ i
 end
 # QuakeML: <value> is read even when <uncertainty> comes first; the preferred origin/magnitude is used
 mktemp() do path, io
-    write(io, """<?xml version="1.0"?>
-<q:quakeml xmlns:q="http://quakeml.org/xmlns/quakeml/1.2"><eventParameters><event>
-<preferredOriginID>o2</preferredOriginID><preferredMagnitudeID>m2</preferredMagnitudeID>
-<origin publicID="o1"><longitude><value>1.0</value></longitude><latitude><value>2.0</value></latitude><depth><value>3000</value></depth></origin>
-<origin publicID="o2"><longitude><uncertainty>0.1</uncertainty><value>10.0</value></longitude><latitude><uncertainty>0.5</uncertainty><value>45.0</value></latitude><depth><uncertainty>9</uncertainty><value>5000</value></depth></origin>
-<magnitude publicID="m1"><mag><value>1.5</value></mag></magnitude>
-<magnitude publicID="m2"><mag><value>4.5</value></mag></magnitude>
-</event></eventParameters></q:quakeml>""")
+    write(
+        io, """<?xml version="1.0"?>
+        <q:quakeml xmlns:q="http://quakeml.org/xmlns/quakeml/1.2"><eventParameters><event>
+        <preferredOriginID>o2</preferredOriginID><preferredMagnitudeID>m2</preferredMagnitudeID>
+        <origin publicID="o1"><longitude><value>1.0</value></longitude><latitude><value>2.0</value></latitude><depth><value>3000</value></depth></origin>
+        <origin publicID="o2"><longitude><uncertainty>0.1</uncertainty><value>10.0</value></longitude><latitude><uncertainty>0.5</uncertainty><value>45.0</value></latitude><depth><uncertainty>9</uncertainty><value>5000</value></depth></origin>
+        <magnitude publicID="m1"><mag><value>1.5</value></mag></magnitude>
+        <magnitude publicID="m2"><mag><value>4.5</value></mag></magnitude>
+        </event></eventParameters></q:quakeml>"""
+    )
     close(io)
     D = GeophysicalModelGenerator.getlonlatdepthmag_QuakeML(path)
     @test D.lat.val[1] == 45.0
