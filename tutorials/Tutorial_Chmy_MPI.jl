@@ -44,16 +44,16 @@ end
 end
 
 # And the main function is:
-@views function main(backend=CPU(); nxy_l=(126, 126))
+@views function main(backend = CPU(); nxy_l = (126, 126))
     arch = Arch(backend, MPI.COMM_WORLD, (0, 0))
     topo = topology(arch)
-    me   = global_rank(topo)
+    me = global_rank(topo)
 
     ## geometry
     dims_l = nxy_l
     dims_g = dims_l .* dims(topo)
-    grid   = UniformGrid(arch; origin=(-2, -2), extent=(4, 4), dims=dims_g)
-    launch = Launcher(arch, grid, outer_width=(16, 8))
+    grid = UniformGrid(arch; origin = (-2, -2), extent = (4, 4), dims = dims_g)
+    launch = Launcher(arch, grid, outer_width = (16, 8))
 
     ##@info "mpi" me grid
 
@@ -67,33 +67,33 @@ end
     P = Field(backend, grid, Center(), Int32)   # phases
 
     q = VectorField(backend, grid)
-    C_v = (me==0) ? KernelAbstractions.zeros(CPU(), Float64, size(interior(C)) .* dims(topo)) : nothing
+    C_v = (me == 0) ? KernelAbstractions.zeros(CPU(), Float64, size(interior(C)) .* dims(topo)) : nothing
 
     ## Use the `GeophysicalModelGenerator` to set the initial conditions. Note that
     ## you have to call this for a `Phases` and a `Temp` grid, which we call `C` here.
-    add_box!(P,C,grid,  xlim=(-1.0,1.0), zlim=(-1.0,1.0), phase=ConstantPhase(4), T=ConstantTemp(400))
+    add_box!(P, C, grid, xlim = (-1.0, 1.0), zlim = (-1.0, 1.0), phase = ConstantPhase(4), T = ConstantTemp(400))
 
     ## set BC's and updates the halo:
-    bc!(arch, grid, C => Neumann(); exchange=C)
+    bc!(arch, grid, C => Neumann(); exchange = C)
 
     ## visualisation
-    fig = Figure(; size=(400, 320))
-    ax  = Axis(fig[1, 1]; aspect=DataAspect(), xlabel="x", ylabel="y", title="it = 0")
-    plt = heatmap!(ax, centers(grid)..., interior(C) |> Array; colormap=:turbo)
+    fig = Figure(; size = (400, 320))
+    ax = Axis(fig[1, 1]; aspect = DataAspect(), xlabel = "x", ylabel = "y", title = "it = 0")
+    plt = heatmap!(ax, centers(grid)..., interior(C) |> Array; colormap = :turbo)
     Colorbar(fig[1, 2], plt)
     ## action
     nt = 100
     for it in 1:nt
-        (me==0) && @printf("it = %d/%d \n", it, nt)
+        (me == 0) && @printf("it = %d/%d \n", it, nt)
         launch(arch, grid, compute_q! => (q, C, χ, grid))
-        launch(arch, grid, update_C! => (C, q, Δt, grid); bc=batch(grid, C => Neumann(); exchange=C))
+        launch(arch, grid, update_C! => (C, q, Δt, grid); bc = batch(grid, C => Neumann(); exchange = C))
     end
     KernelAbstractions.synchronize(backend)
     gather!(arch, C_v, C)
     if me == 0
-        fig = Figure(; size=(400, 320))
-        ax  = Axis(fig[1, 1]; aspect=DataAspect(), xlabel="x", ylabel="y", title="it = 0")
-        plt = heatmap!(ax, C_v; colormap=:turbo) # how to get the global grid for axes?
+        fig = Figure(; size = (400, 320))
+        ax = Axis(fig[1, 1]; aspect = DataAspect(), xlabel = "x", ylabel = "y", title = "it = 0")
+        plt = heatmap!(ax, C_v; colormap = :turbo) # how to get the global grid for axes?
         Colorbar(fig[1, 2], plt)
         save("out_gather_$nx.png", fig)
     end
@@ -112,7 +112,7 @@ end
 
 # Running the code on the CPU is done with this:
 n = 128
-main(; nxy_l=(n, n) .- 2)
+main(; nxy_l = (n, n) .- 2)
 
 # If you instead want to run this on AMD or NVIDIA GPU's do this:
 ## main(ROCBackend(); nxy_l=(n, n) .- 2)

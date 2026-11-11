@@ -35,5 +35,37 @@ Data_ASAGI3 = read_ASAGI(fname_asagi)
 # test that it errors if we use a tuple with non-scalar fields
 @test_throws "Field Stress is not an Array but instead a NTuple{9, Array{Float64, 3}}; only Arrays are supported" write_ASAGI("test", Data_tuple)
 
+# integer fields keep their integer type
+Data_int = CartData(XYZ..., (Rho = Rho, Phases = Phases))
+Data_ASAGI4 = read_ASAGI(write_ASAGI("test4", Data_int))
+@test eltype(Data_ASAGI4.fields.Phases[10]) == Int32
+
+# a requested field that does not exist is reported by name
+@test_throws "Field Nope is not in the data set" write_ASAGI("test", Data, fields = (:Nope,))
+
 # Cleanup
 foreach(rm, filter(endswith(".nc"), readdir()))
+
+# fill values in NetCDF input become NaN (tomography) or an error (topography), never numbers
+ncdir = mktempdir()
+tomo_nc = joinpath(ncdir, "tomo.nc")
+NCDataset(tomo_nc, "c") do ds
+    defVar(ds, "longitude", [0.0, 1.0], ("longitude",))
+    defVar(ds, "latitude", [0.0, 1.0], ("latitude",))
+    defVar(ds, "depth", [0.0, 10.0], ("depth",))
+    vs = Union{Missing, Float32}[4.0f0 for i in 1:2, j in 1:2, k in 1:2]
+    vs[1, 1, 1] = missing
+    defVar(ds, "vs", vs, ("longitude", "latitude", "depth"); fillvalue = -999.0f0)
+end
+Tomo = tomo_2_GeoData(tomo_nc)
+@test isnan(Tomo.fields.vel[1, 1, 1])
+@test Tomo.fields.vel[2, 2, 2] == 4
+@test eltype(Tomo.fields.vel) == Float32
+
+topo_nc = joinpath(ncdir, "topo.grd")
+NCDataset(topo_nc, "c") do ds
+    defVar(ds, "lon", [0.0, 1.0], ("lon",))
+    defVar(ds, "lat", [0.0, 1.0], ("lat",))
+    defVar(ds, "z", Union{Missing, Float32}[missing 1; 2 3], ("lon", "lat"); fillvalue = -999.0f0)
+end
+@test_throws "missing elevations" GeophysicalModelGenerator.read_topo_netcdf(topo_nc)

@@ -107,8 +107,3 @@ heatmap!(lon,lat,cntmap.fields.countmap[:,:,1]',colormap=cgrad(:batlowW,rev=true
 ```
 
 ![tutorial_Fault_Map](../assets/img/FaultDensity.png)
-
----
-
-*This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
-

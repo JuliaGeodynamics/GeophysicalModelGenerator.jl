@@ -105,6 +105,18 @@ using Statistics
         @test gradY_p ≈ permutedims(gradY_m)
     end
 
+    @testset "cells above sea level" begin
+        # the anomaly does not depend on the order of the depth levels, some of which lie above sea level
+        Xa, Ya, Za = xyz_grid(range(-5.0e3, 5.0e3, 6), range(-5.0e3, 5.0e3, 6), range(-20.0e3, 4.0e3, 7))
+        RHOa = fill(2800.0, size(Xa))
+        RHOa[Za .>= 0] .= 0.0
+        RHOa[3, 3, 3] = 3000.0
+        dg_up, = voxel_grav(Xa, Ya, Za, RHOa, refMod = "NE", outName = outName, printing = false)
+        R(A) = A[:, :, end:-1:1]
+        dg_down, = voxel_grav(Xa, Ya, R(Za), R(RHOa), refMod = "NE", outName = outName, printing = false)
+        @test dg_up ≈ dg_down
+    end
+
     @testset "gradients are per meter" begin
         # interior gradient equals the finite difference of dg over the 2 km spacing
         dx = 2000.0
@@ -126,15 +138,13 @@ using Statistics
     end
 
     @testset "topography" begin
-        # a topography of the wrong size is replaced by a flat one (reported when printing)
-        out = mktemp() do path, io
-            redirect_stdout(io) do
-                voxel_grav(1000 .* X, 1000 .* Y, 1000 .* Z, RHO, refMod = "NE", Topo = zeros(2, 2), outName = outName, printing = true)
-            end
-            flush(io)
-            read(path, String)
-        end
-        @test occursin("Using a flat topography", out)
-        @test occursin("Assuming coordinates to be in meters", out)
+        @test_throws "Topo has size (2, 2)" voxel_grav(1000 .* X, 1000 .* Y, 1000 .* Z, RHO, refMod = "NE", Topo = zeros(2, 2), outName = outName)
+
+        # orientation 2 with nx != ny: Topo follows the grid permutation
+        Xo = [Float64(j) for i in 1:4, j in 1:3, k in 1:4]
+        Yo = [Float64(i) for i in 1:4, j in 1:3, k in 1:4]
+        Zo = [Float64(k) for i in 1:4, j in 1:3, k in 1:4]
+        chk = GeophysicalModelGenerator.checkInput(Xo, Yo, Zo, ones(size(Xo)), "NE", "m", 1.0e-6, fill(500.0, 4, 3), outName, false)
+        @test chk[7] == fill(500.0, 3, 4)
     end
 end

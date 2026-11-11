@@ -3,6 +3,7 @@ using Parameters        # helps setting default parameters in structures
 using SpecialFunctions: erfc
 using GeoParams
 using StaticArrays
+using NearestNeighbors
 
 import Base: show
 # Setup_geometry
@@ -12,29 +13,14 @@ import Base: show
 
 export add_box!, add_sphere!, add_ellipsoid!, add_cylinder!, add_layer!, add_polygon!, add_plate!, add_slab!, add_stripes!, add_volcano!, add_fault!,
     make_volc_topo,
-    ConstantTemp, LinearTemp, HalfspaceCoolingTemp, SpreadingRateTemp, LithosphericTemp, LinearWeightedTemperature,
+    ConstantTemp, LinearTemp, HalfspaceCoolingTemp, SpreadingRateTemp, LithosphericTemp, LinearWeightedTemperature, GaussianTemp,
     McKenzie_subducting_slab,
     ConstantPhase, LithosphericPhases,
-    Trench, compute_slab_surface,
+    Trench, compute_slab_surface, bezier_curve, BezierSlab, Tear,
     compute_thermal_structure, compute_phase
 
-"""
-    ind2D = flatten_index_dimensions(Phase, ind_vec::Vector{CartesianIndex{3}})
-
-This converts the indices to purely 2D indices if the array `phase` is 2D
-"""
-function flatten_index_dimensions(Phase, ind_vec::Vector{CartesianIndex{3}})
-    if length(size(Phase)) == 2
-        ind2D = Vector{CartesianIndex{2}}(undef, length(ind_vec))
-        for (num, ind) in enumerate(ind_vec)
-            ind2D[num] = CartesianIndex(ind[1], ind[3])
-        end
-    else
-        ind2D = ind_vec
-    end
-
-    return ind2D
-end
+# Extrema of the coordinates that are not NaN; NaN marks absent points, such as empty particle slots
+finite_extrema(A) = (mapreduce(a -> isnan(a) ? typemax(a) : a, min, A), mapreduce(a -> isnan(a) ? typemin(a) : a, max, A))
 
 """
     add_stripes!(Phase, Grid::AbstractGeneralGrid;
@@ -43,7 +29,7 @@ end
         stripeSpacing   =  1,
         Origin          =  nothing,
         StrikeAngle     =  0,
-        DipAngle        =  10,
+        DipAngle        =  0,
         phase           =  ConstantPhase(3),
         stripePhase     =  ConstantPhase(4),
         cell            = false)
@@ -59,7 +45,7 @@ Parameters
 - `stripAxes` - sets the axis for which we want the stripes. Default is (1,1,0) i.e. X, Y and not Z
 - `stripeWidth` - width of the stripe
 - `stripeSpacing` - space between two stripes
-- `Origin` - the origin, used to rotate the box around. Default is the left-front-top corner
+- `Origin` - the origin, used to rotate the stripes around. Default is the corner of the grid with the maximum x, y and z
 - `StrikeAngle` - strike angle
 - `DipAngle` - dip angle
 - `phase` - specifies the phase we want to apply stripes to
@@ -102,49 +88,33 @@ function add_stripes!(
         cell = false
     )                          # if true, Phase and Temp are defined on cell centers
 
-    # warnings
-    if stripeWidth >= stripeSpacing / 2.0
-        print("WARNING: stripeWidth should be strictly < stripeSpacing/2.0, otherwise phase is overwritten by the stripePhase\n")
-    elseif sum(stripAxes .== 0) == 3
-        print("WARNING: at least one axis should be set to 1 e.g. stripAxes = (1,0,0), otherwise no stripes will be added\n")
-    end
+    stripeWidth < stripeSpacing / 2.0 || throw(ArgumentError("stripeWidth must be < stripeSpacing/2"))
+    sum(stripAxes .== 0) < 3 || throw(ArgumentError("stripAxes needs a nonzero entry"))
 
     # Retrieve 3D data arrays for the grid
     X, Y, Z = coordinate_grids(Grid, cell = cell)
 
     # sets origin
     if isnothing(Origin)
-        Origin = (maximum(X), maximum(Y), maximum(Z))  # upper-left corner
+        Origin = last.(finite_extrema.((X, Y, Z)))  # upper-left corner
     end
 
-    # Perform rotation of 3D coordinates:
-    Xrot = X .- Origin[1]
-    Yrot = Y .- Origin[2]
-    Zrot = Z .- Origin[3]
-
-    Rot3D!(Xrot, Yrot, Zrot, StrikeAngle, DipAngle)
-
-    # linear indices, so that a 2D Phase array works with a grid of size (nx, 1, nz)
+    # vec, so that a 2D Phase array works with a grid of size (nx, 1, nz)
     length(Phase) == length(X) || throw(DimensionMismatch("Phase has $(length(Phase)) entries but the grid has $(length(X)) points"))
-    ph_ind = findall(vec(Phase .== phase.phase))
-
-    ind = Int64[]
-    if stripAxes[1] == 1
-        indX = findall(abs.(rem.(Xrot[ph_ind], stripeSpacing, RoundNearest)) .<= stripeWidth / 2.0)
-        ind = vcat(ind, indX)
-    end
-    if stripAxes[2] == 1
-        indY = findall(abs.(rem.(Yrot[ph_ind], stripeSpacing, RoundNearest)) .<= stripeWidth / 2.0)
-        ind = vcat(ind, indY)
-    end
-    if stripAxes[3] == 1
-        indZ = findall(abs.(rem.(Zrot[ph_ind], stripeSpacing, RoundNearest)) .<= stripeWidth / 2.0)
-        ind = vcat(ind, indZ)
-    end
-
-    Phase[ph_ind[ind]] .= stripePhase.phase
+    p = (; r = rotation(Origin, StrikeAngle, DipAngle), stripeSpacing, stripeWidth, stripAxes, phase = phase.phase, stripePhase = stripePhase.phase)
+    P = vec(Phase)   # one wrapper on both sides, so that the broadcast needs no copy
+    P .= stripe_phase.(Ref(p), P, vec(X), vec(Y), vec(Z))
 
     return nothing
+end
+
+in_stripe(p, x) = abs(rem(x, p.stripeSpacing, RoundNearest)) <= p.stripeWidth / 2.0
+
+function stripe_phase(p, ph, x, y, z)
+    ph == p.phase || return ph
+    xr, yr, zr = rotate(p.r, x, y, z)
+    striped = (p.stripAxes[1] == 1 && in_stripe(p, xr)) || (p.stripAxes[2] == 1 && in_stripe(p, yr)) || (p.stripAxes[3] == 1 && in_stripe(p, zr))
+    return striped ? p.stripePhase : ph
 end
 
 
@@ -167,12 +137,12 @@ Parameters
 - `xlim` -  left/right coordinates of box
 - `ylim` -  front/back coordinates of box [optional; if not specified we use the whole box]
 - `zlim` -  bottom/top coordinates of box
-- `Origin` - the origin, used to rotate the box around. Default is the left-front-top corner
+- `Origin` - the origin, used to rotate the box around. Default is the left-front-top corner. Depths of the phase and temperature structures are measured from the top of the box, wherever `Origin` lies
 - `StrikeAngle` - strike angle of slab
 - `DipAngle` - dip angle of slab
-- `phase` - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
+- `phase` - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`; `nothing` keeps the phases
 - `T` - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`,`LithosphericTemp()`
-- `segments` - optional parameter to define multiple ridge segments within the box
+- `segments` - optional parameter to define multiple ridge segments within the box, for `T = SpreadingRateTemp()`
 - `cell` - if true, `Phase` and `Temp` are defined on centers
 
 Examples
@@ -235,6 +205,7 @@ function add_box!(
         segments = nothing,                       # Allows defining multiple ridge segments
         cell = false
     )                            # if true, Phase and Temp are defined on cell centers
+    isnothing(segments) || T isa SpreadingRateTemp || throw(ArgumentError("segments only apply to SpreadingRateTemp, got $(nameof(typeof(T)))"))
 
 
     # Retrieve 3D data arrays for the grid
@@ -245,8 +216,9 @@ function add_box!(
 
     # Limits of block
     if isnothing(ylim)
-        ylim = (minimum(Y), maximum(Y))
+        ylim = finite_extrema(Y)
     end
+    xlim, ylim, zlim = extrema(xlim), extrema(ylim), extrema(zlim)
 
     # McKenzie temperature is computed relative to [xmin,ymin,zmax] of the box
     if Origin !== nothing && isa(T, McKenzie_subducting_slab)
@@ -264,27 +236,28 @@ function add_box!(
     zbot = minimum(zlim) - Origin[3]
     xmin, xmax = extrema(xlim) .- Origin[1]
     ymin, ymax = extrema(ylim) .- Origin[2]
-    ind, Xrot, Yrot, Zrot = rotated_points_inside(X, Y, Z, Origin, StrikeAngle, DipAngle) do (x, y, z)
-        xmin <= x <= xmax && ymin <= y <= ymax && zbot <= z <= ztop
-    end
+    p = (; r = rotation(Origin, StrikeAngle, DipAngle), xmin, xmax, ymin, ymax, zbot, ztop)
+    # depth is measured from the top of the box, wherever the rotation Origin lies
+    frame = (; xmin, xmax, ymin, ymax, zbot = zbot - ztop, ztop = 0.0)
 
-    ind_flat = flatten_index_dimensions(Phase, ind)
-
-    if !isempty(ind_flat)
-        # Compute thermal structure accordingly. See routines below for different options
-        if isa(T, LithosphericTemp)
-            Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], Xrot, Yrot, Zrot, phase)
-        end
-        if segments !== nothing
-            # segments are given in absolute coordinates; the phase uses the rotated ones
-            isnothing(T) || (Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], X[ind], Y[ind], Zrot, Phase[ind_flat], T, segments; ztop, zbot))
-            Phase[ind_flat] = compute_phase(Phase[ind_flat], Temp[ind_flat], Xrot, Yrot, Zrot, phase)
-        else
-            set_temp_phase!(Phase, Temp, ind_flat, Xrot, Yrot, Zrot, phase, T; ztop, zbot)
-        end
+    if isnothing(segments)
+        set_shape!(Phase, Temp, X, Y, Z, box_coordinates, p, frame, phase, T)
+    else
+        set_shape!(Phase, Temp, X, Y, Z, ridge_coordinates, p, frame, phase, T; T_args = (segments,))
     end
 
     return nothing
+end
+
+function box_coordinates(p, x, y, z)
+    xr, yr, zr = rotate(p.r, x, y, z)
+    return p.xmin <= xr <= p.xmax && p.ymin <= yr <= p.ymax && p.zbot <= zr <= p.ztop ? (xr, yr, zr - p.ztop) : nothing
+end
+
+# ridge segments are given in absolute x, y coordinates
+function ridge_coordinates(p, x, y, z)
+    xyz = box_coordinates(p, x, y, z)
+    return isnothing(xyz) ? nothing : (x, y, xyz[3])
 end
 
 """
@@ -295,7 +268,7 @@ end
     T = nothing,
     segments = nothing,
     cell = false     )
-Add box function but getting bounds as a vector bounds in a way of [[xmin,xmax],[ymin,ymax],[zmin,zmax]]. If bounds is empty return nothing 
+Add box function but getting bounds as a vector bounds in a way of [[xmin,xmax],[ymin,ymax],[zmin,zmax]]. If bounds is empty return nothing
 """
 function add_box!(
         Phase, Temp, Grid::AbstractGeneralGrid,           # required input
@@ -333,10 +306,16 @@ Parameters
 - `Grid` -  grid structure (usually obtained with read_LaMEM_inputfile, but can also be other grid types)
 - `xlim` -  left/right coordinates of box
 - `ylim` -  front/back coordinates of box
-- `zlim` -  bottom/top coordinates of box
-- `phase` - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
+- `zlim` -  bottom/top coordinates of box. Each bound is either a number, a function `z(x, y)`, or a surface
+            `CartData` (e.g. imported topography or a Moho map), which gives a layer with a curved or perturbed bottom
+            or top surface. A surface must cover `xlim` and `ylim`.
+- `phase` - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`; `nothing` keeps the phases
 - `T` - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
 
+Numeric limits may be given in either order. Thermal and phase structures see the vertical coordinate
+`z - top(x, y)`, the (negative) depth below the top of the layer, so that the layers of `LithosphericPhases` and
+the profile of `HalfspaceCoolingTemp` start at the top of the layer, whether it is a number or a curved surface.
+`LinearTemp` goes from `Ttop` at the top to `Tbot` at the bottom of the layer at every `(x, y)`.
 
 Examples
 ========
@@ -371,6 +350,14 @@ julia> write_paraview(Model3D,"LaMEM_ModelSetup")           # Save model to para
 1-element Vector{String}:
  "LaMEM_ModelSetup.vts"
 ```
+
+Example 3) Layer with a sinusoidal bottom surface, as for a Rayleigh-Taylor instability
+```julia-repl
+julia> Grid = CartData(xyz_grid(-3:0.05:3, 0, -2:0.05:0))
+julia> Phases = zeros(Int32,   size(Grid));
+julia> Temp   = zeros(Float64, size(Grid));
+julia> add_layer!(Phases, Temp, Grid, zlim=((x, y) -> -0.5 + 0.05cospi(x), 0), phase=ConstantPhase(1))
+```
 """
 function add_layer!(
         Phase, Temp, Grid::AbstractGeneralGrid;     # required input
@@ -389,30 +376,70 @@ function add_layer!(
     end
 
     if isnothing(xlim)
-        xlim = (minimum(X), maximum(X))
+        xlim = finite_extrema(X)
     end
     if isnothing(ylim)
-        ylim = (minimum(Y), maximum(Y))
+        ylim = finite_extrema(Y)
     end
     if isnothing(zlim)
-        zlim = (minimum(Z), maximum(Z))
+        zlim = finite_extrema(Z)
     end
 
     # Set phase number & thermal structure in the full domain
-    ind = findall(
-        (X .>= (xlim[1])) .& (X .<= (xlim[2])) .&
-            (Y .>= (ylim[1])) .& (Y .<= (ylim[2])) .&
-            (Z .>= (zlim[1])) .& (Z .<= (zlim[2]))
-    )
-
-    ind_flat = flatten_index_dimensions(Phase, ind)
-
-    if !isempty(ind_flat)
-        # Compute thermal structure accordingly. See routines below for different options
-        set_temp_phase!(Phase, Temp, ind_flat, X[ind], Y[ind], Z[ind], phase, T; ztop = maximum(zlim), zbot = minimum(zlim))
+    (x1, x2), (y1, y2) = minmax(xlim...), minmax(ylim...)
+    inside(x, y) = x1 <= x <= x2 && y1 <= y <= y2
+    any(Iterators.map(inside, X, Y)) || return nothing
+    foreach(b -> check_covers(b, (x1, x2), (y1, y2), X, Y), zlim)
+    z1, z2 = map(layer_bound, zlim)
+    if z1 isa Number && z2 isa Number
+        z1, z2 = minmax(z1, z2)
     end
+    zbot, ztop = layer_zrange(z1, z2, inside, X, Y)
+    p = (; x1, x2, y1, y2, z1, z2)
+    # `thickness` is the local thickness, which `LinearTemp` uses
+    thickness = let z1 = z1, z2 = z2
+        (x, y) -> zbound(z2, x, y) - zbound(z1, x, y)
+    end
+    frame = (; xmin = x1, xmax = x2, ymin = y1, ymax = y2, zbot, ztop, thickness)
+    set_shape!(Phase, Temp, X, Y, Z, layer_coordinates, p, frame, phase, T)
 
     return nothing
+end
+
+# A bound of a layer is a number or a function z(x, y); a surface is interpolated
+layer_bound(b) = b
+layer_bound(b::CartData) = surface_interpolation(b)
+zbound(b::Number, x, y) = b
+zbound(b, x, y) = b(x, y)
+
+# A surface bound must cover the part of the grid within xlim and ylim
+check_covers(b, xlim, ylim, X, Y) = nothing
+function check_covers(S::CartData, (x1, x2), (y1, y2), X, Y)
+    any(isnan, S.z.val) && throw(ArgumentError("the surface has NaN heights; fill or remove them before using it as a bound"))
+    (gx1, gx2), (gy1, gy2) = finite_extrema(X), finite_extrema(Y)
+    xr, yr = (max(x1, gx1), min(x2, gx2)), (max(y1, gy1), min(y2, gy2))
+    # a surface with a single row in y is constant in y
+    xs, ys = extrema(ustrip, S.x.val), size(S.z.val, 2) == 1 ? yr : extrema(ustrip, S.y.val)
+    xs[1] <= xr[1] && xr[2] <= xs[2] && ys[1] <= yr[1] && yr[2] <= ys[2] ||
+        throw(ArgumentError("the surface must cover xlim and ylim within the grid, x = $xr and y = $yr; it spans x = $xs and y = $ys"))
+    return nothing
+end
+
+# Vertical extent of a layer in its own frame, in which its top lies at z = 0; the bounds are evaluated
+# only at the points (x, y) for which `inside(x, y)`
+function layer_zrange(z1, z2, inside, X, Y)
+    thickness = z1 isa Number && z2 isa Number ? z2 - z1 :
+        last(finite_extrema(Iterators.map((x, y) -> inside(x, y) ? zbound(z2, x, y) - zbound(z1, x, y) : NaN, X, Y)))
+    thickness >= 0 || throw(ArgumentError("the top of the layer lies below its bottom everywhere; zlim is (bottom, top)"))
+    return -thickness, zero(thickness)
+end
+
+# thermal and phase structures see the depth below the top of the layer
+function layer_coordinates(p, x, y, z)
+    p.x1 <= x <= p.x2 && p.y1 <= y <= p.y2 || return nothing
+    zt = zbound(p.z2, x, y)
+    zbound(p.z1, x, y) <= z <= zt || return nothing
+    return (x, y, z - zt)
 end
 
 
@@ -422,7 +449,8 @@ end
             T=nothing, cell=false )
 
 
-Adds a sphere with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
+Adds a sphere with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models.
+Depths in `phase` and `T` are measured below the top of the sphere.
 
 
 Parameters
@@ -432,7 +460,7 @@ Parameters
 - `Grid` - LaMEM grid structure (usually obtained with read_LaMEM_inputfile)
 - `cen` - center coordinates of sphere
 - `radius` - radius of sphere
-- `phase` - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
+- `phase` - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`; `nothing` keeps the phases
 - `T` - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
 - `cell` - if true, `Phase` and `Temp` are defined on cell centers
 
@@ -470,17 +498,14 @@ function add_sphere!(
     X, Y, Z = coordinate_grids(Grid, cell = cell)
 
     # Set phase number & thermal structure in the full domain
-    ind = findall(sqrt.((X .- cen[1]) .^ 2 .+ (Y .- cen[2]) .^ 2 .+ (Z .- cen[3]) .^ 2) .< radius)
-
-    ind_flat = flatten_index_dimensions(Phase, ind)
-
-    if !isempty(ind_flat)
-        # Compute thermal structure accordingly. See routines below for different options
-        set_temp_phase!(Phase, Temp, ind_flat, X[ind], Y[ind], Z[ind], phase, T; ztop = cen[3] + radius, zbot = cen[3] - radius)
-    end
+    p = (; cen, radius, ztop = cen[3] + radius)
+    frame = (; xmin = cen[1] - radius, xmax = cen[1] + radius, ymin = cen[2] - radius, ymax = cen[2] + radius, zbot = -2radius, ztop = 0.0)
+    set_shape!(Phase, Temp, X, Y, Z, sphere_coordinates, p, frame, phase, T)
 
     return nothing
 end
+
+sphere_coordinates(p, x, y, z) = sqrt((x - p.cen[1])^2 + (y - p.cen[2])^2 + (z - p.cen[3])^2) <= p.radius ? (x, y, z - p.ztop) : nothing
 
 """
     add_ellipsoid!(Phase, Temp, Grid::AbstractGeneralGrid; cen::Tuple = (-1,-1,-1), axes::Tuple = (0.2,0.1,0.5),
@@ -488,7 +513,8 @@ end
             phase = ConstantPhase(1).
             T=nothing, cell=false )
 
-Adds an Ellipsoid with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
+Adds an Ellipsoid with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models.
+Depths in `phase` and `T` are measured below the top of the ellipsoid.
 
 
 Parameters
@@ -501,7 +527,7 @@ Parameters
 - `Origin` - the origin, used to rotate the box around. Default is the left-front-top corner
 - `StrikeAngle` - strike angle of slab
 - `DipAngle` - dip angle of slab
-- `phase` - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
+- `phase` - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`; `nothing` keeps the phases
 - `T` - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
 - `cell` - if true, `Phase` and `Temp` are defined on cell centers
 
@@ -547,18 +573,20 @@ function add_ellipsoid!(
     y2 = axes[2]^2
     z2 = axes[3]^2
     cenRot = cen .- Origin
-    ind, Xrot, Yrot, Zrot = rotated_points_inside(X, Y, Z, Origin, StrikeAngle, DipAngle) do (x, y, z)
-        sqrt((x - cenRot[1])^2 / x2 + (y - cenRot[2])^2 / y2 + (z - cenRot[3])^2 / z2) <= 1
-    end
-
-    ind_flat = flatten_index_dimensions(Phase, ind)
-
-    if !isempty(ind_flat)
-        # Compute thermal structure accordingly. See routines below for different options
-        set_temp_phase!(Phase, Temp, ind_flat, Xrot, Yrot, Zrot, phase, T; ztop = cenRot[3] + axes[3], zbot = cenRot[3] - axes[3])  # see #135
-    end
+    p = (; r = rotation(Origin, StrikeAngle, DipAngle), cenRot, x2, y2, z2, ztop = cenRot[3] + axes[3])
+    frame = (;
+        xmin = cenRot[1] - axes[1], xmax = cenRot[1] + axes[1], ymin = cenRot[2] - axes[2], ymax = cenRot[2] + axes[2],
+        zbot = -2axes[3], ztop = 0.0,  # see #135
+    )
+    set_shape!(Phase, Temp, X, Y, Z, ellipsoid_coordinates, p, frame, phase, T)
 
     return nothing
+end
+
+@inline function ellipsoid_coordinates(p, x, y, z)
+    xyz = rotate(p.r, x, y, z)
+    xr, yr, zr = xyz
+    return sqrt((xr - p.cenRot[1])^2 / p.x2 + (yr - p.cenRot[2])^2 / p.y2 + (zr - p.cenRot[3])^2 / p.z2) <= 1 ? (xr, yr, zr - p.ztop) : nothing
 end
 
 """
@@ -567,7 +595,8 @@ end
             T=nothing, cell=false )
 
 
-Adds a cylinder with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
+Adds a cylinder with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models.
+Depths in `phase` and `T` are measured below the top of the cylinder.
 
 
 Parameters
@@ -578,7 +607,7 @@ Parameters
 - `base` - center coordinate of bottom of cylinder
 - `cap` - center coordinate of top of cylinder
 - `radius` - radius of the cylinder
-- `phase` - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
+- `phase` - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`; `nothing` keeps the phases
 - `T` - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
 - `cell` - if true, `Phase` and `Temp` are defined on cell centers
 
@@ -615,81 +644,99 @@ function add_cylinder!(
     # axis vector of cylinder
     axVec = cap .- base
     ax2 = (axVec[1]^2 + axVec[2]^2 + axVec[3]^2)
+    ax2 > 0 || throw(ArgumentError("base and cap must differ"))
 
     # Retrieve 3D data arrays for the grid
     X, Y, Z = coordinate_grids(Grid, cell = cell)
 
     # Set phase number & thermal structure in the full domain
-    function in_cylinder(x, y, z)
-        # distance between the point and the cylinder base
-        dx_b, dy_b, dz_b = x - base[1], y - base[2], z - base[3]
-        # normalized parametric coordinate of the point-axis projection
-        t = (axVec[1] * dx_b + axVec[2] * dy_b + axVec[3] * dz_b) / ax2
-        # distance vector between the point and the axis
-        dx, dy, dz = dx_b - t * axVec[1], dy_b - t * axVec[2], dz_b - t * axVec[3]
-        return 0 <= t <= 1 && sqrt(dx^2 + dy^2 + dz^2) <= radius
-    end
-    ind = findall(in_cylinder.(X, Y, Z))
+    p = (; base, axVec, ax2, radius)
 
-    ind_flat = flatten_index_dimensions(Phase, ind)
-
-    if !isempty(ind_flat)
-        # Compute thermal structure accordingly. See routines below for different options
-        # Vertical extent of the cylinder, including the tilt of its circular end caps; see #135
-        zhalf = radius * sqrt(1 - axVec[3]^2 / ax2)
-        ztop = max(base[3], cap[3]) + zhalf
-        zbot = min(base[3], cap[3]) - zhalf
-        set_temp_phase!(Phase, Temp, ind_flat, X[ind], Y[ind], Z[ind], phase, T; ztop, zbot)
-    end
+    # Vertical extent of the cylinder, including the tilt of its circular end caps; see #135
+    zhalf = radius * sqrt(1 - axVec[3]^2 / ax2)
+    frame = (;
+        xmin = min(base[1], cap[1]) - radius, xmax = max(base[1], cap[1]) + radius,
+        ymin = min(base[2], cap[2]) - radius, ymax = max(base[2], cap[2]) + radius,
+        zbot = -(max(base[3], cap[3]) - min(base[3], cap[3]) + 2zhalf), ztop = 0.0,
+    )
+    p = (; p..., ztop = max(base[3], cap[3]) + zhalf)
+    set_shape!(Phase, Temp, X, Y, Z, cylinder_coordinates, p, frame, phase, T)
 
     return nothing
 end
 
-# Internal function that rotates the coordinates
-function Rot3D!(X, Y, Z, StrikeAngle, DipAngle)
+function in_cylinder(p, x, y, z)
+    # distance between the point and the cylinder base
+    dx_b, dy_b, dz_b = x - p.base[1], y - p.base[2], z - p.base[3]
+    # normalized parametric coordinate of the point-axis projection
+    t = (p.axVec[1] * dx_b + p.axVec[2] * dy_b + p.axVec[3] * dz_b) / p.ax2
+    # distance vector between the point and the axis
+    dx, dy, dz = dx_b - t * p.axVec[1], dy_b - t * p.axVec[2], dz_b - t * p.axVec[3]
+    return 0 <= t <= 1 && sqrt(dx^2 + dy^2 + dz^2) <= p.radius
+end
 
-    # precompute trigonometric functions (expensive!)
-    sindStrikeAngle, cosStrikeAngle = sincosd(StrikeAngle)
-    sinDipAngle, cosDipAngle = sincosd(-DipAngle)   # note the minus here to be consistent with the earlier version of the code
-    for i in eachindex(X)
-        X[i], Y[i], Z[i] = Rot3D(X[i], Y[i], Z[i], cosStrikeAngle, sindStrikeAngle, cosDipAngle, sinDipAngle)
+cylinder_coordinates(p, x, y, z) = in_cylinder(p, x, y, z) ? (x, y, z - p.ztop) : nothing
+
+
+# Sets the thermal structure `T` (unless it is `nothing`) and then `phase` at the points (X, Y, Z) that lie
+# inside a shape; `Phase` and `Temp` have one entry per point, in the same order.
+# `shape(p, x, y, z)` returns the coordinates of a point in the frame of the shape, or `nothing` for a point
+# outside it; `p` holds the parameters of the shape. `frame` is the extent of the shape in that frame (xmin, xmax, ymin, ymax, zbot, ztop),
+# which thermal structures use as reference. `T_args` are extra arguments of `T` (ridge segments).
+# A slab shape returns a fourth coordinate φ ∈ [0, 1], by which a tear thins the slab; the temperature there is
+# blended from the temperature before (φ = 0) to that of `T` (φ = 1).
+function set_shape!(Phase, Temp, X, Y, Z, shape, p, frame, phase, T; T_args = ())
+    length(Phase) == length(X) || throw(DimensionMismatch("Phase has $(length(Phase)) entries but the grid has $(length(X)) points"))
+    length(Temp) == length(X) || throw(DimensionMismatch("Temp has $(length(Temp)) entries but the grid has $(length(X)) points"))
+    if needs_points(T)
+        set_shape_gathered!(Phase, Temp, X, Y, Z, shape, p, frame, phase, T, T_args)
+    else
+        cT = isnothing(T) ? nothing : prepare_temperature(T, T_args..., frame, nothing)
+        set_points!(Phase, Temp, X, Y, Z, shape, p, phase, T, cT)
     end
-
     return nothing
 end
 
-# Indices of the points for which `inside((x, y, z))` holds, where x, y, z are the coordinates
-# shifted by `Origin` and rotated, and those rotated coordinates; no full-size temporaries.
-# The broadcast fuses the rotation and the test into one pass that writes a bit mask.
-function rotated_points_inside(inside, X, Y, Z, Origin, StrikeAngle, DipAngle)
-    sinStrike, cosStrike = sincosd(StrikeAngle)
-    sinDip, cosDip = sincosd(-DipAngle)   # same sign convention as Rot3D!
-    rot(x, y, z) = Rot3D(x - Origin[1], y - Origin[2], z - Origin[3], cosStrike, sinStrike, cosDip, sinDip)
-    ind = findall(inside.(rot.(X, Y, Z)))
-    # Keep map: a loop assigning into three arrays here is about 30x slower
-    xyz = map(I -> rot(X[I], Y[I], Z[I]), ind)
-    return ind, getindex.(xyz, 1), getindex.(xyz, 2), getindex.(xyz, 3)
-end
-
-# Sets the thermal structure `T` (unless it is `nothing`) and then `phase` at the points `ind` of
-# `Phase` and `Temp`, whose coordinates are x, y, z, gathering each array once.
-# `args` and `kwargs` are passed on to `compute_thermal_structure`.
-function set_temp_phase!(Phase, Temp, ind, x, y, z, phase, T, args...; kwargs...)
-    P, Tp = Phase[ind], Temp[ind]
-    if !isnothing(T)
-        Tp = compute_thermal_structure(Tp, x, y, z, P, T, args...; kwargs...)
-        Temp[ind] = Tp
+function set_points!(Phase, Temp, X, Y, Z, shape, p, phase, T, cT)
+    for (iP, iT, i) in zip(eachindex(Phase), eachindex(Temp), eachindex(X, Y, Z))
+        xyz = shape(p, X[i], Y[i], Z[i])
+        isnothing(xyz) && continue
+        xl, yl, zl = xyz
+        if !isnothing(T)
+            Temp[iT] = blend_temperature(xyz, Temp[iT], point_temperature(T, cT, xl, yl, zl, Temp[iT]))
+        end
+        Phase[iP] = point_phase(phase, Phase[iP], Temp[iT], xl, yl, zl)
     end
-    Phase[ind] = compute_phase(P, Tp, x, y, z, phase)
     return nothing
 end
+
+# For thermal structures that need the points of the region: the phase is set first, as the thermal
+# structure depends on it, then the temperature, then the phase again with the new temperature.
+function set_shape_gathered!(Phase, Temp, X, Y, Z, shape, p, frame, phase, T, T_args)
+    xyz = shape.(Ref(p), X, Y, Z)
+    ind = findall(!isnothing, vec(xyz))
+    isempty(ind) && return nothing
+    xl, yl, zl = (getindex.(xyz[ind], k) for k in 1:3)
+    P, Tp = vec(Phase)[ind], vec(Temp)[ind]
+    P = compute_phase(P, Tp, xl, yl, zl, phase)
+    T0 = copy(Tp)
+    Tp = point_temperatures!(Tp, xl, yl, zl, T, prepare_temperature(T, T_args..., frame, (xl, yl, zl, P)))
+    Tp .= blend_temperature.(xyz[ind], T0, Tp)
+    vec(Temp)[ind] = Tp
+    vec(Phase)[ind] = compute_phase(P, Tp, xl, yl, zl, phase)
+    return nothing
+end
+
+blend_temperature(xyz, T0, T) = T
+blend_temperature((_, _, _, φ)::NTuple{4, Any}, T0, T) = φ < 1 ? T0 + φ * (T - T0) : T
 
 
 """
         add_polygon!(Phase, Temp, Grid::AbstractGeneralGrid; xlim=(), ylim=(0.0,0.8), zlim=(), phase = ConstantPhase(1), T=nothing, cell=false )
 
 
-Adds a polygon with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models
+Adds a polygon with phase & temperature structure to a 3D model setup.  This simplifies creating model geometries in geodynamic models.
+Depths in `phase` and `T` are measured below the top of the polygon (the maximum of `zlim`).
 
 Parameters
 ====
@@ -699,7 +746,7 @@ Parameters
 - `xlim`  - `x`-coordinate of the polygon points, same ordering as zlim, number of points unlimited
 - `ylim`  - `y`-coordinate, limitation in length possible (two values (start and stop))
 - `zlim`  - `z`-coordinate of the polygon points, same ordering as xlim, number of points unlimited
-- `phase` - specifies the phase of the box. See `ConstantPhase()`
+- `phase` - specifies the phase of the box. See `ConstantPhase()`; `nothing` keeps the phases
 - `T`     - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`
 - `cell`  - if true, `Phase` and `Temp` are defined on cell centers
 
@@ -736,32 +783,25 @@ function add_polygon!(
 
 
     xlim_ = Float64.(collect(xlim))
-    ylim_ = Float64.(collect(ylim))
+    ylim_ = sort(Float64.(collect(ylim)))
     zlim_ = Float64.(collect(zlim))
 
 
     # Retrieve 3D data arrays for the grid
     X, Y, Z = coordinate_grids(Grid, cell = cell)
 
-    ind = zeros(Bool, size(X))
-    ind_slice = zeros(Bool, size(X[:, 1, :]))
-
-    # find points within the polygon in the x-z plane; y is tested per point, as it can vary along every dimension
-    for i in axes(Y, 2)
-        inpolygon!(ind_slice, xlim_, zlim_, X[:, i, :], Z[:, i, :])
-        ind[:, i, :] = ind_slice
-    end
-    ind .&= ylim_[1] .<= Y .<= ylim_[2]
-    ind = findall(ind)
-    ind_flat = flatten_index_dimensions(Phase, ind)
-
-    if !isempty(ind)
-        # Compute thermal structure accordingly. See routines below for different options
-        set_temp_phase!(Phase, Temp, ind_flat, X[ind], Y[ind], Z[ind], phase, T; ztop = maximum(zlim_), zbot = minimum(zlim_))
-    end
+    # points within the polygon in the x-z plane and between the y limits
+    (xmin, xmax), (zmin, zmax) = extrema(xlim_), extrema(zlim_)
+    p = (; xlim_, ylim_, zlim_, ztop = zmax)
+    frame = (; xmin, xmax, ymin = ylim_[1], ymax = ylim_[2], zbot = zmin - zmax, ztop = 0.0)
+    set_shape!(Phase, Temp, X, Y, Z, polygon_coordinates, p, frame, phase, T)
 
     return nothing
 end
+
+in_polygon(p, x, y, z) = inpoly_either(p.xlim_, p.zlim_, x, z) && p.ylim_[1] <= y <= p.ylim_[2]
+
+polygon_coordinates(p, x, y, z) = in_polygon(p, x, y, z) ? (x, y, z - p.ztop) : nothing
 
 """
     add_polygon!(Phase, Temp, Grid::AbstractGeneralGrid,
@@ -769,7 +809,7 @@ end
     phase = ConstantPhase(1),
     T = nothing,
     cell = false     )
-Add polygon function but getting bounds as a vector bounds in a way of [[xmin,xmax],[ymin,ymax],[zmin,zmax]]. If bounds is empty return nothing 
+Add polygon function but getting bounds as a vector bounds in a way of [[xmin,xmax],[ymin,ymax],[zmin,zmax]]. If bounds is empty return nothing
 """
 function add_polygon!(
         Phase, Temp, Grid::AbstractGeneralGrid,           # required input
@@ -797,7 +837,7 @@ end
 
 """
         add_plate!(Phase, Temp, Grid::AbstractGeneralGrid; xlim=(), ylim=(), zlim::Tuple = (0.0,0.8), phase = ConstantPhase(1), T=nothing, segments=nothing, cell=false )
-Adds a tectonic plate with phase and temperature structure to a 3D model setup.
+Adds a tectonic plate with phase and temperature structure to a 3D model setup. Depths in `phase` and `T` are measured below the top of the plate (the maximum of `zlim`).
 This function enables the definition of tectonic plates in the xy plane and projects them along the z-axis, providing a flexible approach to model complex plate geometries.
 Parameters
 ==========
@@ -807,14 +847,15 @@ Parameters
 - `xlim`   - `x`-coordinate of the polygon points, same ordering as ylim, number of points unlimited
 - `ylim`   - `y`-coordinate of the polygon points, same ordering as xlim, number of points unlimited
 - `zlim`   - `z`-coordinate range for projecting the polygon (start and stop, two values)
-- `phase`  - Specifies the phase of the plate. See `ConstantPhase()`
+- `phase`  - Specifies the phase of the plate. See `ConstantPhase()`; `nothing` keeps the phases
 - `T`      - Specifies the temperature of the plate. See `ConstantTemp()`, `LinearTemp()`, `HalfspaceCoolingTemp()`, `SpreadingRateTemp()`
-- `segments` - Optional. Allows for thermal segmentation within the polygon. Useful for ridge systems or complex thermal structures.
+- `segments` - Optional. Ridge segments for `T = SpreadingRateTemp()`, from which the plate age is measured.
 - `cell`   - If true, `Phase` and `Temp` are defined on cell centers
 Example
 ========
 Tectonic plate in the xy plane with phase and temperature structure:
 ```julia-repl
+julia> x, y, z = -1000.0:4:0.0, -1000.0:4:1000.0, -660.0:5:0.0;
 julia> Grid = CartData(xyz_grid(x, y, z))
 Grid:
   nel         : (512, 512, 128)
@@ -843,37 +884,32 @@ julia> write_paraview(Grid, "Plate")  # Save model to Paraview
 1-element Vector{String}:
  "Plate.vts"
 """
-
 function add_plate!(
         Phase, Temp, Grid::AbstractGeneralGrid;
         xlim = (), ylim = (), zlim::Tuple = (0.0, 0.8),
         phase = ConstantPhase(1),
         T = nothing, segments = nothing, cell = false
     )
+    isnothing(segments) || T isa SpreadingRateTemp || throw(ArgumentError("segments only apply to SpreadingRateTemp, got $(nameof(typeof(T)))"))
 
     xlim_ = collect(xlim)
     ylim_ = collect(ylim)
-    zlim_ = collect(zlim)
+    zlim_ = collect(extrema(zlim))
 
     X, Y, Z = coordinate_grids(Grid, cell = cell)
-    ind = zeros(Bool, size(X))
-    ind_slice = zeros(Bool, size(X[:, :, 1]))
 
-    for k in 1:size(Z, 3)
-        if zlim_[1] <= Z[1, 1, k] <= zlim_[2]
-            inpolygon!(ind_slice, xlim_, ylim_, X[:, :, k], Y[:, :, k])
-            @views ind[:, :, k] = ind_slice
-        else
-            @views ind[:, :, k] = zeros(size(X[:, :, 1]))
-        end
-    end
-
-    if !isempty(ind)
-        set_temp_phase!(Phase, Temp, ind, X[ind], Y[ind], Z[ind], phase, T, (isnothing(segments) ? () : (segments,))...; ztop = maximum(zlim_), zbot = minimum(zlim_))
-    end
+    # points within the polygon in the x-y plane and between the z limits
+    (xmin, xmax), (ymin, ymax), (zmin, zmax) = extrema(xlim_), extrema(ylim_), extrema(zlim_)
+    p = (; xlim_, ylim_, zlim_, ztop = zmax)
+    frame = (; xmin, xmax, ymin, ymax, zbot = zmin - zmax, ztop = 0.0)
+    set_shape!(Phase, Temp, X, Y, Z, plate_coordinates, p, frame, phase, T; T_args = isnothing(segments) ? () : (segments,))
 
     return nothing
 end
+
+in_plate(p, x, y, z) = p.zlim_[1] <= z <= p.zlim_[2] && inpoly_either(p.xlim_, p.ylim_, x, y)
+
+plate_coordinates(p, x, y, z) = in_plate(p, x, y, z) ? (x, y, z - p.ztop) : nothing
 
 """
     add_plate!(Phase, Temp, Grid::AbstractGeneralGrid,
@@ -882,7 +918,7 @@ end
     T = nothing,
     segments = nothing,
     cell = false     )
-Add plate function but getting bounds as a vector bounds in a way of [[xmin,xmax],[ymin,ymax],[zmin,zmax]]. If bounds is empty return nothing 
+Add plate function but getting bounds as a vector bounds in a way of [[xmin,xmax],[ymin,ymax],[zmin,zmax]]. If bounds is empty return nothing
 """
 function add_plate!(
         Phase, Temp, Grid::AbstractGeneralGrid,           # required input
@@ -902,12 +938,22 @@ function add_plate!(
     )
 end
 
+# Coordinates relative to the origin `O`, rotated by `StrikeAngle` and `DipAngle` (in degrees)
+function rotation(O, StrikeAngle, DipAngle)
+    sinStrike, cosStrike = sincosd(StrikeAngle)
+    sinDip, cosDip = sincosd(-DipAngle)   # Rot3D takes the dip angle with the opposite sign
+    return (; O, cosStrike, sinStrike, cosDip, sinDip)
+end
+
+# Applies the rotation `r` returned by `rotation`
+rotate(r, x, y, z) = Rot3D(x - r.O[1], y - r.O[2], z - r.O[3], r.cosStrike, r.sinStrike, r.cosDip, r.sinDip)
+
 """
     xrot, yrot, zrot = Rot3D(X::Number,Y::Number,Z::Number, cosStrikeAngle, sindStrikeAngle, cosDipAngle, sinDipAngle)
 
     Perform rotation for a point in 3D space
 """
-function Rot3D(X::_T, Y::_T, Z::_T, cosStrikeAngle::_T, sindStrikeAngle::_T, cosDipAngle::_T, sinDipAngle::_T) where {_T <: Number}
+function Rot3D(X, Y, Z, cosStrikeAngle, sindStrikeAngle, cosDipAngle, sinDipAngle)
 
     # rotation matrixes
     #roty = [cosd(-DipAngle) 0 sind(-DipAngle) ; 0 1 0 ; -sind(-DipAngle) 0  cosd(-DipAngle)];
@@ -956,7 +1002,7 @@ Optional Parameters
 function add_volcano!(
         Phases,
         Temp,
-        Grid::CartData;
+        Grid::AbstractGeneralGrid;
         volcanic_phase = 1,
         center = (0, 0, 0),
         height = 0.0,
@@ -966,6 +1012,14 @@ function add_volcano!(
         background = nothing,
         T = HalfspaceCoolingTemp(Age = 0)
     )
+    if isnothing(background) && !needs_points(T)
+        X, Y, Z = coordinate_grids(Grid)
+        length(Phases) == length(X) || throw(DimensionMismatch("Phases has $(length(Phases)) entries but the grid has $(length(X)) points"))
+        cone = (; center, height, radius, crater, base)
+        return add_volcano_points!(vec(Phases), vec(Temp), vec(X), vec(Y), vec(Z), cone, volcanic_phase, T)
+    end
+    Grid isa CartData || error("add_volcano! with a background topography or a $(nameof(typeof(T))) thermal structure requires a CartData grid")
+
     H = make_volc_topo(
         Grid;
         center = center,
@@ -978,28 +1032,25 @@ function add_volcano!(
 
     # Broadcasts rather than loops: Grid.z.val is not inferable, so a loop here would dispatch per point
     Z = Grid.z.val
+    P, Tp = reshape(Phases, size(Z)), reshape(Temp, size(Z))   # also for 2D arrays on a grid of size (nx, 1, nz)
     depth = max.(H .- Z, 0)
-    Phases[(Z .< H) .& (Z .≥ base)] .= volcanic_phase
-    ind = findall(Phases .> 0)
+    P[(Z .< H) .& (Z .≥ base)] .= volcanic_phase
+    ind = findall(P .> 0)
 
-    ind_flat = flatten_index_dimensions(Phases, ind)
-
-    # @views Temp[ind .== false] .= 0.0
-    if !isempty(ind_flat)
-        if !isnothing(T)
-            # depth is measured downwards from the topography, so the surface is at depth = 0
-            Temp[ind_flat] = compute_thermal_structure(Temp[ind_flat], Grid.x.val[ind], Grid.y.val[ind], depth[ind], Phases[ind_flat], T; ztop = 0.0, zbot = maximum(depth[ind]))
-        end
+    if !isempty(ind) && !isnothing(T)
+        x, y, d = Grid.x.val[ind], Grid.y.val[ind], depth[ind]
+        cT = prepare_temperature(T, volcano_frame(center, radius, maximum(d)), (x, y, d, P[ind]))
+        Tp[ind] = point_temperatures!(Tp[ind], x, y, d, T, cT)
     end
 
     return nothing
 end
 
 """
-make_volc_topo(Grid::LaMEM_grid; center::Array{Float64, 1}, height::Float64, radius::Float64, crater::Float64,
-            base=0.0m, background=nothing)
+make_volc_topo(Grid::Union{LaMEM_grid, CartData}; center, height, radius, crater=0.0, base=0.0, background=nothing)
 
-Creates a generic volcano topography (cones and truncated cones)
+Creates a generic volcano topography (cones and truncated cones). For a `LaMEM_grid` it returns a `CartData`
+with the topography as field `Topography`; for a `CartData` it returns the topography as a `Matrix`.
 
 
 Parameters
@@ -1051,9 +1102,9 @@ Saved file: VolcanoTopo.vts
 """
 function make_volc_topo(
         Grid::LaMEM_grid;
-        center::Array{Float64, 1},
-        height::Float64,
-        radius::Float64,
+        center,
+        height,
+        radius,
         crater = 0.0,
         base = 0.0,
         background = nothing
@@ -1121,21 +1172,6 @@ function make_volc_topo(
     Y = @views Grid.y.val[:, :, 1]
     nx = size(X, 1)
     ny = size(X, 2)
-    pos = similar(X)
-
-    for i in eachindex(pos)
-        # compute radial distance to volcano center
-        DX = X[i] - center[1]
-        DY = Y[i] - center[2]
-        RD = √(DX^2 + DY^2)
-
-        # get radial distance from crater rim
-        RD -= crater
-
-        # find position relative to crater rim
-        dr = radius - crater
-        pos[i] = -RD / dr + 1
-    end
 
     ## assign topography
     H = zeros(nx, ny)
@@ -1153,15 +1189,40 @@ function make_volc_topo(
         end
     end
 
-    for i in eachindex(pos)
-        if 0 ≤ pos[i] < 1
-            H[i] = pos[i] * (height - base) + base
-        elseif pos[i] ≥ 1
-            H[i] = height
-        end
-    end
+    H .= volcano_height.(X, Y, H; center, height, radius, crater, base)
 
     return H
+end
+
+# add_volcano! without a background topography, point by point: the volcanic phase is set where a point lies
+# below the cone, then `T` at every point with a phase > 0, with depth measured downwards from the cone.
+# Points with NaN coordinates (empty particle slots) are left unchanged.
+function add_volcano_points!(Phases, Temp, X, Y, Z, cone, volcanic_phase, T)
+    Phases .= ((ph, x, y, z) -> z < volcano_h(cone, x, y) && z ≥ cone.base ? volcanic_phase : ph).(Phases, X, Y, Z)
+    isnothing(T) && return nothing
+
+    # a lazy broadcast, so that the reduction allocates no array
+    zbot = maximum(Broadcast.instantiate(Broadcast.broadcasted((ph, x, y, z) -> ph > 0 && !isnan(z) ? volcano_depth(cone, x, y, z) : -Inf, Phases, X, Y, Z)))
+    zbot == -Inf && return nothing
+    cT = prepare_temperature(T, volcano_frame(cone.center, cone.radius, zbot), nothing)
+    Temp .= ((t, ph, x, y, z) -> ph > 0 && !isnan(z) ? point_temperature(T, cT, x, y, volcano_depth(cone, x, y, z), t) : t).(Temp, Phases, X, Y, Z)
+    return nothing
+end
+
+volcano_h(cone, x, y) = volcano_height(x, y, cone.base; cone...)
+
+volcano_depth(cone, x, y, z) = max(volcano_h(cone, x, y) - z, 0)
+
+# Frame of the thermal structure of a volcano: the footprint of the cone, with depth measured downwards from the
+# topography, so that the surface is at depth 0
+volcano_frame(center, radius, zbot) =
+    (; xmin = center[1] - radius, xmax = center[1] + radius, ymin = center[2] - radius, ymax = center[2] + radius, ztop = 0.0, zbot)
+
+# Topography at (x, y) of a volcanic cone with a crater, on top of the topography `h0` away from the cone
+function volcano_height(x, y, h0; center, height, radius, crater, base)
+    RD = √((x - center[1])^2 + (y - center[2])^2) - crater   # radial distance from the crater rim
+    pos = -RD / (radius - crater) + 1                          # position relative to the crater rim
+    return 0 ≤ pos < 1 ? pos * (height - base) + base : pos ≥ 1 ? height : h0
 end
 
 abstract type AbstractThermalStructure end
@@ -1176,18 +1237,43 @@ Parameters
 ===
 - T : the value
 """
-@with_kw_noshow mutable struct ConstantTemp <: AbstractThermalStructure
-    T = 1000
+@with_kw_noshow struct ConstantTemp{A} <: AbstractThermalStructure
+    T::A = 1000
 end
 
-function compute_thermal_structure(Temp, X, Y, Z, Phase, s::ConstantTemp; kwargs...)
-    Temp .= s.T
+# Every thermal structure is evaluated point by point. `prepare_temperature(s, frame, points)` computes,
+# once per call, the reference values a structure needs from `frame`, the extent of the region
+# (xmin, xmax, ymin, ymax, zbot, ztop); `points = (X, Y, Z, Phase)` holds the points of the region for
+# structures that depend on them (`LithosphericTemp`), and is `nothing` otherwise.
+# `point_temperature` returns the temperature at one point. `compute_thermal_structure` applies both to
+# all points, taking the extent of the points as frame where `ztop` and `zbot` are not given.
+compute_thermal_structure(Temp, X, Y, Z, Phase, s::AbstractThermalStructure; ztop = nothing, zbot = nothing) =
+    point_temperatures!(Temp, X, Y, Z, s, prepare_temperature(s, points_frame(X, Y, Z; ztop, zbot), (X, Y, Z, Phase)))
+
+function points_frame(X, Y, Z; ztop = nothing, zbot = nothing)
+    (xmin, xmax), (ymin, ymax) = extrema(X), extrema(Y)
+    return (; xmin, xmax, ymin, ymax, ztop = isnothing(ztop) ? maximum(Z) : ztop, zbot = isnothing(zbot) ? minimum(Z) : zbot)
+end
+
+# Thermal structures whose preparation needs the points of the region, not only its extent
+needs_points(s) = false
+
+function point_temperatures!(Temp, X, Y, Z, s, c)
+    for i in eachindex(Temp, X, Y, Z)
+        Temp[i] = point_temperature(s, c, X[i], Y[i], Z[i], Temp[i])
+    end
     return Temp
 end
 
+# `T` is the current temperature at the point, which only structures that perturb it use
+point_temperature(s, c, x, y, z, T) = point_temperature(s, c, x, y, z)
+
+prepare_temperature(s::ConstantTemp, frame, points) = nothing
+point_temperature(s::ConstantTemp, c, x, y, z) = s.T
+
 
 """
-    LinearTemp(Ttop=0, Tbot=1000)
+    LinearTemp(Ttop=0, Tbot=1350)
 
 Set a linear temperature structure from top to bottom.
 
@@ -1201,27 +1287,19 @@ Parameters
 - Tbot : the value @ the bottom
 
 """
-@with_kw_noshow mutable struct LinearTemp <: AbstractThermalStructure
-    Ttop = 0
-    Tbot = 1350
+@with_kw_noshow struct LinearTemp{A, B} <: AbstractThermalStructure
+    Ttop::A = 0
+    Tbot::B = 1350
 end
 
-function compute_thermal_structure(Temp, X, Y, Z, Phase, s::LinearTemp; ztop = nothing, zbot = nothing)
-    @unpack Ttop, Tbot = s
+# Anchored at the top and bottom of the region; `dz` is its height, or a function `dz(x, y)` for a region whose
+# frame gives its local `thickness`
+prepare_temperature(s::LinearTemp, frame, points) = (; frame.ztop, dz = get(frame, :thickness, frame.ztop - frame.zbot), dT = s.Tbot - s.Ttop)
 
-    # Anchor at the geometric top/bottom of the region when the caller knows them;
-    # otherwise fall back to the extent of the grid points inside it.
-    zbot_grid, ztop_grid = extrema(Z)
-    ztop = isnothing(ztop) ? ztop_grid : ztop
-    zbot = isnothing(zbot) ? zbot_grid : zbot
-    dz = ztop - zbot
-    dT = Tbot - Ttop
-
-    if dz == 0
-        return fill!(Temp, Ttop)   # region without vertical extent: no gradient to apply
-    end
-    Temp = abs.((Z .- ztop) ./ dz) .* dT .+ Ttop
-    return Temp
+# a region without vertical extent has no gradient to apply
+function point_temperature(s::LinearTemp, c, x, y, z)
+    dz = zbound(c.dz, x, y)
+    return dz == 0 ? s.Ttop : abs((z - c.ztop) / dz) * c.dT + s.Ttop
 end
 
 """
@@ -1240,41 +1318,29 @@ Parameters
 - Adiabat : Mantle Adiabat [K/km]
 
 """
-@with_kw_noshow mutable struct HalfspaceCoolingTemp <: AbstractThermalStructure
-    Tsurface = 0       # top T
-    Tmantle = 1350     # bottom T
-    Age = 60          # thermal age of plate [in Myrs]
-    Adiabat = 0        # Adiabatic gradient in K/km
+@with_kw_noshow struct HalfspaceCoolingTemp{A, B, C, D} <: AbstractThermalStructure
+    Tsurface::A = 0       # top T
+    Tmantle::B = 1350     # bottom T
+    Age::C = 60           # thermal age of plate [in Myrs]
+    Adiabat::D = 0        # Adiabatic gradient in K/km
 end
 
-function compute_thermal_structure(Temp, X, Y, Z, Phase, s::HalfspaceCoolingTemp; ztop = nothing, zbot = nothing)
-    @unpack Tsurface, Tmantle, Age, Adiabat = s
-
-    kappa = 1.0e-6
-    SecYear = 3600 * 24 * 365
-    # Depth is measured from the geometric top of the region (the surface of the
-    # cooling halfspace), not from the topmost grid point inside it.
-    ztop = isnothing(ztop) ? maximum(Z) : ztop
-    ThermalAge = Age * 1.0e6 * SecYear
-
-    MantleAdiabaticT = Tmantle .+ Adiabat * abs.(Z)    # Adiabatic temperature of mantle
-
-    return halfspace_cooling_temp!(Temp, Z, ztop, MantleAdiabaticT, Tsurface, Tmantle, ThermalAge, kappa)
+# Temperature of a cooling half-space of thermal age `age` [yr] at `depth` [km] below its surface, with a
+# diffusivity of 1e-6 m²/s; an age of zero is taken as 1e-6 s, so that the surface keeps `Tsurface`
+function halfspace_temperature(Tsurface, Tmantle, age, depth)
+    t = max(age * 3600 * 24 * 365.25, 1.0e-6)   # [s]
+    return (Tsurface - Tmantle) * erfc(depth * 1.0e3 / (2 * sqrt(1.0e-6 * t))) + Tmantle
 end
 
-# The per-point loops of the thermal structures are separate functions, called with the unpacked
-# parameters, so that they are compiled for the concrete parameter types: the fields of the
-# parameter structs are not concretely typed.
-function halfspace_cooling_temp!(Temp, Z, ztop, MantleAdiabaticT, Tsurface, Tmantle, ThermalAge, kappa)
-    for i in eachindex(Temp)
-        Temp[i] = (Tsurface .- Tmantle) * erfc((abs.(Z[i] - ztop) * 1.0e3) ./ (2 * sqrt(kappa * ThermalAge))) + MantleAdiabaticT[i]
-    end
-    return Temp
-end
+# Depth is measured from the top of the region (the surface of the cooling halfspace)
+prepare_temperature(s::HalfspaceCoolingTemp, frame, points) = (; frame.ztop)
+
+point_temperature(s::HalfspaceCoolingTemp, c, x, y, z) =
+    halfspace_temperature(s.Tsurface, s.Tmantle, s.Age * 1.0e6, abs(z - c.ztop)) + s.Adiabat * abs(z)
 
 
 """
-    SpreadingRateTemp(Tsurface=0, Tmantle=1350, Adiabat=0, MORside="left",SpreadingVel=3, AgeRidge=0, maxAge=80)
+    SpreadingRateTemp(Tsurface=0, Tmantle=1350, Adiabat=0, MORside="left",SpreadingVel=3, AgeRidge=0, maxAge=60)
 
 Sets a halfspace temperature structure within the box, combined with a spreading rate (which implies that the plate age varies)
 
@@ -1288,65 +1354,62 @@ Parameters
 - AgeRidge : thermal age of the ridge [Myrs]
 - maxAge : maximum thermal Age of plate [Myrs]
 
-Note: the thermal age at the mid oceanic ridge is set to 1 year to avoid division by zero
+Note: a thermal age of zero, at a ridge with `AgeRidge = 0`, is taken as 1e-6 s to avoid division by zero
 
 """
-@with_kw_noshow mutable struct SpreadingRateTemp <: AbstractThermalStructure
-    Tsurface = 0       # top T
-    Tmantle = 1350     # bottom T
-    Adiabat = 0        # Adiabatic gradient in K/km
-    MORside = "left"   # side of box where the MOR is located
-    SpreadingVel = 3   # spreading velocity [cm/yr]
-    AgeRidge = 0       # Age of the ridge [Myrs]
-    maxAge = 60       # maximum thermal age of plate [Myrs]
+@with_kw_noshow struct SpreadingRateTemp{A, B, C, D, E, F} <: AbstractThermalStructure
+    Tsurface::A = 0         # top T
+    Tmantle::B = 1350       # bottom T
+    Adiabat::C = 0          # Adiabatic gradient in K/km
+    MORside::String = "left"  # side of box where the MOR is located
+    SpreadingVel::D = 3     # spreading velocity [cm/yr]
+    AgeRidge::E = 0         # Age of the ridge [Myrs]
+    maxAge::F = 60          # maximum thermal age of plate [Myrs]
 end
 
-function compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp; ztop = nothing, zbot = nothing)
-    @unpack Tsurface, Tmantle, Adiabat, MORside, SpreadingVel, AgeRidge, maxAge = s
+# The plate age grows with the distance from the ridge, which lies at the edge of the region on the side
+# `MORside`: the minimum x ("left"), maximum x ("right"), minimum y ("front") or maximum y ("back").
+function prepare_temperature(s::SpreadingRateTemp, frame, points)
+    side = findfirst(==(s.MORside), ("left", "right", "front", "back"))
+    isnothing(side) && error("unknown side")
+    ref = (frame.xmin, frame.xmax, frame.ymin, frame.ymax)[side]
+    return (; frame.ztop, side, ref, segments = nothing)
+end
 
-    kappa = 1.0e-6
-    SecYear = 3600 * 24 * 365
-    ztop = isnothing(ztop) ? maximum(Z) : ztop
+# Ridge segments: the plate age grows with the distance from the segment whose region contains the point
+# (see `determine_region`).
+function prepare_temperature(s::SpreadingRateTemp, segments, frame, points)
+    isempty(segments) && throw(ArgumentError("segments must not be empty"))
+    for i in firstindex(segments):(lastindex(segments) - 1)
+        a, b = segments[i][2], segments[i + 1][1]
+        side_of_line(segments[i][1]..., a..., b...) * side_of_line(segments[i + 1][2]..., a..., b...) < 0 ||
+            throw(ArgumentError("ridge segments $i and $(i + 1) must lie on opposite sides of the transform fault from the end of segment $i to the start of segment $(i + 1)"))
+    end
+    return (; frame.ztop, segments)
+end
 
-    MantleAdiabaticT = Tmantle .+ Adiabat * abs.(Z)    # Adiabatic temperature of mantle
-
-    if MORside == "left"
-        Distance = X .- X[1, 1, 1]
-    elseif MORside == "right"
-        Distance = X[end, 1, 1] .- X
-    elseif MORside == "front"
-        Distance = Y .- Y[1, 1, 1]
-    elseif MORside == "back"
-        Distance = Y[1, end, 1] .- Y
-
+function point_temperature(s::SpreadingRateTemp, c, x, y, z)
+    if isnothing(c.segments)
+        Distance = c.side == 1 ? x - c.ref : c.side == 2 ? c.ref - x : c.side == 3 ? y - c.ref : c.ref - y
+        ThermalAge = abs(Distance * 1.0e3 * 1.0e2) / s.SpreadingVel + s.AgeRidge * 1.0e6    # Thermal age in years
     else
-        error("unknown side")
+        region = determine_region(x, y, c.segments)
+        x1, y1 = c.segments[region][1]
+        x2, y2 = c.segments[region][2]
+        Distance = perpendicular_distance_to_segment(x, y, x1, y1, x2, y2)
+        ThermalAge = abs(Distance * 1.0e5) / s.SpreadingVel + s.AgeRidge * 1.0e6  # Thermal age in years
     end
-
-    return spreading_rate_temp!(Temp, Z .- ztop, Distance, MantleAdiabaticT, Tsurface, Tmantle, SpreadingVel, AgeRidge, maxAge, kappa, SecYear)
+    ThermalAge = min(ThermalAge, s.maxAge * 1.0e6)
+    return halfspace_temperature(s.Tsurface, s.Tmantle, ThermalAge, abs(z - c.ztop)) + s.Adiabat * abs(z)
 end
 
-function spreading_rate_temp!(Temp, Z, Distance, MantleAdiabaticT, Tsurface, Tmantle, SpreadingVel, AgeRidge, maxAge, kappa, SecYear)
-    for i in eachindex(Temp)
-        ThermalAge = abs(Distance[i] * 1.0e3 * 1.0e2) / SpreadingVel + AgeRidge * 1.0e6    # Thermal age in years
-        if ThermalAge > maxAge * 1.0e6
-            ThermalAge = maxAge * 1.0e6
-        end
+# only SpreadingRateTemp follows ridge segments
+prepare_temperature(s::AbstractThermalStructure, segments, frame, points) =
+    throw(ArgumentError("segments only apply to SpreadingRateTemp, got $(nameof(typeof(s)))"))
 
-        ThermalAge = ThermalAge * SecYear
-        if ThermalAge == 0
-            ThermalAge = 1.0e-6   # doesn't like zero
-        end
-
-        Temp[i] = (Tsurface .- Tmantle) * erfc((abs.(Z[i]) * 1.0e3) ./ (2 * sqrt(kappa * ThermalAge))) + MantleAdiabaticT[i]
-
-    end
-
-    return Temp
-end
 
 """
-    SpreadingRateTemp(Temp, X, Y, Z, Phase, s::SpreadingRateTemp, segments)
+    compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp, segments)
 
 Calculates the temperature distribution across the plate considering multiple ridge segments.
 
@@ -1356,66 +1419,25 @@ Parameters
 ==========
 - Temp     : Temperature field to be updated (array)
 - X, Y, Z  : Coordinates of the points (arrays)
-- Phase    : Phase of the material (unused in this version)
+- Phase    : Phase of the material (unused)
 - s        : SpreadingRateTemp object containing the thermal and spreading parameters
 - segments : List of ridge segments, where each segment is defined by two tuples representing the start and end coordinates (x1, y1) and (x2, y2) for each segment.
 
 Note
 ====
-The temperature at each point is calculated using the thermal age, which is determined by the distance from the point to the nearest ridge segment and the spreading velocity.
+The temperature at each point is calculated using the thermal age, which is determined by the spreading velocity and the distance from the point to the ridge segment that produced it.
+Consecutive segments are joined by transform faults, from the end of one segment to the start of the next; the
+fracture zones continue the transform faults as straight lines and separate the regions of the segments.
+The segments are therefore ordered along the ridge, and each pair of consecutive segments must lie on opposite sides of their transform fault.
 
-The function works in the context of one or more segments. The key difference from the previous function is that the ridge can now be placed at any position within the box, not just at the boundary.
+The function works with one or more segments, and the ridge can be placed at any position within the box, not only at its boundary.
 
 The thermal age is capped at `maxAge` years, and the temperature is adjusted based on the distance to the ridge and the corresponding thermal gradient.
 
 """
+compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp, segments::AbstractVector; ztop = nothing, zbot = nothing) =
+    point_temperatures!(Temp, X, Y, Z, s, prepare_temperature(s, segments, points_frame(X, Y, Z; ztop, zbot), (X, Y, Z, Phase)))
 
-function compute_thermal_structure(Temp, X, Y, Z, Phase, s::SpreadingRateTemp, segments::Vector{Tuple{Tuple{Float64, Float64}, Tuple{Float64, Float64}}}; ztop = nothing, zbot = nothing)
-    @unpack Tsurface, Tmantle, Adiabat, SpreadingVel, AgeRidge, maxAge = s
-    kappa = 1.0e-6
-    SecYear = 3600 * 24 * 365
-    ztop = isnothing(ztop) ? maximum(Z) : ztop
-
-    MantleAdiabaticT = Tmantle .+ Adiabat * abs.(Z)
-
-    #Create delimiters
-    delimiters = [(segments[i][2], segments[i + 1][1]) for i in 1:(length(segments) - 1)]
-
-    return spreading_rate_segments_temp!(Temp, X, Y, Z .- ztop, segments, delimiters, MantleAdiabaticT, Tsurface, Tmantle, SpreadingVel, AgeRidge, maxAge, kappa, SecYear)
-end
-
-function spreading_rate_segments_temp!(Temp, X, Y, Z, segments, delimiters, MantleAdiabaticT, Tsurface, Tmantle, SpreadingVel, AgeRidge, maxAge, kappa, SecYear)
-    for I in eachindex(X)
-        px, py, pz = X[I], Y[I], Z[I]
-
-        # Determine region of point
-        region = determine_region(px, py, delimiters, segments)
-
-        # Select the corresponding segment
-        x1, y1 = segments[region][1]
-        x2, y2 = segments[region][2]
-
-        # Calculate distance to segment
-        Distance = perpendicular_distance_to_segment(px, py, x1, y1, x2, y2)
-
-        # Calculate thermal age
-        ThermalAge = abs(Distance * 1.0e5) / SpreadingVel + AgeRidge * 1.0e6  # Thermal age in years
-        if ThermalAge > maxAge * 1.0e6
-            ThermalAge = maxAge * 1.0e6
-        end
-
-        ThermalAge = ThermalAge * SecYear  # Convert to seconds
-        if ThermalAge == 0
-            ThermalAge = 1.0e-6  # Avoid zero
-        end
-
-        # Calculate temperature
-        Temp[I] = (Tsurface - Tmantle) * erfc(abs(pz) * 1.0e3 / (2 * sqrt(kappa * ThermalAge))) + MantleAdiabaticT[I]
-    end
-
-    return Temp
-
-end
 
 # Supporting functions for multi-segment ridge functionality
 
@@ -1426,27 +1448,17 @@ function perpendicular_distance_to_segment(x, y, x1, y1, x2, y2)
     return num / den
 end
 
-# Function to determine the side of a point with respect to a line (adjusted for segment direction)
-function side_of_line(x, y, x1, y1, x2, y2, direction)
-    side = (x2 - x1) * (y - y1) - (y2 - y1) * (x - x1)
-    return direction == :left ? side > 0 : side < 0
-end
+# Positive if (x, y) lies to the left of the line from (x1, y1) to (x2, y2), negative to its right
+side_of_line(x, y, x1, y1, x2, y2) = (x2 - x1) * (y - y1) - (y2 - y1) * (x - x1)
 
-# Function to determine in which region a point lies (based on delimiters)
-function determine_region(px, py, delimiters, segments)
-    for i in 1:length(delimiters)
-        x1, y1 = delimiters[i][1]
-        x2, y2 = delimiters[i][2]
-
-        # Determine the direction of the segments
-        direction = x2 < x1 ? :left : :right
-
-        # Check the side of the line considering the direction
-        if side_of_line(px, py, x1, y1, x2, y2, direction)
-            return i  # Region corresponding to segment i
-        end
+# Region of a point: the first segment that lies on the same side of its fracture zone (the line through the
+# transform fault to the next segment) as the point, or else the last segment
+function determine_region(px, py, segments)
+    for i in firstindex(segments):(lastindex(segments) - 1)
+        a, b = segments[i][2], segments[i + 1][1]
+        side_of_line(px, py, a..., b...) * side_of_line(segments[i][1]..., a..., b...) > 0 && return i
     end
-    return length(segments)  # Last region
+    return lastindex(segments)
 end
 
 """
@@ -1476,7 +1488,7 @@ Parameters
 - rheology  : Structure containing the thermal parameters for each phase [default example_CLrheology]
 
 """
-@with_kw_noshow mutable struct LithosphericTemp <: AbstractThermalStructure
+@with_kw_noshow struct LithosphericTemp <: AbstractThermalStructure
     Tsurface = 0.0      # top T [C]
     Tpot = 1350.0       # potential T [C]
     dTadi = 0.5         # adiabatic gradient in K/km
@@ -1506,7 +1518,10 @@ struct Thermal_parameters{A}
     end
 end
 
-function compute_thermal_structure(Temp, X, Y, Z, Phase, s::LithosphericTemp; kwargs...)
+needs_points(s::LithosphericTemp) = true
+
+function prepare_temperature(s::LithosphericTemp, frame, points)
+    X, Y, Z, Phase = points
     @unpack Tsurface, Tpot, dTadi, ubound, lbound, utbf, ltbf, age,
         dtfac, nz, rheology = s
 
@@ -1517,21 +1532,12 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::LithosphericTemp; kw
     T = zeros(nz)
     phase = Int64.(zeros(nz))
 
-    # Assign phase id from Phase to 1D phase array
-    phaseid = (minimum(Phase):1:maximum(Phase))
-    zsurf = maximum(Z[findall(Phase .== phaseid[1])]) * 1.0e3
-    zbase = zeros(length(phaseid)) # base of each layer
-
-    # for each phase id
-    for i in 1:length(phaseid)
-        # Calculate layer thickness from Phase array
-        zbase[i] = minimum(Z[findall(Phase .== phaseid[i])]) * 1.0e3
-    end
-    for i in 1:length(phaseid)
-        # Assign phase ids
-        ztop = i === 1 ? zsurf : zbase[i - 1]
-        ind = findall((z .>= zbase[i]) .& (z .<= ztop))
-        phase[ind] .= phaseid[i]
+    maximum(Z) > minimum(Z) || throw(ArgumentError("the box must have a nonzero height for LithosphericTemp"))
+    # Layers from shallow to deep; each deeper layer starts at the base of the one above
+    layers = sort(unique(Phase); by = p -> -maximum(Z[Phase .== p]))
+    phase .= first(layers)
+    for (above, ph) in zip(layers[1:(end - 1)], layers[2:end])
+        phase[z .<= minimum(Z[Phase .== above]) * 1.0e3] .= ph
     end
 
     # Setup initial T-profile
@@ -1560,12 +1566,8 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::LithosphericTemp; kw
     dtexp = dz^2.0 / 2.0 / κ            # Stability criterion for explicit
     dt = dtfac * dtexp             # [s]
     nit = Int64(ceil(age / dt))     # Number of iterations
-    time = zeros(nit)              # Time array
 
     for i in 1:nit
-        if i > 1
-            time[i] = time[i - 1] + dt
-        end
         SolveDiff1Dexplicit_vary!(
             T,
             thermal_parameters,
@@ -1576,11 +1578,13 @@ function compute_thermal_structure(Temp, X, Y, Z, Phase, s::LithosphericTemp; kw
         )
     end
 
-    interp_linear_T = linear_interpolation(-z ./ 1.0e3, T .- 273.15)      # create interpolation object
-    Temp = interp_linear_T(-Z)
+    # Flat extrapolation: the extreme points can lie one ulp outside the nodes after the m/km round trip
+    interp_linear_T = linear_interpolation(-z ./ 1.0e3, T .- 273.15; extrapolation_bc = Flat())
 
-    return Temp
+    return (; itp = interp_linear_T)
 end
+
+point_temperature(s::LithosphericTemp, c, x, y, z) = c.itp(-z)
 
 function SolveDiff1Dexplicit_vary!(
         T,
@@ -1591,7 +1595,7 @@ function SolveDiff1Dexplicit_vary!(
         dt
     )
     nz = length(T)
-    T0 = T
+    T0 = copy(T)
 
     if ubound == "const"
         T[1] = T0[1]
@@ -1671,6 +1675,16 @@ end
 
 abstract type AbstractPhaseNumber end
 
+# Thermal and phase structures are shown as a call of their constructor, without type parameters
+function show(io::IO, s::Union{AbstractThermalStructure, AbstractPhaseNumber})
+    print(io, nameof(typeof(s)), "(")
+    for (i, f) in enumerate(fieldnames(typeof(s)))
+        i > 1 && print(io, ", ")
+        show(io, getfield(s, f))
+    end
+    return print(io, ")")
+end
+
 
 """
     ConstantPhase(phase=1)
@@ -1681,14 +1695,24 @@ Parameters
 ===
 - phase : the value
 """
-@with_kw_noshow mutable struct ConstantPhase <: AbstractPhaseNumber
-    phase = 1
+@with_kw_noshow struct ConstantPhase{P} <: AbstractPhaseNumber
+    phase::P = 1
 end
 
-function compute_phase(Phase, Temp, X, Y, Z, s::ConstantPhase)
-    Phase .= s.phase
+# Every phase structure is evaluated point by point by `point_phase`, from the previous phase, the
+# temperature and the coordinates of the point; `compute_phase` applies it to all points.
+function compute_phase(Phase, Temp, X, Y, Z, s::AbstractPhaseNumber; kwargs...)
+    for i in eachindex(Phase, Temp, X, Y, Z)
+        Phase[i] = point_phase(s, Phase[i], Temp[i], X[i], Y[i], Z[i]; kwargs...)
+    end
     return Phase
 end
+
+point_phase(s::ConstantPhase, ph, T, x, y, z) = s.phase
+
+# `phase = nothing` keeps the phases, e.g. to set only the temperature of a region
+point_phase(::Nothing, ph, T, x, y, z) = ph
+compute_phase(Phase, Temp, X, Y, Z, ::Nothing; kwargs...) = Phase
 
 
 """
@@ -1703,19 +1727,19 @@ Parameters
 - Tlab   : Temperature of the lithosphere asthenosphere boundary. If specified, the phases at locations with T>Tlab are set to Phases[end].
 
 """
-@with_kw_noshow mutable struct LithosphericPhases <: AbstractPhaseNumber
-    Layers = [10.0, 20.0, 15.0]
-    Phases = [1, 2, 3, 4]
-    Tlab = nothing
+@with_kw_noshow struct LithosphericPhases{L, P, T} <: AbstractPhaseNumber
+    Layers::L = [10.0, 20.0, 15.0]
+    Phases::P = [1, 2, 3, 4]
+    Tlab::T = nothing
 end
 
 
 """
-    Phase = compute_phase(Phase, Temp, X, Y, Z, s::LithosphericPhases, Ztop)
+    Phase = compute_phase(Phase, Temp, X, Y, Z, s::LithosphericPhases; Ztop = 0)
 
 or
 
-    Phase = compute_phase(Phase, Temp, Grid::AbstractGeneralGrid, s::LithosphericPhases)
+    Phase = compute_phase(Phase, Temp, Grid::LaMEM_grid, s::LithosphericPhases)
 
 This copies the layered lithosphere onto the Phase matrix.
 
@@ -1728,26 +1752,26 @@ Parameters
 - Z     - Vertical coordinate array (consistent with Phase and Temp)
 - s     - LithosphericPhases
 - Ztop  - Vertical coordinate of top of model box
-- Grid  - Grid structure (usually obtained with read_LaMEM_inputfile)
+- Grid  - LaMEM grid (usually obtained with read_LaMEM_inputfile); `Ztop` is the top of the grid
 """
-function compute_phase(Phase, Temp, X, Y, Z, s::LithosphericPhases; Ztop = 0)
-    @unpack Layers, Phases, Tlab = s
+compute_phase(Phase, Temp, X, Y, Z, s::LithosphericPhases)
 
-    Phase .= Phases[end]
-
-    for i in 1:length(Layers)
-        Zbot = Ztop - Layers[i]
-        Phase[Zbot .<= Z .<= Ztop] .= Phases[i]
-
+# Layers are counted downward from Ztop; where two layers share a boundary, the lower one applies.
+function point_phase(s::LithosphericPhases, ph, T, x, y, z; Ztop = 0)
+    p = s.Phases[end]
+    for i in eachindex(s.Layers)
+        Zbot = Ztop - s.Layers[i]
+        if Zbot <= z <= Ztop
+            p = s.Phases[i]
+        end
         Ztop = Zbot
     end
 
     # set phase to mantle if requested
-    if !isnothing(Tlab)
-        Phase[Temp .> Tlab] .= Phases[end]
+    if !isnothing(s.Tlab) && T > s.Tlab
+        p = s.Phases[end]
     end
-
-    return Phase
+    return p
 end
 
 # allow AbstractGeneralGrid instead of Z and Ztop
@@ -1769,7 +1793,7 @@ Parameters
 - `it`:           Number iterations employed in the harmonic summation
 
 """
-@with_kw_noshow mutable struct McKenzie_subducting_slab <: AbstractThermalStructure
+@with_kw_noshow struct McKenzie_subducting_slab <: AbstractThermalStructure
     Tsurface::Float64 = 20.0       # top T
     Tmantle::Float64 = 1350.0     # bottom T
     Adiabat::Float64 = 0.4        # Adiabatic gradient in K/km
@@ -1782,8 +1806,8 @@ end
     compute_thermal_structure(Temp, X, Y, Z, Phase, s::McKenzie_subducting_slab)
 
 Compute the temperature field of a `McKenzie_subducting_slab`. Uses the analytical solution
-of McKenzie (1969) ["Speculations on the consequences and causes of plate motions"]. The functions assumes
-that the bottom of the slab is the coordinate Z=0. Internally the function shifts the coordinate.
+of McKenzie (1969) ["Speculations on the consequences and causes of plate motions"]. Depth is measured from
+the top of the region, and the slab thickness is the height of the region.
 
 Parameters
 
@@ -1795,33 +1819,31 @@ Parameters
 - `Phase`: Phase array
 - `s`:    `McKenzie_subducting_slab`
 """
-function compute_thermal_structure(Temp, X, Y, Z, Phase, s::McKenzie_subducting_slab; kwargs...)
-    @unpack Tsurface, Tmantle, Adiabat, v_cm_yr, κ, it = s
+compute_thermal_structure(Temp, X, Y, Z, Phase, s::McKenzie_subducting_slab)
 
-    # Thickness of the layer:
-    Thickness = (maximum(Z) - minimum(Z))
-    Zshift = Z .- Z[end]       # McKenzie model is defined with Z = 0 at the bottom of the slab
+# The McKenzie model is defined with Z = 0 at the top of the region, and its thickness is that of the region
+function prepare_temperature(s::McKenzie_subducting_slab, frame, points)
+    Thickness = (frame.ztop - frame.zbot)
 
     # Convert subduction velocity from cm/yr -> m/s;
     convert_velocity = 1 / (100.0 * 365.25 * 60.0 * 60.0 * 24.0)
-    v_s = v_cm_yr * convert_velocity
+    v_s = s.v_cm_yr * convert_velocity
 
     # calculate the thermal Reynolds number
-    Re = (v_s * Thickness * 1000) / 2 / κ      # factor 1000 to transfer Thickness from km to m
+    Re = (v_s * Thickness * 1000) / 2 / s.κ      # factor 1000 to transfer Thickness from km to m
 
-    # McKenzie model
-    sc = 1 / Thickness
-    σ = ones(size(Temp))
-    # Dividi et impera
-    for i in 1:it
-        a = (-1.0)^i / (i * pi)
-        r = Re - (Re^2 + i^2.0 * pi^2.0)^0.5
-        σ .+= 2 * a .* exp.(r .* X .* sc) .* sin.(i .* pi .* (1 .- abs.(Zshift .* sc)))
+    # coefficients 2a, r and iπ of the terms of the harmonic sum
+    terms = ntuple(i -> (2 * ((-1.0)^i / (i * pi)), Re - (Re^2 + i^2.0 * pi^2.0)^0.5, i * pi), s.it)
+    return (; Zref = frame.ztop, sc = 1 / Thickness, terms)
+end
+
+function point_temperature(s::McKenzie_subducting_slab, c, x, y, z)
+    σ = 1.0
+    zshift = z - c.Zref
+    for (a2, r, iπ) in c.terms
+        σ += a2 * exp(r * x * c.sc) * sin(iπ * (1 - abs(zshift * c.sc)))
     end
-
-    Temp .= Tsurface .+ (Tmantle - Tsurface) .* σ .+ Adiabat .* abs.(Z)
-
-    return Temp
+    return s.Tsurface + (s.Tmantle - s.Tsurface) * σ + s.Adiabat * abs(z)
 end
 
 """
@@ -1833,19 +1855,19 @@ Parameters
 ===
 - w_min:        Minimum weight
 - w_max:        Maximum weight
-- crit_dist:    Critical distance
+- crit_dist:    Critical distance; in `add_slab!` with a `Trench` and `dir = :X`, the length along the slab down to `d_decoupling`
 - dir:          Direction of the averaging (`:X`, `:Y` or `:Z`)
 - F1:           First temperature field
 - F2:           Second temperature field
 
 """
-@with_kw_noshow mutable struct LinearWeightedTemperature <: AbstractThermalStructure
+@with_kw_noshow struct LinearWeightedTemperature{T1 <: AbstractThermalStructure, T2 <: AbstractThermalStructure} <: AbstractThermalStructure
     w_min::Float64 = 0.0
     w_max::Float64 = 1.0
     crit_dist::Float64 = 100.0
     dir::Symbol = :X
-    F1::AbstractThermalStructure = ConstantTemp()
-    F2::AbstractThermalStructure = ConstantTemp()
+    F1::T1 = ConstantTemp()
+    F2::T2 = ConstantTemp()
 end
 
 """
@@ -1866,40 +1888,58 @@ can be used to smooth the temperature field from continent ocean:
 - compute the thermal fields {F1} {F2}
 - then modify F.
 """
-function compute_thermal_structure(Temp, X, Y, Z, Phase, s::LinearWeightedTemperature; kwargs...)
-    @unpack w_min, w_max, crit_dist, dir = s
-    @unpack F1, F2 = s
+compute_thermal_structure(Temp, X, Y, Z, Phase, s::LinearWeightedTemperature)
 
-    if dir === :X
-        dist = X
-    elseif dir === :Y
-        dist = Y
-    else
-        dist = Z
+prepare_temperature(s::LinearWeightedTemperature, frame, points) =
+    (; c1 = prepare_temperature(s.F1, frame, points), c2 = prepare_temperature(s.F2, frame, points))
+needs_points(s::LinearWeightedTemperature) = needs_points(s.F1) || needs_points(s.F2)
+
+function point_temperature(s::LinearWeightedTemperature, c, x, y, z, T)
+    dist = s.dir === :X ? x : s.dir === :Y ? y : z
+    weight = s.w_min + (s.w_max - s.w_min) / (s.crit_dist) * (dist)
+    if weight > s.w_max
+        weight = s.w_max
     end
-
-    # compute the 1D thermal structures
-    Temp1 = zeros(size(Temp))
-    Temp2 = zeros(size(Temp))
-    Temp1 = compute_thermal_structure(Temp1, X, Y, Z, Phase, F1; kwargs...)
-    Temp2 = compute_thermal_structure(Temp2, X, Y, Z, Phase, F2; kwargs...)
-
-    # Compute the weights
-    weight = w_min .+ (w_max - w_min) ./ (crit_dist) .* (dist)
-
-    ind_1 = findall(weight .> w_max)
-    ind_2 = findall(weight .< w_min)
-
-    # Change the weight
-    weight[ind_1] .= w_max
-    weight[ind_2] .= w_min
-
-    # Average temperature
-    Temp .= Temp1 .* (1.0 .- weight) + Temp2 .* weight
-
-    return Temp
+    if weight < s.w_min
+        weight = s.w_min
+    end
+    return point_temperature(s.F1, c.c1, x, y, z, T) * (1.0 - weight) + point_temperature(s.F2, c.c2, x, y, z, T) * weight
 end
 
+
+"""
+    GaussianTemp(Amplitude=200, Width=50)
+
+Adds a Gaussian temperature anomaly to the current temperature (e.g. a geotherm set before), centered in the region it
+is added to (e.g. the center of a sphere or box), as for a plume head or a thermal seed:
+
+`T = T + Amplitude * exp(-((x - x0)² / Wx² + (y - y0)² / Wy² + (z - z0)² / Wz²) / 2)`
+
+Parameters
+===
+- Amplitude : temperature anomaly at the center [C]; negative for a cold anomaly
+- Width : standard deviation of the Gaussian [km], either one value or a tuple `(Wx, Wy, Wz)`. A width of
+  `Inf` gives a temperature that is constant along that axis, e.g. `(50, 50, Inf)` for a vertical plume conduit.
+
+Choose a region that extends to about three widths from its center, so that the anomaly fades out at its edge.
+"""
+@with_kw_noshow struct GaussianTemp{A, B} <: AbstractThermalStructure
+    Amplitude::A = 200
+    Width::B = 50
+end
+
+function prepare_temperature(s::GaussianTemp, frame, points)
+    center = ((frame.xmin + frame.xmax) / 2, (frame.ymin + frame.ymax) / 2, (frame.zbot + frame.ztop) / 2)
+    s.Width isa Number || length(s.Width) == 3 || throw(ArgumentError("Width must be a number or have 3 entries, got $(s.Width)"))
+    width = s.Width isa Number ? ntuple(_ -> s.Width, 3) : (s.Width[1], s.Width[2], s.Width[3])
+    all(>(0), width) || throw(ArgumentError("every Width must be positive (Inf is allowed), got $(s.Width)"))
+    return (; center, width)
+end
+
+function point_temperature(s::GaussianTemp, c, x, y, z, T)
+    r2 = ((x - c.center[1]) / c.width[1])^2 + ((y - c.center[2]) / c.width[2])^2 + ((z - c.center[3]) / c.width[3])^2
+    return T + s.Amplitude * exp(-r2 / 2)
+end
 
 abstract type AbstractTrenchSlab end
 
@@ -1913,6 +1953,9 @@ Parameters
 
 - `Start`     - Start of the trench (`x`,`y`) coordinates
 - `End`       - End of the trench (`x`,`y`) coordinates
+- `Trace`     - If not `nothing`, the trench as a polyline of two or more (`x`,`y`) points, which replaces `Start`
+                and `End`; see `bezier_curve` for smooth curves. The slab bends perpendicular to the curved trench, to its left for `direction = 1` and to
+                its right for `direction = -1`, and ends at the ends of the trench.
 - `n_seg`     - The number of segment through which the slab is discretize along the dip
 - `Length`    - The length of the slab
 - `Thickness` - The thickness of the slab
@@ -1923,7 +1966,9 @@ Parameters
                rotation is anticlockwise the coordinate y has specific values: direction tells if the subduction is directed along
                the positive or negative direction of the new y coordinate system. In practice, it apply an additional transformation
                to y by multiplying it with -1 or +1;
-- `d_decoupling` - depth at which the slab is fully submerged into the mantle.
+- `d_decoupling` - depth at which the slab is fully submerged into the mantle. A `LinearWeightedTemperature` of the
+                   slab with `dir = :X` blends its two structures over the length along the slab down to this depth;
+                   with another `dir`, its `crit_dist` is kept.
 - `type_bending` - is the type of bending angle of the slab [`:Linear`, `:Ribe`].
     The angle of slab changes as a function of `l` (∈ [0,Length]). `l` is the actual distance along the slab length from
     the trench.
@@ -1937,11 +1982,23 @@ Parameters
     For l>Lb, θ(l) = θ_max;
 - `WeakzoneThickness` - Thickness of the weakzone [km]
 - `WeakzonePhase` - Phase of the weakzone
+- `Bending` - If not `nothing`, the dip profile as `(angle, length)` pairs, e.g. `[(20, 150), (80, 250)]`: starting
+              at 0° where the slab starts, the dip changes linearly to each angle (in degrees) over each length (in km)
+              along the top of the slab. It replaces `Length`, `Lb`, `θ_max` and `type_bending`.
+- `Behind` - Length [km] of the slab behind the trench, where the slab starts, e.g. to bend the plate before the trench.
+- `ThermalThickness` - If not `nothing`, the thickness [km] below the top of the slab within which `add_slab!` sets
+              the temperature, with the phases set within `Thickness`; e.g. to reach the mantle temperature at the base
+              of the thermal structure of the slab.
+- `Tear` - If not `nothing`, a `Tear` that thins the slab towards a slab break-off. `Start` and `Tip` of the tear
+              are distances along the trench from `Start` of the trench (along `Trace` for a curved trench), or map
+              points. `ThermalThickness` thins by the same factor as `Thickness`, and the weak zone thins by it
+              with its base on the slab surface, so that both vanish where the slab is torn.
 
 """
-@with_kw_noshow mutable struct Trench{Nseg} <: AbstractTrenchSlab
+@with_kw_noshow struct Trench{Nseg, TR, BE, TT, TE} <: AbstractTrenchSlab
     Start::NTuple{Nseg, Float64} = (0.0, 0.0)   # Start (x,y) coordinates of trench (in mapview)
     End::NTuple{Nseg, Float64} = (0.0, 1.0)     # End (x,y) coordinates of trench (in mapview)
+    Trace::TR = nothing                        # polyline of (x,y) points of a curved trench (in mapview)
     n_seg::Int64 = 50                          # number of segments in downdip direction
     Length::Float64 = 400.0                   # length of the slab
     Thickness::Float64 = 100.0                # thickness of the slab
@@ -1949,25 +2006,39 @@ Parameters
     θ_max::Float64 = 45.0                      # max bending angle, (must be converted into radians)
     direction::Float64 = -1.0                  # Direction of the bending angle (-1= left to right or 1.0=right to left)
     d_decoupling::Float64 = 100               # decoupling depth of the slab
-    type_bending::Symbol = :Ribe               # Mode Ribe | Linear | Customize
+    type_bending::Symbol = :Ribe               # Mode Ribe | Linear
     WeakzoneThickness::Float64 = 0.0           # Thickness of the weakzone
     WeakzonePhase::Int64 = 5                   # Phase of the weak zone
+    Bending::BE = nothing                      # dip profile as (angle, length) pairs, replaces Length, Lb, θ_max and type_bending
+    Behind::Float64 = 0.0                      # length of the slab behind the trench
+    ThermalThickness::TT = nothing             # thickness within which the temperature is set, if not Thickness
+    Tear::TE = nothing                         # tear of the slab towards a break-off
 end
 
 function show(io::IO, g::Trench{Nseg}) where {Nseg}
     println(io, "Trench{$Nseg}, $(g.n_seg) segments")
-    println(io, "     Trench [Start/End] : $(g.Start) - $(g.End) [km]")
+    if isnothing(g.Trace)
+        println(io, "     Trench [Start/End] : $(g.Start) - $(g.End) [km]")
+    else
+        println(io, "        Trench [Trace] : $(length(g.Trace)) points from $(first(g.Trace)) to $(last(g.Trace)) [km]")
+    end
     println(io, "       Slab [Thickness] : $(g.Thickness) km")
-    println(io, "          Slab [Length] : $(g.Length) km")
-    println(io, "    Bending length [Lb] : $(g.Lb) km")
-    println(io, "     Max. angle [θ_max] : $(g.θ_max)ᵒ")
+    if isnothing(g.Bending)   # Bending replaces Length, Lb, θ_max and type_bending
+        println(io, "          Slab [Length] : $(g.Length) km")
+        println(io, "    Bending length [Lb] : $(g.Lb) km")
+        println(io, "     Max. angle [θ_max] : $(g.θ_max)ᵒ")
+    end
     if g.direction == -1.0
         println(io, "        Dip [direction] : left to right [$(g.direction)]")
     else
         println(io, "     Dip [direction] : right to left [$(g.direction)]")
     end
     println(io, "    Depth [d_decoupling]: $(g.d_decoupling) km")
-    println(io, "  Bending [type_bending]: $(g.type_bending)")
+    isnothing(g.Bending) && println(io, "  Bending [type_bending]: $(g.type_bending)")
+    isnothing(g.Bending) || println(io, "              [Bending] : $(g.Bending) [°, km]")
+    g.Behind == 0 || println(io, "               [Behind] : $(g.Behind) km")
+    isnothing(g.ThermalThickness) || println(io, "     [ThermalThickness] : $(g.ThermalThickness) km")
+    isnothing(g.Tear) || println(io, "                 [Tear] : $(g.Tear)")
     println(io, "    [WeakzoneThickness] : $(g.WeakzoneThickness) km")
     if g.WeakzoneThickness > 0
         println(io, "   Weakzone phase : $(g.WeakzonePhase)")
@@ -1991,41 +2062,61 @@ Method
 It computes it by discretizing the slab surface in `n_seg` segments, and computing the average bending angle (which is a function of the current length of the slab).
 Next, it compute the coordinates assuming that the trench is at 0.0, and assuming a positive `θ_max` angle.
 """
-function compute_slab_surface(trench::Trench)
+compute_slab_surface(trench::Trench) = slab_surfaces(trench)[1:3]
 
-    @unpack Thickness, Length, n_seg, Lb, θ_max, type_bending, direction, WeakzoneThickness = trench
+# Top, bottom and weak zone surfaces of the slab, and its base at `ThermalThickness` below the top (`Bottom` if not set)
+function slab_surfaces(trench::Trench)
+
+    @unpack Thickness, n_seg, Lb, θ_max, type_bending, direction, WeakzoneThickness, Bending, Behind = trench
+    if !isnothing(Bending)
+        isempty(Bending) && throw(ArgumentError("Bending must contain at least one (angle, length) pair"))
+        all(((θ, L),) -> L > 0, Bending) || throw(ArgumentError("the lengths of Bending must be positive, got $Bending"))
+        all(((θ, L),) -> 0 < θ <= 90, Bending) || throw(ArgumentError("the angles of Bending must lie in (0, 90] degrees, got $Bending"))
+    end
+    Behind >= 0 || throw(ArgumentError("Behind must not be negative, got $Behind"))
+    Tth = something(trench.ThermalThickness, Thickness)
 
     # Convert θ_max into radians
     θ_max *= π / 180
+    angle(l) = isnothing(Bending) ? compute_bending_angle(θ_max, Lb, l, type_bending) : deg2rad(bending_profile_angle(Bending, l))
 
     # Allocate the top, mid and bottom surface
     Top = zeros(n_seg + 1, 2)
     Bottom = zeros(n_seg + 1, 2)
     WeakZone = zeros(n_seg + 1, 2)
+    ThermalBottom = zeros(n_seg + 1, 2)
+    Top[1, 1] = Bottom[1, 1] = WeakZone[1, 1] = ThermalBottom[1, 1] = -Behind
     Bottom[1, 2] = -Thickness
     WeakZone[1, 2] = WeakzoneThickness
+    ThermalBottom[1, 2] = -Tth
     MidS = zeros(n_seg + 1, 2)
+    MidS[1, 1] = -Behind
     MidS[1, 2] = -Thickness / 2
 
     # Initialize the length.
-    dl = Length / n_seg  # dl
+    dl = slab_length(trench) / n_seg  # dl
     for it in 1:n_seg
         l = (it - 1) * dl
 
         # Compute the mean angle within the segment
-        θ = compute_bending_angle(θ_max, Lb, l, type_bending)
-        θ_n = compute_bending_angle(θ_max, Lb, l + dl, type_bending)
+        θ = angle(l)
+        θ_n = angle(l + dl)
         θ_mean = (θ + θ_n) / 2
 
-        # Mid surface coordinates (x,z)
         sinθ, cosθ = sincos(θ_mean)
-
-        MidS[it + 1, 1] = MidS[it, 1] + dl * cosθ
-        MidS[it + 1, 2] = MidS[it, 2] - dl * sinθ
-
-        # Top surface coordinates (x,z)
-        Top[it + 1, 1] = MidS[it + 1, 1] + 0.5 * Thickness * abs(sinθ)
-        Top[it + 1, 2] = MidS[it + 1, 2] + 0.5 * Thickness * abs(cosθ)
+        if isnothing(Bending)
+            # Mid surface coordinates (x,z), then the top surface
+            MidS[it + 1, 1] = MidS[it, 1] + dl * cosθ
+            MidS[it + 1, 2] = MidS[it, 2] - dl * sinθ
+            Top[it + 1, 1] = MidS[it + 1, 1] + 0.5 * Thickness * abs(sinθ)
+            Top[it + 1, 2] = MidS[it + 1, 2] + 0.5 * Thickness * abs(cosθ)
+        else
+            # the lengths of a dip profile are measured along the top surface
+            Top[it + 1, 1] = Top[it, 1] + dl * cosθ
+            Top[it + 1, 2] = Top[it, 2] - dl * sinθ
+            MidS[it + 1, 1] = Top[it + 1, 1] - 0.5 * Thickness * abs(sinθ)
+            MidS[it + 1, 2] = Top[it + 1, 2] - 0.5 * Thickness * abs(cosθ)
+        end
 
         # Bottom surface coordinate
         Bottom[it + 1, 1] = MidS[it + 1, 1] - 0.5 * Thickness * abs(sinθ)
@@ -2035,12 +2126,28 @@ function compute_slab_surface(trench::Trench)
         WeakZone[it + 1, 1] = MidS[it + 1, 1] + (0.5 * Thickness + WeakzoneThickness) * abs(sinθ)
         WeakZone[it + 1, 2] = MidS[it + 1, 2] + (0.5 * Thickness + WeakzoneThickness) * abs(cosθ)
 
+        ThermalBottom[it + 1, 1] = Top[it + 1, 1] - Tth * abs(sinθ)
+        ThermalBottom[it + 1, 2] = Top[it + 1, 2] - Tth * abs(cosθ)
     end
     Top[:, 1] *= direction
     Bottom[:, 1] *= direction
     WeakZone[:, 1] *= direction
+    ThermalBottom[:, 1] *= direction
 
-    return Top, Bottom, WeakZone
+    return Top, Bottom, WeakZone, ThermalBottom
+end
+
+# length of the slab from where it starts, along its top for a dip profile and along its middle otherwise
+slab_length(trench::Trench) = isnothing(trench.Bending) ? trench.Length : sum(last, trench.Bending)
+
+# dip [°] at length `l` along the slab of the profile `Bending`: from 0°, linear to each angle over each length
+function bending_profile_angle(Bending, l)
+    θ0, l0 = 0.0, 0.0
+    for (θ, L) in Bending
+        l <= l0 + L && return θ0 + (θ - θ0) * (l - l0) / L
+        θ0, l0 = float(θ), l0 + L
+    end
+    return θ0
 end
 
 """
@@ -2057,6 +2164,7 @@ Parameters
 
 """
 function compute_bending_angle(θ_max::Float64, Lb::Float64, l::Float64, type::Symbol)
+    type in (:Ribe, :Linear) || throw(ArgumentError("type_bending must be :Ribe or :Linear, got :$type"))
 
     if l > Lb
         θ = θ_max
@@ -2070,85 +2178,61 @@ function compute_bending_angle(θ_max::Float64, Lb::Float64, l::Float64, type::S
     return θ
 end
 
-"""
-    find_slab_distance!(ls, d, X,Y,Z, trench::Trench)
+# Bounding box, in the plane perpendicular to the trench, of the slab between the polylines `Top` and `Bottom`
+function slab_bounding_box(Top, Bottom)
+    (ymin, ymax), (zmin, zmax) = extrema([Top[:, 1]; Bottom[:, 1]]), extrema([Top[:, 2]; Bottom[:, 2]])
+    return (; ymin, ymax, zmin, zmax)
+end
 
-Function that finds the perpendicular distance to the top and bottom of the slab `d`, and the current length of the slab `l`.
-
-"""
-function find_slab_distance!(ls, d, X, Y, Z, Top, Bottom, trench::Trench)
-    @unpack Thickness, Length, n_seg, Start, End, direction = trench
-
-    # Perform rotation of 3D coordinates along the angle from Start -> End:
-    Xrot = X .- Start[1]
-    Yrot = Y .- Start[2]
-
-    StrikeAngle = -atand(End[2] - Start[2], End[1] - Start[1])
-    Rot3D!(Xrot, Yrot, Z, StrikeAngle, 0.0)
-
-    xb = Rot3D(End[1] - Start[1], End[2] - Start[2], 0.0, cosd(StrikeAngle), sind(StrikeAngle), 1.0, 0.0)
-
-    # dl
-    dl = trench.Length / n_seg
-    l = 0  # length at the trench position
-    D = @SVector [Top[1, 2], Bottom[1, 2], Bottom[1, 2], Top[1, 2]]
-
-    # Every segment lies within the bounding box of the whole slab, so only points in it are searched
-    (ymin_slab, ymax_slab), (zmin_slab, zmax_slab) = extrema([Top[:, 1]; Bottom[:, 1]]), extrema([Top[:, 2]; Bottom[:, 2]])
-    ind_slab = findall(0.0 .<= Xrot .<= xb[1] .&& ymin_slab .<= Yrot .<= ymax_slab .&& zmin_slab .<= Z .<= zmax_slab)
-    Y_slab, Z_slab = Yrot[ind_slab], Z[ind_slab]
-
-    # Construct the slab
-    for i in 1:n_seg
-        ln = l + dl
-
-        pa = (Top[i, 1], Top[i, 2])        # D = 0 | L = l
-        pb = (Bottom[i, 1], Bottom[i, 2])  # D = -Thickness | L=l
-
-        pc = (Bottom[i + 1, 1], Bottom[i + 1, 2])  # D = -Thickness |L=L+dl
-        pd = (Top[i + 1, 1], Top[i + 1, 2]) # D = 0| L = L+dl
-
-        # Create the polygon
-        poly_y = @SVector [pa[1], pb[1], pc[1], pd[1]]
-        poly_z = @SVector [pa[2], pb[2], pc[2], pd[2]]
-
-        # find a sub set of particles
-        ymin, ymax = extrema(poly_y)
-        zmin, zmax = extrema(poly_z)
-
-        ind_s = ind_slab[ymin .<= Y_slab .<= ymax .&& zmin .<= Z_slab .<= zmax]
-
-        # Find the particles
-        yp = Yrot[ind_s]
-        zp = Z[ind_s]
-
-        # Initialize the ind that are going to be used by inpoly
-        ind = zeros(Bool, size(zp))
-        inpolygon!(ind, poly_y, poly_z, yp, zp)         # determine whether points are inside the polygon or not
-
-        # indexes of the segment
-        ind_seg = ind_s[ind]
-
-        # Loop over the chosen particles and interpolate the current value of L and D.
-        for ip in ind_seg
-            point_ = (Yrot[ip], Z[ip])
-            d[ip] = -distance_to_linesegment(point_, pa, pd)
-            ls[ip] = distance_to_linesegment(point_, pb, pa) + l
-        end
-
-        #Update l
-        l = ln
+# Corner points, polygon, bounding box and starting length `l` along the slab of every segment of the slab
+# between the polylines `Top` and `Bottom` (n_seg + 1 points each in the plane perpendicular to the trench)
+function slab_segments(Top, Bottom, n_seg, dl)
+    l = [zero(dl)]  # length at the trench position, then summed segment by segment
+    for i in 2:n_seg
+        push!(l, l[end] + dl)
     end
-    return
+    segments = map(i -> slab_segment(Top, Bottom, i, l[i]), 1:n_seg)
+    # the bounding boxes separately, as most points are tested only against them
+    return (; boxes = map(sg -> (sg.ymin, sg.ymax, sg.zmin, sg.zmax), segments), segments)
+end
+
+function slab_segment(Top, Bottom, i, l)
+    pa = (Top[i, 1], Top[i, 2])        # D = 0 | L = l
+    pb = (Bottom[i, 1], Bottom[i, 2])  # D = -Thickness | L=l
+    pc = (Bottom[i + 1, 1], Bottom[i + 1, 2])  # D = -Thickness |L=L+dl
+    pd = (Top[i + 1, 1], Top[i + 1, 2]) # D = 0| L = L+dl
+    poly_y = @SVector [pa[1], pb[1], pc[1], pd[1]]
+    poly_z = @SVector [pa[2], pb[2], pc[2], pd[2]]
+    (ymin, ymax), (zmin, zmax) = extrema(poly_y), extrema(poly_z)
+    return (; pa, pb, pd, poly_y, poly_z, ymin, ymax, zmin, zmax, l)
+end
+
+# Length `ls` along the slab (from the trench), distance `d` perpendicular to its surface (0 at the surface,
+# negative below it) and z coordinate `zs` of the nearest point of the surface, of a point with coordinates
+# (xr, yr, zr) in the frame of the trench, for the slab `segments`; NaN for a point in no slab segment. Where
+# segments overlap, the last one applies.
+function slab_distances(xr, yr, zr, xb, segments, bbox)
+    (0.0 <= xr <= xb && bbox.ymin <= yr <= bbox.ymax && bbox.zmin <= zr <= bbox.zmax) || return NaN, NaN, NaN
+    for i in reverse(eachindex(segments.boxes))
+        ymin, ymax, zmin, zmax = segments.boxes[i]
+        (ymin <= yr <= ymax && zmin <= zr <= zmax) || continue
+        sg = segments.segments[i]
+        if inpoly_either(sg.poly_y, sg.poly_z, yr, zr)
+            (y1, z1), (y2, z2) = sg.pa, sg.pd
+            t = clamp(((yr - y1) * (y2 - y1) + (zr - z1) * (z2 - z1)) / ((y2 - y1)^2 + (z2 - z1)^2), 0, 1)
+            return distance_to_linesegment((yr, zr), sg.pb, sg.pa) + sg.l, -distance_to_linesegment((yr, zr), sg.pa, sg.pd), z1 + t * (z2 - z1)
+        end
+    end
+    return NaN, NaN, NaN
 end
 
 
 """
-    distance_to_linesegment(p::NTuple{2,_T}, v::NTuple{2,_T}, w::NTuple{2,_T})
+    distance_to_linesegment(p, v, w)
 
 Computes the distance normal distance from a point `p` to a line segment defined by the points `v` and `w`.
 """
-function distance_to_linesegment(p::NTuple{2, _T}, v::NTuple{2, _T}, w::NTuple{2, _T}) where {_T <: Number}
+function distance_to_linesegment(p, v, w)
     dx = w[1] - v[1]
     dy = w[2] - v[2]
     l2 = dx * dx + dy * dy  # i.e. |w-v|^2 -  avoid a sqrt
@@ -2188,7 +2272,7 @@ Parameters
 - `Temp`    - Temperature array (consistent with Grid)
 - `Grid`    - grid structure (can be any of the grid types in `GMG`)
 - `trench`  - Trench structure
-- `phase`   - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`
+- `phase`   - specifies the phase of the box. See `ConstantPhase()`,`LithosphericPhases()`; `nothing` keeps the phases
 - `T`       - specifies the temperature of the box. See `ConstantTemp()`,`LinearTemp()`,`HalfspaceCoolingTemp()`,`SpreadingRateTemp()`,`LithosphericTemp()`
 - `cell`    - if true, `Phase` and `Temp` are defined on cells
 
@@ -2213,7 +2297,7 @@ julia> add_slab!(Phase, Temp, Cart, trench, phase = phase, T = TsHC)
 """
 function add_slab!(
         Phase, Temp, Grid::AbstractGeneralGrid, trench::Trench;     # required input
-        phase::AbstractPhaseNumber = ConstantPhase(1),                          # Sets the phase number(s) in the slab
+        phase::Union{AbstractPhaseNumber, Nothing} = ConstantPhase(1),                          # Sets the phase number(s) in the slab
         T::Union{AbstractThermalStructure, Nothing} = nothing, cell = false
     )     # Sets the thermal structure (various functions are available),
 
@@ -2221,55 +2305,338 @@ function add_slab!(
     X, Y, Z = coordinate_grids(Grid, cell = cell)
 
     # Compute top and bottom of the slab
-    Top, Bottom, WeakZone = compute_slab_surface(trench)
+    Top, Bottom, WeakZone, ThermalBottom = slab_surfaces(trench)
+    @unpack Start, End, n_seg = trench
 
-    # Find the distance to the slab (along & perpendicular)
-    d = fill(NaN, size(Grid))        # -> d = distance perpendicular to the slab
-    ls = fill(NaN, size(Grid))       # -> l = length from the trench along the slab
-    find_slab_distance!(ls, d, X, Y, Z, Top, Bottom, trench)
+    # Coordinates in the frame of the trench: rotated along the angle from Start -> End for a straight trench,
+    # or the distance along a curved trench and from it
+    StrikeAngle = -atand(End[2] - Start[2], End[1] - Start[1])
+    sinStrike, cosStrike = sincosd(StrikeAngle)
+    trace = isnothing(trench.Trace) ? nothing : trace_segments(trench.Trace)
+    xb = isnothing(trace) ? Rot3D(End[1] - Start[1], End[2] - Start[2], 0.0, cosd(StrikeAngle), sind(StrikeAngle), 1.0, 0.0)[1] : trace_length(trace)
+    tear = resolve_tear(trench.Tear, something(trace, trace_segments((Start, End))))
+    (ymin, ymax) = isnothing(trace) ? extrema((Start[2], End[2])) : extrema(last, trench.Trace)
+    dl = slab_length(trench) / n_seg
+    bbox, segments = slab_bounding_box(Top, Bottom), slab_segments(Top, Bottom, n_seg, dl)
 
-    # Function to fill up the temperature and the phase.
-    ind = findall((-trench.Thickness .<= d .<= 0.0))
+    if T isa LinearWeightedTemperature && T.dir === :X
+        l_decouplingind = findall(Top[:, 2] .<= -trench.d_decoupling)
+        isempty(l_decouplingind) && throw(ArgumentError("the slab does not reach d_decoupling"))
+        # length along the slab at the decoupling depth, the x coordinate of its thermal structure
+        l_decoupling = (l_decouplingind[1] - 1) * dl
+        l_decoupling > 0 || throw(ArgumentError("d_decoupling must be greater than zero"))
+        T = LinearWeightedTemperature(T.w_min, T.w_max, l_decoupling, T.dir, T.F1, T.F2)
+    end
 
-    if !isempty(ind)
-        if isa(T, LinearWeightedTemperature)
-            l_decouplingind = findall(Top[:, 2] .<= -trench.d_decoupling)
-            if !isempty(l_decouplingind)
-                l_decoupling = Top[l_decouplingind[1], 1]
-                T.crit_dist = abs(l_decoupling)
-            end
-        end
+    # The slab is evaluated in the coordinates (ls, y, d): ls is the length along the slab and d the distance
+    # perpendicular to it, with the slab surface at d = 0 and its base at d = -Thickness
+    tbox = isnothing(trace) ? nothing : (; xmin = minimum(first, trench.Trace), xmax = maximum(first, trench.Trace), ymin, ymax)
+    common = (; Start, cosStrike, sinStrike, trace, tbox, xb, tear)
+    frame = (; xmin = 0.0, xmax = slab_length(trench), ymin, ymax, zbot = -trench.Thickness, ztop = 0.0)
+    if isnothing(trench.ThermalThickness)
+        p = (; common..., segments, bbox, Thickness = trench.Thickness)
+        set_shape!(Phase, Temp, X, Y, Z, slab_coordinates, p, frame, phase, T)
+    else
+        # temperature within ThermalThickness, keeping the phases there, then the phases within Thickness
+        needs_points(T) && throw(ArgumentError("ThermalThickness cannot be combined with $(nameof(typeof(T))), which needs the phases of the slab before they are set"))
+        Tth = trench.ThermalThickness
+        pT = (; common..., segments = slab_segments(Top, ThermalBottom, n_seg, dl), bbox = slab_bounding_box(Top, ThermalBottom), Thickness = Tth)
+        set_shape!(Phase, Temp, X, Y, Z, slab_coordinates, pT, (; frame..., zbot = -Tth), nothing, T)
+        p = (; common..., segments, bbox, Thickness = trench.Thickness)
+        set_shape!(Phase, Temp, X, Y, Z, slab_coordinates, p, frame, phase, nothing)
+    end
 
-        # Compute thermal structure accordingly. See routines below for different options {Future: introducing the length along the trench for having lateral varying properties along the trench}
-        # d is the distance perpendicular to the slab: its surface is at d = 0 and its base at d = -Thickness
-        set_temp_phase!(Phase, Temp, flatten_index_dimensions(Phase, ind), ls[ind], Y[ind], d[ind], phase, T; ztop = 0.0, zbot = -trench.Thickness)
-
-        # Add a weak zone on top of the slab (indicated by a phase number but not by temperature)
-        if trench.WeakzoneThickness > 0.0
-            d_weakzone = fill(NaN, size(Grid))        # -> d = distance perpendicular to the slab
-            ls_weakzone = fill(NaN, size(Grid))       # -> l = length from the trench along the slab
-            find_slab_distance!(ls_weakzone, d_weakzone, X, Y, Z, WeakZone, Top, trench)
-
-            ind = findall((-trench.WeakzoneThickness .<= d_weakzone .<= 0.0) .& (Z .> -trench.d_decoupling))
-            Phase[flatten_index_dimensions(Phase, ind)] .= trench.WeakzonePhase
-        end
+    # Add a weak zone on top of the slab (indicated by a phase number but not by temperature)
+    if trench.WeakzoneThickness > 0.0
+        bbox_weakzone, segments_weakzone = slab_bounding_box(WeakZone, Top), slab_segments(WeakZone, Top, n_seg, dl)
+        pw = (;
+            common..., segments = segments_weakzone, bbox = bbox_weakzone,
+            WeakzoneThickness = trench.WeakzoneThickness, WeakzonePhase = trench.WeakzonePhase, d_decoupling = trench.d_decoupling,
+        )
+        P = vec(Phase)   # one wrapper on both sides, so that the broadcast needs no copy
+        P .= weakzone_phase.(Ref(pw), P, vec(X), vec(Y), vec(Z))
     end
 
     return nothing
 end
 
+# Coordinates in the frame of the trench: along the trench, perpendicular to it (positive to its left), and z
+rotated(p, x, y, z) = trench_frame(p, p.trace, x, y, z)
+trench_frame(p, ::Nothing, x, y, z) = Rot3D(x - p.Start[1], y - p.Start[2], z, p.cosStrike, p.sinStrike, 1.0, -0.0)
+# For a curved trench, the along-trench coordinate is the distance along the trace, and the trench ends where
+# the offset is NaN. Points outside the extent `tbox` of the trace widened by the horizontal reach of the slab,
+# or outside its depth range, are farther from the trace than the slab reaches and get the offset NaN without
+# evaluating it.
+function trench_frame(p, trace, x, y, z)
+    b, t = p.bbox, p.tbox
+    r = max(abs(b.ymin), abs(b.ymax))
+    near = b.zmin <= z <= b.zmax && t.xmin - r <= x <= t.xmax + r && t.ymin - r <= y <= t.ymax + r
+    h, s = near ? trace_projection(trace, x, y) : (NaN, 0.0)
+    return (s, -h, z)
+end
+
+# A tear thins the slab by the factor φ; the distance below the surface is stretched by 1 / φ
+function slab_coordinates(p, x, y, z)
+    xr, yr, zr = rotated(p, x, y, z)
+    ls, d, zs = slab_distances(xr, yr, zr, p.xb, p.segments, p.bbox)
+    φ = tear_factor(p.tear, xr, -zs)
+    return φ > 0 && -p.Thickness * φ <= d <= 0.0 ? (ls, y, d / φ, φ) : nothing
+end
+
+# A tear thins the weak zone towards its base, the slab surface (φ from the depth of the top of the weak zone)
+function weakzone_phase(p, ph, x, y, z)
+    xr, yr, zr = rotated(p, x, y, z)
+    _, d, zs = slab_distances(xr, yr, zr, p.xb, p.segments, p.bbox)
+    φ = tear_factor(p.tear, xr, -zs)
+    return φ > 0 && -p.WeakzoneThickness <= d <= p.WeakzoneThickness * (φ - 1) && zr > -p.d_decoupling ? p.WeakzonePhase : ph
+end
+
+"""
+    Tear(; Depth, Width, Start, Tip)
+
+Tear of a slab towards a slab break-off, for the `Tear` of a `BezierSlab` or a `Trench`. The slab necks around
+the depth `Depth` [km, positive downwards]: the neck starts at `Start` along the trench, where the slab has its full
+thickness, and deepens towards `Tip`, where the slab is torn through at `Depth`; beyond `Tip` the torn gap widens,
+with a detached slab below it. `Width` [km] is the vertical width of the neck. The tear runs in either direction
+along the trench.
+
+`Start` and `Tip` are each a distance [km] along the trench (see `BezierSlab` and `Trench`), or a map point `(x, y)`
+whose nearest point on the trench in map view sets that distance; a map point beyond the ends of the trench is an
+error.
+
+At a point of the slab surface at distance `a` along the trench and depth `z`, the slab thickness is multiplied by
+```
+φ = clamp(1 - A exp(-((z - Depth) / Width)²), 0, 1),   A = max(0, (a - Start) / (Tip - Start))
+```
+The thickness is thus continuous and full before `Start`; beyond `Tip` (A > 1) the slab is torn over the depth
+interval `|z - Depth| ≤ Width √(log A)`. Thermal and phase structures see the distance below the surface stretched
+by `1 / φ`, so that crust and thermal boundary layer thin with the slab. The temperature is then blended with the
+temperature `T₀` before the slab is added, `T₀ + φ (T_slab - T₀)`, so that the neck warms as it thins, and the
+torn gap keeps `T₀`.
+
+Example
+========
+```julia-repl
+julia> tear = Tear(; Depth = 180, Width = 50, Start = 550, Tip = 770);
+julia> add_slab!(Phases, Temp, Grid, BezierSlab(; Points, Thickness = 80, Tear = tear); phase = ConstantPhase(1))
+```
+"""
+struct Tear{S, P}
+    Depth::Float64
+    Width::Float64
+    Start::S
+    Tip::P
+    function Tear{S, P}(Depth, Width, Start, Tip) where {S, P}
+        Depth > 0 || throw(ArgumentError("the Depth of a Tear must be positive (downwards), got $Depth"))
+        Width > 0 || throw(ArgumentError("the Width of a Tear must be positive, got $Width"))
+        Start != Tip || throw(ArgumentError("Start and Tip of a Tear must differ, got $Start for both"))
+        return new(Depth, Width, Start, Tip)
+    end
+end
+Tear(; Depth, Width, Start, Tip) = Tear{typeof(Start), typeof(Tip)}(Depth, Width, Start, Tip)
+
+# Tear with Start and Tip as distances `a0`, `a1` along the polyline `segments` of the trench
+resolve_tear(::Nothing, segments) = nothing
+function resolve_tear(t::Tear, segments)
+    a0, a1 = trench_distance(t.Start, segments), trench_distance(t.Tip, segments)
+    a0 != a1 || throw(ArgumentError("Start and Tip of a Tear must lie at different distances along the trench, both are at $a0 km"))
+    return (; t.Depth, t.Width, a0, a1)
+end
+
+trench_distance(a::Number, segments) = float(a)
+function trench_distance(pt, segments)
+    length(pt) == 2 || throw(ArgumentError("a map point of a Tear must be (x, y), got $pt"))
+    h, s = trace_projection(segments, pt[1], pt[2])
+    isnan(h) && throw(ArgumentError("the map point $pt of a Tear lies beyond the ends of the trench"))
+    return s
+end
+
+# Factor of the slab thickness at distance `a` along the trench and depth `zd` of the slab surface
+tear_factor(::Nothing, a, zd) = 1
+tear_factor(t, a, zd) = clamp(1 - max(0, (a - t.a0) / (t.a1 - t.a0)) * exp(-((zd - t.Depth) / t.Width)^2), 0, 1)
+
+"""
+    BezierSlab(; Points, Thickness = 100.0, Tear = nothing)
+
+Slab whose top is a tensor-product Bézier surface, for `add_slab!`. `Points[i, j] = (x, y, z)` are the control
+points: `i` runs along the trench and `j` down the dip, such that the slab dips to the right of the trench seen in
+the direction of increasing `i`. The sections `Points[i, :]` may differ along the trench, and a slab whose
+sections start horizontally joins smoothly to a plate added with `add_plate!` along `bezier_curve(Points[:, 1])`.
+
+The slab extends `Thickness` below the surface, measured perpendicular to it, so the surface must bend with radii
+larger than `Thickness`. `Thickness` is a number or a function `(x, y, z) -> thickness` of the point of the surface,
+e.g. to thin the slab towards a slab break-off, where the thickness reaches 0. Where a function thins the slab, it
+is compressed: thermal and phase structures see the distance below the surface stretched to the largest thickness,
+so that crust and thermal boundary layer thin with the slab and the temperature stays continuous.
+
+`Tear` is `nothing` or a `Tear`, which thins the slab towards a slab break-off; it multiplies `Thickness`, also if
+that is a function. The distances `Start` and `Tip` of the tear are measured in map view along the edge
+`bezier_curve(Points[:, 1])` of the surface, the trench, from its first point; a point of the surface is as far
+along the trench as the point of the edge with the same parameter along the trench.
+
+Thermal and phase structures see the slab in its own coordinates: `x` is an estimate of the distance along the dip
+(from the mean length of the control polygons in `j`), which `McKenzie_subducting_slab` uses; `y` is the depth of
+the surface above the point; and `z` is the distance below the surface. A `LinearWeightedTemperature` with
+`dir = :Y` thus blends two thermal structures with the depth of the slab surface, e.g. from half-space cooling at
+the trench to `McKenzie_subducting_slab` at the base of the overriding plate.
+
+Example
+========
+A trench that bends in map view, with sections that steepen along it:
+```julia-repl
+julia> trench = [(300.0, 0.0), (300.0, 400.0), (600.0, 600.0), (600.0, 1000.0)];   # control points along the trench
+julia> section(dip) = [(0.0, 0.0), (120.0, 0.0), (220.0, -60.0), (220 + 250cosd(dip), -60 - 250sind(dip))];   # (distance, depth)
+julia> dips = (30, 40, 50, 60);
+julia> Points = [(trench[i][1] + section(dips[i])[j][1], trench[i][2], section(dips[i])[j][2]) for i in 1:4, j in 1:4];
+julia> Grid = CartData(xyz_grid(0:20:1000, 0:20:1000, -400:20:0));
+julia> Phases = zeros(Int32, size(Grid));
+julia> Temp = zeros(Float64, size(Grid));
+julia> add_slab!(Phases, Temp, Grid, BezierSlab(; Points, Thickness = 80.0); phase = ConstantPhase(1))
+```
+"""
+@with_kw_noshow struct BezierSlab{P, T, TE} <: AbstractTrenchSlab
+    Points::P
+    Thickness::T = 100.0
+    Tear::TE = nothing
+end
+
+"""
+    add_slab!(Phase, Temp, Grid::AbstractGeneralGrid, slab::BezierSlab; phase = ConstantPhase(1), T = nothing, cell = false)
+
+Adds a slab whose top is a Bézier surface, see `BezierSlab`.
+"""
+function add_slab!(
+        Phase, Temp, Grid::AbstractGeneralGrid, slab::BezierSlab;
+        phase::Union{AbstractPhaseNumber, Nothing} = ConstantPhase(1), T::Union{AbstractThermalStructure, Nothing} = nothing, cell = false
+    )
+    Base.require_one_based_indexing(slab.Points)
+    all(>=(2), size(slab.Points)) || throw(ArgumentError("a Bézier slab needs at least 2 × 2 control points, got $(size(slab.Points))"))
+    # static control points, so that the sums over them unroll
+    P = SMatrix{size(slab.Points)...}(map(q -> SVector{3, Float64}(q[1], q[2], q[3]), slab.Points))
+    # orientation from the area-weighted mean normal, as parts of the surface may be vertical
+    normals = [(S = bezier_surface(P, u, v); cross(S[3], S[2])) for u in 0:0.125:1, v in 0:0.125:1]
+    nz = sum(n -> n[3], normals)
+    abs(nz) > sqrt(eps()) * sum(norm, normals) ||
+        throw(ArgumentError("the surface of these control points is vertical, so it does not define on which side the slab lies"))
+    nz > 0 ||
+        throw(ArgumentError("the slab of these control points lies above their surface; reverse the order of the control points along the trench (the first index)"))
+    X, Y, Z = coordinate_grids(Grid, cell = cell)
+
+    # samples of the surface on a regular (u, v) grid, with the tangents J = [Su Sv], the second derivatives (central
+    # differences of the tangents) and the unit normal, from which Newton steps approach the closest point
+    function sampling(ku, kv)
+        return map(vec([SVector(a / ku, b / kv) for a in 0:ku, b in 0:kv])) do uv
+            S, Su, Sv = bezier_surface(P, uv...)
+            δ = 1.0e-5
+            tangents(du, dv) = Base.tail(bezier_surface(P, uv[1] + du, uv[2] + dv))
+            (Su⁺, Sv⁺), (Su⁻, Sv⁻), (_, Sv⁺⁺), (_, Sv⁻⁻) = tangents(δ, 0), tangents(-δ, 0), tangents(0, δ), tangents(0, -δ)
+            n = normalize(cross(Sv, Su))
+            all(isfinite, n) || throw(ArgumentError("the Bézier surface is degenerate: its normal vanishes at some points; check the control points"))
+            return (; uv, S, J = hcat(Su, Sv), Suu = (Su⁺ - Su⁻) / 2δ, Suv = (Sv⁺ - Sv⁻) / 2δ, Svv = (Sv⁺⁺ - Sv⁻⁻) / 2δ, n)
+        end
+    end
+    # coarse samples to start from, fine samples at most about 5 km apart (at least 17 per direction)
+    coarse = sampling(16, 16)
+    hu, hv = maximum(s -> norm(s.J[:, 1]), coarse), maximum(s -> norm(s.J[:, 2]), coarse)
+    ku, kv = max(16, ceil(Int, hu / 5)), max(16, ceil(Int, hv / 5))
+    # largest thickness, sampled for a function
+    Tmax = maximum(s -> slab_thickness(slab.Thickness, s.S), coarse)
+
+    # a Bézier surface lies within the convex hull of its control points
+    lo, hi = reduce((a, b) -> min.(a, b), P) .- Tmax, reduce((a, b) -> max.(a, b), P) .+ Tmax
+    len = mean(sum(norm, diff(P[i, :])) for i in axes(P, 1))
+    # the trench in map view, sampled evenly in the parameter u along it
+    edge = isnothing(slab.Tear) ? nothing : trace_segments([(S[1], S[2]) for S in (bezier_surface(P, u, 0.0)[1] for u in range(0, 1, 1001))])
+    tear = resolve_tear(slab.Tear, edge)
+    p = (;
+        P, lo, hi, slab.Thickness, Tmax, len, coarse, coarse_tree = KDTree(map(s -> s.S, coarse)), cell = hypot(hu, hv) / 16,
+        fine = sampling(ku, kv), ku, kv, edge, tear,
+    )
+    frame = (; xmin = 0.0, xmax = len, ymin = 0.0, ymax = -lo[3], zbot = -Tmax, ztop = 0.0)
+    set_shape!(Phase, Temp, X, Y, Z, bezier_slab_coordinates, p, frame, phase, T)
+    return nothing
+end
+
+# Bernstein polynomials of degree M - 1 at u and their derivatives, dB_i^m = m (B_{i-1}^{m-1} - B_i^{m-1})
+function bernstein_basis(::Val{M}, u) where {M}
+    powers(x) = (one(x), accumulate(*, ntuple(_ -> x, Val(M - 1)))...)
+    up, vp, m = powers(u), powers(1 - u), M - 1
+    B(k, i) = 0 <= i <= k ? binomial(k, i) * up[i + 1] * vp[k - i + 1] : zero(u)
+    return ntuple(i -> (B(m, i - 1), m * (B(m - 1, i - 2) - B(m - 1, i - 1))), Val(M))
+end
+
+# Point S of the Bézier surface with control points P at (u, v), and its derivatives Su, Sv
+function bezier_surface(P::SMatrix{M, N}, u, v) where {M, N}
+    Bu, Bv = bernstein_basis(Val(M), u), bernstein_basis(Val(N), v)
+    S = Su = Sv = zero(eltype(P))
+    for i in 1:M, j in 1:N
+        (bu, dbu), (bv, dbv) = Bu[i], Bv[j]
+        S, Su, Sv = S + bu * bv * P[i, j], Su + dbu * bv * P[i, j], Sv + bu * dbv * P[i, j]
+    end
+    return S, Su, Sv
+end
+
+# Normal of the surface, upwards for a slab that dips to the right of increasing u
+
+# Parameters (u, v) after a Newton step towards the point of the surface closest to `pt`, from the sample `s`
+function newton_step(s, pt)
+    r = pt - s.S
+    H = s.J' * s.J - SMatrix{2, 2}(dot(r, s.Suu), dot(r, s.Suv), dot(r, s.Suv), dot(r, s.Svv))
+    return s.uv + H \ (s.J' * r)
+end
+
+# Points farther than a coarse sample cell beyond the slab on either side of the surface, or whose closest point of
+# the surface lies beyond its edges, are beyond the slab
+function bezier_slab_coordinates(p, x, y, z)
+    p.lo[1] <= x <= p.hi[1] && p.lo[2] <= y <= p.hi[2] && p.lo[3] <= z <= p.hi[3] || return nothing
+    pt = SVector(x, y, z)
+    i, dist = nn(p.coarse_tree, pt)
+    s = p.coarse[i]
+    dist <= p.Tmax + p.cell && -p.Tmax - p.cell <= dot(pt - s.S, s.n) <= p.cell || return nothing
+    # a Newton step from the nearest coarse sample, then two from the nearest fine sample
+    u, v = newton_step(s, pt)
+    for _ in 1:2
+        isfinite(u) && isfinite(v) || return nothing
+        a, b = round(Int, clamp(u, 0, 1) * p.ku), round(Int, clamp(v, 0, 1) * p.kv)
+        u, v = newton_step(p.fine[begin + a + (p.ku + 1) * b], pt)
+    end
+    # with a tolerance for rounding, as points on an edge get parameters just beyond it
+    all(t -> -1.0e-6 <= t <= 1 + 1.0e-6, (u, v)) || return nothing
+    S, Su, Sv = bezier_surface(p.P, u, v)
+    n = cross(Sv, Su)
+    d = dot(pt - S, n) / norm(n)
+    φ = isnothing(p.tear) ? 1 : tear_factor(p.tear, edge_distance(p.edge, u), -S[3])
+    T = slab_thickness(p.Thickness, S) * φ
+    T > 0 && -T <= d <= 0 || return nothing
+    return (v * p.len, -S[3], d * (p.Tmax / T), φ)
+end
+
+# Distance along the polyline `segments` of samples evenly spaced in the parameter u ∈ [0, 1]
+function edge_distance(segments, u)
+    k = u * length(segments)
+    i = clamp(floor(Int, k), 0, length(segments) - 1)
+    sg = segments[begin + i]
+    return sg.s0 + (k - i) * sg.length
+end
+
+slab_thickness(T::Number, S) = T
+slab_thickness(T, S) = T(S[1], S[2], S[3])
+
 """
     add_fault!(Phase, Temp, Grid::AbstractGeneralGrid;
         Start=(20,100), End=(10,80),
+        Trace=nothing,
         Fault_thickness=10.0,
         Depth_extent=nothing,
         DipAngle=0e0,
+        DetachmentDepth=nothing,
         phase=ConstantPhase(1),
         T=nothing,
         cell=false)
 
 Adds a fault to the given 3D grid by modifying the `Phase` and `Temp` arrays.
 For a 2D grid, use `add_box` instead.
+Depths in `phase` and `T` are measured below the top of the fault's `Depth_extent`.
 
 # Arguments
 - `Phase`: Phase array
@@ -2277,10 +2644,17 @@ For a 2D grid, use `add_box` instead.
 - `Grid`: The grid on which the fault is to be added.
 - `Start`: Tuple representing the starting coordinates of the fault (X, Y).
 - `End`: Tuple representing the ending coordinates of the fault (X, Y).
+- `Trace`: If not `nothing`, the surface trace of the fault as a polyline of two or more points `(X, Y)`,
+  which replaces `Start` and `End`. The fault follows the curved trace, and its dip is perpendicular to it.
 - `Fault_thickness`: Thickness of the fault.
 - `Depth_extent`: Depth extent of the fault. If `nothing`, the fault extends through the entire domain.
-- `DipAngle`: Dip angle of the fault.
-- `phase`: Phase to be assigned to the fault.
+- `DipAngle`: Dip angle of the fault, measured from the vertical. A positive angle dips to the right of the
+  direction from `Start` to `End` (or along `Trace`).
+- `DetachmentDepth`: If `nothing`, the fault is planar. Otherwise, the fault is listric: it starts with
+  `DipAngle` at `z = 0` and flattens with depth into a horizontal detachment at `z = -DetachmentDepth`,
+  following `z = -DetachmentDepth * (1 - exp(-h / (DetachmentDepth * tand(DipAngle))))` at a horizontal
+  distance `h` from the trace. The thickness is accurate where the curvature radius exceeds `Fault_thickness`.
+- `phase`: Phase to be assigned to the fault; `nothing` keeps the phases
 - `T`: Temperature to be assigned to the fault. If `nothing`, the temperature is not modified.
 
 
@@ -2294,6 +2668,27 @@ add_fault!(Phase, Temp, Grid;
         phase=ConstantPhase(1)
         )
 ```
+
+Listric normal fault that flattens into a detachment at 15 km depth:
+```julia
+add_fault!(Phase, Temp, Grid;
+        Start=(50,0), End=(50,100),
+        Fault_thickness=2.0,
+        DipAngle=30.0,
+        DetachmentDepth=15.0,
+        phase=ConstantPhase(1)
+        )
+```
+
+Fault with a curved surface trace, dipping towards the center of the arc:
+```julia
+add_fault!(Phase, Temp, Grid;
+        Trace=[(50 + 40cosd(a), 50 + 40sind(a)) for a in 0:10:180],
+        Fault_thickness=2.0,
+        DipAngle=-30.0,
+        phase=ConstantPhase(1)
+        )
+```
 """
 function add_fault!(
         Phase,
@@ -2301,54 +2696,135 @@ function add_fault!(
         Grid::AbstractGeneralGrid;
         Start = (20, 100),
         End = (10, 80),
+        Trace = nothing,
         Fault_thickness = 10.0,
         Depth_extent = nothing,
         DipAngle = 0.0e0,
+        DetachmentDepth = nothing,
         phase = ConstantPhase(1),
         T = nothing,
         cell = false
     )
+    if !isnothing(DetachmentDepth)
+        DetachmentDepth > 0 || throw(ArgumentError("DetachmentDepth must be positive, got $DetachmentDepth"))
+        DipAngle != 0 || throw(ArgumentError("a listric fault needs a nonzero DipAngle"))
+    end
 
     # Extract the coordinates
     X, Y, Z = coordinate_grids(Grid, cell = cell)
 
-    # Calculate the direction vector from Start to End
-    direction = (End[1] - Start[1], End[2] - Start[2])
-    length = sqrt(direction[1]^2 + direction[2]^2)
-    unit_direction = (direction[1], direction[2]) ./ length
-
-    # Calculate the fault region based on fault thickness and length
+    trace = isnothing(Trace) ? (Start, End) : Trace
+    # a tuple for a straight fault, whose single segment has a direct `trace_offset`
+    segments = isnothing(Trace) ? Tuple(trace_segments(trace)) : trace_segments(trace)
     fault_half_thickness = Fault_thickness / 2
 
-    # The fault plane contains the strike line through Start and dips about it, towards the
-    # horizontal normal (unit_direction[2], -unit_direction[1]) for positive DipAngle.
+    # The fault dips about its trace, towards the right of the trace for positive DipAngle
     sinDip, cosDip = sincosd(DipAngle)
-    function in_fault(x, y, z)
-        dx = x - Start[1]
-        dy = y - Start[2]
-        projection_length = dx * unit_direction[1] + dy * unit_direction[2]
-        horizontal_offset = dx * unit_direction[2] - dy * unit_direction[1]
-        # distance to the dipping plane (Z = 0 at the surface)
-        perpendicular_distance = abs(horizontal_offset * cosDip + z * sinDip)
-        return 0 ≤ projection_length ≤ length && perpendicular_distance ≤ fault_half_thickness
-    end
-
-    # A broadcast, not a loop: X, Y, Z are not inferable, so a loop here would dispatch per point
-    ind = findall(in_fault.(X, Y, Z))
-
-    # Apply depth extent if provided
-    if !isnothing(Depth_extent)
-        ind = ind[Z[ind] .≥ Depth_extent[1] .&& Z[ind] .≤ Depth_extent[2]]
-    end
-
-    ind_flat = flatten_index_dimensions(Phase, ind)
-
-    if !isempty(ind_flat)
-        # Compute thermal structure accordingly
-        # see #135
-        ztop, zbot = isnothing(Depth_extent) ? (nothing, nothing) : (maximum(Depth_extent), minimum(Depth_extent))
-        set_temp_phase!(Phase, Temp, ind_flat, X[ind], Y[ind], Z[ind], phase, T; ztop, zbot)
-    end
+    isnothing(Depth_extent) || (Depth_extent = extrema(Depth_extent))
+    # without a depth extent, the fault spans the whole grid vertically; see #135
+    zbot, ztop = isnothing(Depth_extent) ? finite_extrema(Z) : extrema(Depth_extent)
+    p = (; segments, fault_half_thickness, cosDip, sinDip, Depth_extent, DetachmentDepth, ztop)
+    (xmin, xmax), (ymin, ymax) = extrema(first, trace), extrema(last, trace)
+    frame = (; xmin, xmax, ymin, ymax, zbot = zbot - ztop, ztop = 0.0)
+    set_shape!(Phase, Temp, X, Y, Z, fault_coordinates, p, frame, phase, T)
 
     return nothing
 end
+
+"""
+    bezier_curve(points, n = 100)
+
+Returns `n` points along the Bézier curve with control points `points`, such as `[(x1, y1), (x2, y2), ...]`. The
+curve starts at the first and ends at the last control point; its degree is one less than the number of control
+points. The result can be used wherever a polyline is expected, e.g. as `Trace` of a `Trench` or of `add_fault!`,
+or as polygon of `add_plate!`. Curves joined end to end form a path; drop the first point of every following curve,
+as consecutive points of a trace must differ.
+
+Example
+========
+```julia-repl
+julia> trace = bezier_curve([(400.0, 0.0), (400.0, 500.0), (700.0, 500.0), (700.0, 1000.0)], 50);
+julia> trench = Trench(Trace = trace, Thickness = 80.0, θ_max = 45.0, Length = 400, Lb = 200);
+```
+"""
+function bezier_curve(points, n::Integer = 100)
+    N = length(points) - 1
+    N >= 1 || throw(ArgumentError("a Bézier curve needs at least two control points, got $(N + 1)"))
+    n >= 2 || throw(ArgumentError("a Bézier curve needs at least two output points, got $n"))
+    return map(range(0, 1, n)) do t
+        mapreduce(k -> binomial(N, k) * (1 - t)^(N - k) * t^k .* points[begin + k], (a, b) -> a .+ b, 0:N)
+    end
+end
+
+# Segments of the polyline `trace` of (x, y) points in map view: start point, unit direction, length and
+# distance `s0` along the trace to the start point
+function trace_segments(trace)
+    length(trace) >= 2 || throw(ArgumentError("a trace needs at least two points, got $(length(trace))"))
+    length(trace) > 2 && first(trace) == last(trace) && throw(ArgumentError("a trace must not be closed, but its first and last points are both $(first(trace))"))
+    segments = map(zip(trace[begin:(end - 1)], trace[(begin + 1):end])) do (a, b)
+        direction = (b[1] - a[1], b[2] - a[2])
+        len = sqrt(direction[1]^2 + direction[2]^2)
+        len > 0 || throw(ArgumentError("consecutive points of a trace must differ, got $a twice"))
+        (; x1 = a[1], y1 = a[2], u = direction ./ len, length = len)
+    end
+    # the side of a point is ambiguous beyond a turn sharper than 90°
+    for (a, b) in zip(segments[begin:(end - 1)], segments[(begin + 1):end])
+        a.u[1] * b.u[1] + a.u[2] * b.u[2] >= 0 ||
+            throw(ArgumentError("a trace must not turn by more than 90° between consecutive segments, as it does at $((b.x1, b.y1))"))
+    end
+    s0 = cumsum([zero(first(segments).length); [sg.length for sg in segments[begin:(end - 1)]]])
+    return map((sg, s) -> (; sg..., s0 = s), segments, s0)
+end
+
+trace_length(segments) = last(segments).s0 + last(segments).length
+
+# Signed horizontal distance from the trace, positive to its right; NaN where the nearest point of the
+# trace is one of its ends, so that shapes along the trace end there
+trace_offset(segments, x, y) = trace_projection(segments, x, y)[1]
+
+function trace_offset((sg,)::Tuple{Any}, x, y)
+    dx, dy = x - sg.x1, y - sg.y1
+    t = dx * sg.u[1] + dy * sg.u[2]
+    return 0 ≤ t ≤ sg.length ? dx * sg.u[2] - dy * sg.u[1] : oftype(t, NaN)
+end
+
+# Signed horizontal distance `h` from the trace (as `trace_offset`) and distance `s` along the trace to its
+# nearest point
+function trace_projection(segments, x, y)
+    sg = first(segments)
+    dmin = h = oftype((x - sg.x1) * sg.u[1], Inf)
+    s = zero(dmin)
+    for i in eachindex(segments)
+        sg = segments[i]
+        dx, dy = x - sg.x1, y - sg.y1
+        t = dx * sg.u[1] + dy * sg.u[2]
+        hs = dx * sg.u[2] - dy * sg.u[1]
+        d = 0 ≤ t ≤ sg.length ? abs(hs) : hypot(hs, t < 0 ? t : t - sg.length)
+        if d < dmin
+            beyond = (t < 0 && i == firstindex(segments)) || (t > sg.length && i == lastindex(segments))
+            dmin, h, s = d, beyond ? oftype(d, NaN) : copysign(d, hs), sg.s0 + clamp(t, 0, sg.length)
+        end
+    end
+    return h, s
+end
+
+in_fault(p, x, y, z) = fault_distance(p, p.DetachmentDepth, trace_offset(p.segments, x, y), z) ≤ p.fault_half_thickness
+
+# distance to the dipping plane (Z = 0 at the surface)
+fault_distance(p, ::Nothing, h, z) = abs(h * p.cosDip + z * p.sinDip)
+
+# Listric fault: vertical distance to the fault surface times the cosine of its local slope, which equals the
+# normal distance for a plane and approximates it where the curvature radius exceeds the distance. On the side
+# opposite the dip (h < 0) the distance is that to the plane of the surface dip, as the listric surface lies on
+# the dip side only.
+function fault_distance(p, D, h, z)
+    h *= sign(p.sinDip)            # positive in the dip direction
+    h < 0 && return abs(h * p.cosDip + z * abs(p.sinDip))
+    m = abs(p.cosDip / p.sinDip)   # slope at the surface
+    e = exp(-h * m / D)
+    return abs(z + D * (1 - e)) / sqrt(1 + (m * e)^2)
+end
+
+in_depth(p, z) = isnothing(p.Depth_extent) || p.Depth_extent[1] ≤ z ≤ p.Depth_extent[2]
+
+fault_coordinates(p, x, y, z) = in_fault(p, x, y, z) && in_depth(p, z) ? (x, y, z - p.ztop) : nothing

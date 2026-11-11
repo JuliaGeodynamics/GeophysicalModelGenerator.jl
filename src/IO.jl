@@ -26,7 +26,7 @@ end
     load_GMG(filename::String, dir=pwd(); maxattempts=5)
 
 Loads a `GeoData`/`CartData`/`UTMData` data set from jld2 file `filename`
-Note: the `filename` can also be a remote `url`, in which case we first download that file to a temporary directory before opening it.
+Note: the `filename` can also be a remote `url`, in which case the file is downloaded to a temporary file, loaded and the temporary file removed again.
 We make `maxattempts` attempts to download it before giving up.
 
 Example 1 - Load local file
@@ -58,24 +58,25 @@ GeoData
 
 """
 function load_GMG(filename::String, dir = pwd(); maxattempts = 5)
-
-    local_filename = "download_GMG_temp_$(getpid()).jld2"
-    if contains(filename, "http")
-        file_ext = download_data(filename, local_filename, dir = dir, maxattempts = maxattempts)
-    else
-        # local file
-        file_ext = joinpath(dir, filename * ".jld2")
+    if is_url(filename)
+        tmp = tempname() * ".jld2"
+        try
+            download_data(filename, tmp; maxattempts)
+            return load_object(tmp)
+        finally
+            rm(tmp; force = true)
+        end
     end
+    return load_object(joinpath(dir, filename * ".jld2"))
+end
 
-    # load data:
-    data = load_object(file_ext)
+is_url(name::AbstractString) = startswith(name, r"(https?|file)://")
 
-    # remove local temporary file
-    if contains(filename, "http")
-        rm(joinpath(dir, local_filename), force = true)
-    end
-
-    return data
+# Rejects empty files and the HTML error pages that servers deliver with status 200. Bytes outside
+# ASCII, which cannot start an HTML page, are replaced so that binary files can be compared as text.
+function is_data_file(file::AbstractString)
+    head = lowercase(String(map(b -> b < 0x80 ? b : UInt8('?'), open(io -> read(io, 15), file))))
+    return !isempty(head) && !startswith(head, "<!doctype html") && !startswith(head, "<html")
 end
 
 
@@ -83,6 +84,7 @@ end
     download_data(url::String, local_filename="temp.dat"; dir=pwd(), maxattempts=5 )
 
 Downloads a remote dataset with name `url` from a remote location and saves it to the current directory.
+The destination is replaced only by a download that is not empty and not an HTML page.
 If download fails, we make `maxattempts` attempts before giving up.
 
 Example
@@ -96,33 +98,21 @@ julia> download_data(url)
 """
 function download_data(url::String, local_filename = "temp.dat"; dir = pwd(), maxattempts = 5)
 
-    if !contains(url, "http")
-        @warn "the url does not contain http; please double check that it worked"
+    if !is_url(url)
+        @warn "the url does not start with http(s):// or file://"
     end
 
-    #download remote file to a local temporary directory
-    file_ext = []
+    dest = joinpath(dir, local_filename)
     for attempt in 1:maxattempts
         try
-            file_ext = Downloads.download(url, joinpath(dir, local_filename))
-            # A truncated transfer can still return a path, so only accept a
-            # download that actually produced a non-empty file.
-            if filesize(file_ext) == 0
-                error("downloaded file is empty")
-            end
-            break
+            return download_validated(url, dest; valid = is_data_file)
         catch e
             e isa InterruptException && rethrow()
-            file_ext = []
             @warn "Failed downloading $url on attempt $attempt/$maxattempts: $e"
             if attempt < maxattempts
                 sleep(5 * attempt)  # back off progressively
             end
         end
     end
-    if isempty(file_ext)
-        error("Could not download data from $url after $maxattempts attempts")
-    end
-
-    return file_ext
+    error("Could not download data from $url after $maxattempts attempts")
 end

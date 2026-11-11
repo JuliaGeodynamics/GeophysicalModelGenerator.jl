@@ -9,6 +9,8 @@ The routines provided here have the following functionality:
 - Save LaMEM marker files in serial or in parallel
 - Read a LaMEM timestep
 
+Marker files use 32-bit `PetscInt` by default (`is64bit=false`), as does the `LaMEM_jll` build that LaMEM.jl installs; this must match your LaMEM build. `create_partitioning_file` throws an error if LaMEM writes no partitioning file.
+
 ```@docs
 GeophysicalModelGenerator.read_LaMEM_inputfile
 GeophysicalModelGenerator.get_processor_partitioning
@@ -17,4 +19,5 @@ GeophysicalModelGenerator.save_LaMEM_markers_parallel
 GeophysicalModelGenerator.read_data_PVTR
 GeophysicalModelGenerator.LaMEM_grid
 GeophysicalModelGenerator.create_partitioning_file
+GeophysicalModelGenerator.get_LaMEM_grid_info
 ```

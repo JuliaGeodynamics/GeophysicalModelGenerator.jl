@@ -11,7 +11,7 @@ import Base: show, size
 export LaMEM_grid, read_LaMEM_inputfile
 export save_LaMEM_markers_parallel, save_LaMEM_topography
 export get_processor_partitioning, read_data_VTR, read_data_PVTR, create_partitioning_file
-export crop_bounds, get_proc_bound, get_proc_grid, get_particles_distribution, get_LaMEM_grid_info, check_markers_directory, setup_model_domain, LaMEMPartitioningInfo, write_processor_partitioning_LaMEM, insert_cpu_lines_after_nelz, update_nel_xyz_in_file
+export crop_bounds, get_proc_bound, get_proc_grid, get_particles_distribution, get_LaMEM_grid_info, setup_model_domain, LaMEMPartitioningInfo, write_processor_partitioning_LaMEM, insert_cpu_lines_after_nelz, update_nel_xyz_in_file
 
 """
 Structure that holds information about the LaMEM partitioning
@@ -35,7 +35,7 @@ struct LaMEMPartitioningInfo <: AbstractGeneralGrid
     ix::Vector{Int64}
     iy::Vector{Int64}
     iz::Vector{Int64}
-    
+
 
 end
 
@@ -148,7 +148,7 @@ julia> nmark_z = ParseValue_LaMEM_InputFile("SaltModels.dat","nmark_z",Int64, ar
 """
 function ParseValue_LaMEM_InputFile(file, keyword, type; args::Union{String, Nothing} = nothing)
     value = nothing
-    for line in eachline(file)
+    for line in readlines(file)   # not eachline: an early break would leave the file open
         line_strip = strip(split(line, '#')[1])   # drop comment and surrounding whitespace
         lhs_rhs = split(line_strip, '=', limit = 2)
         length(lhs_rhs) == 2 || continue
@@ -164,6 +164,7 @@ function ParseValue_LaMEM_InputFile(file, keyword, type; args::Union{String, Not
                     value = value[1]
                 end
             end
+            break   # LaMEM uses the first occurrence of a key
         end
     end
 
@@ -306,6 +307,10 @@ function Create1D_grid_vector(coord::Vector{Float64}, nel::Int64, nmark::Int64, 
     return xn, x
 end
 
+function Create1D_grid_vector(coord::Vector{Float64}, nel::Vector{Int64}, nmark::Int64, nseg::Nothing, bias)
+    error("`nseg_x/y/z` is required for segmented grids.")
+end
+
 """
 Returns 1D coordinate vectors of grid points and of marker locations for a regular spacing
 """
@@ -433,7 +438,7 @@ Writing LaMEM marker file -> ./markers/mdb.00000003.dat
 ```
 
 """
-function save_LaMEM_markers_parallel(Grid::CartData; PartitioningFile = empty, directory = "./markers", verbose = true, is64bit = false, add_APS=false)
+function save_LaMEM_markers_parallel(Grid::CartData; PartitioningFile = empty, directory = "./markers", verbose = true, is64bit = false, add_APS = false)
 
     x = ustrip.(Grid.x.val[:, 1, 1])
     y = ustrip.(Grid.y.val[1, :, 1])
@@ -457,7 +462,7 @@ function save_LaMEM_markers_parallel(Grid::CartData; PartitioningFile = empty, d
     APS = if haskey(Grid.fields, :APS)
         Grid.fields[:APS]
     else
-        if verbose
+        if verbose && add_APS
             println("Field :APS is not provided; setting it to zero")
         end
         zeros(size(Phases))
@@ -527,9 +532,7 @@ function save_LaMEM_markers_parallel(Grid::CartData; PartitioningFile = empty, d
         end
 
         # Write output files
-        if ~isdir(directory)
-            mkdir(directory)
-        end         # Create dir if not existent
+        mkpath(directory)
         fname = @sprintf "%s/mdb.%1.8d.dat"  directory (n - 1)    # Name
         if verbose
             println("Writing LaMEM marker file -> $fname")                   # print info
@@ -620,7 +623,7 @@ end
 Writes a vector `A` to disk, such that it can be read with `PetscBinaryRead` (which assumes a Big Endian type)
 
 """
-function PetscBinaryWrite_Vec(filename, A; add_APS=false)
+function PetscBinaryWrite_Vec(filename, A; add_APS = false)
 
     # Note: use "hton" to transfer to Big Endian type, which is what PETScBinaryRead expects
     return open(filename, "w+") do f
@@ -654,186 +657,143 @@ function get_processor_partitioning(filename; is64bit = false)
     else
         typ = Int32
     end
-    io = open(filename, "r")
+    return open(filename, "r") do io
+        nProcX = ntoh(read(io, typ))
+        nProcY = ntoh(read(io, typ))
+        nProcZ = ntoh(read(io, typ))
 
+        nNodeX = ntoh(read(io, typ))
+        nNodeY = ntoh(read(io, typ))
+        nNodeZ = ntoh(read(io, typ))
 
-    nProcX = ntoh(read(io, typ))
-    nProcY = ntoh(read(io, typ))
-    nProcZ = ntoh(read(io, typ))
+        iX = [ntoh(read(io, typ)) for i in 1:(nProcX + 1)]
+        iY = [ntoh(read(io, typ)) for i in 1:(nProcY + 1)]
+        iZ = [ntoh(read(io, typ)) for i in 1:(nProcZ + 1)]
 
-    nNodeX = ntoh(read(io, typ))
-    nNodeY = ntoh(read(io, typ))
-    nNodeZ = ntoh(read(io, typ))
+        CharLength = ntoh(read(io, Float64))
+        xcoor = [ntoh(read(io, Float64)) for i in 1:nNodeX] .* CharLength
+        ycoor = [ntoh(read(io, Float64)) for i in 1:nNodeY] .* CharLength
+        zcoor = [ntoh(read(io, Float64)) for i in 1:nNodeZ] .* CharLength
 
-    iX = [ntoh(read(io, typ)) for i in 1:(nProcX + 1)]
-    iY = [ntoh(read(io, typ)) for i in 1:(nProcY + 1)]
-    iZ = [ntoh(read(io, typ)) for i in 1:(nProcZ + 1)]
+        xc = xcoor[iX .+ 1]
+        yc = ycoor[iY .+ 1]
+        zc = zcoor[iZ .+ 1]
 
-    CharLength = ntoh(read(io, Float64))
-    xcoor = [ntoh(read(io, Float64)) for i in 1:nNodeX] .* CharLength
-    ycoor = [ntoh(read(io, Float64)) for i in 1:nNodeY] .* CharLength
-    zcoor = [ntoh(read(io, Float64)) for i in 1:nNodeZ] .* CharLength
-
-    xc = xcoor[iX .+ 1]
-    yc = ycoor[iY .+ 1]
-    zc = zcoor[iZ .+ 1]
-
-    close(io)
-
-    return nProcX, nProcY, nProcZ,
-        xc, yc, zc,
-        nNodeX, nNodeY, nNodeZ
-
+        return nProcX, nProcY, nProcZ,
+            xc, yc, zc,
+            nNodeX, nNodeY, nNodeZ
+    end
 end
 
 
 """
-    coord, Data_3D_Arrays, Name_Vec = read_data_VTR(fname)
+    coord_x, coord_y, coord_z, Data_3D_Arrays, Name_Vec, NumComp_Vec, ix, iy, iz = read_data_VTR(fname, FullSize; origin=(1, 1, 1))
 
-Reads a VTR (structured grid) VTK file `fname` and extracts the coordinates, data arrays and names of the data.
-In general, this only contains a piece of the data, and one should open a `*.pvtr` file to retrieve the full data
+Reads a VTR (rectilinear grid) VTK file `fname` with raw appended binary data, as LaMEM writes
+it, and returns the coordinates, the point data and the names and number of components of
+the data arrays. In general, the file contains only one piece of the data, and one should open
+a `*.pvtr` file with `read_data_PVTR` to retrieve the full data.
+
+The coordinates and data are placed into arrays of the full grid size `FullSize`, which are
+zero outside this piece; `ix`, `iy`, `iz` are the indices of the piece in the full grid.
+The `Piece Extent` of the file counts nodes of the full grid from `origin`, the start of the
+`WholeExtent` of the `*.pvtr` file (LaMEM starts at 1). Cell data is not supported.
 """
-function read_data_VTR(fname, FullSize)
-    file = open(fname, "r")
-
-    header = true
-    num = 1
-    CoordOffset = zeros(Int64, 3)
-    Offset_Vec = []
-    Name_Vec = [];     Type_Vec = []
-    NumComp_Vec = [];     PieceExtent = []; WholeExtent = []
-    while header == true
-
-        line = readline(file)
-        line_strip = lstrip(line)
-        if startswith(line_strip, "<RectilinearGrid WholeExtent")
-            id_start = findfirst("\"", line_strip)[1] + 1
-            id_end = findlast("\"", line_strip)[1] - 1
-            WholeExtent = parse.(Int64, split(line_strip[id_start:id_end]))
-        end
-        if startswith(line_strip, "<Piece Extent=")
-            id_start = findfirst("\"", line_strip)[1] + 1
-            id_end = findlast("\"", line_strip)[1] - 1
-            PieceExtent = parse.(Int64, split(line_strip[id_start:id_end]))
-
-
-        end
-        if startswith(line_strip, "<Coordinates>")
-            # Read info where the coordinates are stored
-            Type, Name, NumberOfComponents, CoordOffset[1] = Parse_VTR_Line(readline(file)); num += 1
-            Type, Name, NumberOfComponents, CoordOffset[2] = Parse_VTR_Line(readline(file)); num += 1
-            Type, Name, NumberOfComponents, CoordOffset[3] = Parse_VTR_Line(readline(file)); num += 1
-        end
-
-        if startswith(line_strip, "<PointData>")
-            line_strip = lstrip(readline(file))
-            while ~startswith(line_strip, "</PointData>")
-                Type, Name, NumberOfComponents, Offset = Parse_VTR_Line(line_strip);  num += 1
-
-                Offset_Vec = [Offset_Vec;  Offset]
-                Name_Vec = [Name_Vec;    Name]
-                Type_Vec = [Type_Vec;   Type]
-                NumComp_Vec = [NumComp_Vec; NumberOfComponents]
-                line_strip = lstrip(readline(file))
-            end
-        end
-
-        if startswith(line_strip, "<CellData>")
-            line_strip = lstrip(readline(file))
-            while ~startswith(line_strip, "</CellData>")
-                Type, Name, NumberOfComponents, Offset = Parse_VTR_Line(line_strip);  num += 1
-
-                Offset_Vec = [Offset_Vec;  Offset]
-                Name_Vec = [Name_Vec;    Name]
-                Type_Vec = [Type_Vec;   Type]
-                NumComp_Vec = [NumComp_Vec; NumberOfComponents]
-                line_strip = lstrip(readline(file))
-                # if we have cell Data, for some reason we need to increment this by one.
-                PieceExtent[1:2:end] .+= 1
-            end
-
-        end
-
-        if startswith(line_strip, "<AppendedData ")
-            header = false
-        end
-
-        num += 1
-    end
-
-    # Skip to beginning of raw data (linebreak)
-    skip(file, 5)
-    start_bin = position(file)      # start of binary data
-
-    # Determine the end of the raw data
-    seekend(file)
-    skip(file, -29)
-
-    end_bin = position(file)
-
-    # Start with reading the coordinate arrays:
-    coord_x = ReadBinaryData(file, start_bin, CoordOffset[1], (PieceExtent[2] - PieceExtent[1] + 1) * sizeof(Float32))
-    coord_y = ReadBinaryData(file, start_bin, CoordOffset[2], (PieceExtent[4] - PieceExtent[3] + 1) * sizeof(Float32))
-    coord_z = ReadBinaryData(file, start_bin, CoordOffset[3], (PieceExtent[6] - PieceExtent[5] + 1) * sizeof(Float32))
-
-
-    # Read data arrays:
-    Data_3D_Arrays = []
-    ix = PieceExtent[1]:PieceExtent[2]
-    iy = PieceExtent[3]:PieceExtent[4]
-    iz = PieceExtent[5]:PieceExtent[6]
-    numPoints = length(ix) * length(iy) * length(iz)
-
-    coord_x_full = zeros(Float64, FullSize[1])
-    coord_y_full = zeros(Float64, FullSize[2])
-    coord_z_full = zeros(Float64, FullSize[3])
-
-    coord_x_full[ix] = coord_x[1:length(ix)]
-    coord_y_full[iy] = coord_y[1:length(iy)]
-    coord_z_full[iz] = coord_z[1:length(iz)]
-
-    for i in 1:(length(Name_Vec) - 1)
-
-        data3D = ReadBinaryData(file, start_bin, Offset_Vec[i], numPoints * NumComp_Vec[i] * sizeof(Float32))
-        data3D = getArray(data3D, PieceExtent, NumComp_Vec[i])
-
-        data3D_full = zeros(Float64, NumComp_Vec[i], FullSize[1], FullSize[2], FullSize[3])  # Generate full data
-
-        # ugly hack to make it work with parallel files
-        ix_left = ix; ix_right = 1:length(ix_left)
-        iy_left = iy; iy_right = 1:length(iy_left)
-        iz_left = iz; iz_right = 1:length(iz_left)
-        if ix_left[1] > 1
-            ix_left = ix_left[2:end]; ix_right = ix_right[2:end]
-        end
-        if iy_left[1] > 1
-            iy_left = iy_left[2:end]; iy_right = iy_right[2:end]
-        end
-        if iz_left[1] > 1
-            iz_left = iz_left[2:end]; iz_right = iz_right[2:end]
-        end
-
-        data3D_full[1:NumComp_Vec[i], ix_left, iy_left, iz_left] = data3D[1:NumComp_Vec[i], ix_right, iy_right, iz_right]
-        #data3D_full[1:NumComp_Vec[i], ix, iy, iz]        = data3D;
-
-        Data_3D_Arrays = [Data_3D_Arrays; data3D_full]
-    end
-    i = length(Name_Vec)
-
-    if Type_Vec[i] == "UInt8"
-        data3D = ReadBinaryData(file, start_bin, Offset_Vec[i], numPoints * NumComp_Vec[i] * sizeof(UInt8), DataType = UInt8)
-    else
-        data3D = ReadBinaryData(file, start_bin, Offset_Vec[i], numPoints * NumComp_Vec[i] * sizeof(Float32))
-    end
-
-    data3D = getArray(data3D, PieceExtent, NumComp_Vec[i])
-    data3D_full = zeros(Float64, NumComp_Vec[i], FullSize[1], FullSize[2], FullSize[3])  # Generate full d
-    data3D_full[1:NumComp_Vec[i], ix, iy, iz] = data3D[1:NumComp_Vec[i], 1:length(ix), 1:length(iy), 1:length(iz)]
-
-    Data_3D_Arrays = [Data_3D_Arrays; data3D_full]
-
-    return coord_x_full, coord_y_full, coord_z_full, Data_3D_Arrays, Name_Vec, NumComp_Vec, ix, iy, iz
+function read_data_VTR(fname, FullSize; origin = (1, 1, 1))
+    coords = (zeros(Float64, FullSize[1]), zeros(Float64, FullSize[2]), zeros(Float64, FullSize[3]))
+    Data_3D_Arrays, Name_Vec, NumComp_Vec, ix, iy, iz = read_vtr_piece!(coords, nothing, fname, FullSize, origin)
+    return coords..., Data_3D_Arrays, Name_Vec, NumComp_Vec, ix, iy, iz
 end
+
+# Reads the piece `fname` into the full-grid coordinate vectors `coords` and into `Data`
+# (components × full grid, allocated here if `nothing`), converting to Float64 while copying.
+# Returns `Data, Name_Vec, NumComp_Vec, ix, iy, iz`.
+function read_vtr_piece!(coords, Data, fname, FullSize, origin)
+    return open(fname, "r") do file
+
+        vtk_types = Dict(
+            "Float32" => Float32, "Float64" => Float64, "UInt8" => UInt8,
+            "Int32" => Int32, "Int64" => Int64, "UInt32" => UInt32, "UInt64" => UInt64
+        )
+        header_type = UInt32                    # the VTK default
+        PieceExtent = Int64[]
+        CoordOffset = zeros(Int64, 3); CoordType = fill("Float32", 3)
+        Offset_Vec = Int64[]; Name_Vec = String[]; Type_Vec = String[]; NumComp_Vec = Int64[]
+        while true
+            line_strip = lstrip(readline(file))
+            eof(file) && error("$fname has no <AppendedData> section")
+
+            if startswith(line_strip, "<VTKFile")
+                (occursin("compressor=", line_strip) || occursin("BigEndian", line_strip)) && error("$fname is compressed or big-endian; only uncompressed little-endian files are supported.")
+                m = match(r"header_type=\"(\w+)\"", line_strip)
+                isnothing(m) || (header_type = vtk_types[m[1]])
+            end
+            if startswith(line_strip, "<Piece Extent=")
+                id_start = findfirst("\"", line_strip)[1] + 1
+                id_end = findlast("\"", line_strip)[1] - 1
+                PieceExtent = parse.(Int64, split(line_strip[id_start:id_end]))
+            end
+            if startswith(line_strip, "<Coordinates>")
+                # Read info where the coordinates are stored
+                for d in 1:3
+                    CoordType[d], _, _, CoordOffset[d] = Parse_VTR_Line(readline(file))
+                end
+            end
+
+            if startswith(line_strip, "<PointData>")
+                line_strip = lstrip(readline(file))
+                while !startswith(line_strip, "</PointData>")
+                    Type, Name, NumberOfComponents, Offset = Parse_VTR_Line(line_strip)
+                    push!(Offset_Vec, Offset)
+                    push!(Name_Vec, Name)
+                    push!(Type_Vec, Type)
+                    push!(NumComp_Vec, NumberOfComponents)
+                    line_strip = lstrip(readline(file))
+                end
+            end
+
+            if startswith(line_strip, "<CellData>")
+                startswith(lstrip(readline(file)), "</CellData>") ||
+                    error("$fname contains cell data, which read_data_VTR does not support")
+            end
+
+            startswith(line_strip, "<AppendedData ") && break
+        end
+
+        # The raw data begins after an underscore. Each array is preceded by a header of type
+        # `header_type` that holds its size in bytes, and the offsets point at those headers.
+        while read(file, UInt8) != UInt8('_')
+        end
+        start_bin = position(file) + sizeof(header_type)
+
+        # indices of this piece in the full grid
+        ix = (PieceExtent[1]:PieceExtent[2]) .- (origin[1] - 1)
+        iy = (PieceExtent[3]:PieceExtent[4]) .- (origin[2] - 1)
+        iz = (PieceExtent[5]:PieceExtent[6]) .- (origin[3] - 1)
+        numPoints = length(ix) * length(iy) * length(iz)
+
+        for (full, idx, d) in zip(coords, (ix, iy, iz), 1:3)
+            full[idx] = read_raw(file, start_bin + CoordOffset[d], vtk_types[CoordType[d]], length(idx))
+        end
+
+        Data === nothing && (Data = zeros(Float64, sum(NumComp_Vec), FullSize...))
+        row = 0
+        for i in eachindex(Name_Vec)
+            T = get(vtk_types, Type_Vec[i]) do
+                error("data array $(Name_Vec[i]) in $fname has the unsupported type $(Type_Vec[i])")
+            end
+            nc = NumComp_Vec[i]
+            buf = read_raw(file, start_bin + Offset_Vec[i], T, nc * numPoints)
+            Data[(row + 1):(row + nc), ix, iy, iz] .= reshape(buf, nc, length(ix), length(iy), length(iz))
+            row += nc
+        end
+
+        return Data, Name_Vec, NumComp_Vec, ix, iy, iz
+    end
+end
+
+# `n` values of type `T` from position `pos` of `file`
+read_raw(file, pos, T, n) = (seek(file, pos); read!(file, Vector{T}(undef, n)))
 
 # Parses a line of a *.vtr file & retrieve Type/Name/NumberOfComponents/Offset
 function Parse_VTR_Line(line)
@@ -886,26 +846,10 @@ function Parse_VTR_Line(line)
 end
 
 
-function getArray(data, PieceExtent, NumComp)
-    data = reshape(data, (NumComp, PieceExtent[2] - PieceExtent[1] + 1, PieceExtent[4] - PieceExtent[3] + 1, PieceExtent[6] - PieceExtent[5] + 1))
-    return data
-end
-
-function ReadBinaryData(file::IOStream, start_bin::Int64, Offset::Int64, BytesToRead; DataType = Float32)
-
-    seekstart(file)                                 # go to start
-    skip(file, start_bin + Offset)                    # move to beginning of raw binary data
-    buffer = read(file, BytesToRead)          # Read necesaary bytes
-    data = reinterpret(DataType, buffer)    # Transfer to buffer
-
-    data = Float64.(data[1:end])         # Transfer to Float64
-    return data
-end
-
 """
     Data::ParaviewData = read_data_PVTR(fname, dir)
 
-Reads a parallel, rectilinear, `*.vts` file with the name `fname` and located in `dir` and create a 3D `Data` struct from it.
+Reads a parallel, rectilinear, `*.pvtr` file with the name `fname` and located in `dir` and create a 3D `Data` struct from it.
 
 # Example
 ```julia-repl
@@ -919,97 +863,89 @@ ParaviewData
 ```
 """
 function read_data_PVTR(fname, dir)
-    file = open(joinpath(dir, fname), "r")
+    return open(joinpath(dir, fname), "r") do file
+        header = true
+        num = 1
+        FullSize = (1, 1, 1)
+        origin = (1, 1, 1)                  # first node index of the full grid
+        Data_3D = nothing; coords = nothing; NumComp = []; Names = []
+        while header == true
+            eof(file) && error("$fname ends before </PRectilinearGrid")
+            line = readline(file)
+            line_strip = lstrip(line)
+            if startswith(line_strip, "<PRectilinearGrid")
+                id_start = findfirst("WholeExtent=", line_strip)[1] + 13
+                line_strip = line_strip[id_start:end]
+                id_end = findfirst("\"", line_strip)[1] - 1
+                line_piece = line_strip[1:id_end]
 
-    header = true
-    num = 1
-    FullSize = (1, 1, 1)
-    num_data_sets = 1
-    Data_3D = []; coord_x = []; coord_y = []; coord_z = []; NumComp = []; Names = []
-    while header == true
-
-        line = readline(file)
-        line_strip = lstrip(line)
-        if startswith(line_strip, "<PRectilinearGrid")
-            id_start = findfirst("WholeExtent=", line_strip)[1] + 13
-            line_strip = line_strip[id_start:end]
-            id_end = findfirst("\"", line_strip)[1] - 1
-            line_piece = line_strip[1:id_end]
-
-            WholeExtent = parse.(Int64, split(line_piece))
-            FullSize = (WholeExtent[2], WholeExtent[4], WholeExtent[6])
-        end
-
-
-        if startswith(line_strip, "<Piece")
-            id_start = findfirst("Source=", line_strip)[1] + 8
-            line_strip = line_strip[id_start:end]
-            id_end = findfirst("\"", line_strip)[1] - 1
-            fname_piece = line_strip[1:id_end]
-
-            if num_data_sets == 1
-                coord_x, coord_y, coord_z, Data_3D, Names, NumComp, ix, iy, iz = read_data_VTR(joinpath(dir, fname_piece), FullSize)
-            else
-                coord_x1, coord_y1, coord_z1, Data_3D1, Names, NumComp, ix, iy, iz = read_data_VTR(joinpath(dir, fname_piece), FullSize)
-                coord_x[ix] = coord_x1[ix]
-                coord_y[iy] = coord_y1[iy]
-                coord_z[iz] = coord_z1[iz]
-
-                Data_3D = Data_3D + Data_3D1
-
+                WholeExtent = parse.(Int64, split(line_piece))
+                FullSize = (WholeExtent[2] - WholeExtent[1] + 1, WholeExtent[4] - WholeExtent[3] + 1, WholeExtent[6] - WholeExtent[5] + 1)
+                origin = (WholeExtent[1], WholeExtent[3], WholeExtent[5])
+                coords = (zeros(Float64, FullSize[1]), zeros(Float64, FullSize[2]), zeros(Float64, FullSize[3]))
             end
-            num_data_sets += 1
+
+
+            if startswith(line_strip, "<Piece")
+                id_start = findfirst("Source=", line_strip)[1] + 8
+                line_strip = line_strip[id_start:end]
+                id_end = findfirst("\"", line_strip)[1] - 1
+                fname_piece = line_strip[1:id_end]
+
+                # neighboring pieces share their boundary nodes, which hold the same values
+                Data_3D, Names, NumComp, _ = read_vtr_piece!(coords, Data_3D, joinpath(dir, fname_piece), FullSize, origin)
+            end
+
+
+            if startswith(line_strip, "</PRectilinearGrid")
+                header = false
+            end
         end
 
-
-        if startswith(line_strip, "</PRectilinearGrid")
-            header = false
+        # Create a named-Tuple out of the fields
+        NamesSymbol = []
+        for i in 1:length(Names)
+            id = findfirst(" ", Names[i])
+            if isnothing(id)
+                Names_Strip = Names[i]
+            else
+                Names_Strip = Names[i][1:(findfirst(" ", Names[i])[1] - 1)]
+            end
+            NamesSymbol = [NamesSymbol; Names_Strip]
         end
-    end
 
-    # Create a named-Tuple out of the fields
-    NamesSymbol = []
-    for i in 1:length(Names)
-        id = findfirst(" ", Names[i])
-        if isnothing(id)
-            Names_Strip = Names[i]
-        else
-            Names_Strip = Names[i][1:(findfirst(" ", Names[i])[1] - 1)]
+        #  NamesSymbol =   [Names[i][1:findfirst(" ", Names[i])[1]-1] for i=1:length(Names)]
+        Names1 = Symbol.(NamesSymbol)
+
+        Data_Array = []
+        num = 1
+        for i in 1:length(NumComp)
+            data = view(Data_3D, num:(num + NumComp[i] - 1), :, :, :)
+            data_arrays = [data[i, :, :, :] for i in 1:size(data, 1)]
+            data_tuple = tuple(data_arrays...)
+
+            if size(data, 1) > 1
+                Data_NamedTuple = NamedTuple{(Names1[i],)}((data_tuple,))
+            else
+                Data_NamedTuple = NamedTuple{(Names1[i],)}((data_tuple[1],))
+            end
+            Data_Array = [Data_Array; Data_NamedTuple]
+
+            num = num + NumComp[i]
         end
-        NamesSymbol = [NamesSymbol; Names_Strip]
-    end
 
-    #  NamesSymbol =   [Names[i][1:findfirst(" ", Names[i])[1]-1] for i=1:length(Names)]
-    Names1 = Symbol.(NamesSymbol)
-
-    Data_Array = []
-    num = 1
-    for i in 1:length(NumComp)
-        data = Data_3D[num:(num + NumComp[i] - 1), :, :, :]
-        data_arrays = [data[i, :, :, :] for i in 1:size(data, 1)]
-        data_tuple = tuple(data_arrays...)
-
-        if size(data, 1) > 1
-            Data_NamedTuple = NamedTuple{(Names1[i],)}((data_tuple,))
-        else
-            Data_NamedTuple = NamedTuple{(Names1[i],)}((data_tuple[1],))
+        # Merge vector with tuples into a NamedTuple
+        fields = Data_Array[1]
+        for i in 2:length(Data_Array)
+            fields = merge(fields, Data_Array[i])
         end
-        Data_Array = [Data_Array; Data_NamedTuple]
 
-        num = num + NumComp[i]
+        # Create a ParaviewData struct from it.
+        X, Y, Z = xyz_grid(coords...)
+        DataC = ParaviewData(X, Y, Z, fields)
+
+        return DataC
     end
-
-    # Merge vector with tuples into a NamedTuple
-    fields = Data_Array[1]
-    for i in 2:length(Data_Array)
-        fields = merge(fields, Data_Array[i])
-    end
-
-    # Create a ParaviewData struct from it.
-    X, Y, Z = xyz_grid(coord_x, coord_y, coord_z)
-    DataC = ParaviewData(X, Y, Z, fields)
-
-    return DataC
 end
 
 """
@@ -1040,7 +976,7 @@ function save_LaMEM_topography(Topo::CartData, filename::String)
         dy = (y1 - y0) / (ny - 1)
 
         itp = LinearInterpolation((Topo.x.val[:, 1, 1], Topo.y.val[1, :, 1]), ustrip.(Topo.fields.Topography[:, :, 1]))
-        Topo_itp = [itp(x, y) for x in x0:dx:x1, y in y0:dy:y1]
+        Topo_itp = [itp(x, y) for x in range(x0, x1, length = Int(nx)), y in range(y0, y1, length = Int(ny))]
 
         # Code the topograhic data into a vector
         Topo_vec = [ nx;ny;x0;y0;dx;dy; Topo_itp[:]]
@@ -1065,16 +1001,17 @@ write_processor_partitioning_LaMEM(P::LaMEMPartitioningInfo; is64bit::Bool = fal
 Writes the processor partitioning information `P` to a binary file in the format used by LaMEM.
 The file is named `ProcessorPartitioning_(P.nProcX*P.nProcY*P.nProcZ)cpu_(P.nProcX).(P.nProcY).(P.nProcZ).bin` and returned as string.
 The coordinates are written as Float64, and the processor counts and node counts as Int64 or Int32, depending on the `is64bit` flag.
+`is64bit` must match the `PetscInt` width of the LaMEM build (default: 32-bit).
 """
 function write_processor_partitioning_LaMEM(
-    P::LaMEMPartitioningInfo;
-    is64bit::Bool = false
-)
-    xcoor = range(P.xc[1], P.xc[end], length=P.nNodeX)
-    ycoor = range(P.yc[1], P.yc[end], length=P.nNodeY)
-    zcoor = range(P.zc[1], P.zc[end], length=P.nNodeZ)
+        P::LaMEMPartitioningInfo;
+        is64bit::Bool = false
+    )
+    xcoor = range(P.xc[1], P.xc[end], length = P.nNodeX)
+    ycoor = range(P.yc[1], P.yc[end], length = P.nNodeY)
+    zcoor = range(P.zc[1], P.zc[end], length = P.nNodeZ)
 
-    filename = "ProcessorPartitioning_$(P.nProcX*P.nProcY*P.nProcZ)cpu_$(P.nProcX).$(P.nProcY).$(P.nProcZ).bin"
+    filename = "ProcessorPartitioning_$(P.nProcX * P.nProcY * P.nProcZ)cpu_$(P.nProcX).$(P.nProcY).$(P.nProcZ).bin"
     typ = is64bit ? Int64 : Int32
     open(filename, "w") do io
         # Write processor counts (big-endian)
@@ -1096,10 +1033,6 @@ function write_processor_partitioning_LaMEM(
         write(io, hton.(ycoor))
         write(io, hton.(zcoor))
 
-        xcoor = []
-        ycoor = []
-        zcoor = []
-
     end
     println("Processor partitioning written to $filename")
     return filename
@@ -1116,35 +1049,20 @@ Likewise for the `mpiexec` directory (if not specified it is assumed to be avail
 """
 function create_partitioning_file(LaMEM_input::String, NumProc::Int64; LaMEM_dir::String = pwd(), LaMEM_options = "", MPI_dir = "", verbose = true)
 
-    # Create string to execute LaMEM
-    mpi_str = MPI_dir * "mpiexec -n $(NumProc) "
-    LaMEM_str = LaMEM_dir * "/" * "LaMEM -ParamFile " * LaMEM_input * " -mode save_grid "
-    str = mpi_str * LaMEM_str
+    cmd = `$(joinpath(expanduser(MPI_dir), "mpiexec")) -n $(NumProc) $(joinpath(expanduser(LaMEM_dir), "LaMEM")) -ParamFile $(LaMEM_input) -mode save_grid $(Base.shell_split(LaMEM_options))`
+    verbose && println("Executing command: $cmd")
 
-    if verbose == true
-        println("Executing command: $str")
+    t_start = time()
+    run(cmd)   # throws if LaMEM fails
+
+    candidates = filter(readdir(pwd(), join = true)) do f
+        startswith(basename(f), "ProcessorPartitioning_$(NumProc)cpu_") && endswith(f, ".bin") && mtime(f) >= t_start - 1
     end
-    # Run
-    exit = run(`sh -c $str`, wait = false)
+    isempty(candidates) && error("LaMEM did not write a ProcessorPartitioning_$(NumProc)cpu_*.bin file in $(pwd())")
+    PartFile = basename(argmax(mtime, candidates))
+    verbose && println("Successfully generated PartitioningFile: $PartFile")
 
-    # Retrieve newest file
-    if success(exit)
-        files = filter(f -> startswith(f, "ProcessorPartitioning_") && endswith(f, ".bin"), readdir())
-        time_modified = zeros(length(files))
-        for (i, file) in enumerate(files)
-            time_modified[i] = stat(file).mtime
-        end
-        id = findall(time_modified .== maximum(time_modified))   # last modified
-        PartFile = files[id]
-        if verbose == true
-            println("Successfully generated PartitioningFile: $(PartFile[1])")
-        end
-    else
-        error("Something went wrong with executing command ")
-    end
-
-    return PartFile[1]
-
+    return PartFile
 end
 
 """
@@ -1177,15 +1095,15 @@ function Base.show(io::IO, d::LaMEMPartitioningInfo)
     println(io, "  ix     : $(d.ix)")
     println(io, "  iy     : $(d.iy)")
     println(io, "  iz     : $(d.iz)")
-    
+
     return nothing
 
 end
 
-function check_markers_directory(directory)
-    return if !isdir(directory) mkdir(directory) end
-end
-
+"""
+    Grid = get_LaMEM_grid_info(file; args=nothing)
+Create a `LaMEM_grid` from the marker, element, and coordinate settings of a LaMEM input file (multi-segment grids are summed).
+"""
 function get_LaMEM_grid_info(file; args::Union{String, Nothing} = nothing)
 
     # read information from file
@@ -1218,7 +1136,7 @@ function get_LaMEM_grid_info(file; args::Union{String, Nothing} = nothing)
     Grid = LaMEM_grid(
         nmark_x, nmark_y, nmark_z,
         nump_x, nump_y, nump_z,
-        nel_x, nel_y, nel_z,
+        nel_x_tot, nel_y_tot, nel_z_tot,
         W, L, H,
         parsed_x, parsed_y, parsed_z,
         [], [], [],
@@ -1455,60 +1373,46 @@ function decompose_mpi_ranks(total_ranks::Int, nx::Int, ny::Int, nz::Int)
     best_py = 1
     best_pz = 1
     best_metric = Inf
-    first_best_metric = nothing  # To store the first best metric
 
     # Try all possible combinations of factors
     for px in factors
         remaining = total_ranks ÷ px
         rem_factors = get_factors(remaining)
-        
+
         for py in rem_factors
             pz = remaining ÷ py
-            
-            # Skip invalid combinations
-            if px * py * pz != total_ranks
-                continue
-            end
-            
+
             # Calculate local grid sizes
             local_nx = nx / px
             local_ny = ny / py
             local_nz = nz / pz
-            
+
             if mod(nx, px) != 0 || mod(ny, py) != 0 || mod(nz, pz) != 0
                 continue  # Skip this iteration if any of them is not an integer
             end
-    
+
             # Calculate aspect ratios (always ≥ 1.0)
-            ar_xy = max(local_nx/local_ny, local_ny/local_nx)
-            ar_xz = max(local_nx/local_nz, local_nz/local_nx)
-            ar_yz = max(local_ny/local_nz, local_nz/local_ny)
-            
+            ar_xy = max(local_nx / local_ny, local_ny / local_nx)
+            ar_xz = max(local_nx / local_nz, local_nz / local_nx)
+            ar_yz = max(local_ny / local_nz, local_nz / local_ny)
+
             # Metric: average deviation from aspect ratio of 1.0
             metric = (ar_xy + ar_xz + ar_yz) / 3.0
 
             # Update best configuration if this one is better
-        if metric < best_metric
+            if metric < best_metric
 
-            best_metric = metric
-            best_px = px
-            best_py = py
-            best_pz = pz
-            first_best_metric = metric  # Store the first best metric
+                best_metric = metric
+                best_px = px
+                best_py = py
+                best_pz = pz
 
-        elseif isapprox(metric, best_metric, rtol=1e-10)
-
-            # If the metric is equal to the first best metric, skip updating
-            if first_best_metric !== nothing && isapprox(metric, first_best_metric, rtol=1e-10)
-                continue
             end
-
-        end
         end
     end
     if best_metric == Inf
         error("No valid decomposition found for total_ranks = $total_ranks")
-        
+
     end
     return (best_px, best_py, best_pz)
 end
@@ -1521,8 +1425,8 @@ function get_factors(n::Int)
     for i in 1:isqrt(n)
         if n % i == 0
             push!(factors, i)
-            if i != n÷i
-                push!(factors, n÷i)
+            if i != n ÷ i
+                push!(factors, n ÷ i)
             end
         end
     end
@@ -1545,49 +1449,51 @@ Parameters:
 - n_ranks: Total number of MPI ranks
 
 Returns:
-- ModelDomain struct containing all domain decomposition information
+- LaMEMPartitioningInfo struct containing all domain decomposition information
 """
-function setup_model_domain(coord_x::AbstractVector{<:Real}, 
-                            coord_y::AbstractVector{<:Real}, 
-                            coord_z::AbstractVector{<:Real},
-                            nx::Int, ny::Int, nz::Int,
-                            n_ranks::Int; verbose::Bool = true)
-    
+function setup_model_domain(
+        coord_x::AbstractVector{<:Real},
+        coord_y::AbstractVector{<:Real},
+        coord_z::AbstractVector{<:Real},
+        nx::Int, ny::Int, nz::Int,
+        n_ranks::Int; verbose::Bool = true
+    )
+
     # Verify input vectors have correct size
     if any(length.([coord_x, coord_y, coord_z]) .!= 2)
         error("coord_x, coord_y, and coord_z must be 2-element vectors [min, max]")
     end
-    
+
     # Generate full coordinate vectors
     nnodx = nx + 1
     nnody = ny + 1
     nnodz = nz + 1
-    
-    xcoor = range(coord_x[1], coord_x[2], length=nnodx)
-    ycoor = range(coord_y[1], coord_y[2], length=nnody)
-    zcoor = range(coord_z[1], coord_z[2], length=nnodz)
-    
+
+    xcoor = range(coord_x[1], coord_x[2], length = nnodx)
+    ycoor = range(coord_y[1], coord_y[2], length = nnody)
+    zcoor = range(coord_z[1], coord_z[2], length = nnodz)
+
     check_multigrid_compatibility(nx, ny, nz, n_ranks, verbose)
 
     # Decompose MPI ranks into 3D processor grid
     Nprocx, Nprocy, Nprocz = decompose_mpi_ranks(n_ranks, nx, ny, nz)
-    
+
     # Calculate subdomain divisions
     function calculate_domain_divisions(N::Int, nproc::Int)
         base_size = div(N, nproc)
         remainder = N % nproc
-        
+
         indices = zeros(Int, nproc + 1)
         indices[1] = 1
-        
+
         for i in 1:nproc
             local_size = base_size + (i <= remainder ? 1 : 0)
             indices[i + 1] = indices[i] + local_size
         end
-        
+
         return indices
     end
-    
+
     # Calculate divisions for each direction
     ix = calculate_domain_divisions(nx, Nprocx)
     iy = calculate_domain_divisions(ny, Nprocy)
@@ -1595,14 +1501,10 @@ function setup_model_domain(coord_x::AbstractVector{<:Real},
 
     P = LaMEMPartitioningInfo(
         Nprocx, Nprocy, Nprocz,
-        nnodx, nnody, nnodz, 
+        nnodx, nnody, nnodz,
         xcoor[ix], ycoor[iy], zcoor[iz],
         ix, iy, iz
-        )
-
-        xcoor = []
-        ycoor = []
-        zcoor = []
+    )
 
     return P
 
@@ -1617,9 +1519,9 @@ Check if the model resolution and MPI ranks are optimal for multigrid methods.
 function check_multigrid_compatibility(nx::Int, ny::Int, nz::Int, total_ranks::Int, verbose::Bool = true)
     # Generate arrays of valid numbers for resolution
     powers_of_2 = [2^i for i in 1:15]  # Up to 32768
-    multiples_of_48 = [48*i for i in 1:683]  # Up to 32784
+    multiples_of_48 = [48 * i for i in 1:683]  # Up to 32784
     valid_resolution_numbers = sort(unique([powers_of_2; multiples_of_48]))
-    
+
     # Generate valid rank sequence algorithmically
     valid_rank_numbers = generate_valid_rank_sequence()
 
@@ -1631,12 +1533,12 @@ function check_multigrid_compatibility(nx::Int, ny::Int, nz::Int, total_ranks::I
         elseif idx == 1
             return valid_array[1]
         else
-            prev = valid_array[idx-1]
+            prev = valid_array[idx - 1]
             curr = valid_array[idx]
             return abs(n - prev) < abs(n - curr) ? prev : curr
         end
     end
-    
+
     # Function to check if a number is valid for resolution
     function is_valid_resolution(n)
         # Check if power of 2
@@ -1646,20 +1548,20 @@ function check_multigrid_compatibility(nx::Int, ny::Int, nz::Int, total_ranks::I
         # Check if multiple of 48
         return n % 48 == 0
     end
-    
+
     # Function to check if a number is valid for ranks
     function is_valid_ranks(n)
         return n in valid_rank_numbers
     end
-    
+
     # Check each value
     is_nx_valid = is_valid_resolution(nx)
     is_ny_valid = is_valid_resolution(ny)
     is_nz_valid = is_valid_resolution(nz)
     is_ranks_valid = is_valid_ranks(total_ranks)
-    
+
     all_valid = is_nx_valid && is_ny_valid && is_nz_valid && is_ranks_valid
-    
+
     # Generate suggestions for invalid values
     suggestions = Dict{String, Int}()
     if !is_nx_valid
@@ -1674,7 +1576,7 @@ function check_multigrid_compatibility(nx::Int, ny::Int, nz::Int, total_ranks::I
     if !is_ranks_valid
         suggestions["total_ranks"] = find_closest_valid(total_ranks, valid_rank_numbers)
     end
-    
+
     # Print warnings and suggestions
     if !all_valid && verbose
         println("\nWARNING: Non-optimal configuration detected for multigrid method!")
@@ -1683,14 +1585,14 @@ function check_multigrid_compatibility(nx::Int, ny::Int, nz::Int, total_ranks::I
         println("ny = $ny ($(is_ny_valid ? "optimal" : "non-optimal "))")
         println("nz = $nz ($(is_nz_valid ? "optimal" : "non-optimal "))")
         println("total_ranks = $total_ranks ($(is_ranks_valid ? "optimal" : "non-optimal"))")
-        
+
         println("\nSuggested optimal configuration:")
         println("nx = $(get(suggestions, "nx", nx))")
         println("ny = $(get(suggestions, "ny", ny))")
         println("nz = $(get(suggestions, "nz", nz))")
         println("total_ranks = $(get(suggestions, "total_ranks", total_ranks))")
     end
-    
+
     return
 end
 
@@ -1703,20 +1605,20 @@ Sequence includes powers of 2 and their multiples by specified multipliers.
 function generate_valid_rank_sequence(max_value::Int = 196608, multipliers::Vector{Int} = [3])
     valid_ranks = Int[]
     power_of_2 = 2
-    
+
     while power_of_2 <= max_value
         push!(valid_ranks, power_of_2)
-        
+
         for m in multipliers
             multiple = m * (power_of_2 ÷ 2)
             if multiple <= max_value
                 push!(valid_ranks, multiple)
             end
         end
-        
+
         power_of_2 *= 2
     end
-    
+
     return sort(unique(valid_ranks))
 end
 
@@ -1738,16 +1640,17 @@ update_nel_xyz_in_file(ParamFile_name, nx, ny, nz)
 """
 function update_nel_xyz_in_file(filename::String, nx::Int, ny::Int, nz::Int)
     lines = readlines(filename)
+    any(l -> occursin(r"^\s*nseg_[xyz]\s*=\s*([2-9]|\d\d)", l), lines) && error("Segmented grids (nseg > 1) are not supported.")
     for i in eachindex(lines)
-        if occursin("nel_x", lines[i])
+        if occursin(r"^\s*nel_x\s*=", lines[i])
             lines[i] = "    nel_x   =  $nx"
-        elseif occursin("nel_y", lines[i])
+        elseif occursin(r"^\s*nel_y\s*=", lines[i])
             lines[i] = "    nel_y   =  $ny"
-        elseif occursin("nel_z", lines[i])
+        elseif occursin(r"^\s*nel_z\s*=", lines[i])
             lines[i] = "    nel_z   =  $nz"
         end
     end
-    open(filename, "w") do io
+    return open(filename, "w") do io
         for line in lines
             println(io, line)
         end
@@ -1776,13 +1679,13 @@ P         = setup_model_domain(Grid_info.coord_x, Grid_info.coord_y, Grid_info.c
 insert_cpu_lines_after_nelz(ParamFile_name, P)
 
 Use-case:This allows to run correctly LaMEM simulation with the correct number of processes on each direction if partitioning file is generated by julia routine:
-part_filename = write_processor_partitioning_LaMEM(P; is64bit=true) # always use is64bit=true
+part_filename = write_processor_partitioning_LaMEM(P) # is64bit=false (default) matches a LaMEM built with 32-bit PetscInt
 insert_cpu_lines_after_nelz(ParamFile_name, P)
 Grid_o    = read_LaMEM_inputfile(ParamFile_name);
 Phase_o   = zeros(UInt8, size(Grid_o.X));
 Temp_o    = zeros(size(Phase_o));
 Model3D_o = CartData(Grid_o, (Phases=Phase_o,Temp=Temp_o))
-save_LaMEM_markers_parallel(Model3D_o, PartitioningFile=part_filename,verbose = true, is64bit = true)
+save_LaMEM_markers_parallel(Model3D_o, PartitioningFile=part_filename,verbose = true)
 run_lamem(ParamFile_name,n_ranks)
 """
 function insert_cpu_lines_after_nelz(filename::String, P)
@@ -1806,7 +1709,7 @@ function insert_cpu_lines_after_nelz(filename::String, P)
         end
     end
 
-    open(filename, "w") do io
+    return open(filename, "w") do io
         for line in newlines
             println(io, line)
         end

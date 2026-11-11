@@ -30,6 +30,14 @@ end
 @testset "2D Numerical Model tutorial" begin
     include("../tutorials/Tutorial_NumericalModel_2D.jl")
 end
+
+@testset "Curved layers, faults and plumes tutorial" begin
+    include("../tutorials/Tutorial_NumericalModel_Geometries.jl")
+end
+
+@testset "Slab break-off tutorial" begin
+    include("../tutorials/Tutorial_SlabBreakoff.jl")
+end
 #
 #@testset "3D Numerical Model tutorial" begin
 #    include("../tutorials/Tutorial_NumericalModel_3D.jl")

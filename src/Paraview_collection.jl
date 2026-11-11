@@ -13,9 +13,9 @@ Optional options
 ===
 - `dir`:    directory where the `*.vtk` are stored.
 - `pvd_name`:  filename of the resulting `*.pvd` file without extension; if not specified, `full_simulation` is used.
-- `files`:  Vector of the `*.vtk` files without extension; if not specified, all `*.vtk` files in the directory are used.
+- `files`:  Vector of the `*.vtk` file names, including extension and used exactly as given (so include `dir` if needed); if not specified, all `*.vtk` files in the directory are used.
 - `file_extension`:  file extension of the vtk files. Default is `.vts` but all `vt*` work.
-- `time`:  Vector of the timesteps; if not specified, pseudo time steps are assigned.
+- `time`:  Vector of the timesteps (numbers or strings); if not specified, pseudo time steps are assigned.
 """
 function make_paraview_collection(; dir = pwd(), pvd_name = nothing, files = nothing, file_extension = ".vts", time = nothing)
 
@@ -47,15 +47,15 @@ end
 natural_order(name) = [isdigit(m.match[1]) ? (0, parse(Int, m.match), "") : (1, 0, m.match) for m in eachmatch(r"\d+|\D+", name)]
 
 """
-    make_paraview_collection(pvd_name::String, files::Vector{String}, time::Vector{String})
+    make_paraview_collection(pvd_name::String, files::Vector{String}, time::AbstractVector)
 This function makes a `*.pvd` file from a provided list of `*.vtk` files and time steps.
 
 Inputs are:
 - `pvd_name`:  filename of the resulting `*.pvd` file without extension.
 - `files`: Vector of desired files to be included in the `*.pvd` file.
-- `time`: Vector of time steps corresponding to the `files` vector.
+- `time`: Vector of time steps (numbers or strings) corresponding to the `files` vector.
 """
-function make_paraview_collection(pvd_name::String, files::Vector{String}, time::Vector{String})
+function make_paraview_collection(pvd_name::String, files::Vector{String}, time::AbstractVector)
     # Check that the arrays have the same length
     @assert length(time) == length(files)
 
@@ -75,7 +75,7 @@ function make_paraview_collection(pvd_name::String, files::Vector{String}, time:
         # Create a new <DataSet> element
         new_dataset = new_child(collection, "DataSet")
         # Set the attributes of the new <DataSet> element
-        set_attribute(new_dataset, "timestep", time[i])
+        set_attribute(new_dataset, "timestep", string(time[i]))
         set_attribute(new_dataset, "part", "0")
         set_attribute(new_dataset, "file", files[i])
     end

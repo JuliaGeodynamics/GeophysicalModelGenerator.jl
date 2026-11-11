@@ -19,24 +19,20 @@ end
 
 function +(a::_T, b::_T) where {_T <: AbstractGeneralGrid}
     @assert size(a) == size(b)
-    return _addSurfaces(a, b)
+    return combine_surfaces(+, a, b)
 end
 
 function -(a::_T, b::_T) where {_T <: AbstractGeneralGrid}
     @assert size(a) == size(b)
-    return _subtractSurfaces(a, b)
+    return combine_surfaces(-, a, b)
 end
 
 # Internal routines
-_addSurfaces(a::_T, b::_T) where {_T <: GeoData} = GeoData(a.lon.val, a.lat.val, a.depth.val + b.depth.val, merge(a.fields, b.fields))
-_addSurfaces(a::_T, b::_T) where {_T <: UTMData} = UTMData(a.EW.val, a.NS.val, a.depth.val + b.depth.val, a.zone, a.northern, merge(a.fields, b.fields))
-_addSurfaces(a::_T, b::_T) where {_T <: CartData} = CartData(a.x.val, a.y.val, a.z.val + b.z.val, merge(a.fields, b.fields))
-_addSurfaces(a::_T, b::_T) where {_T <: ParaviewData} = ParaviewData(a.x.val, a.y.val, a.z.val + b.z.val, merge(a.fields, b.fields))
+combine_surfaces(op, a::_T, b::_T) where {_T <: GeoData} = GeoData(a.lon.val, a.lat.val, op(a.depth.val, b.depth.val), merge(a.fields, b.fields), a.atts)
+combine_surfaces(op, a::_T, b::_T) where {_T <: UTMData} = UTMData(a.EW.val, a.NS.val, op(a.depth.val, b.depth.val), a.zone, a.northern, merge(a.fields, b.fields), a.atts)
+combine_surfaces(op, a::_T, b::_T) where {_T <: CartData} = CartData(a.x.val, a.y.val, op(a.z.val, b.z.val), merge(a.fields, b.fields), a.atts)
+combine_surfaces(op, a::_T, b::_T) where {_T <: ParaviewData} = ParaviewData(a.x.val, a.y.val, op(a.z.val, b.z.val), merge(a.fields, b.fields))
 
-_subtractSurfaces(a::_T, b::_T) where {_T <: GeoData} = GeoData(a.lon.val, a.lat.val, a.depth.val - b.depth.val, merge(a.fields, b.fields))
-_subtractSurfaces(a::_T, b::_T) where {_T <: UTMData} = UTMData(a.EW.val, a.NS.val, a.depth.val - b.depth.val, a.zone, a.northern, merge(a.fields, b.fields))
-_subtractSurfaces(a::_T, b::_T) where {_T <: CartData} = CartData(a.x.val, a.y.val, a.z.val - b.z.val, merge(a.fields, b.fields))
-_subtractSurfaces(a::_T, b::_T) where {_T <: ParaviewData} = ParaviewData(a.x.val, a.y.val, a.z.val - b.z.val, merge(a.fields, b.fields))
 
 """
     remove_NaN_surface!(Z::Array,X::Array,Y::Array)
@@ -65,14 +61,21 @@ end
 """
     Topo = drape_on_topo(Topo::GeoData, Data::GeoData)
 
-This drapes fields of a data set `Data` on the topography `Topo`
+This drapes fields of a data set `Data` on the topography `Topo`, using the nearest point of `Data`.
+Outside the lon/lat extent of `Data`, vector (tuple) fields are `NaN` and scalar fields take the value of the nearest point.
 
 """
-function drape_on_topo(Topo::GeoData, Data::GeoData)
+drape_on_topo(Topo::GeoData, Data::GeoData) = drape_nearest(Topo, Data, true)
+
+# Nearest-point draping shared by the GeoData and CartData methods; `wrap_lon` matches the
+# longitude convention of `Topo` to that of `Data`, which only applies to geographic coordinates.
+function drape_nearest(Topo::GeoData, Data::GeoData, wrap_lon::Bool)
     @assert is_surface(Topo)
     @assert is_surface(Data)
 
     Lon, Lat, _ = lonlatdepth_grid(Topo.lon.val[:, 1, 1], Topo.lat.val[1, :, 1], Topo.depth.val[1, 1, :])
+
+    wrap_lon && (Lon = match_lon_convention(Lon, Data.lon.val))
 
     # use nearest neighbour to interpolate data
     idx = nearest_point_indices(Lon, Lat, vec(Data.lon.val), vec(Data.lat.val))
@@ -96,16 +99,12 @@ function drape_on_topo(Topo::GeoData, Data::GeoData)
 
             for j in 1:length(data_tuple)
                 data_field = data_tuple[j]
-                tmp = data_array[:, :, :, 1]
-                tmp = data_field[idx]
-                data_array[:, :, :, j] = tmp
+                data_array[:, :, :, j] = data_field[idx]
             end
-
-            data_new = tuple([data_array[:, :, :, c] for c in 1:size(data_array, 4)]...)       # transform 4D matrix to tuple
 
             # remove points outside domain
             for j in 1:length(data_tuple)
-                tmp = data_new[j]
+                tmp = data_array[:, :, :, j]
                 tmp[idx_out] .= NaN
                 data_array[:, :, :, j] = tmp
             end
@@ -113,7 +112,6 @@ function drape_on_topo(Topo::GeoData, Data::GeoData)
 
         else
             # scalar field
-            data_new = zeros(typeof(Data.fields[i][1]), size(Topo.lon.val, 1), size(Topo.lon.val, 2), size(Topo.lon.val, 3))
             data_new = Data.fields[i][idx]                                 # interpolate data field
 
         end
@@ -124,7 +122,7 @@ function drape_on_topo(Topo::GeoData, Data::GeoData)
 
     end
 
-    Topo_new = GeoData(Topo.lon.val, Topo.lat.val, Topo.depth.val, fields_new)
+    Topo_new = GeoData(Topo.lon.val, Topo.lat.val, Topo.depth.val, fields_new, Topo.atts)
 
     return Topo_new
 end
@@ -142,9 +140,9 @@ function drape_on_topo(Topo::CartData, Data::CartData)
     Topo_lonlat = GeoData(ustrip.(Topo.x.val), ustrip.(Topo.y.val), ustrip.(Topo.z.val), Topo.fields)
     Data_lonlat = GeoData(ustrip.(Data.x.val), ustrip.(Data.y.val), ustrip.(Data.z.val), Data.fields)
 
-    Topo_new_lonlat = drape_on_topo(Topo_lonlat, Data_lonlat)
+    Topo_new_lonlat = drape_nearest(Topo_lonlat, Data_lonlat, false)
 
-    Topo_new = CartData(Topo_new_lonlat.lon.val, Topo_new_lonlat.lat.val, Topo_new_lonlat.depth.val, Topo_new_lonlat.fields)
+    Topo_new = CartData(Topo_new_lonlat.lon.val, Topo_new_lonlat.lat.val, Topo_new_lonlat.depth.val, Topo_new_lonlat.fields, Topo.atts)
 
     return Topo_new
 end
@@ -177,7 +175,6 @@ function fit_surface_to_points(surf::CartData, X_pt::Vector, Y_pt::Vector, Z_pt:
     @assert is_surface(surf)
 
     idx = nearest_point_indices(NumValue(surf.x), NumValue(surf.y), X_pt[:], Y_pt[:])
-    depth = NumValue(surf.z)
     depth = Z_pt[idx]
 
     surf_new = deepcopy(surf)
@@ -274,13 +271,30 @@ Determines if points within the 3D `Data_Cart` structure are above the Cartesian
 function above_surface(Data_Cart::Union{Q1Data, CartData}, DataSurface_Cart::CartData; above = true, cell = false)
 
     X, Y, Z = coordinate_grids(Data_Cart, cell = cell)
-    xs, ys, zs = ustrip.(DataSurface_Cart.x.val), ustrip.(DataSurface_Cart.y.val), ustrip.(DataSurface_Cart.z.val)
-    size(zs, 3) == 1 || error("It seems that DataSurface is not a surface")
-    surface = linear_interpolation((xs[:, 1, 1], ys[1, :, 1]), zs[:, :, 1])
+    surface = surface_interpolation(DataSurface_Cart)
 
     # One fused pass, which also acts as a function barrier for the non-inferable X, Y, Z
     compare = above ? (>) : (<)
     return compare.(ustrip.(Z), surface.(ustrip.(X), ustrip.(Y)))
+end
+
+# Linear interpolation of the height of the surface `S`, of size (nx, ny, 1), at (x, y); a surface with ny = 1
+# is constant in y. Evenly spaced coordinates (to within rounding) are passed as ranges, so that a lookup
+# computes the enclosing cell instead of searching for it.
+function surface_interpolation(S::CartData)
+    size(S.z.val, 3) == 1 || error("It seems that DataSurface is not a surface")
+    x, y, z = as_range(ustrip.(S.x.val[:, 1, 1])), as_range(ustrip.(S.y.val[1, :, 1])), ustrip.(S.z.val[:, :, 1])
+    if length(y) == 1
+        itp = linear_interpolation(x, vec(z))
+        return (x, y) -> itp(x)
+    end
+    return linear_interpolation((x, y), z)
+end
+
+function as_range(v)
+    length(v) < 2 && return v
+    r = range(first(v), last(v), length(v))
+    return maximum(abs, r .- v) <= 4 * eps(float(eltype(v))) * maximum(abs, v) ? r : v
 end
 
 """
@@ -302,12 +316,13 @@ end
 
 
 """
-    Below = below_surface(Grid::CartGrid, DataSurface_Cart::CartData)
+    Below = below_surface(Grid::CartGrid, DataSurface_Cart::CartData; cell=false)
 
-    Determines if points described by the `Grid` CartGrid structure are above the Cartesian surface `DataSurface_Cart`
+Determines if points described by the `Grid` CartGrid structure are below the Cartesian surface `DataSurface_Cart`.
+If `cell=true`, the cell centers of `Grid` are used instead of its vertices.
 """
-function below_surface(Grid::CartGrid, DataSurface_Cart::CartData)
-    return above_surface(Grid, DataSurface_Cart; above = false)
+function below_surface(Grid::CartGrid, DataSurface_Cart::CartData; cell = false)
+    return above_surface(Grid, DataSurface_Cart; above = false, cell)
 end
 
 
@@ -321,12 +336,13 @@ function below_surface(Data_Cart::ParaviewData, DataSurface_Cart::ParaviewData)
 end
 
 """
-    Below = below_surface(Data_Cart::Union{CartData,Q1Data}, DataSurface_Cart::CartData, cell=false)
+    Below = below_surface(Data_Cart::Union{CartData,Q1Data}, DataSurface_Cart::CartData; cell=false)
 
-Determines if points within the 3D `Data_Cart` structure are below the Cartesian surface `DataSurface_Cart`
+Determines if points within the 3D `Data_Cart` structure are below the Cartesian surface `DataSurface_Cart`.
+If `cell=true`, the cell centers of `Data_Cart` are used instead of its vertices.
 """
-function below_surface(Data_Cart::Union{CartData, Q1Data}, DataSurface_Cart::CartData, cell = false)
-    return above_surface(Data_Cart, DataSurface_Cart; above = false, cell = cell)
+function below_surface(Data_Cart::Union{CartData, Q1Data}, DataSurface_Cart::CartData; cell = false)
+    return above_surface(Data_Cart, DataSurface_Cart; above = false, cell)
 end
 
 """

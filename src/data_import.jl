@@ -8,9 +8,17 @@ using LightXML
 
 export screenshot_to_GeoData, screenshot_to_CartData, screenshot_to_UTMData, getlonlatdepthmag_QuakeML
 
-# import CSV data using standard library functions
-# here we assume that the data is indeed comma separated and that comments are preceded with a "#"
+"""
+    Data = ReadCSV_LatLon(filename::AbstractString, DepthCon::AbstractString)
 
+Reads a comma-separated file with a one-line header and returns it as `GeoData`. Lines
+starting with `#` are comments. The columns whose header contains `lon`, `lat` and `depth`
+give the coordinates; a unit may follow the name in brackets, e.g. `depth(km)`, and a depth
+in `m` is converted to km. `DepthCon` states the sign convention of the depth column in the
+file: `"positive"` (depth increases downward; it is negated, since `GeoData` depth is negative
+below the surface) or `"negative"` (taken as is). Every other column becomes a field named
+`name_unit` (`name_percentage` for a `%` unit, `name_none` without a unit).
+"""
 function ReadCSV_LatLon(filename::AbstractString, DepthCon::AbstractString)
     # import data from file with coordinates given in lat/lon/depth format and additional data given in additional columns
     # the idea here is to assign the data to a structure of the type GeoData which will then be used for further processing
@@ -20,6 +28,9 @@ function ReadCSV_LatLon(filename::AbstractString, DepthCon::AbstractString)
     # while doing so, separate the unit from the variable name
     ndata = size(data, 1) # number of entries
     nfields = size(data, 2) # number of fields
+
+    DepthCon in ("positive", "negative") || error("DepthCon must be \"positive\" or \"negative\"")
+    any(h -> occursin("depth", h), hdr) || error("CSV file has no depth column")
 
     # declare some variables as local, otherwise they are not known outside of the following for loop
     local LonData
@@ -51,9 +62,7 @@ function ReadCSV_LatLon(filename::AbstractString, DepthCon::AbstractString)
             # take care of positive or negative convection for depth (here we use negative)
             if cmp(DepthCon, "positive") == 0 # if depth is given as positive values, convert to negative
                 DepthData = -1 * data[1:end, ifield]
-            elseif cmp(DepthCon, "negative") == 0
-                DepthData = data[1:end, ifield]
-            else # default behaviour assumes that dpeth is negative
+            else
                 DepthData = data[1:end, ifield]
             end
 
@@ -299,17 +308,20 @@ function screenshot_to_CartData(filename::String, Corner_LowerLeft, Corner_Upper
 end
 
 """
-    Data = screenshot_to_UTMData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, UTMzone::Int64=nothing, isnorth::Bool=true, fieldname=:colors)
+    Data = screenshot_to_UTMData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight=nothing, Corner_UpperLeft=nothing, UTMzone=nothing, isnorth::Bool=true, fieldname=:colors)
 
 Does the same as `screenshot_to_GeoData`, but returns for UTM data
 Note that you have to specify the `UTMzone` and `isnorth`
 """
-function screenshot_to_UTMData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight = nothing, Corner_UpperLeft = nothing, UTMzone::Int64 = nothing, isnorth::Bool = true, fieldname::Symbol = :colors)
+function screenshot_to_UTMData(filename::String, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight = nothing, Corner_UpperLeft = nothing, UTMzone = nothing, isnorth::Bool = true, fieldname::Symbol = :colors)
 
     # first create a GeoData struct
     Data_UTM = screenshot_to_GeoData(filename, Corner_LowerLeft, Corner_UpperRight; Corner_LowerRight = Corner_LowerRight, Corner_UpperLeft = Corner_UpperLeft, Cartesian = false, UTM = true, UTMzone = UTMzone, isnorth = isnorth, fieldname = fieldname)
     return Data_UTM
 end
+
+# Float64 content of the <value> element inside `parent/tag`.
+quakeml_value(parent, tag) = parse(Float64, content(get_elements_by_tagname(get_elements_by_tagname(parent, tag)[1], "value")[1]))
 
 """
     Data = getlonlatdepthmag_QuakeML(filename::String)
@@ -334,19 +346,25 @@ function getlonlatdepthmag_QuakeML(filename::String)
 
     # now loop over the events and assign the respective values
     for ievent in 1:num_events
-        tmp_event = events[ievent]
-        origin = get_elements_by_tagname(events[ievent], "origin")
-        magnitude = get_elements_by_tagname(events[ievent], "magnitude")
-
-        # this is a bit dirty, if you find a better/cleaner way, be my guest...
-        lon[ievent] = parse(Float64, string(collect(child_nodes(collect(child_elements(get_elements_by_tagname(origin[1], "longitude")[1]))[1]))[1]))
-        lat[ievent] = parse(Float64, string(collect(child_nodes(collect(child_elements(get_elements_by_tagname(origin[1], "latitude")[1]))[1]))[1]))
-        depth[ievent] = parse(Float64, string(collect(child_nodes(collect(child_elements(get_elements_by_tagname(origin[1], "depth")[1]))[1]))[1]))
-        mag[ievent] = parse(Float64, string(collect(child_nodes(get_elements_by_tagname(get_elements_by_tagname(magnitude[1], "mag")[1], "value")[1]))[1]))
+        event = events[ievent]
+        # the preferred origin/magnitude if the event names one, else the first
+        function pick(tag, idtag)
+            c = get_elements_by_tagname(event, tag)
+            id = get_elements_by_tagname(event, idtag)
+            isempty(id) && return c[1]
+            want = strip(content(id[1]))
+            i = findfirst(x -> attribute(x, "publicID") == want, c)
+            isnothing(i) && error("QuakeML event $ievent names $idtag \"$want\", but has no <$tag> with that publicID")
+            return c[i]
+        end
+        origin = pick("origin", "preferredOriginID")
+        magnitude = pick("magnitude", "preferredMagnitudeID")
+        lon[ievent] = quakeml_value(origin, "longitude")
+        lat[ievent] = quakeml_value(origin, "latitude")
+        depth[ievent] = quakeml_value(origin, "depth")
+        mag[ievent] = quakeml_value(magnitude, "mag")
     end
 
     Data_ISC = GeoData(lon, lat, -1 * depth / 1.0e3, (Magnitude = mag, Depth = -1 * depth / 1.0e3 * km))
     return Data_ISC
 end
-
-

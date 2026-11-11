@@ -63,10 +63,14 @@ julia> write_paraview(Data_set, "test_Points", PointsData=true)
 ```
 
 """
-function write_paraview(DataSet::ParaviewData, filename = "test"; PointsData = false, pvd = nothing, time = nothing, directory = nothing, verbose = true)
+write_paraview(DataSet::ParaviewData, filename = "test"; PointsData = false, pvd = nothing, time = nothing, directory = nothing, verbose = true) =
+    write_vtk_grid(filename, DataSet.x.val, DataSet.y.val, DataSet.z.val, DataSet.fields; PointsData, pvd, time, directory, verbose)
+
+# Writes the coordinate arrays `x`, `y`, `z` and `fields` to a VTK file; see `write_paraview`.
+function write_vtk_grid(filename, x, y, z, fields; PointsData, pvd, time, directory, verbose)
 
     # Error checking
-    if !(length(size(DataSet.x)) == length(size(DataSet.y)) == length(size(DataSet.z)))
+    if !(ndims(x) == ndims(y) == ndims(z))
         error("The X/Y/Z or Lon/Lat/Depth arrays should be 3 dimensional")
     end
 
@@ -79,43 +83,15 @@ function write_paraview(DataSet::ParaviewData, filename = "test"; PointsData = f
     # Create VT* file
     if PointsData
         # in case we write a dataset with unconnected points (e.g., GPS data, EQ locations etc.)
-        npoints = length(DataSet.x)
-        cells = [MeshCell(VTKCellTypes.VTK_VERTEX, (i,)) for i in 1:npoints]
-        x = ustrip.(DataSet.x.val);  x = x[:]
-        y = ustrip.(DataSet.y.val);  y = y[:]
-        z = ustrip.(DataSet.z.val);  z = z[:]
-
-        vtkfile = vtk_grid(filename, x, y, z, cells)
-
+        cells = [MeshCell(VTKCellTypes.VTK_VERTEX, (i,)) for i in 1:length(x)]
+        vtkfile = vtk_grid(filename, vec(strip_units(x)), vec(strip_units(y)), vec(strip_units(z)), cells)
     else
         # for connected 3D grids, 2D planes or 1D lines
-        vtkfile = vtk_grid(filename, ustrip.(DataSet.x.val), ustrip.(DataSet.y.val), ustrip.(DataSet.z.val))
+        vtkfile = vtk_grid(filename, strip_units(x), strip_units(y), strip_units(z))
     end
 
     # Add data fields to VT* file
-    names = String.(collect(keys(DataSet.fields)))  # this is how to retrieve the names of the data fields
-    for (index, name) in enumerate(names)
-
-        if typeof(DataSet.fields[index]) <: Tuple
-            # if we do a tuple of velocities, it appears difficult to deal with units
-            # This will require some more work
-            unit_name = ""
-            Data = DataSet.fields[index]
-            if unit(Data[1][1]) != NoUnits
-                error("potential error as vector data fields have units; please save them with no units!")
-            end
-        else
-            unit_name = unit(DataSet.fields[index][1])
-            Data = ustrip.(DataSet.fields[index])
-        end
-
-        name_with_units = join([name, "  [$(unit_name)]"])  # add units to the name of the field
-        if PointsData
-            vtkfile[name_with_units, VTKPointData()] = Data[:]
-        else
-            vtkfile[name_with_units] = Data
-        end
-    end
+    add_vtk_fields!(vtkfile, fields, PointsData ? VTKPointData() : nothing)
     outfiles = vtk_save(vtkfile)
     if verbose
         println("Saved file: $(outfiles[1])")
@@ -128,6 +104,34 @@ function write_paraview(DataSet::ParaviewData, filename = "test"; PointsData = f
     return pvd
 end
 
+# The numbers of an array, without copying: arrays with units are reinterpreted, others returned as they are.
+strip_units(A::AbstractArray{<:Quantity}) = ustrip(A)
+strip_units(A) = A
+
+# Adds `fields` to `vtkfile`, with the unit in each name. With `location = nothing` WriteVTK
+# infers from the array size whether a field lives on points or cells; with `VTKPointData()`
+# or `VTKCellData()` the field is written flattened at that location.
+function add_vtk_fields!(vtkfile, fields, location = nothing)
+    for (name, field) in pairs(fields)
+        if field isa Tuple
+            # vector fields are written without units
+            unit(field[1][1]) != NoUnits && error("potential error as vector data fields have units; please save them with no units!")
+            unit_name = ""
+            Data = field
+        else
+            unit_name = unit(field[1])
+            Data = strip_units(field)
+        end
+        name_with_units = "$name  [$unit_name]"
+        if isnothing(location)
+            vtkfile[name_with_units] = Data
+        else
+            vtkfile[name_with_units, location] = Data isa Tuple ? Data : vec(Data)
+        end
+    end
+    return vtkfile
+end
+
 # Multiple dispatch such that we can also call the routine with GeoData input:
 write_paraview(DataSet::GeoData, filename::Any; PointsData = false, pvd = nothing, time = nothing, directory = nothing, verbose = true) = write_paraview(convert(ParaviewData, DataSet), filename; PointsData, pvd, time, directory, verbose)
 
@@ -138,10 +142,7 @@ Writes a `UTMData` structure to paraview. Note that this data is *not* transform
 """
 function write_paraview(DataSet::UTMData, filename::Any; PointsData = false, pvd = nothing, time = nothing, directory = nothing, verbose = true)
 
-    PVData = ParaviewData(DataSet.EW, DataSet.NS, DataSet.depth.val, DataSet.fields)
-
-    outfiles = write_paraview(PVData, filename, PointsData = PointsData, pvd = pvd, time = time, directory = directory, verbose = verbose)
-    return outfiles
+    return write_vtk_grid(filename, DataSet.EW.val, DataSet.NS.val, DataSet.depth.val, DataSet.fields; PointsData, pvd, time, directory, verbose)
 end
 
 """
@@ -151,10 +152,7 @@ Writes a `CartData` structure to paraview.
 """
 function write_paraview(DataSet::CartData, filename::Any; PointsData = false, pvd = nothing, time = nothing, directory = nothing, verbose = true)
 
-    PVData = ParaviewData(DataSet.x.val, DataSet.y.val, DataSet.z.val, DataSet.fields)
-
-    outfiles = write_paraview(PVData, filename, PointsData = PointsData, pvd = pvd, time = time, directory = directory, verbose = verbose)
-    return outfiles
+    return write_vtk_grid(filename, DataSet.x.val, DataSet.y.val, DataSet.z.val, DataSet.fields; PointsData, pvd, time, directory, verbose)
 end
 
 
@@ -211,54 +209,11 @@ function write_paraview(DataSet::Q1Data, filename = "test"; directory = nothing,
     end
 
     # Create VT* file
-    vtkfile = vtk_grid(filename, ustrip.(DataSet.x.val), ustrip.(DataSet.y.val), ustrip.(DataSet.z.val))
+    vtkfile = vtk_grid(filename, strip_units(DataSet.x.val), strip_units(DataSet.y.val), strip_units(DataSet.z.val))
 
-    # Add vertex data fields to VT* file
-    names = String.(collect(keys(DataSet.fields)))  # this is how to retrieve the names of the data fields
-    for (index, name) in enumerate(names)
-
-        if typeof(DataSet.fields[index]) <: Tuple
-            # if we do a tuple of velocities, it appears difficult to deal with units
-            # This will require some more work
-            unit_name = ""
-            Data = DataSet.fields[index]
-            if unit(Data[1][1]) != NoUnits
-                error("potential error as vector data fields have units; please save them with no units!")
-            end
-        else
-            unit_name = unit(DataSet.fields[index][1])
-            Data = ustrip.(DataSet.fields[index])
-        end
-
-        name_with_units = join([name, "  [$(unit_name)]"])  # add units to the name of the field
-        #if PointsData
-        #    vtkfile[name_with_units, VTKPointData()]    = Data[:];
-        #else
-        vtkfile[name_with_units] = Data
-        #end
-    end
-
-    # Add cell data fields to VT* file
-    names = String.(collect(keys(DataSet.cellfields)))  # this is how to retrieve the names of the data fields
-    for (index, name) in enumerate(names)
-
-        if typeof(DataSet.cellfields[index]) <: Tuple
-            # if we do a tuple of velocities, it appears difficult to deal with units
-            # This will require some more work
-            unit_name = ""
-            Data = DataSet.cellfields[index]
-            if unit(Data[1][1]) != NoUnits
-                error("potential error as vector data fields have units; please save them with no units!")
-            end
-        else
-            unit_name = unit(DataSet.cellfields[index][1])
-            Data = ustrip.(DataSet.cellfields[index])
-        end
-
-        name_with_units = join([name, "  [$(unit_name)]"])  # add units to the name of the field
-        vtkfile[name_with_units, VTKCellData()] = Data[:]
-
-    end
+    # Add vertex and cell data fields to VT* file
+    add_vtk_fields!(vtkfile, DataSet.fields)
+    add_vtk_fields!(vtkfile, DataSet.cellfields, VTKCellData())
 
 
     outfiles = vtk_save(vtkfile)
@@ -309,47 +264,9 @@ function write_paraview(DataSet::FEData, filename = "test"; directory = nothing,
 
     vtkfile = vtk_grid(filename, points, cells)
 
-    # Add vertex data fields to VT* file
-    names = String.(collect(keys(DataSet.fields)))  # this is how to retrieve the names of the data fields
-    for (index, name) in enumerate(names)
-
-        if typeof(DataSet.fields[index]) <: Tuple
-            # if we do a tuple of velocities, it appears difficult to deal with units
-            # This will require some more work
-            unit_name = ""
-            Data = DataSet.fields[index]
-            if unit(Data[1][1]) != NoUnits
-                error("potential error as vector data fields have units; please save them with no units!")
-            end
-        else
-            unit_name = unit(DataSet.fields[index][1])
-            Data = ustrip.(DataSet.fields[index])
-        end
-
-        name_with_units = join([name, "  [$(unit_name)]"])  # add units to the name of the field
-        vtkfile[name_with_units] = Data
-    end
-
-    # Add cell data fields to VT* file
-    names = String.(collect(keys(DataSet.cellfields)))  # this is how to retrieve the names of the data fields
-    for (index, name) in enumerate(names)
-
-        if typeof(DataSet.cellfields[index]) <: Tuple
-            # if we do a tuple of velocities, it appears difficult to deal with units
-            # This will require some more work
-            unit_name = ""
-            Data = DataSet.cellfields[index]
-            if unit(Data[1][1]) != NoUnits
-                error("potential error as vector data fields have units; please save them with no units!")
-            end
-        else
-            unit_name = unit(DataSet.cellfields[index][1])
-            Data = ustrip.(DataSet.cellfields[index])
-        end
-
-        name_with_units = join([name, "  [$(unit_name)]"])  # add units to the name of the field
-        vtkfile[name_with_units, VTKCellData()] = Data[:]
-    end
+    # Add vertex and cell data fields to VT* file
+    add_vtk_fields!(vtkfile, DataSet.fields)
+    add_vtk_fields!(vtkfile, DataSet.cellfields, VTKCellData())
 
     outfiles = vtk_save(vtkfile)
     if verbose

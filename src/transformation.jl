@@ -4,6 +4,8 @@ using StaticArrays
 
 export project_CartData, project_FEData_CartData
 
+# Express `lon` in 0..360° if any `data_lon` exceeds 180°, otherwise in -180..180° (+360 first: -1e-16 maps to 0)
+match_lon_convention(lon, data_lon) = maximum(data_lon) > 180 ? mod.(lon .+ 360, 360) : ifelse.(lon .> 180, lon .- 360, lon)
 
 """
     d_cart = project_CartData(d_cart::CartData, d::GeoData, p::ProjectionPoint)
@@ -11,34 +13,27 @@ export project_CartData, project_FEData_CartData
 Projects all datafields from the GeoData struct `d` to the CartData struct `d_cart`, around the projection point `p`.
 `d_cart` *must* be an orthogonal cartesian grid (deformed doesn't work; use `convert2CartData(d, proj)`, where `proj` is a projection point in that case).
 
-# Note:    
-- If `d_cart` and `d` are horizontal surfaces (3rd dimension has size==1), it also interpolates the depth coordinate.    
+# Note:
+- If `d_cart` and `d` are horizontal surfaces (3rd dimension has size==1), it also interpolates the depth coordinate.
+- Points of `d_cart` outside `d` take the value at the nearest edge of `d` for surfaces; for 3D grids, floating-point fields are `NaN` there and `Int64` fields take the value of the nearest point.
+- `d` may use longitudes in 0..360° or in -180..180°.
 
 """
 function project_CartData(d_cart::CartData, d::GeoData, p::ProjectionPoint)
     Data_UTM = convert2UTMzone(d_cart, p)
     Data_lonlat = convert(GeoData, Data_UTM)
 
-    # Check whether the data sets have the same sign. If not, we may have to shift one by 360 degrees
-    min_lon_cart, max_lon_cart = minimum(Data_lonlat.lon.val), maximum(Data_lonlat.lon.val)
-    min_lon, max_lon = minimum(d.lon.val), maximum(d.lon.val)
-
-    if (sign(min_lon) != sign(min_lon_cart)) &&  (sign(max_lon) != sign(max_lon_cart))
-        # the longitude data has a different sign. This can happen if one of them is "West" (and has negative values), whereas the other has
-        if (min_lon_cart < 0)
-            Data_lonlat = GeoData(Data_lonlat.lon.val .+ 360, Data_lonlat.lat.val, ustrip.(Data_lonlat.depth.val), Data_lonlat.fields)
-        end
-    end
+    lon = match_lon_convention(Data_lonlat.lon.val, d.lon.val)
 
     if size(Data_lonlat.lon.val, 3) == 1
-        z_new, fields_new = interpolate_datafields_2D(d, Data_lonlat.lon.val, Data_lonlat.lat.val)
+        z_new, fields_new = interpolate_datafields_2D(d, lon, Data_lonlat.lat.val)
 
         # Create new struct
-        d_cart = CartData(d_cart.x.val, d_cart.y.val, z_new, fields_new)
+        d_cart = CartData(d_cart.x.val, d_cart.y.val, z_new, fields_new, d_cart.atts)
 
     else
-        d_data = interpolate_datafields(d, Data_lonlat.lon.val, Data_lonlat.lat.val, Data_lonlat.depth.val)
-        d_cart = CartData(d_cart.x.val, d_cart.y.val, d_cart.z.val, d_data.fields)
+        d_data = interpolate_datafields(d, lon, Data_lonlat.lat.val, Data_lonlat.depth.val)
+        d_cart = CartData(d_cart.x.val, d_cart.y.val, d_cart.z.val, d_data.fields, d_cart.atts)
 
     end
 
@@ -53,6 +48,7 @@ Projects all datafields from the CartData struct `d_cart_data0` to the CartData 
 
 # Note:
 - If `d_cart` is a horizontal surface (3rd dimension has size==1), the depth coordinate of `d_cart_data0` is interpolated as well.
+- Points of `d_cart` outside `d_cart_data0` take the value at the nearest edge of `d_cart_data0` for surfaces; for 3D grids, floating-point fields are `NaN` there and `Int64` fields take the value of the nearest point.
 
 """
 function project_CartData(d_cart::CartData, d_cart_data0::CartData)
@@ -61,11 +57,11 @@ function project_CartData(d_cart::CartData, d_cart_data0::CartData)
         z_new, fields_new = interpolate_datafields_2D(d_cart_data0, d_cart.x.val, d_cart.y.val)
 
         # Create new struct
-        d_cart = CartData(d_cart.x.val, d_cart.y.val, z_new, fields_new)
+        d_cart = CartData(d_cart.x.val, d_cart.y.val, z_new, fields_new, d_cart.atts)
 
     else
         d_data = interpolate_datafields(d_cart_data0, d_cart.x.val, d_cart.y.val, d_cart.z.val)
-        d_cart = CartData(d_cart.x.val, d_cart.y.val, d_cart.z.val, d_data.fields)
+        d_cart = CartData(d_cart.x.val, d_cart.y.val, d_cart.z.val, d_data.fields, d_cart.atts)
 
     end
 
@@ -77,11 +73,11 @@ end
     d_cart = project_CartData(d_cart::CartData, d::UTMData, p::ProjectionPoint)
 
 Projects all datafields from the UTMData struct `d` to the CartData struct `d_cart`, around the projection point `p`.
-    `d_cart` *must* be an orthogonal cartesian grid (deformed doesn't work; use `convert2CartData(d, proj)`, where `proj` is a projection point in that case).
-    
-    # Note:    
-    - If `d_cart` and `d` are horizontal surfaces (3rd dimension has size==1), it also interpolates the depth coordinate.    
-        
+`d_cart` *must* be an orthogonal cartesian grid (deformed doesn't work; use `convert2CartData(d, proj)`, where `proj` is a projection point in that case).
+
+# Note:
+- If `d_cart` and `d` are horizontal surfaces (3rd dimension has size==1), it also interpolates the depth coordinate.
+- Points of `d_cart` outside `d` take the value at the nearest edge of `d` for surfaces; for 3D grids, floating-point fields are `NaN` there and `Int64` fields take the value of the nearest point.
 
 """
 function project_CartData(d_cart::CartData, d::UTMData, p::ProjectionPoint)
@@ -91,11 +87,11 @@ function project_CartData(d_cart::CartData, d::UTMData, p::ProjectionPoint)
         z_new, fields_new = interpolate_datafields_2D(d, Data_UTM.EW.val, Data_UTM.NS.val)
 
         # Create new struct
-        d_cart = CartData(d_cart.x.val, d_cart.y.val, z_new, fields_new)
+        d_cart = CartData(d_cart.x.val, d_cart.y.val, z_new, fields_new, d_cart.atts)
 
     else
         d_data = interpolate_datafields(d, Data_UTM.EW.val, Data_UTM.NS.val, Data_UTM.depth.val)
-        d_cart = CartData(d_cart.x.val, d_cart.y.val, d_cart.z.val, d_data.fields)
+        d_cart = CartData(d_cart.x.val, d_cart.y.val, d_cart.z.val, d_data.fields, d_cart.atts)
 
     end
 
@@ -107,7 +103,7 @@ end
     inside = point_in_tetrahedron(p::_T, a::_T, b::_T, c::_T, d::_T, tol=1e-10)
 Determines if a point `p` is inside a tetrahedron specified by `a`,`b`,`c`,`d` or not    
 """
-function point_in_tetrahedron(p::_T, a::_T, b::_T, c::_T, d::_T, tol = 1.0e-10) where {_T <: Vector{Float64}}
+function point_in_tetrahedron(p::AbstractVector, a::_T, b::_T, c::_T, d::_T, tol = 1.0e-10) where {_T <: Vector{Float64}}
 
     # check bounding box
     xmin = min(a[1], b[1], c[1], d[1])
@@ -157,23 +153,27 @@ function project_FEData_CartData(data_cart::CartData, data_fe::FEData)
 end
 
 # Region of the last tetrahedron that contains each point of (X, Y, Z), or 0.
-# On a rectilinear grid with ascending axes, only the points within each tetrahedron's
+# On a rectilinear grid with monotonic axes, only the points within each tetrahedron's
 # bounding box are tested; otherwise every point is tested against every tetrahedron.
 function tetrahedron_regions(X, Y, Z, vertices, connectivity, cellfields_regions)
     regions = zeros(Int64, size(X))
     x, y, z = X[:, 1, 1], Y[1, :, 1], Z[1, 1, :]
-    rectilinear = all(issorted, (x, y, z)) && all(I -> X[I] == x[I[1]] && Y[I] == y[I[2]] && Z[I] == z[I[3]], CartesianIndices(X))
+    ascending = issorted(x) && issorted(y) && issorted(z)
+    rectilinear = (ascending || all(v -> issorted(v; rev = true), (x, y, z))) && all(I -> X[I] == x[I[1]] && Y[I] == y[I[2]] && Z[I] == z[I[3]], CartesianIndices(X))
 
     for i in axes(connectivity, 2) # loop over tetrahedrons
         a, b, c, d = (vertices[:, connectivity[k, i]] for k in 1:4)
         lo, hi = min.(a, b, c, d), max.(a, b, c, d)
         candidates = if rectilinear
-            CartesianIndices((searchsortedfirst(x, lo[1]):searchsortedlast(x, hi[1]), searchsortedfirst(y, lo[2]):searchsortedlast(y, hi[2]), searchsortedfirst(z, lo[3]):searchsortedlast(z, hi[3])))
+            first_ = ascending ? searchsortedfirst : (v, t) -> searchsortedfirst(v, t; rev = true)
+            last_ = ascending ? searchsortedlast : (v, t) -> searchsortedlast(v, t; rev = true)
+            lo_, hi_ = ascending ? (lo, hi) : (hi, lo)
+            CartesianIndices((first_(x, lo_[1]):last_(x, hi_[1]), first_(y, lo_[2]):last_(y, hi_[2]), first_(z, lo_[3]):last_(z, hi_[3])))
         else
             CartesianIndices(X)
         end
         for I in candidates
-            if point_in_tetrahedron([X[I], Y[I], Z[I]], a, b, c, d)
+            if point_in_tetrahedron(SVector(X[I], Y[I], Z[I]), a, b, c, d)
                 regions[I] = cellfields_regions[i]
             end
         end

@@ -11,6 +11,7 @@ export waterflows
 Computes the spacing with central differences
 """
 function spacing(lon, lat)
+    all(>=(3), size(lon.val)[1:2]) || error("Central-difference spacing needs at least 3 grid points in each direction, got $(size(lon.val)[1:2]).")
     dlon = zeros(size(lon.val)[1:2])
     dlat = zeros(size(lat.val)[1:2])
     @views dlon[2:(end - 1), :] = (lon.val[3:end, :, 1] - lon.val[1:(end - 2), :, 1]) / 2
@@ -73,8 +74,8 @@ function waterflows(Topo::GeoData, flowdir_fn = WhereTheWaterFlows.d8dir_feature
     cellarea = cell_area(Topo)
     cellarea_m2 = cellarea
     if !isnothing(rainfall)
-        @assert typeof(rainfall) == Array{Float64, 2}
-        cellarea = rainfall
+        size(rainfall) == size(cellarea) || error("rainfall has size $(size(rainfall)), but the topography has $(size(cellarea)) points.")
+        cellarea = convert(Matrix{Float64}, rainfall)
     end
 
     dem = Topo.depth.val[:, :, 1]

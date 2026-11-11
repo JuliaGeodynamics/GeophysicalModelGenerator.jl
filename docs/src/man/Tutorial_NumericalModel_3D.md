@@ -63,15 +63,15 @@ Add them to the `CartData` dataset:
 Grid = addfield(Grid,(;Phases, Temp))
 ```
 
-````
-CartData 
+```
+CartData
     size    : (512, 512, 128)
     x       ϵ [ -1000.0 : 1000.0]
     y       ϵ [ -1000.0 : 1000.0]
     z       ϵ [ -660.0 : 0.0]
     fields  : (:Z, :Phases, :Temp)
 
-````
+```
 
 Which looks like
 
@@ -79,10 +79,10 @@ Which looks like
 write_paraview(Grid,"Grid3D_FreeSubduction");
 ```
 
-````
+```
 Saved file: Grid3D_FreeSubduction.vts
 
-````
+```
 
 ![Mechanical3D_Tutorial_1](../assets/img/Mechanical3D_Tutorial_1.png)
 
@@ -173,15 +173,10 @@ Grid = addfield(Grid,(;Phases, Temp))
 write_paraview(Grid,"Grid3D_Ridges");
 ```
 
-````
+```
 Saved file: Grid3D_Ridges.vts
 
-````
+```
 
 And the resulting image looks like
 ![Mechanical3D_Tutorial_2](../assets/img/Mechanical3D_Tutorial_2.png)
-
----
-
-*This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
-

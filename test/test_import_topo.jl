@@ -25,6 +25,7 @@ topo_server_ok = get(ENV, "GMG_TOPO_PREFETCH_OK", "true") == "true" ||
         @test_throws "must satisfy" import_topo([180, 185, 40, 41])
         @test_throws "must satisfy" import_topo([350, 355, 40, 41])
         @test_throws "must satisfy" import_topo([10, 10.5, 60, 60])
+        @test_throws "antimeridian" import_topo([170, -170, -20, -10])
         # named after the south-west corner, zero padded
         @test G.tile_filename(28, -18, "earth_relief", "03s", "g") == "N28W018.SRTMGL3.jp2"
         @test G.tile_filename(0, -30, "earth_relief", "01m", "p") == "N00W030.earth_relief_01m_p.jp2"
@@ -41,7 +42,7 @@ topo_server_ok = get(ENV, "GMG_TOPO_PREFETCH_OK", "true") == "true" ||
         @test G.native_registration("earth_relief", "15s", "g") == "p"
     end
 
-    # `"@earth_relief_01m"`, as this function used to be called
+    # the `"@earth_relief_01m"` spelling of the data set
     @testset "file= spelling" begin
         G = GeophysicalModelGenerator
         @test G.parse_topo_file("@earth_relief_01m") == ("earth_relief", "01m", "g")
@@ -58,6 +59,33 @@ topo_server_ok = get(ENV, "GMG_TOPO_PREFETCH_OK", "true") == "true" ||
         @test G.tile_size_deg("earth_relief", "15s", "p") == 10
         @test G.tile_size_deg("earth_relief", "03s", "g") == 1
         @test isnothing(G.tile_size_deg("earth_relief", "10m", "g"))
+    end
+
+    # what enters the cache, checked with local files rather than the server
+    @testset "download validation" begin
+        G = GeophysicalModelGenerator
+        dir = mktempdir()
+        html = joinpath(dir, "error.html")
+        write(html, "<html><body>Service unavailable</body></html>")
+        jp2 = joinpath(dir, "source.jp2")
+        write(jp2, b"\0\0\0\x0cjP  \r\n\x87\n", zeros(UInt8, 20))
+        fileurl(p) = "file://" * (Sys.iswindows() ? "/" * replace(p, '\\' => '/') : p)
+
+        # an error page is not cached, and leaves no temporary file behind
+        dest = joinpath(dir, "N00E000.earth_relief_01m_g.jp2")
+        @test_throws "did not deliver a valid" G.download_validated(fileurl(html), dest; timeout = 10)
+        @test readdir(dir) == ["error.html", "source.jp2"]
+        G.download_validated(fileurl(jp2), dest; timeout = 10)
+        @test read(dest) == read(jp2)
+        @test length(readdir(dir)) == 3
+
+        index = joinpath(dir, "gmt_data_server.txt")
+        @test_throws "did not deliver a valid" G.download_validated(fileurl(html), index; timeout = 10)
+        @test G.is_valid_download(G.BUNDLED_SERVER_INDEX)
+
+        # a tile that passes the check but does not decode reports what the decoder said
+        @test_throws "opj_decompress could not decode" G.decode_jp2(dest, 10)
+        @test !isfile(dest * ".raw")
     end
 
     # La Palma: small, has both land and deep water, and a summit to check against
@@ -116,4 +144,14 @@ topo_server_ok = get(ENV, "GMG_TOPO_PREFETCH_OK", "true") == "true" ||
             @test minimum(ustrip.(gebco.fields.Topography)) < -3     # km
         end
     end
+end
+
+@testset "import_topo offline behavior" begin
+    G = GeophysicalModelGenerator
+    dir = mktempdir()
+    dest = joinpath(dir, "N00E000.SRTMGL3.jp2")
+    touch(dest * ".absent")          # a remembered 404
+    @test G.download_tile("earth_relief/earth_relief_03s_g/N00E000.SRTMGL3.jp2", dest) == false
+    @test_throws "res must be one of" import_topo([10, 11, 40, 41], res = "07m")
+    @test_throws "dataset \"earth_unknown\" is not on the GMT data server" import_topo([10, 11, 40, 41], dataset = "earth_unknown")
 end
