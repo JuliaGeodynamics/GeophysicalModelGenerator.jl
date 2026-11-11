@@ -135,6 +135,7 @@ makedocs(;
             "Movies" => "man/movies.md",
         ],
         "List of functions" => "man/listfunctions.md",
+        "Publications" => "man/publications.md",
         "Authors" => "man/authors.md",
         "Contributing" => "man/contributing.md",
         "Code of Conduct" => "man/code_of_conduct.md",

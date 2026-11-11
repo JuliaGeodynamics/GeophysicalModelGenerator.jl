@@ -1,0 +1,84 @@
+name: Add publication
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  add:
+    if: contains(github.event.issue.labels.*.name, 'publication') || startsWith(github.event.issue.title, '[Publication]')
+    runs-on: ubuntu-latest
+    steps:
+      # Only people with write access to the repository may trigger changes.
+      - name: Check permission
+        id: perm
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AUTHOR: ${{ github.event.issue.user.login }}
+        run: |
+          p=$(gh api "repos/$GITHUB_REPOSITORY/collaborators/$AUTHOR/permission" --jq .permission || echo none)
+          case "$p" in admin|maintain|write) echo "allowed=true" >> "$GITHUB_OUTPUT" ;; *) echo "allowed=false" >> "$GITHUB_OUTPUT" ;; esac
+
+      - name: Explain refusal
+        if: steps.perm.outputs.allowed != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ github.event.issue.number }}
+        run: gh issue comment "$NUMBER" --repo "$GITHUB_REPOSITORY" --body "Thanks! Only repository collaborators can add publications automatically; a maintainer will have a look."
+
+      - uses: actions/checkout@v7
+        if: steps.perm.outputs.allowed == 'true'
+      - uses: julia-actions/setup-julia@v3
+        if: steps.perm.outputs.allowed == 'true'
+        with:
+          version: "1"
+      - uses: julia-actions/cache@v3
+        if: steps.perm.outputs.allowed == 'true'
+
+      # The issue body is untrusted text: it is passed through the environment, never
+      # interpolated into the script, and only DOI-shaped strings are extracted from it.
+      - name: Format and insert
+        id: add
+        if: steps.perm.outputs.allowed == 'true'
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          julia --project=_pubbot -e 'using Pkg; Pkg.instantiate()'
+          julia --project=_pubbot _pubbot/add_doi.jl --report "$RUNNER_TEMP/report.md"
+
+      - name: Open pull request
+        id: cpr
+        if: steps.add.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: pubbot/issue-${{ github.event.issue.number }}
+          delete-branch: true
+          title: "Publications: add from #${{ github.event.issue.number }}"
+          body-path: ${{ runner.temp }}/report.md
+          commit-message: "Add publications from #${{ github.event.issue.number }}"
+          labels: publication
+          add-paths: |
+            docs/src/man/publications.md
+            _pubbot/seen_dois.txt
+
+      - name: Reply on issue
+        if: steps.perm.outputs.allowed == 'true' && always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ github.event.issue.number }}
+          PR_URL: ${{ steps.cpr.outputs.pull-request-url }}
+          OUTCOME: ${{ steps.add.outcome }}
+        run: |
+          if [ -n "$PR_URL" ]; then
+            gh issue comment "$NUMBER" --repo "$GITHUB_REPOSITORY" --body "Opened $PR_URL for review."
+          elif [ "$OUTCOME" = "success" ]; then
+            gh issue comment "$NUMBER" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/report.md"
+          else
+            gh issue comment "$NUMBER" --repo "$GITHUB_REPOSITORY" --body "Something went wrong, see $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          fi
