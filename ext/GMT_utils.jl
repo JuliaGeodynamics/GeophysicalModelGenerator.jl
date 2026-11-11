@@ -40,12 +40,12 @@ function import_GeoTIFF(fname::String; fieldname = :layer1, negative = false, is
         if length(size(G.image)) == 3
             data = permutedims(G.image, [2, 1, 3])
         elseif length(size(G.image)) == 2
-            if size(G.image)==(nx,ny)
-              data[:,:,1] = G.image
-            elseif size(G.image)==(ny,nx)
-              data[:,:,1] = G.image'
+            if size(G.image) == (nx, ny)
+                data[:, :, 1] = G.image
+            elseif size(G.image) == (ny, nx)
+                data[:, :, 1] = G.image'
             else
-              error("unknown size; ")
+                error("unknown size; ")
             end
         end
 

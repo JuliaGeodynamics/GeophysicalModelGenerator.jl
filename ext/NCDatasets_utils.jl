@@ -156,8 +156,10 @@ function tomo_2_GeoData(filename::String; vel_type::String = "vs")
     depth, lon, lat, vel = NCDataset(filename) do data
         vel = data[vel_type][:, :, :]
         T = float(nonmissingtype(eltype(vel)))
-        (nomissing(data["depth"][:]), nomissing(data["longitude"][:]), nomissing(data["latitude"][:]),
-         map(v -> ismissing(v) ? T(NaN) : T(v), vel))
+        (
+            nomissing(data["depth"][:]), nomissing(data["longitude"][:]), nomissing(data["latitude"][:]),
+            map(v -> ismissing(v) ? T(NaN) : T(v), vel),
+        )
     end
 
     # create lon, lat, depth grid
@@ -165,7 +167,6 @@ function tomo_2_GeoData(filename::String; vel_type::String = "vs")
 
     return GeoData(Lon, Lat, Depth, (vel = vel,))
 end
-
 
 
 """

@@ -22,7 +22,7 @@ function import_Gmsh(fname::String)
     # Extract vertices
     nverts = length(mesh.grid.node_coordinates)
     dims = length(mesh.grid.node_coordinates[1])
-    vertices = [mesh.grid.node_coordinates[n][i] for i in 1:dims,n in 1:nverts]
+    vertices = [mesh.grid.node_coordinates[n][i] for i in 1:dims, n in 1:nverts]
 
     # write coords as 1D double array
     nvertices_cell = length(mesh.grid.cell_node_ids[1])
