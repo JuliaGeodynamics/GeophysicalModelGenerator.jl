@@ -1010,7 +1010,8 @@ let
     function allocs(G)
         P, T = zeros(Int64, size(G)), zeros(size(G))
         add_slab!(P, T, G, slab; T = HalfspaceCoolingTemp())
-        return @allocated add_slab!(P, T, G, slab; T = HalfspaceCoolingTemp())
+        # the minimum of a few runs, as @allocated also counts allocations of other threads
+        return minimum(_ -> @allocated(add_slab!(P, T, G, slab; T = HalfspaceCoolingTemp())), 1:3)
     end
     @test allocs(CartData(xyz_grid(range(0, 100, 80), range(0, 100, 80), range(-60, 0, 80)))) - allocs(GridAlloc) < 50_000   # 512_000 and 64_000 points
 end
