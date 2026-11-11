@@ -1,0 +1,22 @@
+name = "PubBot"
+uuid = "f196049c-c26f-49c5-9db9-b567b4f56510"
+version = "0.1.0"
+
+[deps]
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+Poppler_jll = "9c32591e-4766-534b-9725-b71a8799265b"
+TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+Unicode = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
+
+[compat]
+JSON = "1"
+Poppler_jll = "25"
+julia = "1.10"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

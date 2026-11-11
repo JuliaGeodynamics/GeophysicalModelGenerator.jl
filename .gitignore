@@ -28,3 +28,6 @@ tutorial/test.tiff
 *.nc
 !/test/test_files/ISCTest.xml
 test/gmt.history
+
+# Publication bot
+_pubbot/.cache
