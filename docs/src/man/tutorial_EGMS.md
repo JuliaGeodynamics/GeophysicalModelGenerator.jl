@@ -28,16 +28,28 @@ The Ortho level combines the ascending and descending satellite tracks into two 
 
 Downloading requires a free [EU Login](https://ecas.ec.europa.eu/cas/eim/external/register.cgi) account, so this step has to be done by hand:
 
-1. Open the EGMS Explorer at [https://egms.land.copernicus.eu](https://egms.land.copernicus.eu) and log in with your EU Login account (create one first if you do not have it yet). Looking at the map works without, but searching and downloading products does not.
-2. Select the level `ORTHO (Level 3)` and the release you want. Every release covers about five years and only the latest two are offered, for example `2020-2024`.
+1. Open the EGMS Explorer at [https://egms.land.copernicus.eu](https://egms.land.copernicus.eu) and click the padlock icon (`Sign in with EU Login`). Create an account first if you do not have one yet. Looking at the map works without it, but searching and downloading products does not.
+2. Under `Level` select `ORTHO (Level 3)`, and under `Release` the period you want, for example `2020-2024`. Every release covers about five years and only the latest two are offered.
 3. Zoom to your region of interest; you can type `Etna` or the coordinates (`37.75, 15.0`) in the search box. Clicking on a point of the map shows its time series, which is a good way to check that there is something of interest before downloading.
-4. Open the product search (download) tool, draw a polygon around your region on the map and start the search. This lists the tiles that touch the polygon.
-5. Download the `U` (vertical) and, if you want it, the `E` (east-west) file of every tile listed. For Etna that is a single tile, `E47N16`, so you get:
-   - `EGMS_L3_E47N16_100km_U_2020_2024_1.zip`
-   - `EGMS_L3_E47N16_100km_E_2020_2024_1.zip`
+4. Select the `Geographic archive search` tool. Click on the map to draw a polygon around your region and double-click to close it, which starts the search. The products that touch the polygon are then listed in the `Archive` panel.
+5. Download the files you need from that list. You recognise them by their name, which is built up as follows:
+
+   `EGMS_L3_E47N16_100km_U_2020_2024_1.zip`
+
+   | Part | Meaning |
+   |:-----|:--------|
+   | `L3` | the level (Ortho) |
+   | `E47N16` | the tile, a square of 100 x 100 km |
+   | `U` or `E` | the component: `U` is the vertical (up) motion, `E` the east-west motion |
+   | `2020_2024` | the release |
+   | `1` | the version of the file |
+
+   Every tile thus comes as two separate files, one for each component. Take the `U` file of every tile in the list, and the `E` file as well if you also want the horizontal motion. Etna lies within a single tile, `E47N16`, so for this tutorial you need:
+   - `EGMS_L3_E47N16_100km_U_2020_2024_1.zip` (vertical)
+   - `EGMS_L3_E47N16_100km_E_2020_2024_1.zip` (east-west)
 6. Unzip them and put the `.csv` files in the directory you work in. Each zip file also holds a GeoTIFF with the mean velocity only, which we do not use here.
 
-The number at the end of the file name is the version of the file, which is increased if EGMS delivers a corrected one, so yours may end with `_2`.
+The version is increased if EGMS delivers a corrected file, so yours may end with `_2`.
 
 The name of a tile gives its lower left corner in the map projection of EGMS (ETRS89-LAEA, EPSG:3035) in units of 100 km: `E47N16` starts at an easting of 4700 km and a northing of 1600 km. If you want to know beforehand which tile a point is in:
 
