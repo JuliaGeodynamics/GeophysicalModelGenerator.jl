@@ -72,7 +72,7 @@ InSAR measurement points of the European Ground Motion Service, as read by
 - `lon`, `lat`     : position of every point [degrees]
 - `height`         : height of every point above the geoid [m]
 - `dates`          : the acquisition dates of the time series
-- `displacement`   : displacement [mm] with respect to the first date; `displacement[i, p]`
+- `displacement`   : displacement [mm], of which only the change with time is meaningful; `displacement[i, p]`
                      is the value at `dates[i]` for point `p`
 - `fields`         : the other numerical columns of the file, such as `mean_velocity`
                      [mm/yr] (the velocity EGMS computed over the full period)

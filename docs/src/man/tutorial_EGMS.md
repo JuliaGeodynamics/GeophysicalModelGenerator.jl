@@ -65,10 +65,10 @@ julia> E, N = GeophysicalModelGenerator.lonlat_to_laea(15.0, 37.75)
 
 An unzipped tile is a large text file. If you open it with a text editor, it starts like:
 ```
-pid,easting,northing,height_ortho,rmse_ts,mean_velocity,mean_velocity_std,acceleration,acceleration_std,seasonality,seasonality_std,gnss_velocity_n,gnss_velocity_e,gnss_velocity_u,20191204,20191210,20191216,...
-10NAgpcbbl,4773750,1900050,7.3,1.0,-0.6,0.0,-0.57,0.06,0.9,0.1,2.4,0.5,-0.6,1.2,-0.5,-0.3,...
+pid,easting,northing,height_ortho,rmse_ts,mean_velocity,mean_velocity_std,acceleration,acceleration_std,seasonality,seasonality_std,gnss_velocity_n,gnss_velocity_e,gnss_velocity_u,20201209,20201215,20201221,...
+10JVqNtNeK,4700050,1600050,497.5,2.5,-0.7,0.1,-0.37,0.16,1.4,0.1,3.6,-1.2,-0.5,-1.8,-1.7,-2.0,...
 ```
-After the coordinates and a few statistics of each point, there is one column for every date (every 6 days) with the displacement in mm with respect to the first date. The dates above are only an illustration; the ones in your file depend on the release. Releases before 2020-2024 use slightly different column names (`height` and `rmse`), which `import_EGMS` handles as well.
+After the coordinates and a few statistics of each point, there is one column for every date (every 6 days) with the displacement in mm. Only changes of the displacement with time are meaningful, as the values do not start at zero. Releases before 2020-2024 use slightly different column names (`height` and `rmse`), which `import_EGMS` handles as well.
 
 ## 3. Read the data
 
@@ -79,14 +79,14 @@ julia> using GeophysicalModelGenerator, Dates
 julia> limits = [14.7, 15.3, 37.5, 38.0]
 julia> up = import_EGMS("EGMS_L3_E47N16_100km_U_2020_2025_1.csv", limits = limits)
 EGMSData
-  points    : ...
-  lon       ϵ [ ... ]
-  lat       ϵ [ ... ]
-  dates     : ... from ... to ...
+  points    : 101560
+  lon       ϵ [ 14.700002984094718 : 15.299935652997434]
+  lat       ϵ [ 37.50000974271099 : 37.99995772116388]
+  dates     : 302 from 2020-12-09 to 2025-11-19
   fields    : (:rmse_ts, :mean_velocity, :mean_velocity_std, :acceleration, :acceleration_std, :seasonality, :seasonality_std, :gnss_velocity_n, :gnss_velocity_e, :gnss_velocity_u)
 ```
 
-Reading takes a little while as the whole file has to be gone through. The result holds the location of the points (`up.lon`, `up.lat`, and `up.height` in m above the geoid), the acquisition dates (`up.dates`), the displacement in mm of every point at every date (`up.displacement[idate, ipoint]`) and the remaining columns of the file (`up.fields`). Of those, `up.fields.mean_velocity` is the velocity in mm/yr over the whole period of the release as computed by EGMS. Check `up.dates` to see which period your file covers: a release does not necessarily start on the first of January of its first year.
+Reading takes a few seconds, as the whole file of 270 MB has to be gone through. The result holds the location of the points (`up.lon`, `up.lat`, and `up.height` in m above the geoid), the acquisition dates (`up.dates`), the displacement in mm of every point at every date (`up.displacement[idate, ipoint]`) and the remaining columns of the file (`up.fields`). Of those, `up.fields.mean_velocity` is the velocity in mm/yr over the whole period of the release as computed by EGMS. Note that this release starts in December 2020 and not in January: check `up.dates` to see which period your file covers.
 
 If your region extends over several tiles, pass a vector of file names, or the name of the directory that holds them, and they are combined. Read the `U` and `E` files separately though, as they are different quantities.
 
@@ -99,7 +99,7 @@ julia> v_2021 = EGMS_velocity(up, from = Date(2021, 1, 1), to = Date(2021, 12, 3
 julia> v_2023 = EGMS_velocity(up, from = Date(2023, 1, 1), to = Date(2023, 12, 31))
 ```
 
-The result is a vector with the velocity in mm/yr of every point. Many points move up and down with the seasons (groundwater, temperature). If the period is at least a year long, a yearly signal is therefore fitted along with the straight line, so that it does not end up in the velocity. You can switch this on or off with the `seasonal` keyword. Keep in mind that the shorter the period, the larger the uncertainty of the velocity.
+The result is a vector with the velocity in mm/yr of every point. Many points move up and down with the seasons (groundwater, temperature). If the period is at least a year long, a yearly signal is therefore fitted along with the straight line, so that it does not end up in the velocity. You can switch this on or off with the `seasonal` keyword. Keep in mind that the shorter the period, the larger the uncertainty of the velocity. Without dates, the whole period of the file is used, and the result then agrees with the `mean_velocity` of EGMS to within a few hundredths of a mm/yr.
 
 ## 5. Put the velocities on the topography
 
