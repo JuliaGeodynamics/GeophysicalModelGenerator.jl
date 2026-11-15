@@ -122,7 +122,7 @@ case for the Ortho tiles of one release and one component.
 ```julia
 julia> using Dates
 julia> limits = [14.7, 15.3, 37.5, 38.0]            # Etna
-julia> data = import_EGMS("EGMS_L3_E47N16_100km_U_2020_2024_1.csv", limits = limits)
+julia> data = import_EGMS("EGMS_L3_E47N16_100km_U_2020_2025_1.csv", limits = limits)
 julia> vel  = EGMS_velocity(data, from = Date(2021, 1, 1), to = Date(2021, 12, 31))  # mm/yr
 julia> Topo = import_topo(limits, res = "03s")
 julia> Surf = EGMS_on_grid(data, Topo, from = Date(2021, 1, 1), to = Date(2021, 12, 31), smooth = true)

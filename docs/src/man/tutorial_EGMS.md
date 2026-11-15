@@ -28,25 +28,29 @@ The Ortho level combines the ascending and descending satellite tracks into two 
 
 Downloading requires a free [EU Login](https://ecas.ec.europa.eu/cas/eim/external/register.cgi) account, so this step has to be done by hand:
 
-1. Open the EGMS Explorer at [https://egms.land.copernicus.eu](https://egms.land.copernicus.eu) and click the padlock icon (`Sign in with EU Login`). Create an account first if you do not have one yet. Looking at the map works without it, but searching and downloading products does not.
-2. Under `Level` select `ORTHO (Level 3)`, and under `Release` the period you want, for example `2020-2024`. Every release covers about five years and only the latest two are offered.
-3. Zoom to your region of interest; you can type `Etna` or the coordinates (`37.75, 15.0`) in the search box. Clicking on a point of the map shows its time series, which is a good way to check that there is something of interest before downloading.
-4. Select the `Geographic archive search` tool. Click on the map to draw a polygon around your region and double-click to close it, which starts the search. The products that touch the polygon are then listed in the `Archive` panel.
-5. Download the files you need from that list. You recognise them by their name, which is built up as follows:
+1. Open the EGMS Explorer at [https://egms.land.copernicus.eu](https://egms.land.copernicus.eu) and click the padlock icon in the toolbar (`Sign in with EU Login`). Create an account first if you do not have one yet. Looking at the map works without it, but searching and downloading products does not.
+2. Zoom to your region of interest; you can type `Etna` or the coordinates (`37.75 15.0`) in the `Place/coordinates` box. Clicking on a point of the map shows its time series, which is a good way to check that there is something of interest before downloading.
+3. Click the `Geographic archive search` button in the toolbar (the polygon with a downward arrow; it is also shown in the `Product Archive` panel that opens). Then click on the map to draw a polygon around your region, and double-click to close it. That starts the search.
+4. In the `Product Archive` panel, tick the `Release` you want, for example `2020-2025`, and as `Level` tick `ORTHO (Level 3)` only. Every release covers about five years and only the latest two are offered.
+5. The files that were found are now listed on the left, in two groups: `ORTHO-EAST` (the east-west motion) and `ORTHO-UP` (the vertical motion). Each row is one file, with its name and size, and the first of the two buttons next to it downloads it. The tiles themselves are outlined on the map.
 
-   `EGMS_L3_E47N16_100km_U_2020_2024_1.zip`
+![Tutorial_EGMS_download](../assets/img/Tutorial_EGMS_download.png)
+
+   Every tile comes as two separate files, one in each group. The name of a file tells you what it is:
+
+   `EGMS_L3_E47N16_100km_U_2020_2025_1.zip`
 
    | Part | Meaning |
    |:-----|:--------|
    | `L3` | the level (Ortho) |
    | `E47N16` | the tile, a square of 100 x 100 km |
    | `U` or `E` | the component: `U` is the vertical (up) motion, `E` the east-west motion |
-   | `2020_2024` | the release |
+   | `2020_2025` | the release |
    | `1` | the version of the file |
 
-   Every tile thus comes as two separate files, one for each component. Take the `U` file of every tile in the list, and the `E` file as well if you also want the horizontal motion. Etna lies within a single tile, `E47N16`, so for this tutorial you need:
-   - `EGMS_L3_E47N16_100km_U_2020_2024_1.zip` (vertical)
-   - `EGMS_L3_E47N16_100km_E_2020_2024_1.zip` (east-west)
+   The search lists every tile that the polygon touches, which in the example above are four. You only need the ones that cover your region: Etna lies entirely within tile `E47N16`, so for this tutorial download these two files (about 70 MB each):
+   - `EGMS_L3_E47N16_100km_U_2020_2025_1.zip` from the `ORTHO-UP` group (vertical)
+   - `EGMS_L3_E47N16_100km_E_2020_2025_1.zip` from the `ORTHO-EAST` group (east-west)
 6. Unzip them and put the `.csv` files in the directory you work in. Each zip file also holds a GeoTIFF with the mean velocity only, which we do not use here.
 
 The version is increased if EGMS delivers a corrected file, so yours may end with `_2`.
@@ -59,7 +63,7 @@ julia> E, N = GeophysicalModelGenerator.lonlat_to_laea(15.0, 37.75)
 (4.764602103002746e6, 1.6447430091033338e6)
 ```
 
-A tile is a text file of up to a few gigabytes. If you open it with a text editor, it starts like:
+An unzipped tile is a large text file. If you open it with a text editor, it starts like:
 ```
 pid,easting,northing,height_ortho,rmse_ts,mean_velocity,mean_velocity_std,acceleration,acceleration_std,seasonality,seasonality_std,gnss_velocity_n,gnss_velocity_e,gnss_velocity_u,20191204,20191210,20191216,...
 10NAgpcbbl,4773750,1900050,7.3,1.0,-0.6,0.0,-0.57,0.06,0.9,0.1,2.4,0.5,-0.6,1.2,-0.5,-0.3,...
@@ -73,7 +77,7 @@ A tile is much larger than the volcano, so we only keep the points within the re
 ```julia
 julia> using GeophysicalModelGenerator, Dates
 julia> limits = [14.7, 15.3, 37.5, 38.0]
-julia> up = import_EGMS("EGMS_L3_E47N16_100km_U_2020_2024_1.csv", limits = limits)
+julia> up = import_EGMS("EGMS_L3_E47N16_100km_U_2020_2025_1.csv", limits = limits)
 EGMSData
   points    : ...
   lon       ϵ [ ... ]
@@ -147,7 +151,7 @@ Two properties are worth knowing:
 The result has the vector field `Velocity`, so that the motion can be shown as arrows. With only the vertical file, the arrows point up or down. If you also pass the east-west file, they show the motion in the east-up plane (EGMS has no north-south component, so that part of the vector is zero), and the east-west velocity is added as the scalar field `velocity_east`:
 
 ```julia
-julia> east = import_EGMS("EGMS_L3_E47N16_100km_E_2020_2024_1.csv", limits = limits)
+julia> east = import_EGMS("EGMS_L3_E47N16_100km_E_2020_2025_1.csv", limits = limits)
 julia> Etna = EGMS_on_grid(up, Topo, east = east, from = Date(2021, 1, 1), to = Date(2021, 12, 31))
 GeoData
   size      : (721, 601, 1)
