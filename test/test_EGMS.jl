@@ -114,7 +114,7 @@ import GeophysicalModelGenerator: laea_to_lonlat, lonlat_to_laea
     step = import_EGMS(f3)
     step.displacement .= Float32.([d > Date(2019, 1, 5) ? (x > sum(extrema(step.lon)) / 2 ? 10.0 : -10.0) * Dates.value(d - Date(2019, 1, 5)) / 365.25 : 0.0 for d in step.dates, x in step.lon])
     glon, glat = range(extrema(step.lon)..., length = 60), range(extrema(step.lat)..., length = 8)
-    sharp = EGMS_on_grid(step, glon, glat, radius = 1.0, smooth = true).fields.velocity[:, 4, 1]
+    sharp = EGMS_on_grid(step, glon, glat, radius = 1.0, smooth = true, minpoints = 10).fields.velocity[:, 4, 1]
     blurred = EGMS_on_grid(step, glon, glat, radius = 1.0, smooth = true, minpoints = Inf).fields.velocity[:, 4, 1]
     @test count(v -> abs(v) < 9, sharp) < count(v -> abs(v) < 9, blurred)
     @test count(v -> abs(v) < 9, sharp) <= 6

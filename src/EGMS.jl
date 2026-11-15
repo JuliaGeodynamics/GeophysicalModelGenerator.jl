@@ -123,9 +123,10 @@ case for the Ortho tiles of one release and one component.
 julia> using Dates
 julia> limits = [14.7, 15.3, 37.5, 38.0]            # Etna
 julia> data = import_EGMS("EGMS_L3_E47N16_100km_U_2020_2025_1.csv", limits = limits)
-julia> vel  = EGMS_velocity(data, from = Date(2021, 1, 1), to = Date(2021, 12, 31))  # mm/yr
+julia> vel  = EGMS_velocity(data)                                                    # mm/yr, over the whole period
+julia> vel  = EGMS_velocity(data, from = Date(2021, 1, 1), to = Date(2021, 12, 31))  # mm/yr, over 2021
 julia> Topo = import_topo(limits, res = "03s")
-julia> Surf = EGMS_on_grid(data, Topo, from = Date(2021, 1, 1), to = Date(2021, 12, 31), smooth = true)
+julia> Surf = EGMS_on_grid(data, Topo)
 julia> write_paraview(Surf, "Etna_EGMS")
 ```
 See also [`EGMS_velocity`](@ref), [`EGMS_points`](@ref) and [`EGMS_on_grid`](@ref).
@@ -271,7 +272,7 @@ end
 # --- Interpolation on a grid --------------------------------------------------------------
 
 """
-    Grid_vel = EGMS_on_grid(data::EGMSData, Grid::GeoData; from = first(data.dates), to = last(data.dates), seasonal = nothing, radius = nothing, smooth = false, minpoints = 10, east = nothing)
+    Grid_vel = EGMS_on_grid(data::EGMSData, Grid::GeoData; from = first(data.dates), to = last(data.dates), seasonal = nothing, radius = nothing, smooth = false, minpoints = 50, east = nothing)
     Grid_vel = EGMS_on_grid(data::EGMSData, lon::AbstractRange, lat::AbstractRange; kwargs...)
 
 Puts the velocity [mm/yr] between the dates `from` and `to` (see [`EGMS_velocity`](@ref)) on
@@ -301,7 +302,7 @@ east-west component (the `_E_` file) as `east` to fill `Ve`, which is also added
 `velocity_east`; without it `Ve` is zero. `Vn` is always zero, as EGMS has no north-south
 component.
 """
-function EGMS_on_grid(data::EGMSData, Grid::GeoData; radius = nothing, smooth = false, minpoints = 10, east = nothing, kwargs...)
+function EGMS_on_grid(data::EGMSData, Grid::GeoData; radius = nothing, smooth = false, minpoints = 50, east = nothing, kwargs...)
     size(Grid.lon.val, 3) == 1 || error("Grid should be a surface (a single level in the third direction)")
     vel = EGMS_velocity(data; kwargs...)
     lon, lat = Grid.lon.val, Grid.lat.val

@@ -90,16 +90,22 @@ Reading takes a few seconds, as the whole file of 270 MB has to be gone through.
 
 If your region extends over several tiles, pass a vector of file names, or the name of the directory that holds them, and they are combined. Read the `U` and `E` files separately though, as they are different quantities.
 
-## 4. Velocities over a period
+## 4. Velocities
 
-A volcano does not move at a constant rate, so the average over the whole period is often not what you are after. `EGMS_velocity` fits a straight line through the part of the time series between two dates:
+`EGMS_velocity` computes the average velocity of every point in mm/yr, by fitting a straight line through its time series. Without further arguments, the whole period of the file is used, here the five years from December 2020 to November 2025:
+
+```julia
+julia> v = EGMS_velocity(up)
+```
+
+The result agrees with the `mean_velocity` that EGMS provides to within a few hundredths of a mm/yr. The reason to compute it yourself is that you can choose the period. A volcano does not move at a constant rate, so you may want to compare, say, two different years:
 
 ```julia
 julia> v_2021 = EGMS_velocity(up, from = Date(2021, 1, 1), to = Date(2021, 12, 31))
 julia> v_2023 = EGMS_velocity(up, from = Date(2023, 1, 1), to = Date(2023, 12, 31))
 ```
 
-The result is a vector with the velocity in mm/yr of every point. Many points move up and down with the seasons (groundwater, temperature). If the period is at least a year long, a yearly signal is therefore fitted along with the straight line, so that it does not end up in the velocity. You can switch this on or off with the `seasonal` keyword. Keep in mind that the shorter the period, the larger the uncertainty of the velocity. Without dates, the whole period of the file is used, and the result then agrees with the `mean_velocity` of EGMS to within a few hundredths of a mm/yr.
+Many points move up and down with the seasons (groundwater, temperature). If the period is at least a year long, a yearly signal is therefore fitted along with the straight line, so that it does not end up in the velocity. You can switch this on or off with the `seasonal` keyword. Keep in mind that the shorter the period, the larger the uncertainty of the velocity.
 
 ## 5. Put the velocities on the topography
 
@@ -109,24 +115,55 @@ Next, we load the topography of the same region. A resolution of 3 arc seconds (
 julia> Topo = import_topo(limits, res = "03s")
 ```
 
-`EGMS_on_grid` computes the velocity over a period and gives every point of the topography the average of the measurement points next to it:
+`EGMS_on_grid` computes the velocity and gives every point of the topography the average of the measurement points next to it. We pass the vertical data, and the east-west data as `east`:
 
 ```julia
-julia> Etna = EGMS_on_grid(up, Topo, from = Date(2021, 1, 1), to = Date(2021, 12, 31))
+julia> east = import_EGMS("EGMS_L3_E47N16_100km_E_2020_2025_1.csv", limits = limits)
+julia> Etna = EGMS_on_grid(up, Topo, east = east)
 GeoData
   size      : (721, 601, 1)
   lon       ϵ [ 14.7 : 15.3]
   lat       ϵ [ 37.5 : 38.0]
   depth     ϵ [ -1.6988500000000004 : 3.313]
-  fields    : (:Topography, :velocity, :npoints, :Velocity)
+  fields    : (:Topography, :velocity, :npoints, :velocity_east, :Velocity)
+julia> write_paraview(Etna, "Etna_EGMS")
+Saved file: Etna_EGMS.vts
 ```
 
 The fields that are added to the topography are:
-- `velocity`: the velocity in mm/yr,
+- `velocity`: the vertical velocity in mm/yr (positive is up),
+- `velocity_east`: the east-west velocity in mm/yr (positive is towards the east); only if `east` is given,
 - `npoints`: the number of measurement points that were averaged at that grid point,
-- `Velocity`: the same velocity as a vector, to plot arrows (see below).
+- `Velocity`: the velocity as a vector, to plot arrows (see below).
 
-InSAR does not work over water, dense vegetation or snow (such as the summit of Etna in winter), so there are gaps in the data. These are not filled: grid points without measurement points nearby have a velocity of `NaN`.
+As for `EGMS_velocity`, this is the average over the whole five years, unless you specify a period with `from` and `to`.
+
+Open `Etna_EGMS.vts` in Paraview and color the surface by `velocity` (the fields are listed there with their unit behind the name, so as `velocity []`). Use a colormap that goes from blue via white to red, such as `Cool to Warm (Extended)`, and set its range by hand to be symmetric around zero, for example -20 to 20. Then blue is downward motion, red is upward motion, and white does not move:
+
+![Tutorial_EGMS_vertical](../assets/img/Tutorial_EGMS_vertical.jpg)
+
+The area around the summit subsided by more than 20 mm/yr over these five years. InSAR does not work over water, dense vegetation or snow (such as the summit of Etna itself), so there are gaps in the data. These are not filled: grid points without measurement points nearby have a velocity of `NaN` and are shown in the `NaN` color (here gray), which you can set in the colormap editor.
+
+Coloring by `velocity_east` shows the well-known sliding of the eastern flank of the volcano towards the sea, here in red, with up to 30 mm/yr:
+
+![Tutorial_EGMS_east](../assets/img/Tutorial_EGMS_east.jpg)
+
+#### Different periods
+
+To compare periods, compute them separately and add them as fields to the same surface:
+
+```julia
+julia> Etna_2021 = EGMS_on_grid(up, Topo, from = Date(2021, 1, 1), to = Date(2021, 12, 31))
+julia> Etna_2023 = EGMS_on_grid(up, Topo, from = Date(2023, 1, 1), to = Date(2023, 12, 31))
+julia> Etna = addfield(Etna, "Vz_2021", Etna_2021.fields.velocity)
+julia> Etna = addfield(Etna, "Vz_2023", Etna_2023.fields.velocity)
+julia> write_paraview(Etna, "Etna_EGMS")
+```
+
+The subsidence around the summit was much stronger and more widespread in 2021 (first picture), a year with many eruptions, than in 2023 (second picture):
+
+![Tutorial_EGMS_Vz2021](../assets/img/Tutorial_EGMS_Vz2021.jpg)
+![Tutorial_EGMS_Vz2023](../assets/img/Tutorial_EGMS_Vz2023.jpg)
 
 #### Search radius and smoothing
 
@@ -136,48 +173,36 @@ A few keywords control how the measurement points are averaged:
 |:--------|:--------|:-------------|
 | `radius`    | the size of a grid cell, at least 0.1 km | Distance in km within which measurement points are used. A larger radius closes gaps that are narrower than it. |
 | `smooth`    | `false` | With `true`, nearby points count more than distant ones (a Gaussian weight of width `radius/3`), which gives a smoother map. The default `radius` is then three times larger. |
-| `minpoints` | `10` | Where there is plenty of data, the radius is reduced locally to the smallest one that still holds this many points (but not below the size of a grid cell). `Inf` switches that off. |
+| `minpoints` | `50` | Where there is plenty of data, the radius is reduced locally to the smallest one that still holds this many points (but not below the size of a grid cell). `Inf` switches that off. |
 
 ```julia
-julia> Etna_smooth = EGMS_on_grid(up, Topo, from = Date(2021, 1, 1), to = Date(2021, 12, 31), smooth = true, radius = 1.0)
+julia> Etna_smooth = EGMS_on_grid(up, Topo, smooth = true, radius = 1.0)
 ```
 
-Two properties are worth knowing:
+![Tutorial_EGMS_smooth](../assets/img/Tutorial_EGMS_smooth.jpg)
+
+Compared to the first picture, most gaps are closed and the map is smoother. Two properties are worth knowing:
 - The result is always an average of measured values, with or without smoothing. It can therefore never show larger velocities than the data has.
-- Because of `minpoints`, a large `radius` is only used in full where data is sparse. Where data is dense the radius shrinks, so that sharp steps in the velocity, such as across the faults that bound the sliding eastern flank of Etna, are not smoothed away. If such steps still look blurred, lower `minpoints`.
+- Because of `minpoints`, a large `radius` is only used in full where data is sparse. Where data is dense the radius shrinks, so that sharp steps in the velocity, such as across the faults that bound the sliding eastern flank of Etna, are not smoothed away. If such steps still look blurred, lower `minpoints`; if the map is not smooth enough, increase it.
 
 #### Vectors
 
-The result has the vector field `Velocity`, so that the motion can be shown as arrows. With only the vertical file, the arrows point up or down. If you also pass the east-west file, they show the motion in the east-up plane (EGMS has no north-south component, so that part of the vector is zero), and the east-west velocity is added as the scalar field `velocity_east`:
+The vector field `Velocity` holds the eastward and the vertical velocity, so that the motion can be shown as arrows. EGMS has no north-south component, so that part of the vector is zero and the arrows show the motion in the east-up plane only. Without `east`, they only point up or down.
+
+On a grid as fine as this topography there would be far too many arrows. It is easier to make a second, coarser surface for them, here with a spacing of 30 arc seconds (about 900 m) and with smoothing:
 
 ```julia
-julia> east = import_EGMS("EGMS_L3_E47N16_100km_E_2020_2025_1.csv", limits = limits)
-julia> Etna = EGMS_on_grid(up, Topo, east = east, from = Date(2021, 1, 1), to = Date(2021, 12, 31))
-GeoData
-  size      : (721, 601, 1)
-  lon       ϵ [ 14.7 : 15.3]
-  lat       ϵ [ 37.5 : 38.0]
-  depth     ϵ [ -1.6988500000000004 : 3.313]
-  fields    : (:Topography, :velocity, :npoints, :velocity_east, :Velocity)
+julia> Topo_coarse = import_topo(limits, res = "30s")
+julia> Arrows = EGMS_on_grid(up, Topo_coarse, east = east, smooth = true)
+julia> write_paraview(Arrows, "Etna_EGMS_arrows")
+Saved file: Etna_EGMS_arrows.vts
 ```
 
-You can add more fields to the same surface, for example the vertical velocity over another period:
+In Paraview, open `Etna_EGMS_arrows.vts` as well, select the `Glyph` filter, choose `Velocity` as both Orientation and Scale Array, set the Glyph Mode to `All Points` and adjust the scale factor. Points without data have no arrow. Together with the eastward velocity of the fine surface, seen from the south, this gives:
 
-```julia
-julia> Etna_2023 = EGMS_on_grid(up, Topo, from = Date(2023, 1, 1), to = Date(2023, 12, 31))
-julia> Etna = addfield(Etna, "Vz_2023", Etna_2023.fields.velocity)
-```
+![Tutorial_EGMS_arrows](../assets/img/Tutorial_EGMS_arrows.jpg)
 
-And save it to Paraview:
-
-```julia
-julia> write_paraview(Etna, "Etna_EGMS")
-Saved file: Etna_EGMS.vts
-```
-
-In Paraview, open `Etna_EGMS.vts` and color the surface by `velocity` or `velocity_east`. A diverging colormap that is symmetric around zero works best. Points without data are shown in the `NaN` color, which you can set in the colormap editor. The eastward sliding of the eastern flank of the volcano should be clearly visible in `velocity_east`.
-
-To plot arrows, select the `Glyph` filter, choose `Velocity` as both Orientation and Scale Array, set the Glyph Mode to `Every Nth Point` to thin them out, and adjust the scale factor. Points without data have no arrow.
+#### A grid without topography
 
 If you do not need the topography, you can also interpolate to a regular grid at sea level, here with a spacing of 0.005 degrees:
 
@@ -187,22 +212,28 @@ julia> Grid = EGMS_on_grid(up, 14.7:0.005:15.3, 37.5:0.005:38.0)
 
 ## 6. Save the individual points
 
-To look at the measurement points themselves rather than at an interpolated surface, convert them to a set of points. They are placed at their own height, and next to the `velocity` over the period they carry the other columns of the file:
+To look at the measurement points themselves rather than at an interpolated surface, convert them to a set of points. They are placed at their own height, and next to the `velocity` they carry the other columns of the file:
 
 ```julia
-julia> Points = EGMS_points(up, from = Date(2021, 1, 1), to = Date(2021, 12, 31))
+julia> Points = EGMS_points(up)
 julia> write_paraview(Points, "Etna_EGMS_points", PointsData = true)
 Saved file: Etna_EGMS_points.vtu
 ```
 
 ## 7. Time series of a point
 
-The displacements are available as well, for example to plot the time series of the point closest to a given location:
+The displacements themselves are available as well, for example of the point closest to a given location:
 
 ```julia
-julia> i = argmin((up.lon .- 15.10) .^ 2 .+ (up.lat .- 37.70) .^ 2)
+julia> i = argmin((up.lon .- 15.14) .^ 2 .+ (up.lat .- 37.70) .^ 2)
 julia> up.dates, up.displacement[:, i]      # dates and displacement in mm
 ```
+
+Plotted with a plotting package of your choice, for the vertical and the east-west files and for a point on the eastern and one on the north-western flank, this gives:
+
+![Tutorial_EGMS_timeseries](../assets/img/Tutorial_EGMS_timeseries.png)
+
+The point on the eastern flank moved about 60 mm to the east in five years, whereas the one on the other side of the volcano slowly moved to the west.
 
 ## Reference
 
