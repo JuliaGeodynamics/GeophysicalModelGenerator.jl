@@ -111,8 +111,8 @@ makedocs(;
             "21 - 3D model setups" => "man/Tutorial_NumericalModel_3D.md",
             "22 - 3D Volcano setup" => "man/Tutorial_VolcanoModel_3D.md",
             "23 - Build geometry from polygons" =>  "man/tutorial_Polygon_structures.md",
-            "24 - Profiles for the AdriaArrayGeometryPicker" =>  "man/tutorial_AdriaArrayGeometryPicker.md",
-            "25 - InSAR ground motion from EGMS" =>  "man/tutorial_EGMS.md"
+            "24 - Profiles for the AdriaArrayGeometryPicker" => "man/tutorial_AdriaArrayGeometryPicker.md",
+            "25 - InSAR ground motion from EGMS" => "man/tutorial_EGMS.md",
         ],
         "User Guide" => Any[
             "Installation" => "man/installation.md",
