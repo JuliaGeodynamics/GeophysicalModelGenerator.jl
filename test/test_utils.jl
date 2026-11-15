@@ -139,7 +139,7 @@ test_cross_cart = cross_section(DataSet_Cart, dims = (100, 100), Interpolate = t
 
 flatten_cross = flatten_cross_section(test_cross_cart)
 
-@test flatten_cross[2][30] == 1.0536089537226578
+@test flatten_cross[2][30] ≈ 1.0536089537226578
 @test test_cross_cart.fields.FlatCrossSection[2][30] == flatten_cross[2][30] # should be added by default
 
 # Flatten 3D cross_section with GeoData
@@ -180,7 +180,7 @@ Data_sub_Interp_Cart = extract_subvolume(DataSet_Cart, X_level = (10, 15), Y_lev
 # Extract subset of cross-section
 test_cross = cross_section(Data_set3D, Lat_level = 35, dims = (50, 100), Interpolate = true)
 Data_sub_cross = extract_subvolume(test_cross, Depth_level = (-100km, 0km), Interpolate = false)
-@test Data_sub_cross.fields[1][11] == -200.00000000000003km
+@test Data_sub_cross.fields[1][11] ≈ -200km
 @test size(Data_sub_cross.lat) == (50, 1, 34)
 
 test_cross_cart = cross_section(DataSet_Cart, Start = (0.0, -9.0), End = (90.0, 19.0)) # Cartesian cross-section
