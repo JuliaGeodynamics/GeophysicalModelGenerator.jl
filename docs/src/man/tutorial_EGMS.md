@@ -36,22 +36,21 @@ Downloading requires a free [EU Login](https://ecas.ec.europa.eu/cas/eim/externa
 
 ![Tutorial_EGMS_download](../assets/img/Tutorial_EGMS_download.png)
 
-   Every tile comes as two separate files, one in each group. The name of a file tells you what it is:
+Every tile comes as two separate files, one in each group. The name of a file tells you what it is, for example `EGMS_L3_E47N16_100km_U_2020_2025_1.zip`:
 
-   `EGMS_L3_E47N16_100km_U_2020_2025_1.zip`
+| Part | Meaning |
+|:-----|:--------|
+| `L3` | the level (Ortho) |
+| `E47N16` | the tile, a square of 100 x 100 km |
+| `U` or `E` | the component: `U` is the vertical (up) motion, `E` the east-west motion |
+| `2020_2025` | the release |
+| `1` | the version of the file |
 
-   | Part | Meaning |
-   |:-----|:--------|
-   | `L3` | the level (Ortho) |
-   | `E47N16` | the tile, a square of 100 x 100 km |
-   | `U` or `E` | the component: `U` is the vertical (up) motion, `E` the east-west motion |
-   | `2020_2025` | the release |
-   | `1` | the version of the file |
+The search lists every tile that the polygon touches, which in the example above are four. You only need the ones that cover your region: Etna lies entirely within tile `E47N16`, so for this tutorial download these two files (about 70 MB each):
+- `EGMS_L3_E47N16_100km_U_2020_2025_1.zip` from the `ORTHO-UP` group (vertical)
+- `EGMS_L3_E47N16_100km_E_2020_2025_1.zip` from the `ORTHO-EAST` group (east-west)
 
-   The search lists every tile that the polygon touches, which in the example above are four. You only need the ones that cover your region: Etna lies entirely within tile `E47N16`, so for this tutorial download these two files (about 70 MB each):
-   - `EGMS_L3_E47N16_100km_U_2020_2025_1.zip` from the `ORTHO-UP` group (vertical)
-   - `EGMS_L3_E47N16_100km_E_2020_2025_1.zip` from the `ORTHO-EAST` group (east-west)
-6. Unzip them and put the `.csv` files in the directory you work in. Each zip file also holds a GeoTIFF with the mean velocity only, which we do not use here.
+Finally, unzip them and put the `.csv` files in the directory you work in. Each zip file also holds a GeoTIFF with the mean velocity only, which we do not use here.
 
 The version is increased if EGMS delivers a corrected file, so yours may end with `_2`.
 
