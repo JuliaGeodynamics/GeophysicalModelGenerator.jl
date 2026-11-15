@@ -187,20 +187,7 @@ Compared to the first picture, most gaps are closed and the map is smoother. Two
 
 #### Vectors
 
-The vector field `Velocity` holds the eastward and the vertical velocity, so that the motion can be shown as arrows. EGMS has no north-south component, so that part of the vector is zero and the arrows show the motion in the east-up plane only. Without `east`, they only point up or down.
-
-On a grid as fine as this topography there would be far too many arrows. It is easier to make a second, coarser surface for them, here with a spacing of 30 arc seconds (about 900 m) and with smoothing:
-
-```julia
-julia> Topo_coarse = import_topo(limits, res = "30s")
-julia> Arrows = EGMS_on_grid(up, Topo_coarse, east = east, smooth = true)
-julia> write_paraview(Arrows, "Etna_EGMS_arrows")
-Saved file: Etna_EGMS_arrows.vts
-```
-
-In Paraview, open `Etna_EGMS_arrows.vts` as well, select the `Glyph` filter, choose `Velocity` as both Orientation and Scale Array, set the Glyph Mode to `All Points` and adjust the scale factor. Points without data have no arrow. Together with the eastward velocity of the fine surface, seen from the south, this gives:
-
-![Tutorial_EGMS_arrows](../assets/img/Tutorial_EGMS_arrows.jpg)
+The vector field `Velocity` holds the eastward and the vertical velocity, so that the motion can be shown as arrows with the `Glyph` filter of Paraview. EGMS has no north-south component, so that part of the vector is zero and the arrows show the motion in the east-up plane only. Without `east`, they only point up or down. Section 6 shows how to plot them.
 
 #### A grid without topography
 
@@ -210,7 +197,73 @@ If you do not need the topography, you can also interpolate to a regular grid at
 julia> Grid = EGMS_on_grid(up, 14.7:0.005:15.3, 37.5:0.005:38.0)
 ```
 
-## 6. Save the individual points
+## 6. Cartesian coordinates, arrows and faults
+
+So far the surface is in geographic coordinates, which Paraview shows on a sphere. For a local study it is often handier to work in Cartesian coordinates: `x` towards the east, `y` towards the north and `z` upwards, all in km with respect to a point that you choose. This is what `convert2CartData` does; we take the summit of Etna as origin:
+
+```julia
+julia> proj = ProjectionPoint(Lat = 37.75, Lon = 15.0)
+julia> Etna_cart = convert2CartData(Etna, proj)
+CartData
+    size    : (721, 601, 1)
+    x       ϵ [ -26.517053872323537 : 26.51705387232348]
+    y       ϵ [ -27.736249321532902 : 27.779882576341276]
+    z       ϵ [ -1.6988500000000004 : 3.313]
+    fields  : (:Topography, :velocity, :npoints, :velocity_east, :Velocity)
+julia> write_paraview(Etna_cart, "Etna_EGMS_cart")
+Saved file: Etna_EGMS_cart.vts
+```
+
+The components of `Velocity` are now simply those along `x`, `y` and `z`: `Vx` is the eastward velocity, `Vy` is zero and `Vz` is the vertical velocity.
+
+#### Arrows
+
+On a grid as fine as this topography there would be far too many arrows. It is easier to make a second, coarser surface for them, here with a spacing of 1 arc minute (about 1.8 km):
+
+```julia
+julia> Topo_coarse = import_topo(limits, res = "01m")
+julia> Arrows = EGMS_on_grid(up, Topo_coarse, east = east)
+julia> write_paraview(convert2CartData(Arrows, proj), "Etna_EGMS_arrows_cart")
+Saved file: Etna_EGMS_arrows_cart.vts
+```
+
+In Paraview, open both files. Color `Etna_EGMS_cart.vts` by `velocity_east`, and apply the `Glyph` filter to `Etna_EGMS_arrows_cart.vts` with `Velocity` as both Orientation and Scale Array, the Glyph Mode set to `All Points`, and a scale factor to your liking. Grid points without data have no arrow. Seen from above, with the axes in km, the south-eastern and eastern flank of the volcano moves towards the sea, whereas the western flank moves slowly in the other direction:
+
+![Tutorial_EGMS_cart_east](../assets/img/Tutorial_EGMS_cart_east.jpg)
+
+In Cartesian coordinates you can also exaggerate the topography (set `Scale` to `1 1 2` in the `Transforming` properties of both the surface and the glyphs). The same data, seen from the south-east:
+
+![Tutorial_EGMS_cart_3d](../assets/img/Tutorial_EGMS_cart_3d.jpg)
+
+#### Faults
+
+A fault that slips shows up as a line across which the velocity jumps. Such jumps stand out if you plot how fast the velocity changes with distance. A little smoothing beforehand suppresses the noise between neighbouring points:
+
+```julia
+julia> Smooth = EGMS_on_grid(up, Topo, east = east, smooth = true, radius = 0.5)
+julia> Etna = addfield(Etna, "Ve_smooth", Smooth.fields.velocity_east)
+julia> write_paraview(convert2CartData(Etna, proj), "Etna_EGMS_cart")
+```
+
+In Paraview, apply the `Gradient` filter to `Ve_smooth` and color by the magnitude of the result, which is in mm/yr per km:
+
+![Tutorial_EGMS_cart_faults](../assets/img/Tutorial_EGMS_cart_faults.jpg)
+
+The brightest line, which runs from north-east of the summit to the coast, is the northern boundary of the sliding flank (the Pernicana fault). Several more lineaments are visible on the south-eastern flank. Not everything in this picture is a fault though: the speckle in the mountains to the north and west is noise in areas with few measurement points, the strong gradients around the summit are caused by its subsidence, and the perfectly straight north-south line at `x = -13 km` is most likely a boundary in the processing of the data.
+
+Profiles show the same thing quantitatively. As `Etna_cart` is a regular grid in julia, a profile is just a row or a column of it:
+
+```julia
+julia> X, Y = Etna_cart.x.val[:, :, 1], Etna_cart.y.val[:, :, 1]
+julia> i = argmin(abs.(X[:, 300] .- 10.0))                    # south-north profile at x = 10 km
+julia> y, Vx, Vz = Y[i, :], Smooth.fields.velocity_east[i, :, 1], Smooth.fields.velocity[i, :, 1]
+```
+
+![Tutorial_EGMS_profiles](../assets/img/Tutorial_EGMS_profiles.png)
+
+In the south-north profile east of the summit (top), the eastward velocity increases steadily towards the north up to more than 20 mm/yr, and then drops to zero within a few hundred meters at the northern boundary fault. The west-east profile south of the summit (bottom) shows the western flank moving to the west and the eastern flank to the east, with the largest velocities near the coast.
+
+## 7. Save the individual points
 
 To look at the measurement points themselves rather than at an interpolated surface, convert them to a set of points. They are placed at their own height, and next to the `velocity` they carry the other columns of the file:
 
@@ -220,7 +273,7 @@ julia> write_paraview(Points, "Etna_EGMS_points", PointsData = true)
 Saved file: Etna_EGMS_points.vtu
 ```
 
-## 7. Time series of a point
+## 8. Time series of a point
 
 The displacements themselves are available as well, for example of the point closest to a given location:
 
