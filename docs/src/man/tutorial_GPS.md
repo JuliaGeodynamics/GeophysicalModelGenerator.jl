@@ -153,18 +153,17 @@ Vmagnitude          =   sqrt.(Ve.^2 + Vn.^2 + Vz.^2)  # velocity magnitude in mm
 ## 4. Interpolate topography on grid
 
 Finally, it would be nice to put the data points on the topography.
-The elevation of the points is not given in the GPS dataset, so we use GMT to extract a topographic grid
+The elevation of the points is not given in the GPS dataset, so we use `import_topo` to download a topographic grid
 and interpolate the elevation on the GPS grid locations
 
 ```julia
-using GMT, Interpolations
+using Interpolations
 ```
 
 We use the `import_topo` function to read the topography from a file:
 
 ```julia
 Elevation   =   import_topo([3,17,42,50], file="@earth_relief_01m");
-nothing #hide
 ```
 
 We now want to interpolate the elevation on the GPS grid locations.
@@ -173,7 +172,7 @@ We now want to interpolate the elevation on the GPS grid locations.
 Lon_vec     =   NumValue(Elevation.lon)[:,1,1];
 Lat_vec     =   NumValue(Elevation.lat)[1,:,1];
 interpol    =   LinearInterpolation((Lon_vec, Lat_vec), NumValue(Elevation.depth)[:,:,1]);      # create interpolation object
-height      =   interpol.(lon,lat)/1e3
+height      =   interpol.(lon,lat)
 ```
 
 At this stage we have `lon/lat/height` of all points as well as velocity components
@@ -182,7 +181,7 @@ At this stage we have `lon/lat/height` of all points as well as velocity compone
 GPS_Sanchez_grid        =   GeoData(lon,lat,height,(Velocity_mm_year=(Ve,Vn,Vz),V_north=Vn*mm/yr, V_east=Ve*mm/yr, V_vertical=Vz*mm/yr, Vmagnitude = Vmagnitude*mm/yr, Topography = height*km))
 ```
 
-Save paraview is as always:
+Save to paraview as always:
 
 ```julia
 write_paraview(GPS_Sanchez_grid, "GPSAlps_Sanchez_2017_grid")
@@ -195,8 +194,3 @@ In order to plot the velocities as arrows, you need to select the `Glyph` tool (
 ![Tutorial_GPS_4](../assets/img/Tutorial_GPS_4.png)
 
 The arrows can now be colored by the individual velocity components or its magnitude.
-
----
-
-*This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
-

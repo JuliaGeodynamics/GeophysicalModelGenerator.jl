@@ -28,13 +28,15 @@ function create_CartGrid(grid::StructuredGrid; ylevel = 0.0)
         ConstantΔ = true
     end
     if ndims(grid) == 2
-        # we need a special treatment of this, as all GMG routines work with 3D coordinates
-        X₁ = (X₁[1], ylevel, X₁[2])
-        L = (L[1], 0.0, L[2])
-        Δ = (Δ[1], 0.0, Δ[2])
+        # we need a special treatment of this, as all GMG routines work with 3D coordinates;
+        # the added y direction takes the number type of the grid (e.g. Float32 on Metal)
+        T = eltype(coord1D[1])
+        X₁ = (X₁[1], T(ylevel), X₁[2])
+        L = (L[1], zero(T), L[2])
+        Δ = (Δ[1], zero(T), Δ[2])
         N = (N[1], 1, N[2])
-        coord1D = (coord1D[1], [0.0], coord1D[2])
-        coord1D_cen = (coord1D_cen[1], [0.0], coord1D_cen[2])
+        coord1D = (coord1D[1], [T(ylevel)], coord1D[2])
+        coord1D_cen = (coord1D_cen[1], [T(ylevel)], coord1D_cen[2])
     end
     Xₙ = X₁ .+ L
 
@@ -44,6 +46,9 @@ end
 
 # all functions to be ported
 function_names = (:add_box!, :add_sphere!, :add_ellipsoid!, :add_cylinder!, :add_layer!, :add_polygon!, :add_slab!, :add_stripes!, :add_volcano!)
+
+# `A` itself if it lives in CPU memory, otherwise a host copy
+on_host(A) = parent(A) isa Array ? A : Array(A)
 
 for fn in function_names
 
@@ -63,14 +68,19 @@ for fn in function_names
                 kwargs...
             )
 
+            location(Phase) == location(Temp) ||
+                error("$($fn): Phase and Temp must have the same location, got $(location(Phase)) and $(location(Temp))")
             CartGrid = create_CartGrid(Grid)
+            cell = all(location(Phase) .== Center())
 
-            cell = false
-            if all(location(Phase) .== Center())
-                cell = true
-            end
-
-            return ($fn)(Phase, Temp, CartGrid; cell = cell, kwargs...)
+            # The setup routines index point by point: CPU fields are set in place, GPU fields (which forbid
+            # scalar indexing) through host copies
+            P, T = interior(Phase), interior(Temp)
+            P_h, T_h = on_host(P), on_host(T)
+            ($fn)(P_h, T_h, CartGrid; cell, kwargs...)
+            P_h === P || copyto!(P, P_h)
+            T_h === T || copyto!(T, T_h)
+            return nothing
         end
     end
 

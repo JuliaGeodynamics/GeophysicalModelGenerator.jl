@@ -9,15 +9,16 @@ export write_pTatin_mesh, swap_yz_dims
 """
     write_pTatin_mesh(fe_mesh::FEData; out_file="md.bin", connectivity_zero_based=true)
 
-Write a binary file with the mesh information for pTatin
+Write a binary file with the mesh information for pTatin, and one file per field
+(`<name>_cell.bin`, `<name>_vertex.bin`) in the same directory as `out_file`.
 """
 function write_pTatin_mesh(fe_mesh::FEData; out_file = "md.bin", connectivity_zero_based = true)
 
     # Write mesh
-    write_FEmesh_mesh(fe_mesh; out_file = out_file, connectivity_zero_based = connectivity_zero_based)
+    write_FEmesh_mesh(fe_mesh; out_file, connectivity_zero_based)
 
     # Write cell and vertex fields
-    write_FEmesh_fields(fe_mesh)
+    write_FEmesh_fields(fe_mesh; dir = dirname(out_file))
 
     return nothing
 end
@@ -25,9 +26,10 @@ end
 """
     write_pTatin_mesh(q1_mesh::Q1Data; out_file="md.bin", connectivity_zero_based=true)
 
-Write a binary file with the mesh information for pTatin
+Write a binary file with the mesh information for pTatin, and one file per field in the same
+directory as `out_file`.
 """
-write_pTatin_mesh(q1_mesh::Q1Data; out_file = "md.bin", connectivity_zero_based = true) = write_pTatin_mesh(convert2FEData(q1_mesh), out_file = out_file, connectivity_zero_based = connectivity_zero_based)
+write_pTatin_mesh(q1_mesh::Q1Data; out_file = "md.bin", connectivity_zero_based = true) = write_pTatin_mesh(convert2FEData(q1_mesh); out_file, connectivity_zero_based)
 
 
 """
@@ -39,11 +41,11 @@ function write_FEmesh_mesh(data::FEData; out_file = "md.bin", connectivity_zero_
     dims = size(data.vertices, 1)
     nverts = size(data.vertices, 2)
     arange = 0:(nverts - 1)
-    @assert nverts > dims
 
     nvertices_cell = size(data.connectivity, 1)
     ncells = size(data.connectivity, 2)
-    @assert ncells > nvertices_cell
+    (nverts >= 1 && ncells >= 1) || error("the mesh has $nverts vertices and $ncells cells; it needs at least one of each")
+    all(in(1:nverts), data.connectivity) || error("the connectivity refers to vertices outside 1:$nverts")
 
     shift_connectivity = 0
     if connectivity_zero_based
@@ -76,11 +78,12 @@ end
 
 
 """
-    write_FEmesh_fields(data::FEData)
+    write_FEmesh_fields(data::FEData; dir=".")
 
-Writes cell and vertex fields to disk to be read by pTatin
+Writes cell and vertex fields to `<name>_cell.bin` and `<name>_vertex.bin` in directory `dir`,
+to be read by pTatin
 """
-function write_FEmesh_fields(data::FEData)
+function write_FEmesh_fields(data::FEData; dir = ".")
 
     ncells = size(data.connectivity, 2)
     nverts = size(data.vertices, 2)
@@ -93,20 +96,11 @@ function write_FEmesh_fields(data::FEData)
     dtype_map[:Float32] = 20
     dtype_map[:Float64] = 21
 
-    # Write the cell fields
-    if !isnothing(data.cellfields)
-        names = keys(data.cellfields)
-        for i in 1:length(data.cellfields)
-            _write_field_file(String(names[i]) * "_cell.bin", data.cellfields[i], ncells, dtype_map)
-        end
+    for (name, field) in pairs(data.cellfields)
+        _write_field_file(joinpath(dir, "$(name)_cell.bin"), field, ncells, dtype_map)
     end
-
-    # Write the vertex fields
-    if !isnothing(data.fields)
-        names = keys(data.fields)
-        for i in 1:length(data.fields)
-            _write_field_file(String(names[i]) * "_vertex.bin", data.fields[i], nverts, dtype_map)
-        end
+    for (name, field) in pairs(data.fields)
+        _write_field_file(joinpath(dir, "$(name)_vertex.bin"), field, nverts, dtype_map)
     end
 
     return nothing
@@ -130,8 +124,18 @@ end
     fe_swap = swap_yz_dims(fe_data::FEData)
 
 This swaps the `y` and `z` dimensions of the FEData object, which is useful for pTatin as it uses `y` for what is `z` in GMG.
+
+Swapping two axes mirrors the mesh, so the vertices of each cell are reordered to keep the
+cells' orientation. This is supported for 3D tetrahedra and for 3D hexahedra whose vertices
+are numbered lexicographically (`x` fastest, then `y`, then `z`), as `convert2FEData` does.
 """
 function swap_yz_dims(fe_data::FEData)
-    vertices = copy(fe_data.vertices)
-    return FEData(vertices[[1, 3, 2], :], fe_data.connectivity, fe_data.fields, fe_data.cellfields)
+    nvertices_cell = size(fe_data.connectivity, 1)
+    size(fe_data.vertices, 1) == 3 || error("swap_yz_dims needs 3D vertices, got $(size(fe_data.vertices, 1))D")
+    # an odd permutation of a tetrahedron's vertices restores its orientation; for a hexahedron
+    # this one swaps the local y and z directions
+    perm = nvertices_cell == 4 ? [1, 3, 2, 4] :
+        nvertices_cell == 8 ? [1, 2, 5, 6, 3, 4, 7, 8] :
+        error("swap_yz_dims supports tetrahedra (4 vertices) and hexahedra (8 vertices) only, got $nvertices_cell vertices per cell")
+    return FEData(fe_data.vertices[[1, 3, 2], :], fe_data.connectivity[perm, :], fe_data.fields, fe_data.cellfields)
 end

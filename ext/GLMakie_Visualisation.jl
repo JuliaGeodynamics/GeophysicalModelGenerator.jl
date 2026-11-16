@@ -16,15 +16,6 @@ export visualise, heatmap, heatmap!
 
 println("Loading GLMakie extensions for GMG")
 
-"""
-    visualise(DataSet; Topography=Topo_Data, Topo_range=nothing)
-
-This starts an interactive widget that allows you to explore a 3D data set `DataSet` in an interactive manner.
-All fields in the dataset can be explored, and if the optional parameter `Topography` is provided, the topography will be drawn on top.
-
-Note that this requires orthogonal grids, so it will work with a `GeoData` set, or with an orthogonal `CartData` set.
-Note that you may have to use `project_CartData` to project it to orthogonal cartesian coordinates.
-"""
 function visualise(Data::AbstractGeneralGrid; Topography = nothing, Topo_range = nothing)
 
 
@@ -34,23 +25,21 @@ function visualise(Data::AbstractGeneralGrid; Topography = nothing, Topo_range =
         x = Data.lon.val[:, 1, 1];    xlab = "lon"
         y = Data.lat.val[1, :, 1];    ylab = "lat"
         z = Data.depth.val[1, 1, :];  zlab = "depth [km]"
-        orthogonal = true
     elseif isa(Data, CartData)
         # Determine
         x = Data.x.val[:, 1, 1];    xlab = "X [km]"
         y = Data.y.val[1, :, 1];    ylab = "Y [km]"
         z = Data.z.val[1, 1, :];  zlab = "Z [km]"
         axis_equal = true
-
-        if sum(abs.(Data.x.val[:, 1, 2] - Data.x.val[:, 1, 1])) > 1.0e-10
-            orthogonal = false
-            warning("Non-orthogonal CartData - can only show topography")
-        else
-            orthogonal = true
-        end
-
     else
         error("not yet implemented ")
+    end
+
+    length(z) > 1 || error("visualise needs a 3D data set with more than one point in the vertical direction")
+    if isa(Data, CartData)
+        X, Y, Z = Data.x.val, Data.y.val, Data.z.val
+        all(X .== X[:, 1:1, 1:1]) && all(Y .== Y[1:1, :, 1:1]) && all(Z .== Z[1:1, 1:1, :]) ||
+            error("visualise needs an orthogonal grid; use project_CartData to project this CartData onto one")
     end
 
     if !axis_equal
@@ -63,15 +52,15 @@ function visualise(Data::AbstractGeneralGrid; Topography = nothing, Topo_range =
         z_vec = range(z[1], z[end], length(z))
     end
     # determine width of axis
-    dx = (maximum(x) - minimum(x)) / (length(x) - 1)
-    dy = (maximum(y) - minimum(y)) / (length(y) - 1)
-    dz = (maximum(z) - minimum(z)) / (length(z) - 1)
+    dx = (x[end] - x[1]) / (length(x) - 1)
+    dy = (y[end] - y[1]) / (length(y) - 1)
+    dz = (z[end] - z[1]) / (length(z) - 1)
 
     if !isnothing(Topography)
         if isa(Topography, GeoData)
-            x_topo = (Topography.lon.val .- x[1]) / dx
-            y_topo = (Topography.lat.val .- y[1]) / dy
-            z_topo = (Topography.depth.val .- z[1]) / dz
+            x_topo = (Topography.lon.val .- x[1]) / dx .+ 1
+            y_topo = (Topography.lat.val .- y[1]) / dy .+ 1
+            z_topo = (Topography.depth.val .- z[1]) / dz .+ 1
         elseif isa(Topography, CartData)
             x_topo = Topography.x.val
             y_topo = Topography.y.val
@@ -80,24 +69,29 @@ function visualise(Data::AbstractGeneralGrid; Topography = nothing, Topo_range =
 
         if isnothing(Topo_range)
             # base
-            topo_max = round(maximum(ustrip.(Topography.fields.Topography)), digits = 1)
+            topo_max = maximum(abs, ustrip.(Topography.fields.Topography))
+            iszero(topo_max) && (topo_max = 1.0)
             Topo_range = (-topo_max, topo_max)
         end
 
     end
 
-    data_names = keys(Data.fields)             # Names of the fields
+    # Names of the scalar fields (vector fields stored as Tuples cannot be sliced)
+    data_names = filter(k -> !(Data.fields[k] isa Tuple), collect(keys(Data.fields)))
+    isempty(data_names) && error("visualise needs at least one scalar field in the data set")
     data_selected = Observable(Symbol(data_names[1]))
     data_string = @lift String($data_selected)
-    get_vol(f_name) = Data.fields[f_name]
+    get_vol(f_name) = ustrip.(Data.fields[f_name])
     vol = lift(get_vol, data_selected)
 
-    fig = Figure(resolution = (2000, 2000), fontsize = 20)
-    ax = LScene(fig[1, 1:2], scenekw = (camera = cam3d!, raw = false))
+    fig = Figure(size = (2000, 2000), fontsize = 20)
+    ax = Axis3(
+        fig[1, 1:2], xlabel = xlab, ylabel = ylab, zlabel = zlab,
+        aspect = axis_equal ? :data : (1, 1, 1)
+    )
 
     # Create sliders
-    sgrid = SliderGrid(
-        fig[2, 2],
+    slider_specs = Any[
         (
             label = xlab, range = 1:length(x_vec),
             format = v -> string(round((v - 1) * dx + x[1], digits = 2)),
@@ -110,8 +104,9 @@ function visualise(Data::AbstractGeneralGrid; Topography = nothing, Topo_range =
             label = zlab, range = 1:length(z_vec),
             format = v -> string(round((v - 1) * dz + z[1], digits = 2)),
         ),
-        (label = "Transparency topo", range = 0:0.01:1),
-    )
+    ]
+    isnothing(Topography) || push!(slider_specs, (label = "Transparency topo", range = 0:0.01:1))
+    sgrid = SliderGrid(fig[2, 2], slider_specs...)
 
     # Create dropdown menus
     menu_dataset = Menu(fig, options = [String.(data_names)...], default = String(data_selected[]))
@@ -121,18 +116,22 @@ function visualise(Data::AbstractGeneralGrid; Topography = nothing, Topo_range =
     )
 
     # Colorbar limits
-    cmin = @lift round(minimum($vol), digits = 2)
-    cmax = @lift round(maximum($vol), digits = 2)
-    cmin_str = @lift string($cmin)
-    cmax_str = @lift string($cmax)
+    # Equal extrema are widened, since a degenerate color range cannot be resolved
+    crange = @lift begin
+        vmin, vmax = extrema($vol)
+        vmin == vmax && (vmax = vmin + (iszero(vmin) ? 1 : abs(vmin)))
+        (round(vmin, RoundDown; sigdigits = 4), round(vmax, RoundUp; sigdigits = 4))
+    end
+    cmin = @lift $crange[1]
+    cmax = @lift $crange[2]
 
-    cmin_box = Textbox(fig, stored_string = cmin_str, width = nothing)
-    cmax_box = Textbox(fig, stored_string = cmax_str, width = nothing)
+    cmin_box = Textbox(fig, stored_string = string(cmin[]), width = nothing)
+    cmax_box = Textbox(fig, stored_string = string(cmax[]), width = nothing)
 
     iso_level = Observable([1.7])
     iso_alpha = Observable(0.5)
-    iso_box = Textbox(fig, stored_string = "$(iso_level[][1])", width = nothing)
-    iso_toggle = Toggle(fig, active = true)
+    iso_box = Textbox(fig, stored_string = "$(iso_level[][1])", validator = Float64, width = nothing)
+    iso_toggle = Toggle(fig, active = false)
     iso_slide = Slider(fig, range = 0:0.01:1)
     set_close_to!(iso_slide, iso_alpha[])
 
@@ -150,20 +149,13 @@ function visualise(Data::AbstractGeneralGrid; Topography = nothing, Topo_range =
     lo = sgrid.layout
     nc = ncols(lo)
 
-    # Note: volumeslices & GLMakie in general seems to have a bit of an issue with
-    # using real coordinates. In many cases the numerical values of lon/lat are much smaller than the depth values,
-    # & not centered around zero.
-    #
-    # The "trick" we do here is to create the axis based on the number of points in the 3D volume
-    # and simply overwrite the names of the labels
-
-    if orthogonal
-        plt = volumeslices!(ax, x_vec, y_vec, z_vec, vol, colorrange = (cmin, cmax), colormap = :roma)
-        iso = GLMakie.contour!(plt, x_vec, y_vec, z_vec, vol, levels = iso_level, alpha = iso_alpha, colormap = plt.attributes.colormap, colorrange = plt.attributes.colorrange)
-
-        #        plt = volumeslices!(ax, reverse(x_vec),reverse(y_vec),z_vec,vol, colorrange=(cmin,cmax), colormap=:roma)
-        #        iso = GLMakie.contour!(plt, reverse(x_vec), reverse(y_vec), z_vec, vol, levels = iso_level, alpha=iso_alpha, colormap=plt.attributes.colormap, colorrange=plt.attributes.colorrange)
-    end
+    # GeoData is plotted in index coordinates, with tick labels showing lon/lat/depth: the contour
+    # isosurface needs a uniformly spaced grid, which index coordinates provide.
+    plt = volumeslices!(ax, x_vec, y_vec, z_vec, vol, colorrange = (cmin[], cmax[]), colormap = :roma)
+    iso = contour!(
+        ax, extrema(x_vec), extrema(y_vec), extrema(z_vec), vol, levels = iso_level, alpha = iso_alpha,
+        visible = iso_toggle.active[], colormap = plt.colormap, colorrange = plt.colorrange
+    )
 
     topo_alpha = Observable(0.5)
     if !isnothing(Topography)
@@ -175,63 +167,49 @@ function visualise(Data::AbstractGeneralGrid; Topography = nothing, Topo_range =
     end
 
     if !axis_equal
-        xticks!(ax.scene, xtickrange = [0.0;length(x)], xticklabels = ["$(x[1])", "$(x[end])"])
-        yticks!(ax.scene, ytickrange = [0.0;length(y)], yticklabels = ["$(y[1])", "$(y[end])"])
-        zticks!(ax.scene, ztickrange = [0.0;length(z)], zticklabels = ["$(z[1])", "$(z[end])"])
-    else
-        xticks!(ax.scene, xtickrange = [x[1];x[end]], xticklabels = ["$(x[1])", "$(x[end])"])
-        yticks!(ax.scene, ytickrange = [y[1];y[end]], yticklabels = ["$(y[1])", "$(y[end])"])
-        zticks!(ax.scene, ztickrange = [z[1];z[end]], zticklabels = ["$(z[1])", "$(z[end])"])
+        ax.xticks = ([1, length(x)], string.(round.([x[1], x[end]], digits = 2)))
+        ax.yticks = ([1, length(y)], string.(round.([y[1], y[end]], digits = 2)))
+        ax.zticks = ([1, length(z)], string.(round.([z[1], z[end]], digits = 2)))
     end
-    xlabel!(ax.scene, xlab)
-    ylabel!(ax.scene, ylab)
-    zlabel!(ax.scene, zlab)
 
     #
     cb = Colorbar(fig[1, 3], plt, vertical = true, label = data_string, height = Relative(0.6))
 
     # connect sliders to `volumeslices` update methods
-    sl_yz, sl_xz, sl_xy, sl_alpha_topo = sgrid.sliders
+    sl_yz, sl_xz, sl_xy = sgrid.sliders[1:3]
 
     on(sl_yz.value) do v
-        plt[:update_yz][](v)
+        plt.yz_index = v
     end
     on(sl_xz.value) do v
-        plt[:update_xz][](v)
+        plt.xz_index = v
     end
     on(sl_xy.value) do v
-        plt[:update_xy][](v)
+        plt.xy_index = v
     end
 
-    if orthogonal
-        set_close_to!(sl_yz, 0.5length(x_vec))
-        set_close_to!(sl_xz, 0.5length(y_vec))
-        set_close_to!(sl_xy, 0.5length(z_vec))
-    end
-    set_close_to!(sl_alpha_topo, 0.5)
+    set_close_to!(sl_yz, 0.5length(x_vec))
+    set_close_to!(sl_xz, 0.5length(y_vec))
+    set_close_to!(sl_xy, 0.5length(z_vec))
+    isnothing(Topography) || set_close_to!(sgrid.sliders[4], 0.5)
 
-    # change color limits
+    # change color limits; the textboxes reject an inverted range, which stalls the Colorbar tick computation
+    cmin_box.validator = s -> something(tryparse(Float64, s), Inf) < plt.colorrange[][2]
+    cmax_box.validator = s -> something(tryparse(Float64, s), -Inf) > plt.colorrange[][1]
     on(cmin_box.stored_string) do s
-        ra = plt[:colorrange]
-        plt[:colorrange] = (parse(Float64, s), ra.val[2])
+        plt.colorrange = (parse(Float64, s), plt.colorrange[][2])
     end
     on(cmax_box.stored_string) do s
-        ra = plt[:colorrange]
-        plt[:colorrange] = (ra.val[1], parse(Float64, s))
+        plt.colorrange = (plt.colorrange[][1], parse(Float64, s))
     end
 
     # Change data
     on(menu_dataset.selection) do s
         data_selected[] = Symbol(s)
-        plt[:colorrange] = (cmin[], cmax[])
-        cmin_box.displayed_string = cmin_str[]
-        cmax_box.displayed_string = cmax_str[]
-
-        # update values
-        set_close_to!(sl_yz, sl_yz.value[])
-        set_close_to!(sl_xz, sl_xz.value[])
-        set_close_to!(sl_xy, sl_xy.value[])
-
+        plt.colorrange = (cmin[], cmax[])
+        for (box, c) in ((cmin_box, cmin[]), (cmax_box, cmax[]))
+            box.stored_string = box.displayed_string = string(c)
+        end
     end
 
     # Change colormap
@@ -250,38 +228,25 @@ function visualise(Data::AbstractGeneralGrid; Topography = nothing, Topo_range =
         iso_alpha[] = v
     end
 
-    on(sl_alpha_topo.value) do v
-        topo_alpha[] = v
-        if !isnothing(Topography)
-            # in case topography is supplied
-            topo_surf.attributes.colormap = (:oleron, topo_alpha[])
+    if !isnothing(Topography)
+        on(sgrid.sliders[4].value) do v
+            topo_alpha[] = v
+            topo_surf.colormap = (:oleron, topo_alpha[])
         end
-
     end
 
     # add toggles to show/hide slices
-    if orthogonal
-        hmaps = [plt[Symbol(:heatmap_, s)][] for s in (:yz, :xz, :xy)]
-        toggles = [Toggle(lo[i, nc + 1], active = true) for i in 1:4]
+    hmaps = [plt[Symbol(:heatmap_, s)][] for s in (:yz, :xz, :xy)]
+    toggles = [Toggle(lo[i, nc + 1], active = true) for i in 1:(isnothing(Topography) ? 3 : 4)]
 
-        if !isnothing(Topography)
-            map(zip([hmaps; topo_surf], toggles)) do (h, t)
-                connect!(h.visible, t.active)
-            end
-        else
-            map(zip(hmaps, toggles[1:3])) do (h, t)
-                connect!(h.visible, t.active)
-            end
-        end
+    shown = isnothing(Topography) ? hmaps : [hmaps; topo_surf]
+    for (h, t) in zip(shown, toggles)
+        on(a -> h.visible = a, t.active)
     end
-
-    # axis data
-    ax3 = ax.scene.plots[1]
-
 
     display(fig)
 
-    return nothing
+    return fig
 end
 
 """
@@ -292,7 +257,7 @@ function heatmap(x::GeoData, args...; field = :Topography, kwargs...)
     @assert size(x.depth.val, 3) == 1
     @assert hasfield(typeof(x.fields), field)
 
-    return heatmap(x.lon.val[:, 1], x.lat.val[1, :], ustrip.(x.fields[field][:, :, 1]), args...; kwargs...)
+    return heatmap(x.lon.val[:, 1], x.lat.val[1, :], ustrip.(x.fields[field][:, :, 1]), args...; axis = (xlabel = "lon", ylabel = "lat"), kwargs...)
 
 end
 
@@ -304,9 +269,11 @@ function heatmap(x::GeoData, a::Array{_T, N}, args...; kwargs...) where {_T, N}
     @assert size(x.depth.val, 3) == 1
 
     return if N == 3
-        heatmap(x.lon.val[:, 1], x.lat.val[1, :], ustrip.(a[:, :, 1]), args...; kwargs...)
+        heatmap(x.lon.val[:, 1], x.lat.val[1, :], ustrip.(a[:, :, 1]), args...; axis = (xlabel = "lon", ylabel = "lat"), kwargs...)
     elseif N == 2
-        heatmap(x.lon.val[:, 1], x.lat.val[1, :], ustrip.(a), args...; kwargs...)
+        heatmap(x.lon.val[:, 1], x.lat.val[1, :], ustrip.(a), args...; axis = (xlabel = "lon", ylabel = "lat"), kwargs...)
+    else
+        error("heatmap needs a 2D or 3D array, got a $(N)D array")
     end
 
 end
@@ -319,7 +286,7 @@ function heatmap(x::CartData, args...; field = :Topography, kwargs...)
     @assert size(x.z.val, 3) == 1
     @assert hasfield(typeof(x.fields), field)
 
-    return heatmap(x.x.val[:, 1], x.y.val[1, :], ustrip.(x.fields[field][:, :, 1]), args...; kwargs...)
+    return heatmap(x.x.val[:, 1], x.y.val[1, :], ustrip.(x.fields[field][:, :, 1]), args...; axis = (xlabel = "x [km]", ylabel = "y [km]"), kwargs...)
 
 end
 
@@ -331,9 +298,11 @@ function heatmap(x::CartData, a::Array{_T, N}, args...; kwargs...) where {_T, N}
     @assert size(x.z.val, 3) == 1
 
     return if N == 3
-        heatmap(x.x.val[:, 1], x.y.val[1, :], ustrip.(a[:, :, 1]), args...; kwargs...)
+        heatmap(x.x.val[:, 1], x.y.val[1, :], ustrip.(a[:, :, 1]), args...; axis = (xlabel = "x [km]", ylabel = "y [km]"), kwargs...)
     elseif N == 2
-        heatmap(x.x.val[:, 1], x.y.val[1, :], ustrip.(a), args...; kwargs...)
+        heatmap(x.x.val[:, 1], x.y.val[1, :], ustrip.(a), args...; axis = (xlabel = "x [km]", ylabel = "y [km]"), kwargs...)
+    else
+        error("heatmap needs a 2D or 3D array, got a $(N)D array")
     end
 
 end
@@ -347,7 +316,7 @@ function heatmap!(x::GeoData, args...; field = :Topography, kwargs...)
     @assert size(x.depth.val, 3) == 1
     @assert hasfield(typeof(x.fields), field)
 
-    return heatmap(x.lon.val[:, 1], x.lat.val[1, :], ustrip.(x.fields[field][:, :, 1]), args...; kwargs...)
+    return heatmap!(x.lon.val[:, 1], x.lat.val[1, :], ustrip.(x.fields[field][:, :, 1]), args...; kwargs...)
 
 end
 
@@ -362,13 +331,16 @@ function heatmap!(x::GeoData, a::Array{_T, N}, args...; kwargs...) where {_T, N}
         heatmap!(x.lon.val[:, 1], x.lat.val[1, :], ustrip.(a[:, :, 1]), args...; kwargs...)
     elseif N == 2
         heatmap!(x.lon.val[:, 1], x.lat.val[1, :], ustrip.(a), args...; kwargs...)
+    else
+        error("heatmap needs a 2D or 3D array, got a $(N)D array")
     end
 
 end
 
 """
     heatmap!(x::CartData, args...; field=:Topography, colorbar=false, kwargs...)
-in-place heatmap for a 2D CartData object (surface)
+in-place heatmap for a 2D CartData object (surface). With `colorbar=true`, a colorbar is added
+to the right of the plot, at position `[1, 2]` of the current figure. Returns the heatmap plot.
 """
 function heatmap!(x::CartData, args...; field = :Topography, colorbar = false, kwargs...)
     @assert size(x.z.val, 3) == 1
@@ -376,14 +348,10 @@ function heatmap!(x::CartData, args...; field = :Topography, colorbar = false, k
 
     data = ustrip.(x.fields[field][:, :, 1])
 
-    fig, ax, hm = heatmap!(x.x.val[:, 1], x.y.val[1, :], data, args...; kwargs...)
+    hm = heatmap!(x.x.val[:, 1], x.y.val[1, :], data, args...; kwargs...)
+    colorbar && Colorbar(current_figure()[1, 2], hm, label = string(field))
 
-    cb = nothing
-    if colorbar
-        cb = Colorbar(fig[1, 2], limits = extrema(filter(!isnan, x.fields[field])), label = field)
-    end
-
-    return fig_out
+    return hm
 end
 
 """
@@ -397,6 +365,8 @@ function heatmap!(x::CartData, a::Array{_T, N}, args...; kwargs...) where {_T, N
         heatmap!(x.x.val[:, 1], x.y.val[1, :], ustrip.(a[:, :, 1]), args...; kwargs...)
     elseif N == 2
         heatmap!(x.x.val[:, 1], x.y.val[1, :], ustrip.(a[:, :]), args...; kwargs...)
+    else
+        error("heatmap needs a 2D or 3D array, got a $(N)D array")
     end
 
 end

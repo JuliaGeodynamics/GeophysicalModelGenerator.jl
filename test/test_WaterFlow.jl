@@ -1,4 +1,4 @@
-using Test, GMT
+using Test
 
 # The topography comes from the tile cache that topo_prefetch.jl filled. If the prefetch could
 # not reach the GMT data server, asking again here is pointless: skip on a push/PR run, insist
@@ -23,6 +23,7 @@ else
     # With rain in m3/s per cell
     rainfall = ones(size(Topo.lon.val[:, :, 1])) * 1.0e-3 # 2D array with rainfall per cell area
     Topo_water1, sinks, pits, bnds = waterflows(Topo, rainfall = rainfall)
+    @test_throws "rainfall has size (2, 2)" waterflows(Topo, rainfall = ones(2, 2))
 
     @test maximum(Topo_water1.fields.area) ≈ 169.79800000000208
 end

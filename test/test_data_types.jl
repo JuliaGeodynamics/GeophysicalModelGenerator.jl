@@ -38,6 +38,7 @@ Data_set4 = GeoData(Lat, Lon, Depth, (Data,), att_dict)
 # check that an error is thrown if a different size input is given for depth
 Depth2 = (-100:10:1.0)               # no units
 @test_throws ErrorException GeoData(Lat, Lon, Depth2, (FakeData = Data, Data2 = Data .+ 1.0))
+@test_throws "must contain at least one data field" GeoData(Lat, Lon, Depth, (;))
 
 # Convert 1D vector to cartesian structure
 Data_cart = convert(ParaviewData, Data_set)
@@ -79,10 +80,9 @@ Data_set1 = GeoData(Lon, Lat, Depth, (FakeData = Data, Data2 = Data .+ 1.0))
 @test size(Data_set1.depth) == (11, 11, 10)
 @test Value(Data_set1.depth[1, 2, 3]) == -8.0km
 
-# double-check that giving 3D arrays in the wrong ordering triggers a warning message
-Data_set2 = GeoData(Lat, Lon, Depth, (FakeData = Data, Data2 = Data .+ 1.0))
-
-#@test (test_logger.logs[1].level==Warn && test_logger.logs[1].message=="It appears that the lon array has a wrong ordering")
+# giving 3D arrays in the wrong ordering triggers a warning message
+@test_logs (:warn, "It appears that the lon array has a wrong ordering") (:warn, "It appears that the lat array has a wrong ordering") GeoData(Lat, Lon, Depth, (FakeData = Data, Data2 = Data .+ 1.0))
+@test_logs CartData(xyz_grid(1:3, 1:4, 1:5)..., (a = zeros(3, 4, 5),))   # correct ordering: no warning
 
 # Create 2D arrays & convert them
 Lon, Lat, Depth = lonlatdepth_grid(10:20, 30:40, -50km);
@@ -192,6 +192,10 @@ Data_flipped = flip(Data_flip)
 Data_flipped = flip(Data_flip, 1)
 @test Data_flipped.lon.val[:, 1, 1] == [2.0, 1.0]
 @test Data_flipped.fields.a[:, 1, 1] == [2.0, 1.0]
+Data_flip = GeoData(Lon, Lat, Depth, (v = (Lon, Depth),), Dict("source" => "test"))
+Data_flipped = flip(Data_flip)
+@test Data_flipped.fields.v[2][1, 1, :] == [0.0, -1.0, -2.0, -3.0]     # vector fields are flipped component-wise
+@test Data_flipped.atts["source"] == "test"
 
 # coordinate grids of UTMData (vertices and cell centers)
 Data_utm = UTMData(xyz_grid(1:4, 1:5, 0:2)..., 33, true, (a = ones(4, 5, 3),))
@@ -212,6 +216,7 @@ Grid1D = create_CartGrid(size = 10, x = (0.0, 9.0))
 Grid1D = create_CartGrid(size = 10, extent = 9.0)
 @test Grid1D.L == (9.0,)
 @test Grid1D.min == (0.0,)
+@test_throws "CartData requires a 2D or 3D CartGrid" CartData(Grid1D, (a = zeros(10),))
 Grid2D = create_CartGrid(size = (10, 5), extent = (9.0, 4.0))
 @test Grid2D.min == (0.0, -4.0)
 @test Grid2D.max == (9.0, 0.0)
@@ -256,4 +261,9 @@ let proj = ProjectionPoint(Lat = 40.0, Lon = 14.0)
     C = convert2CartData(U, proj)
     @test ustrip.(Value(C.z)) ≈ [-10.0, -20.0]
     @test ustrip.(Value(convert2CartData(G, proj).z)) ≈ [-10.0, -20.0]
+end
+
+@testset "FEData edge cases" begin
+    @test occursin("FEData{2,3}", sprint(show, FEData([0.0 1 0; 0 0 1], [1; 2; 3;;])))
+    @test_throws "must not be empty" GeoData(zeros(0, 0, 0), zeros(0, 0, 0), zeros(0, 0, 0), NamedTuple())
 end

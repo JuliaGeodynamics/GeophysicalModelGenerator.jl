@@ -4,8 +4,8 @@
 #
 # Author: Arne Spang 06/2021
 
-using Printf            # do we need this?
-using Statistics        # do we need that?
+using Printf
+using Statistics
 
 export voxel_grav
 
@@ -26,7 +26,7 @@ Optional arguments:
 - `refMod`:      1D vector with the reference density for each depth. Alternatively, the strings "NE", "SE", "SW", "NW", "AVG" can be used. In that case, one of the corners of `RHO` is used as reference model.In case of "AVG" the reference model is the average of each depth slice.
 - `lengthUnit`:  The unit of the coordinates and topography file. Either "m" or "km"
 - `rhoTol`:      density differences smaller than `rhoTol` will be ignored [kg/m^3]
-- `Topo`:        2D matrix with the topography of the surface (only relevant for the paraview output)
+- `Topo`:        2D matrix with the topography of the surface, of size `size(X)[1:2]` (only relevant for the paraview output)
 - `outName`:     name of the paraview output (do not include file type)
 - `printing`:    activate printing of additional information [`true` or `false`]
 """
@@ -54,6 +54,7 @@ function voxel_grav(
     Z = Z[:, :, ind]
     RHO = RHO[:, :, ind]
     RefMod = RefMod[ind]
+    z_vec = z_vec[ind]
 
     # check dimensions
     nx = size(X, 1)
@@ -155,6 +156,7 @@ function checkInput(X, Y, Z, RHO, refMod, lengthUnit, rhoTol, Topo, outName, pri
         Y = permutedims(Y, [2, 1, 3])
         Z = permutedims(Z, [2, 1, 3])
         RHO = permutedims(RHO, [2, 1, 3])
+        isempty(Topo) || (Topo = permutedims(Topo))
     else
         error("Coordinate orientation looks wrong!")
     end
@@ -176,12 +178,7 @@ function checkInput(X, Y, Z, RHO, refMod, lengthUnit, rhoTol, Topo, outName, pri
 
     # Topo
     if !isempty(Topo)
-        if !(size(Topo, 1) == size(X, 1) && size(Topo, 2) == size(X, 2))
-            if printing
-                @printf "Topo input dimensions do not fit X, Y, Z, RHO. Using a flat topography.\n"
-            end
-            Topo = zeros(size(X, 1), size(X, 2))
-        end
+        size(Topo) == size(X)[1:2] || error("Topo has size $(size(Topo)) but the grid has $(size(X)[1:2]) points in the horizontal plane.")
     else
         Topo = zeros(size(X, 1), size(X, 2))
     end

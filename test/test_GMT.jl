@@ -22,3 +22,8 @@ test_fwd = import_GeoTIFF("test_files/length_fwd.tif", fieldname = :forward)
 
 test2 = import_GeoTIFF("test_files/UTM2GTIF.TIF")
 @test   test2.fields.layer1[20, 20] == 233.0
+
+# gridline-registered GeoTIFF
+fname_grid = joinpath(mktempdir(), "gridline.tif")
+gmtwrite(fname_grid, GMT.mat2grid(rand(Float32, 4, 5), x = 0:4, y = 0:3, reg = 0, proj4 = "+proj=longlat +datum=WGS84"))
+@test size(import_GeoTIFF(fname_grid).fields.layer1)[1:2] == (5, 4)
