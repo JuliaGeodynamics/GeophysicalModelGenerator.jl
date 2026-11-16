@@ -116,6 +116,7 @@ makedocs(;
             "26 - Slab break-off" => "man/Tutorial_SlabBreakoff.md",
             "27 - Quick look with GLMakie" => "man/Tutorial_Visualise.md",
             "28 - Profile processing" => "man/tutorial_ProfileProcessing.md",
+            "29 - InSAR ground motion from EGMS" => "man/tutorial_EGMS.md",
         ],
         "User Guide" => Any[
             "Installation" => "man/installation.md",

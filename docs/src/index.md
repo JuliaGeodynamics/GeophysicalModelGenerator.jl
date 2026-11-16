@@ -30,7 +30,7 @@ features:
     link: /man/datastructures
 
   - title: Data import
-    details: Import seismic tomography, topography, earthquake catalogs, GPS data, and screenshots of published figures.
+    details: Import seismic tomography, topography, earthquake catalogs, GPS data, InSAR ground motion (EGMS), and screenshots of published figures.
     link: /man/dataimport
 
   - title: Paraview output

@@ -30,6 +30,7 @@ Some of the key features are:
 - Create 3D volumes of seismic tomography models.
 - Handle 2D data (e.g., along a cross-section), including surfaces such as the Moho depth.
 - Plot data along lines (e.g., drillholes) or at points (e.g., earthquake locations, GPS velocities).
+- Import InSAR ground motion of the European Ground Motion Service (EGMS), and compute velocities over a period of choice.
 - Handle both scalar and vector data sets.
 - Grab screenshots of cross-sections or maps in published papers and view them in 3D (together with other data).
 - Create a consistent overview that includes all available data of a certain region.

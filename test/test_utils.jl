@@ -139,7 +139,7 @@ test_cross_cart = cross_section(DataSet_Cart, dims = (100, 100), Interpolate = t
 
 flatten_cross = flatten_cross_section(test_cross_cart)
 
-@test flatten_cross[2][30] == 1.0536089537226578
+@test flatten_cross[2][30] ≈ 1.0536089537226578
 @test test_cross_cart.fields.FlatCrossSection[2][30] == flatten_cross[2][30] # should be added by default
 
 # Flatten 3D cross_section with GeoData

@@ -48,6 +48,7 @@ include("movies_from_pics.jl")
 include("sea_lvl.jl")
 include("WaterFlow.jl")
 include("import_topo.jl")
+include("EGMS.jl")
 export import_topo
 
 # Add optional routines (only activated when the packages are loaded)
