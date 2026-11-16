@@ -32,6 +32,8 @@ geodata4 = geodata1 + geodata2
 @test length(geodata4.fields) == 1
 @test geodata4.depth.val[2] == 2.0
 
+@test (GeoData(geodata1.lon.val, geodata1.lat.val, geodata1.depth.val, geodata1.fields, Dict("source" => "test")) + geodata2).atts["source"] == "test"
+
 geodata5 = geodata1 - geodata2
 @test length(geodata5.fields) == 1
 @test geodata5.depth.val[2] == -2.0
@@ -63,6 +65,24 @@ geo_drape1 = drape_on_topo(geodata2, values1)
 geo_drape2 = drape_on_topo(geodata2, values2)
 @test  geo_drape2.fields.colors[1][10] ≈ 12.9204
 
+# outside the draped data, vector fields are NaN and scalar fields take the nearest value
+Topo_wide = GeoData(xyz_grid(0:5, 0:6, 0)..., (z = zeros(6, 7, 1),), Dict("source" => "test"))
+geo_drape3 = drape_on_topo(Topo_wide, GeoData(X, Y, Z, (; v, vv = (v, v, v))))
+@test isnan(geo_drape3.fields.vv[1][1, 1])
+@test geo_drape3.fields.v[1, 1] ≈ 2.0
+@test geo_drape3.fields.v[2, 2] ≈ 2.0
+@test geo_drape3.atts["source"] == "test"
+
+# data in 0..360 degrees draped on topography in -180..180 degrees
+Xd, Yd, Zd = xyz_grid(0:359, 0:2, 0)
+d = drape_on_topo(GeoData(xyz_grid(-10:10, 0:2, 0)..., (z = zeros(21, 3, 1),)), GeoData(Xd, Yd, Zd, (lonfield = Xd, vec = (Xd, Xd, Xd))))
+@test d.fields.lonfield[6, 1, 1] == 355 && !any(isnan, d.fields.vec[1])
+
+# Cartesian coordinates beyond 180 km are not wrapped like longitudes
+Xc, Yc, Zc = xyz_grid(0:50:500, 0:50:100, 0)
+d = drape_on_topo(CartData(xyz_grid(150:100:450, 0:50:100, 0)..., (z = zeros(4, 3, 1),)), CartData(Xc, Yc, Zc, (xfield = Xc,)))
+@test d.fields.xfield[:, 1, 1] == [150, 250, 350, 450]
+
 # test fit_surface_to_points
 cartdata2b = fit_surface_to_points(cartdata2, X[:], Y[:], v[:])
 @test sum(NumValue(cartdata2b.z)) ≈ 366.02799999999996
@@ -93,10 +113,42 @@ ind = above_surface(q1data, cartdata2);
 ind = below_surface(q1data, cartdata2);
 @test sum(ind) == 140
 
+# cell is a keyword of below_surface, as of above_surface
+@test below_surface(q1data, cartdata2; cell = true) == .!above_surface(q1data, cartdata2; cell = true)
+@test below_surface(Grid, Topo_cart; cell = true) == .!above_surface(Grid, Topo_cart; cell = true)
+
 # cell = true on CartData evaluates at the cell centers
 cart_vertices = CartData(xyz_grid(1:4, 1:5, -5:5))
 cart_centers = CartData(xyz_grid(1.5:1:3.5, 1.5:1:4.5, -4.5:1:4.5))
 @test above_surface(cart_vertices, cartdata2; cell = true) == above_surface(cart_centers, cartdata2)
+
+# evenly and unevenly spaced surface coordinates; a plane is interpolated exactly
+plane(x, y) = 0.3 * x - 0.2 * y - 1
+pts = CartData(xyz_grid(0.25:0.5:9.75, 0.25:0.5:9.75, -4.9:0.2:4.9))
+for xs in (0:0.5:10, [0, 1, 1.5, 4, 7, 10])
+    Xs, Ys, _ = xyz_grid(xs, -1:1:11, 0)
+    surf = CartData(Xs, Ys, plane.(Xs, Ys), (Z = Xs,))
+    @test above_surface(pts, surf) == (pts.z.val .> plane.(pts.x.val, pts.y.val))
+end
+
+# coordinates that are evenly spaced to within rounding are interpolated as ranges
+let
+    xs, ys = collect(LinRange(-100, 100, 201)), collect(LinRange(-3.3, 7.1, 53))
+    Xs, Ys, _ = xyz_grid(xs, ys, 0)
+    surf = CartData(Xs, Ys, sin.(Xs ./ 7) .+ cos.(Ys), (Z = Xs,))
+    itp = GeophysicalModelGenerator.surface_interpolation(surf)
+    @test GeophysicalModelGenerator.as_range(xs) isa AbstractRange && GeophysicalModelGenerator.as_range(ys) isa AbstractRange
+    ref = GeophysicalModelGenerator.linear_interpolation((xs, ys), sin.(xs ./ 7) .+ cos.(ys'))
+    @test all(itp(x, y) ≈ ref(x, y) for x in -99.7:3.1:99.9, y in -3.2:0.37:7.0)
+    @test GeophysicalModelGenerator.as_range([0.0, 1.0, 1.5]) isa Vector
+end
+
+# a surface with a single row in y is constant in y
+let
+    Xs, Ys, _ = xyz_grid(0:1.0:10, 0, 0)
+    itp = GeophysicalModelGenerator.surface_interpolation(CartData(Xs, Ys, 2 .* Xs, (Z = Xs,)))
+    @test itp(2.5, 0.0) ≈ 5 && itp(2.5, 30.0) ≈ 5
+end
 
 #-------------
 # Add & subtract ParaviewData surfaces

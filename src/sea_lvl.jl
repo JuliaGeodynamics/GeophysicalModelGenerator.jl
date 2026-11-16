@@ -4,6 +4,7 @@ pkg_dir = pkgdir(GeophysicalModelGenerator)
 
 const sea_level_path = joinpath(pkg_dir, joinpath("src", "sea_level_data"))
 
+"Maps each built-in sea-level curve name to its data file."
 const sea_level_files = Dict(
     :Spratt_800ka => "Spratt2016-800ka.txt",
     :Spratt_450ka => "Spratt2016-450ka.txt",
@@ -15,18 +16,21 @@ const sea_level_files = Dict(
     :Waelbroeck2002 => "Waelbroeck2002.txt",
 )
 
+"""
+    SeaLevel(name::Symbol; flip_elevation=false, flip_age=false)
+
+Sea-level curve `name` (a key of `sea_level_files`) with fields `elevation` and `age` (ka).
+`flip_elevation` and `flip_age` must be given together: each reverses its vector, and
+reversing only one would mispair ages and elevations.
+"""
 struct SeaLevel{T}
     elevation::Vector{T}
     age::Vector{T}
     name::Symbol
 
     function SeaLevel(name::Symbol; flip_elevation = false, flip_age = false)
-        age, elevation = load_sea_level(
-            name;
-            flip_age = flip_age,
-            flip_elevation = flip_elevation
-        )
-        return new{eltype(age)}(age, elevation, name)
+        elevation, age = load_sea_level(name; flip_age, flip_elevation)
+        return new{eltype(age)}(elevation, age, name)
     end
 end
 
@@ -37,9 +41,12 @@ Base.size(x::SeaLevel) = size(x.elevation)
 Base.eachindex(x::SeaLevel) = eachindex(x.elevation)
 Base.axes(x::SeaLevel) = axes(x.elevation)
 Base.length(x::SeaLevel) = length(x.elevation)
+"Return the name of the sea-level curve `x`."
 curve_name(x::SeaLevel) = x.name
 
+"Load the built-in sea-level curve `name` (a key of `sea_level_files`) as a `SeaLevel`."
 function load_sea_level(name::Symbol; flip_elevation = false, flip_age = false)
+    flip_age == flip_elevation || error("flip_age and flip_elevation must be equal: flipping only one mispairs age and elevation.")
     fname = sea_level_files[name]
     data = readdlm(joinpath(sea_level_path, fname))
     age, h = data[:, 1], data[:, 2]

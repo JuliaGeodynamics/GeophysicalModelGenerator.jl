@@ -9,7 +9,7 @@ In this tutorial, your will learn how to use drape a geological map on top of a 
 
 ## 1. Load data
 
-We start with loading the required packages, which includes `GMT` to download topography (an optional dependency for `GeophysicalModelGenerator`)
+We start with loading the required packages, which includes `GMT` to read the GeoTIFF file (an optional dependency for `GeophysicalModelGenerator`)
 
 ```julia
 using GeophysicalModelGenerator, GMT
@@ -21,7 +21,7 @@ Download the topography with:
 Topo = import_topo(lat=[45.5,47.7], lon=[5, 8.1], file="@earth_relief_03s")
 ```
 
-Next, we drape the geological map on top of the geological map.
+Next, we drape the geological map on top of the topography.
 The geological map was taken from the [2021 PhD thesis of Marc Schori](https://folia.unifr.ch/unifr/documents/313053) and saved as png map.
 We downloaded the pdf map, and cropped it to the lower left and upper right corners.
 The resulting map was uploaded to zenodo; it can be downloaded with
@@ -38,7 +38,7 @@ lowerleft  = [4.54602510460251, 45.27456049638056, 0.0]
 upperright = [8.948117154811715, 47.781282316442606, 0.0]
 ```
 
-We can now import the map with the `Screensho_To_GeoData` function:
+We can now import the map with the `screenshot_to_GeoData` function:
 
 ```julia
 Geology  = screenshot_to_GeoData("SchoriM_Encl_01_Jura-map_A1.png", lowerleft, upperright, fieldname=:geology_colors) # name should have "colors" in it
@@ -272,8 +272,3 @@ We can visualize this in paraview:
 
 We use a vertical exaggeration of factor two. Also note that the `y`-direction is now perpendicular to the Jura mountains.
 The paraview statefiles to generate this figure is `/tutorials/Jura_2.pvsm`.
-
----
-
-*This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
-

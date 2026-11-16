@@ -5,18 +5,23 @@ outname1 = movie_from_images(dir = dir)
 @test outname1 == "test_animation.mp4"
 
 outname2 = movie_from_images(dir = dir, copy_to_current_dir = false)
-@test outname2 == "test_animation.mp4"
+@test outname2 == joinpath(dir, "test_animation.mp4")
 
 outname3 = movie_from_images(dir = dir, copy_to_current_dir = false, framerate = 20, outfile = "test_anim2")
-@test outname3 == "test_anim2.mp4"
+@test outname3 == joinpath(dir, "test_anim2.mp4")
 
 outname4 = movie_from_images(dir = dir, copy_to_current_dir = false, framerate = 20, outfile = "test_anim3", type = :mov_hires)
-@test outname4 == "test_anim3.mov"
+@test outname4 == joinpath(dir, "test_anim3.mov")
 
 rm(outname1)
-rm(joinpath(dir, outname2))
-rm(joinpath(dir, outname3))
-rm(joinpath(dir, outname4))
+rm(outname2)
+rm(outname3)
+rm(outname4)
+
+outname5 = movie_from_images(dir = dir, copy_to_current_dir = false, outfile = "test_anim4", type = :gif)
+@test outname5 == joinpath(dir, "test_anim4.gif")
+@test isfile(outname5)
+rm(outname5)
 
 # default dir=pwd() with copy_to_current_dir=true must not copy the movie onto itself (#107)
 mktempdir() do tmp

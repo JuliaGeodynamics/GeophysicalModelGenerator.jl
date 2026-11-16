@@ -51,6 +51,10 @@ end
     @test isfile("test3.pvd")
     @test check_pvd("test3.pvd", 2)
 
+    make_paraview_collection(; pvd_name = "test4", files = files, time = [0.0, 1.0])
+    @test check_pvd("test4.pvd", 2)
+    @test occursin("timestep=\"1.0\"", read("test4.pvd", String))
+
     # files with numbers in their names are ordered by value, and the working directory does not change
     numbered = mktempdir()
     foreach(n -> touch(joinpath(numbered, "f$n.vts")), (10, 2, 1))

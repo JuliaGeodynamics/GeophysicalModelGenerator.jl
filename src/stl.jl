@@ -1,16 +1,6 @@
-# NOTE: this remains WIP, which is why it is not yet in the documentation
-# These are routines that allow importing *.stl triangular surfaces and employ them
-
 using FileIO
-# using GeometryBasics: TriangleP, Mesh, normals, PointMeta, coordinates
-# I removed TriangleP and PointMeta, as they are not existing in GeometryBasics anymore (past 0.5.0)
-# HD, 2024-06-10
 using GeometryBasics: Mesh, coordinates
 using LinearAlgebra
-
-# Warning: the TriangleIntersect dependency does not seem to work on different machines, as the developer did not add a version number..
-# That forces us to remove it here, and
-#using TriangleIntersect
 
 export load, coordinates
 export isinside_closed_STL
@@ -44,12 +34,6 @@ function isinside_closed_STL(mesh::Mesh, Pt::Vector, eps = 1.0e-3)
     end
 
     # Job done
-    if winding_number >= 2pi - eps
-        isinside = true
-    else
-        isinside = false
-    end
-
-
-    return isinside
+    # The sign of the winding number depends on the face orientation of the mesh
+    return abs(winding_number) >= 2pi - eps
 end

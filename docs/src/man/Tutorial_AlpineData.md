@@ -14,19 +14,12 @@ This is a tutorial to:
 This is a rather lengthy tutorial that combines different other tutorials, but it will guide you through all the steps necessary to obtain a somewhat comprehensive view of the European Alps and their subsurface from a geodynamical point of view.
 
 ## 1. Surface Topography
-In many cases, we want to add topographic data to our visualization. Here we use [GMT.jl](https://github.com/GenericMappingTools/GMT.jl) to download data from a certain region, and transfer that to `GMG`.
-To add the GMT package, simply add it with the julia package manager:
-```julia
-julia> ]
-(@v1.10) pkg> add GMT
-```
-and load both `GMG` and `GMT` with:
 
 ```julia
-using GeophysicalModelGenerator, GMT
+using GeophysicalModelGenerator
 ```
 
-When loading both packages, several `GMT` routines within `GMG` will be loaded. One of these routines is the function `import_topo`, where one simply has to provide the region for which to download the topographic data and the data source.
+In many cases, we want to add topographic data to our visualization. The function `import_topo` downloads data from a certain region and transfers it to `GMG`; one simply has to provide the region and the data source.
 
 ```julia
 Topo = import_topo([4,20,37,50], file="@earth_relief_01m")
@@ -34,7 +27,7 @@ Topo = import_topo([4,20,37,50], file="@earth_relief_01m")
 
 The data is available in different resolutions; see [here](http://gmt.soest.hawaii.edu/doc/latest/grdimage.html) for an overview. Generally, it is advisable to not use the largest resolution if you have a large area, as the files become very large.
 
-If you have issues with loading the topography with `GMT`, there is also the alternative to download the data yourself and import it using `Rasters.jl`.
+If you have issues with downloading the topography, there is also the alternative to download the data yourself and import it using `Rasters.jl`.
 
 We can now export this data to a `VTK` format so that we can visualize it with `Paraview`. To do so, `GMG` provides the function `write_paraview`:
 
@@ -72,7 +65,7 @@ data_mroczek = readdlm("MohoMroczek2023.csv",',',header=false,skipstart=11)
 
 Note that we skipped the first 11 lines of the file as they contain the file header. The result of this operation will look like this:
 
-```julia
+```julia-repl
 julia> data_mroczek = readdlm("MohoMroczek2023.csv",',',header=false,skipstart=11)
 40786×10 Matrix{Any}:
      "X"      "Y"      "Z"    "lat"    "lon"    "depth"   "tPs"   "k"   "interp"  "tag"
@@ -114,7 +107,6 @@ lon        = zeros(size(data_mroczek,1)-1);     lon   .= data_mroczek[2:end,5];
 lat        = zeros(size(data_mroczek,1)-1);     lat   .= data_mroczek[2:end,4];
 depth      = zeros(size(data_mroczek,1)-1);     depth .= -1.0*data_mroczek[2:end,6]; #multiplied with -1, as we consider depth to be negative
 tag        = string.(data_mroczek[2:end,10]); #get unit identifiers und convert them to strings
-nothing #hide
 ```
 
 As a next step, we determine how many different tectonic units there are:
@@ -130,7 +122,6 @@ To convert this data to a `GMG` dataset, we now have to interpolate it to a regu
 
 ```julia
 Lon,Lat,Depth = lonlatdepth_grid(9.9:0.02:15.1,45.0:.02:49.0,0km);
-nothing #hide
 ```
 
 To interpolate the Moho data of the different units to this grid, we have here decided to employ a simple Nearest Neighbor interpolation for simplicity.
@@ -212,7 +203,6 @@ Once the data has been downloaded, we can extract `lon/lat/depth/magnitude` usin
 
 ```julia
 Data_ISC = getlonlatdepthmag_QuakeML("ISCData.xml");
-nothing #hide
 ```
 
 As before, we can export this dataset to `VTK` and also save it as a `jld2` file (as we are now exporting point data, we have to use the option `PointsData=true`):
@@ -329,7 +319,6 @@ initialized with `NaN` (not a number).
 ```julia
 Ve = fill(NaN,size(Vz));
 Vn = fill(NaN,size(Vz));
-nothing #hide
 ```
 
 Next, we loop over all points in `lon_Hz,lat_Hz` and place them into 2D matrixes:
@@ -349,21 +338,19 @@ Yet, given the small velocities in the Alps, it makes more sense to have them in
 Vz = Vz*1000;
 Ve = Ve*1000;
 Vn = Vn*1000;
-nothing #hide
 ```
 
 And their magnitude is
 
 ```julia
 Vmagnitude  =   sqrt.(Ve.^2 + Vn.^2 + Vz.^2);
-nothing #hide
 ```
 
 ### 4.2 Interpolate topography on the grid
-At this stage we have the 3D velocity components on a grid. Yet, we don't have information yet about the elevation of the stations (as the provided data set did not give this).
+At this stage we have the 3D velocity components on a grid. Yet, we don't have information about the elevation of the stations (as the provided data set did not give this).
 We could ignore that and set the elevation to zero, which would allow saving the data directly.
 Yet, a better way is to load the topographic map of the area and interpolate the elevation to the velocity grid.
-As we have already the loaded the topographic map in section 1 of this tutorial, we can simply reuse it. To interpolate, we will use the function `interpolate_datafields_2D`
+As we already have loaded the topographic map in section 1 of this tutorial, we can simply reuse it. To interpolate, we will use the function `interpolate_datafields_2D`.
 
 ```julia
 topo_v, fields_v = interpolate_datafields_2D(Topo, Lon, Lat)
@@ -416,7 +403,6 @@ As longitude and latitude are only given as 2D grids, we here have to convert th
 ```julia
 Lon = repeat(lon[:,:],1,1,size(Depth,3));
 Lat = repeat(lat[:,:],1,1,size(Depth,3));
-nothing #hide
 ```
 
 Finally, as we would like to keep the information on the data source, we add this information as a dictionary.
@@ -435,11 +421,10 @@ Data_attribs   = Dict(
 )
 ```
 
-Now we are all set and can create a GeoData structure which along with metadata
+Now we are all set and can create a GeoData structure along with its metadata
 
 ```julia
 Data = GeoData(Lon,Lat,Depth[:,:,:],(Vp=Vp[:,:,:],dVp=dlnVp[:,:,:]),Data_attribs);
-nothing #hide
 ```
 
 And then we save it again.
@@ -457,8 +442,3 @@ of these datasets. To obtain this visualization, we will load all the `VTK` file
 ![Alps_Tutorial_6](../assets/img/GMG_AlpineData.png)
 
 A Paraview statefile that reproduces this visualization is available under `tutorials/Tutorial_AlpineData.pvsm`.
-
----
-
-*This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
-

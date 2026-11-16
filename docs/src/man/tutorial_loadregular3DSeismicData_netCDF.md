@@ -23,7 +23,7 @@ julia> filename = ("El-Sharkawy-etal-G3.2020-MeRE2020-Mediterranean-0.0.nc")
 julia> ncinfo("El-Sharkawy-etal-G3.2020-MeRE2020-Mediterranean-0.0.nc")
 ##### NetCDF File #####
 
-/Users/mthiel/PROJECTS/CURRENT/SPP2017/GeophysicalModelGenerator/InputData/El-Sharkawy/El-Sharkawy-etal-G3.2020-MeRE2020-Mediterranean-0.0.nc
+/path/to/InputData/El-Sharkawy/El-Sharkawy-etal-G3.2020-MeRE2020-Mediterranean-0.0.nc
 
 ##### Dimensions #####
 

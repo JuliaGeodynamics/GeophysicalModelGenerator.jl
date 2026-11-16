@@ -26,7 +26,6 @@ Pwave_Paffrath = load("Paffrath_Pwave.jld2","Data_set_Paffrath2021_Vp")
 ```
 
 The 3 data sets all contain tomographic models for roughly the alpine area, but as you can see, they all have a different resolution and the fields are sometimes called different as well:
-
 ```julia
 Pwave_Paffrath
 GeoData
@@ -54,7 +53,7 @@ The idea of `Votemaps` is rather simple:
 - Sum up the 3 models.
 - The resulting 3D map will have the number `3` at locations where all 3 models see a high-velocity anomaly (say a slab), implying that this feature is consistent between all models. Features that have a number 1 or 2 are only seen in a single or in 2/3 models.
 
-The result of this gives a feeling which features are consistent between the 3 models. It is of course still subjective, as you still have to choose a criterion and as we are assuming in this that the 3 tomographic models are comparable (which they are not as they are produced using different amounts of data, etc. etc.)
+The result of this gives a feeling which features are consistent between the 3 models. It is of course still subjective, as you still have to choose a criterion and as we are assuming in this that the 3 tomographic models are comparable (which they are not as they are produced using different amounts of data, etc. etc.).
 
 So how do we create Votemaps?
 Doing this is rather simple:
@@ -66,7 +65,6 @@ Data_VoteMap = votemap( [Pwave_Paffrath,       PSwave_Koulakov,    Pwave_Zhao],
 
 This will look at the common `lon`,`lat`,`depth` ranges between all 3 models, interpolate each of the models to a common grid of size `(100,100,100)` and apply each of the criteria specified
 The resulting `GeoData` struct looks like:
-
 ```julia
 GeoData
   size  : (100, 100, 100)
@@ -95,8 +93,3 @@ Data_VoteMap = votemap( [Pwave_Paffrath,       Pwave_Paffrath,       PSwave_Koul
 ```
 
 Similarly, you could only look at a single model (even when that is perhaps easier done directly in paraview, where you can simply select a different isocontour value)
-
----
-
-*This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
-

@@ -2,41 +2,27 @@
 
 module Gmsh_utils
 
-using GridapGmsh, StaticArrays
+using GridapGmsh
 using GridapGmsh: gmsh
 
 import GeophysicalModelGenerator: import_Gmsh, FEData, CartData
 
 
-"""
-    fe_data, tag_names = import_Gmsh(fname::String)
-
-Reads a Gmsh file and returns a `FEData` object with info about the mesh. `tag_names` contains the names of the regions of the FE mesh
-"""
 function import_Gmsh(fname::String)
 
-    # `GmshDiscreteModel` initializes and finalizes gmsh itself. That normally
-    # works, but on a freshly started worker process gmsh's global state is
-    # occasionally not in place yet and it fails with "Gmsh has not been
-    # initialized" (seen on Windows under the parallel test runner).
-    #
-    # Initializing here first makes that state explicit. gmsh reference-counts
-    # nothing, so we must NOT finalize afterwards: GmshDiscreteModel already
-    # finalizes the session it used, and a second finalize errors.
-    try
-        if gmsh.isInitialized() == 0
-            gmsh.initialize()
-        end
-    catch e
-        @warn "Could not initialize gmsh, letting GmshDiscreteModel handle it" exception = e
-    end
+    # gmsh is initialized here because its global state may not be in place yet on a freshly started worker
+    # process; GmshDiscreteModel finalizes the session it uses, so it is not finalized again here.
+    gmsh.isInitialized() == 0 && gmsh.initialize()
 
     mesh = GmshDiscreteModel(fname, renumber = false, has_affine_map = false)
+
+    length(mesh.face_labeling.d_to_dface_to_entity) == 4 ||
+        error("import_Gmsh supports 3D meshes only, but $fname is a $(length(mesh.face_labeling.d_to_dface_to_entity) - 1)D mesh")
 
     # Extract vertices
     nverts = length(mesh.grid.node_coordinates)
     dims = length(mesh.grid.node_coordinates[1])
-    vertices = [mesh.grid.node_coordinates[n][i] for i in 1:dims,n in 1:nverts]
+    vertices = [mesh.grid.node_coordinates[n][i] for i in 1:dims, n in 1:nverts]
 
     # write coords as 1D double array
     nvertices_cell = length(mesh.grid.cell_node_ids[1])

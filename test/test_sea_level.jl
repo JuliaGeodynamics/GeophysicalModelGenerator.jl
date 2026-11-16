@@ -16,3 +16,6 @@ x = SeaLevel(:Spratt_800ka)
 x_rev = SeaLevel(:Spratt_800ka; flip_elevation = true, flip_age = true)
 @test x.elevation == reverse(x_rev.elevation)
 @test x.age == reverse(x_rev.age)
+
+@test x.age[2] == 1000.0
+@test_throws "flip_age and flip_elevation must be equal" SeaLevel(:Spratt_800ka; flip_elevation = true)

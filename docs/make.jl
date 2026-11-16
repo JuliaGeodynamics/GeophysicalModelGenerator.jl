@@ -92,7 +92,7 @@ makedocs(;
             "2 - 3D seismic tomography from ASCII" => "man/tutorial_load3DSeismicData.md",
             "3 - 3D seismic tomography from netCDF" => "man/tutorial_loadregular3DSeismicData_netCDF.md",
             "4 - Visualize Moho topography" => "man/Tutorial_MohoTopo_Spada.md",
-            "5 - Create GMT-based topography" => "man/tutorial_GMT_Topography.md",
+            "5 - Download topography with import_topo" => "man/tutorial_GMT_Topography.md",
             "6 - Coastlines" => "man/tutorial_Coastlines.md",
             "7 - Import screenshots" => "man/tutorial_Screenshot_To_Paraview.md",
             "8 - Interpolate irregular 3D seismic tomography" => "man/tutorial_loadirregular3DSeismicData.md",
@@ -110,8 +110,12 @@ makedocs(;
             "20 - 2D model setups" => "man/Tutorial_NumericalModel_2D.md",
             "21 - 3D model setups" => "man/Tutorial_NumericalModel_3D.md",
             "22 - 3D Volcano setup" => "man/Tutorial_VolcanoModel_3D.md",
-            "23 - Build geometry from polygons" =>  "man/tutorial_Polygon_structures.md",
-            "24 - Profiles for the AdriaArrayGeometryPicker" =>  "man/tutorial_AdriaArrayGeometryPicker.md"
+            "23 - Build geometry from polygons" => "man/tutorial_Polygon_structures.md",
+            "24 - Profiles for the AdriaArrayGeometryPicker" => "man/tutorial_AdriaArrayGeometryPicker.md",
+            "25 - Curved layers, faults and plumes" => "man/Tutorial_NumericalModel_Geometries.md",
+            "26 - Slab break-off" => "man/Tutorial_SlabBreakoff.md",
+            "27 - Quick look with GLMakie" => "man/Tutorial_Visualise.md",
+            "28 - Profile processing" => "man/tutorial_ProfileProcessing.md",
         ],
         "User Guide" => Any[
             "Installation" => "man/installation.md",

@@ -20,7 +20,7 @@
 # in, keyed on the hash of this file, so changing the list below invalidates that cache
 # automatically. The previous tiles are still restored; only the new ones are downloaded.
 
-using GeophysicalModelGenerator
+using GeophysicalModelGenerator, Downloads
 
 # (region, keyword arguments) pairs, matching the calls made in the tests and tutorials
 const TOPO_PREFETCH = [
@@ -47,6 +47,10 @@ function prefetch_topography()
             import_topo(copy(limits); kwargs..., maxattempts = 3)
             true
         catch e
+            # only download failures mean "server unreachable"; anything else is a bug
+            unreachable = e isa Downloads.RequestError ||
+                (e isa ErrorException && occursin(r"could not download|could not be reached", e.msg))
+            unreachable || rethrow()
             @warn "Could not prefetch topography $kwargs for $limits" exception = (e, catch_backtrace())
             false
         end

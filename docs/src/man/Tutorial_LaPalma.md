@@ -14,24 +14,24 @@ We will use two types of data to create the model
  1) Topography
  2) Earthquake locations
 
-We start with loading the required packages, which includes `GMT` to download topography (an optional dependency for `GeophysicalModelGenerator`)
+We start with loading the required packages, which includes `DelimitedFiles` to read the seismicity
 
 ```julia
-using GeophysicalModelGenerator, GMT, DelimitedFiles
+using GeophysicalModelGenerator, DelimitedFiles
 ```
 
-We will use GMT to download the topography with:
+We download the topography with:
 
 ```julia
 Topo = import_topo(lon = [-18.2, -17.5], lat=[28.4, 29.0], file="@earth_relief_15s")
 ```
 
 Next, lets load the seismicity. The earthquake data is available on [https://www.ign.es/web/ign/portal/vlc-catalogo](https://www.ign.es/web/ign/portal/vlc-catalogo).
-We have filtered them and prepared a file with earthquake locations up to early November 2021 (from january 2021).
+We have filtered them and prepared a file with earthquake locations up to early November 2021 (from January 2021).
 Download that:
 
 ```julia
-#download_data("https://zenodo.org/records/10738510/files/EQ_events_all_info5_LaPalma_2021.dat","EQ_events_all_info5_LaPalma_2021.dat")
+download_data("https://zenodo.org/records/10738510/files/EQ_events_all_info5_LaPalma_2021.dat","EQ_events_all_info5_LaPalma_2021.dat")
 data_EQ = readdlm("EQ_events_all_info5_LaPalma_2021.dat")
 ```
 
@@ -81,7 +81,6 @@ LaMEM needs an orthogonal grid of topography, which we can create with:
 
 ```julia
 Topo_model = CartData(xyz_grid(-35:.1:30,-15:.2:45,0));
-nothing #hide
 ```
 
 In a next step, the routine `project_CartData` projects a `GeoData` structure to a `CartData` struct
@@ -151,7 +150,3 @@ write_paraview(Grid_3D,"Grid_3D")
 
 The paraview statefile `/tutorials/LaPalma.pvsm` can be used to reproduce the following plot:
 ![LaPalma_Tutorial](../assets/img/Tutorial_LaPalma.png)
-
----
-
-*This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*

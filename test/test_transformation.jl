@@ -58,6 +58,13 @@ Data_Cart = project_CartData(Data_Cart, Data_west, proj_west)
 @test Data_Cart.fields.LonData[3, 3] ≈ 348.0
 @test all(346 .< Data_Cart.fields.LonData .< 350)
 
+# GeoData given in 0-360° longitudes, projected around a point at 0°: the western points are wrapped to 357-359°
+Lon, Lat, Depth = lonlatdepth_grid(0:359, 40:60, 0)
+Data_global = GeoData(Lon, Lat, Depth, (LonData = Lon,))
+Data_Cart = CartData(xyz_grid(-200:100:200, -100:100:100, 0)..., (Z = zeros(5, 3, 1),))
+LonData = project_CartData(Data_Cart, Data_global, ProjectionPoint(Lat = 50, Lon = 0)).fields.LonData[:, 2, 1]
+@test LonData ≈ [357.22, 358.61, 0.0, 1.39, 2.79] atol = 0.01
+
 # point_in_tetrahedron
 a, b, c, d = [0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]
 @test GeophysicalModelGenerator.point_in_tetrahedron([0.1, 0.1, 0.1], a, b, c, d)
@@ -112,3 +119,13 @@ X, Y, Z = xyz_grid(0.5:1:3.5, 0.5:1:2.5, 0)
 Data_Cart = project_CartData(CartData(X, Y, Z, (Z = Z,)), Data_src)
 @test ustrip.(Data_Cart.z.val) ≈ X .+ Y
 @test Data_Cart.fields.T ≈ 2 .* X
+
+# atts are carried through project_CartData
+X, Y, Z = xyz_grid(0:4, 0:3, 0:2)
+@test project_CartData(CartData(X, Y, Z, (Z = Z,), Dict("s" => 1)), CartData(X, Y, Z, (T = X,))).atts["s"] == 1
+
+# tetrahedron_regions gives the same result for ascending and descending axes
+verts, conn = [0.0 1 0 0; 0 0 1 0; 0 0 0 1], reshape([1, 2, 3, 4], 4, 1)
+r_up = GeophysicalModelGenerator.tetrahedron_regions(xyz_grid(0:0.25:1, 0:0.25:1, 0:0.25:1)..., verts, conn, [7])
+r_down = GeophysicalModelGenerator.tetrahedron_regions(xyz_grid(0:0.25:1, 0:0.25:1, 1:-0.25:0)..., verts, conn, [7])
+@test reverse(r_down, dims = 3) == r_up && any(==(7), r_up)
