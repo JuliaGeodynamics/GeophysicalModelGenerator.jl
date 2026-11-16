@@ -60,10 +60,10 @@ import GeophysicalModelGenerator: laea_to_lonlat, lonlat_to_laea
     @test v[end] ≈ vel_true(20) atol = 0.1
     v = EGMS_velocity(d3, from = Date(2021, 1, 1), to = Date(2022, 12, 31))
     @test v[end] ≈ vel_true(20) atol = 0.3
-    @test_throws ErrorException EGMS_velocity(d3, from = Date(2030, 1, 1))
+    @test_throws "Fewer than two acquisition dates" EGMS_velocity(d3, from = Date(2030, 1, 1))
 
     @test EGMS_velocity(d3, seasonal = false)[end] ≈ vel_true(20) atol = 0.3
-    @test_throws ErrorException EGMS_velocity(d3, from = Date(2021, 1, 1), to = Date(2021, 6, 1), seasonal = true)
+    @test_throws "needs at least one year of data" EGMS_velocity(d3, from = Date(2021, 1, 1), to = Date(2021, 6, 1), seasonal = true)
     @test !isnan(EGMS_velocity(d3, from = Date(2021, 1, 1), to = Date(2021, 6, 1))[1])
 
     # missing values are skipped
@@ -77,8 +77,8 @@ import GeophysicalModelGenerator: laea_to_lonlat, lonlat_to_laea
     @test all(lims[1] .<= dl.lon .<= lims[2])
     fb = write_file("EGMS_L3_E45N26_100km_U_2019_2023_1.csv", 3; i_range = 21:30)
     @test length(import_EGMS([f3, fb])) == 300
-    @test_throws ErrorException import_EGMS([f3, f2])     # different columns
-    @test_throws ErrorException import_EGMS(joinpath(dir, "nofile.csv"))
+    @test_throws "different columns" import_EGMS([f3, f2])
+    @test_throws "not found" import_EGMS(joinpath(dir, "nofile.csv"))
     dir3 = mktempdir()
     cp(f3, joinpath(dir3, basename(f3))); cp(fb, joinpath(dir3, basename(fb)))
     @test length(import_EGMS(dir3)) == 300
@@ -137,4 +137,16 @@ import GeophysicalModelGenerator: laea_to_lonlat, lonlat_to_laea
     @test haskey(S.fields, :Topography)
     @test S.depth.val == Topo.depth.val
     @test count(!isnan, S.fields.velocity) >= length(inside)
+
+    @test_throws "No EGMS points read" import_EGMS(f3, limits = [0, 1, 0, 1])
+    short = import_EGMS(f3)
+    short.displacement[1:(end - 25), 1] .= NaN32     # only the last ~5 months
+    @test isnan(EGMS_velocity(short, seasonal = true)[1])
+    @test !isnan(EGMS_velocity(short, seasonal = true)[2])
+
+    # the number type of the grid is kept, and a non-integer type for `minpoints` is accepted
+    G32 = EGMS_on_grid(d3, GeoData(Float32.(Lon), Float32.(Lat), Float32.(Depth), (z = zeros(Float32, size(Lon)),)), radius = 0.5, minpoints = 5.0)
+    @test eltype(G32.fields.velocity) == Float32
+    @test eltype(G32.fields.Velocity[1]) == Float32
+    @test any(!isnan, G32.fields.velocity)
 end

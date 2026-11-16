@@ -6,20 +6,18 @@
 # azimuthal equal-area projection on the GRS80 ellipsoid; the formulas are those of EPSG
 # guidance note 7-2 (method 9820), written out here so that no projection library is needed.
 
-const LAEA_a = 6378137.0                    # GRS80 semi-major axis [m]
-const LAEA_e2 = (2 - 1 / 298.257222101) / 298.257222101
-const LAEA_e = sqrt(LAEA_e2)
-const LAEA_lat0 = deg2rad(52.0)
-const LAEA_lon0 = deg2rad(10.0)
-const LAEA_FE = 4321000.0                   # false easting [m]
-const LAEA_FN = 3210000.0                   # false northing [m]
+laea_q(sinφ, e2, e) = (1 - e2) * (sinφ / (1 - e2 * sinφ^2) - log((1 - e * sinφ) / (1 + e * sinφ)) / (2 * e))
 
-laea_q(sinφ) = (1 - LAEA_e2) * (sinφ / (1 - LAEA_e2 * sinφ^2) - log((1 - LAEA_e * sinφ) / (1 + LAEA_e * sinφ)) / (2 * LAEA_e))
-
-const LAEA_qP = laea_q(1.0)
-const LAEA_β0 = asin(laea_q(sin(LAEA_lat0)) / LAEA_qP)
-const LAEA_Rq = LAEA_a * sqrt(LAEA_qP / 2)
-const LAEA_D = LAEA_a * cos(LAEA_lat0) / (sqrt(1 - LAEA_e2 * sin(LAEA_lat0)^2) * LAEA_Rq * cos(LAEA_β0))
+# GRS80 ellipsoid (a, e2), projection center (lat0, lon0), false easting and northing [m]
+function laea_params()
+    a, e2 = 6378137.0, (2 - 1 / 298.257222101) / 298.257222101
+    e, lat0, lon0 = sqrt(e2), deg2rad(52.0), deg2rad(10.0)
+    qP = laea_q(1.0, e2, e)
+    β0 = asin(laea_q(sin(lat0), e2, e) / qP)
+    Rq = a * sqrt(qP / 2)
+    D = a * cos(lat0) / (sqrt(1 - e2 * sin(lat0)^2) * Rq * cos(β0))
+    return (; e2, e, lat0, lon0, FE = 4321000.0, FN = 3210000.0, qP, β0, Rq, D)
+end
 
 """
     lon, lat = laea_to_lonlat(easting, northing)
@@ -28,14 +26,15 @@ Converts ETRS89-LAEA Europe (EPSG:3035) coordinates in meters, as used by EGMS, 
 longitude and latitude in degrees.
 """
 function laea_to_lonlat(easting::Real, northing::Real)
-    x, y = easting - LAEA_FE, northing - LAEA_FN
-    ρ = sqrt((x / LAEA_D)^2 + (LAEA_D * y)^2)
-    ρ == 0 && return rad2deg(LAEA_lon0), rad2deg(LAEA_lat0)
-    C = 2 * asin(ρ / (2 * LAEA_Rq))
-    sinβ0, cosβ0 = sincos(LAEA_β0)
-    β = asin(cos(C) * sinβ0 + LAEA_D * y * sin(C) * cosβ0 / ρ)
-    λ = LAEA_lon0 + atan(x * sin(C), LAEA_D * ρ * cosβ0 * cos(C) - LAEA_D^2 * y * sinβ0 * sin(C))
-    e2, e4, e6 = LAEA_e2, LAEA_e2^2, LAEA_e2^3
+    (; e2, lat0, lon0, FE, FN, β0, Rq, D) = laea_params()
+    x, y = easting - FE, northing - FN
+    ρ = sqrt((x / D)^2 + (D * y)^2)
+    ρ == 0 && return rad2deg(lon0), rad2deg(lat0)
+    C = 2 * asin(ρ / (2 * Rq))
+    sinβ0, cosβ0 = sincos(β0)
+    β = asin(cos(C) * sinβ0 + D * y * sin(C) * cosβ0 / ρ)
+    λ = lon0 + atan(x * sin(C), D * ρ * cosβ0 * cos(C) - D^2 * y * sinβ0 * sin(C))
+    e4, e6 = e2^2, e2^3
     φ = β + (e2 / 3 + 31 * e4 / 180 + 517 * e6 / 5040) * sin(2β) +
         (23 * e4 / 360 + 251 * e6 / 3780) * sin(4β) + (761 * e6 / 45360) * sin(6β)
     return rad2deg(λ), rad2deg(φ)
@@ -48,12 +47,13 @@ Converts longitude and latitude in degrees to ETRS89-LAEA Europe (EPSG:3035) coo
 meters. The inverse of [`laea_to_lonlat`](@ref).
 """
 function lonlat_to_laea(lon::Real, lat::Real)
-    β = asin(laea_q(sind(lat)) / LAEA_qP)
-    dλ = deg2rad(lon) - LAEA_lon0
-    sinβ0, cosβ0 = sincos(LAEA_β0)
-    B = LAEA_Rq * sqrt(2 / (1 + sinβ0 * sin(β) + cosβ0 * cos(β) * cos(dλ)))
-    easting = LAEA_FE + B * LAEA_D * cos(β) * sin(dλ)
-    northing = LAEA_FN + B / LAEA_D * (cosβ0 * sin(β) - sinβ0 * cos(β) * cos(dλ))
+    (; e2, e, lon0, FE, FN, qP, β0, Rq, D) = laea_params()
+    β = asin(laea_q(sind(lat), e2, e) / qP)
+    dλ = deg2rad(lon) - lon0
+    sinβ0, cosβ0 = sincos(β0)
+    B = Rq * sqrt(2 / (1 + sinβ0 * sin(β) + cosβ0 * cos(β) * cos(dλ)))
+    easting = FE + B * D * cos(β) * sin(dλ)
+    northing = FN + B / D * (cosβ0 * sin(β) - sinβ0 * cos(β) * cos(dλ))
     return easting, northing
 end
 
@@ -114,6 +114,8 @@ motion along the line of sight of the satellite, and *Ortho* (L3), which gives t
 (`_U_` in the file name) or east-west (`_E_`) component on a 100 m grid.
 
 Optionally, only the points within `limits = [lon_min, lon_max, lat_min, lat_max]` are kept.
+An error is thrown if no points are read at all, for example because the limits do not
+overlap with the data.
 
 Several files can only be combined if they have the same acquisition dates, which is the
 case for the Ortho tiles of one release and one component.
@@ -134,6 +136,7 @@ See also [`EGMS_velocity`](@ref), [`EGMS_points`](@ref) and [`EGMS_on_grid`](@re
 function import_EGMS(files::AbstractVector{<:AbstractString}; limits = nothing)
     isempty(files) && error("No EGMS files given")
     data = [read_EGMS_file(f, limits) for f in files]
+    sum(length, data) > 0 || error("No EGMS points read within limits = $limits")
     d = first(data)
     length(data) == 1 && return d
     for (f, o) in zip(files, data)
@@ -176,13 +179,9 @@ function read_EGMS_file(file::AbstractString, limits)
             error("$file has neither longitude/latitude nor easting/northing columns")
         iheight = something(col("height_ortho"), col("height"), Some(nothing))     # name in new and in old releases
 
-        # all remaining columns are kept if they hold numbers (the point id, for example, does not)
-        skip = Set(filter(!isnothing, [ilon, ilat, ieast, inorth, iheight]))
+        # all remaining columns are kept, except the point id, which is text
+        skip = Set(filter(!isnothing, [ilon, ilat, ieast, inorth, iheight, col("pid")]))
         iother = [i for i in eachindex(names) if !(i in skip) && !(i in idates)]
-        first_row = position(io)
-        row = split(readline(io), delim)
-        seek(io, first_row)
-        iother = [i for i in iother if i <= length(row) && !isnothing(tryparse(Float64, row[i]))]
 
         lon, lat, height = Float64[], Float64[], Float64[]
         other = [Float64[] for _ in iother]
@@ -193,7 +192,7 @@ function read_EGMS_file(file::AbstractString, limits)
             isempty(strip(line)) && continue
             row = split(line, delim)
             length(row) == length(names) || error("$file: a row has $(length(row)) columns, but the header has $(length(names))")
-            lo, la = has_lonlat ? (num(row[ilon]), num(row[ilat])) : laea_to_lonlat(num(row[ieast]), num(row[inorth]))
+            lo, la = has_lonlat ? (parse(Float64, row[ilon]), parse(Float64, row[ilat])) : laea_to_lonlat(parse(Float64, row[ieast]), parse(Float64, row[inorth]))
             if !isnothing(limits)
                 (limits[1] <= lo <= limits[2] && limits[3] <= la <= limits[4]) || continue
             end
@@ -225,7 +224,8 @@ Many points move up and down with the seasons, which would bias the velocity, in
 over short periods. With `seasonal = true` a yearly signal is therefore fitted together with
 the straight line, as EGMS does for its own `mean_velocity` (`data.fields.mean_velocity`),
 which covers the full period of the file. That needs at least a year of data, so by default
-it is done if the period is at least one year long.
+it is done if the period is at least one year long. Points whose own measurements span
+less than a year within the period then get `NaN`.
 
 # Example
 ```julia
@@ -251,7 +251,8 @@ function EGMS_velocity(data::EGMSData; from = first(data.dates), to = last(data.
             vel[p] = sum(w[k] * d[k] for k in eachindex(w))
         else
             ok = findall(!isnan, d)
-            length(ok) > size(A, 2) && (vel[p] = (A[ok, :] \ Float64.(d[ok]))[2])
+            enough = length(ok) > size(A, 2) && (!seasonal || t[last(ok)] - t[first(ok)] >= 1)
+            enough && (vel[p] = (A[ok, :] \ Float64.(d[ok]))[2])
         end
     end
     return vel
@@ -306,6 +307,7 @@ function EGMS_on_grid(data::EGMSData, Grid::GeoData; radius = nothing, smooth = 
     size(Grid.lon.val, 3) == 1 || error("Grid should be a surface (a single level in the third direction)")
     vel = EGMS_velocity(data; kwargs...)
     lon, lat = Grid.lon.val, Grid.lat.val
+    T = float(eltype(lon))                  # number type of the output
 
     # local flat coordinates in km, which is accurate enough to find neighbours
     kmdeg = 111.195
@@ -316,7 +318,7 @@ function EGMS_on_grid(data::EGMSData, Grid::GeoData; radius = nothing, smooth = 
     radius = something(radius, rcell * (smooth ? 3 : 1))
 
     keep = findall(!isnan, vel)
-    velocity = fill(NaN, size(lon))
+    velocity = fill(T(NaN), size(lon))
     npoints = zeros(Int64, size(lon))
     if !isempty(keep)
         P = permutedims([kmdeg * c .* data.lon[keep] kmdeg .* data.lat[keep]])
@@ -327,7 +329,7 @@ function EGMS_on_grid(data::EGMSData, Grid::GeoData; radius = nothing, smooth = 
             idx = inrange(tree, [x, y], r)
             isempty(idx) && continue
             if length(idx) > minpoints && r > rcell     # plenty of data: shrink the radius, to keep sharp features
-                r = min(r, max(rcell, maximum(knn(tree, [x, y], minpoints)[2])))
+                r = min(r, max(rcell, maximum(knn(tree, [x, y], Int(minpoints))[2])))
                 idx = inrange(tree, [x, y], r)
             end
             npoints[i] = length(idx)
@@ -336,17 +338,17 @@ function EGMS_on_grid(data::EGMSData, Grid::GeoData; radius = nothing, smooth = 
         end
     end
     fields = (velocity = velocity, npoints = npoints)
-    Ve = zeros(size(lon))
+    Ve = zeros(T, size(lon))
     if !isnothing(east)
         Ve = EGMS_on_grid(east, Grid; radius = radius, smooth = smooth, minpoints = minpoints, kwargs...).fields.velocity
         fields = merge(fields, (velocity_east = Ve,))
     end
     # copies, as writing to Paraview rotates the vector components in place
-    fields = merge(fields, (Velocity = (copy(Ve), zeros(size(lon)), copy(velocity)),))
+    fields = merge(fields, (Velocity = (copy(Ve), zeros(T, size(lon)), copy(velocity)),))
     return GeoData(Grid.lon.val, Grid.lat.val, Grid.depth.val, merge(Grid.fields, fields), Grid.atts)
 end
 
 function EGMS_on_grid(data::EGMSData, lon::AbstractRange, lat::AbstractRange; kwargs...)
-    Lon, Lat, Depth = lonlatdepth_grid(lon, lat, 0.0)
-    return EGMS_on_grid(data, GeoData(Lon, Lat, Depth, (elevation = zeros(size(Lon)),)); kwargs...)
+    Lon, Lat, Depth = lonlatdepth_grid(lon, lat, zero(eltype(lon)))
+    return EGMS_on_grid(data, GeoData(Lon, Lat, Depth, (elevation = zero(Lon),)); kwargs...)
 end
