@@ -80,7 +80,7 @@ Observed gravity is reduced to anomalies with respect to the reference ellipsoid
 ```julia
 Topo = import_topo(lon = [14, 16], lat = [36.8, 38.8], file = "@earth_relief_30s")
 TE, = topographic_effect(Topo; stations = Stations)                   # mGal
-BA = g_obs .- normal_gravity.(lat_st, height_st) .- vec(TE)           # complete Bouguer anomaly
+CBA = g_obs .- normal_gravity.(lat_st, height_st) .- vec(TE)           # complete Bouguer anomaly
 ```
 
 For a 1 km high plateau, 200 km wide, `topographic_effect` gives 110 mGal at its centre (an infinite slab: 112 mGal).
@@ -122,7 +122,7 @@ The **complete Bouguer anomaly** removes the effect of the topography between se
 ```julia
 ρ_B = 2670.0
 BC, = voxel_grav(X, Y, Z, ρ_B .* ((Z .> 0) .& (Z .<= topo)); refMod = zeros(size(X, 3)), zRef = topo, lengthUnit = "km", outName = nothing)
-BA = FA .- BC
+CBA = FA .- BC
 ```
 
 The **simple Bouguer anomaly** approximates the topography below every station by an infinite slab and ignores the terrain:
