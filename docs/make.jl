@@ -150,11 +150,22 @@ makedocs(;
     warnonly = true,
 )
 
-DocumenterVitepress.deploydocs(;
-    repo = "github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl",
-    target = joinpath(@__DIR__, "build"),
-    branch = "gh-pages",
-    devbranch = "main",
-    forcepush = true,
-    push_preview = true,
-)
+# Two docs builds (e.g. a PR preview and main) can push to gh-pages at the same time, and the push of the later one
+# then fails. deploydocs fetches gh-pages again, so retry a few times.
+for attempt in 1:3
+    try
+        DocumenterVitepress.deploydocs(;
+            repo = "github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl",
+            target = joinpath(@__DIR__, "build"),
+            branch = "gh-pages",
+            devbranch = "main",
+            forcepush = true,
+            push_preview = true,
+        )
+        break
+    catch err
+        attempt == 3 && rethrow()
+        @warn "deploydocs failed (attempt $attempt of 3), retrying in 30 s" exception = err
+        sleep(30)
+    end
+end
