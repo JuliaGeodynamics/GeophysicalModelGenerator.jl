@@ -391,7 +391,7 @@ using KernelAbstractions
             @test sum(rc .* serial[1]) ≈ sum(voxel_grav_adjoint(Gc, rc; cutoff = 100) .* mc) rtol = 1.0e-10
             @test voxel_grav_adjoint(Gc, rc; cutoff = 100, backend = CPU()) ≈ voxel_grav_adjoint(Gc, rc; cutoff = 100)
         end
-        @test_throws "Grid must be a regular lon/lat/depth grid" voxel_grav(GeoData(Lon, Lat, Depth .+ rand(size(Depth)...), (z = Depth,)), m)
+        @test_throws "Grid must be a regular lon/lat/depth grid" voxel_grav(GeoData(Lon .+ 0.01 .* rand(size(Lon)...), Lat, Depth, (z = Depth,)), m)
     end
 
     @testset "adaptive subdivision" begin
@@ -457,6 +457,97 @@ using KernelAbstractions
         @test all(fg(backend = CPU()) .≈ fg())
     end
 
+    @testset "curvilinear grids" begin
+        GMG = GeophysicalModelGenerator
+        # second moments of a hexahedron with an inclined top and bottom: exact vs. a fine midpoint sum
+        zb, zt = (-1.0, -0.4, -0.8, -0.1), (0.5, 1.4, 0.7, 1.9)
+        V, c, m = GMG.hexahedron_moments(2.0, 1.5, zb, zt)
+        n = 60
+        pts = [(x, y, z) for x in ((1:n) .- 0.5) ./ n, y in ((1:n) .- 0.5) ./ n, ζ in ((1:n) .- 0.5) ./ n for z in (GMG.bilinear(zb, x, y) + ζ * (GMG.bilinear(zt, x, y) - GMG.bilinear(zb, x, y)),)]
+        w = [(GMG.bilinear(zt, x, y) - GMG.bilinear(zb, x, y)) for (x, y, _) in pts]
+        Vn = 3.0 * sum(w) / n^3
+        cn = (sum(w .* (2 .* first.(pts) .- 1)), sum(w .* (1.5 .* getindex.(pts, 2) .- 0.75)), sum(w .* last.(pts))) ./ sum(w)
+        @test V ≈ Vn rtol = 1.0e-12                                     # the volume is integrated exactly by both
+        @test all(isapprox.(c, cn; atol = 1.0e-3))
+        @test m[5] ≈ sum(w .* (2 .* first.(pts) .- 1 .- cn[1]) .* (last.(pts) .- cn[3])) / sum(w) rtol = 1.0e-3
+        @test m[1] ≈ sum(w .* (2 .* first.(pts) .- 1 .- cn[1]) .^ 2) / sum(w) rtol = 1.0e-3
+
+        # a curvilinear grid (3 layers following the topography) vs. an independent reference: the cells as vertical
+        # line masses, integrated analytically in z and with adaptive Gauss-Legendre quadrature in x and y
+        gl = ((1 - sqrt(3 / 5)) / 2, 0.5, (1 + sqrt(3 / 5)) / 2), (5 / 18, 8 / 18, 5 / 18)
+        function cell_ref(s, x1, x2, y1, y2, zb, zt, ξ1 = 0.0, ξ2 = 1.0, η1 = 0.0, η2 = 1.0, level = 0)
+            L = max(abs(x2 - x1) * (ξ2 - ξ1), abs(y2 - y1) * (η2 - η1))
+            xc, yc = x1 + (x2 - x1) * (ξ1 + ξ2) / 2, y1 + (y2 - y1) * (η1 + η2) / 2
+            zs = [GMG.bilinear(z, ξ, η) for z in (zb, zt), ξ in (ξ1, ξ2), η in (η1, η2)]
+            if level < 16 && hypot(s[1] - xc, s[2] - yc, max(0.0, minimum(zs) - s[3], s[3] - maximum(zs))) < 6 * L
+                m1, m2 = (ξ1 + ξ2) / 2, (η1 + η2) / 2
+                return sum(cell_ref(s, x1, x2, y1, y2, zb, zt, p..., level + 1) for p in ((ξ1, m1, η1, m2), (m1, ξ2, η1, m2), (ξ1, m1, m2, η2), (m1, ξ2, m2, η2)))
+            end
+            g = 0.0
+            for (a, wa) in zip(gl...), (b, wb) in zip(gl...)
+                ξ, η = ξ1 + (ξ2 - ξ1) * a, η1 + (η2 - η1) * b
+                r2 = (s[1] - x1 - (x2 - x1) * ξ)^2 + (s[2] - y1 - (y2 - y1) * η)^2
+                g += wa * wb * (1 / sqrt(r2 + (s[3] - GMG.bilinear(zt, ξ, η))^2) - 1 / sqrt(r2 + (s[3] - GMG.bilinear(zb, ξ, η))^2))
+            end
+            return G * abs((x2 - x1) * (ξ2 - ξ1) * (y2 - y1) * (η2 - η1)) * g * 1.0e5
+        end
+        hill(x, y) = 2.0 * exp(-((x - 0.5)^2 + y^2) / 8) + 0.3 * sin(x / 2)
+        xs = -8.0:1.0:8.0
+        Xs, Ys, _ = xyz_grid(xs, xs, 0)
+        Topo = CartData(Xs, Ys, hill.(Xs, Ys), (z = hill.(Xs, Ys),))
+        C = curvilinear_grid(xs, xs, (Topo, -1.0, -4.0), (2, 2))
+        X, Y, Z = coordinate_grids(C)
+        top = GMG.surface_interpolation(CartData(X[:, :, end:end], Y[:, :, end:end], Z[:, :, end:end], (z = Z[:, :, end:end],)))
+        pts = [(-3.3, -1.2), (0.0, 0.0), (0.7, 0.4), (2.5, 3.1)]
+        for dz in (0.03, 0.0)                     # stations 30 m above the topography, and on it
+            st = [(x, y, top(x, y) + dz) for (x, y) in pts]
+            ref = map(st) do s
+                sum(cell_ref(1.0e3 .* s, 1.0e3 * X[i, 1, 1], 1.0e3 * X[i + 1, 1, 1], 1.0e3 * Y[1, j, 1], 1.0e3 * Y[1, j + 1, 1], ntuple(l -> 1.0e3 * Z[i + (l - 1) % 2, j + (l - 1) ÷ 2, k], 4), ntuple(l -> 1.0e3 * Z[i + (l - 1) % 2, j + (l - 1) ÷ 2, k + 1], 4)) for k in 1:4, j in 1:16, i in 1:16)
+            end
+            S = CartData(reshape(first.(st), :, 1, 1), reshape(getindex.(st, 2), :, 1, 1), reshape(last.(st), :, 1, 1), (z = reshape(last.(st), :, 1, 1),))
+            dg = vec(voxel_grav(C, ones(size(X)); refMod = zeros(5), stations = S)[1])
+            @test maximum(abs.(dg .- ref)) < 2.0e-4 * maximum(abs, ref)
+        end
+
+        # default stations on top of the grid, gradients (vs. moving the stations), adjoint, and parallel kernels
+        m = 2670 .+ 100 .* rand(StableRNG(31), size(X)...)
+        dg, gx, gy = voxel_grav(C, m; refMod = "AVG", gradients = true)
+        S0 = CartData(X[:, :, end:end], Y[:, :, end:end], Z[:, :, end:end], (z = Z[:, :, end:end],))
+        @test vec(dg) ≈ vec(voxel_grav(C, m; refMod = "AVG", stations = S0)[1])
+        sts = [(x, y, top(x, y) + 0.2) for (x, y) in pts]
+        Sd(dx, dy) = CartData(reshape(first.(sts) .+ dx, :, 1, 1), reshape(getindex.(sts, 2) .+ dy, :, 1, 1), reshape(last.(sts), :, 1, 1), (z = reshape(last.(sts), :, 1, 1),))
+        _, gxs, gys = voxel_grav(C, m; refMod = "AVG", stations = Sd(0, 0), gradients = true, subdivide = 0)
+        δ = 1.0e-3
+        fd(dx, dy) = voxel_grav(C, m; refMod = "AVG", stations = Sd(dx, dy), subdivide = 0)[1]
+        @test gxs ≈ (fd(δ, 0) - fd(-δ, 0)) / 2.0e3δ rtol = 1.0e-5
+        @test gys ≈ (fd(0, δ) - fd(0, -δ)) / 2.0e3δ rtol = 1.0e-5
+        r = rand(StableRNG(32), size(dg)...)
+        @test sum(r .* voxel_grav(C, m; refMod = zeros(5), rhoTol = 0)[1]) ≈ sum(voxel_grav_adjoint(C, r) .* m) rtol = 1.0e-10
+        @test all(voxel_grav(C, m; refMod = "AVG", gradients = true, backend = CPU()) .≈ (dg, gx, gy))
+        @test voxel_grav(C, m; refMod = "AVG", backend = CPU(), float_type = Float32)[1] ≈ dg rtol = 1.0e-4
+        @test voxel_grav_adjoint(C, r; backend = CPU()) ≈ voxel_grav_adjoint(C, r)
+
+        # GeoData: a curvilinear grid of 0.2° × 0.2° agrees with the flat-Earth CartData version
+        Lon, Lat, Depth = lonlatdepth_grid(10:0.02:10.2, 45:0.02:45.2, -4:1:0)
+        R0 = 6378137.0
+        xk, yk = (Lon .- 10.1) .* (π / 180 * R0 * cosd(45.1) / 1.0e3), (Lat .- 45.1) .* (π / 180 * R0 / 1.0e3)
+        hk = @. 1.5 * exp(-(xk^2 + yk^2) / 20)
+        Dc = Depth .+ hk .* (Depth .+ 4) ./ 4
+        gG = voxel_grav(GeoData(Lon, Lat, Dc, (z = Dc,)), fill(2670.0, size(Lon)); refMod = zeros(5), ellipsoid = (a = R0, f = 0))[1]
+        gC = voxel_grav(CartData(xk, yk, Dc, (z = Dc,)), fill(2670.0, size(Lon)); refMod = zeros(5))[1]
+        @test gG ≈ gC rtol = 3.0e-3
+        @test voxel_grav(GeoData(Lon, Lat, Dc, (z = Dc,)), fill(2670.0, size(Lon)); refMod = zeros(5), ellipsoid = (a = R0, f = 0), backend = CPU())[1] ≈ gG
+
+        # topographic_effect: the topography is a single layer of cells that follows it, vs. the reference
+        H = hill.(Xs[:, :, 1], Ys[:, :, 1]) .+ 0.5               # above sea level everywhere
+        te = topographic_effect(CartData(Xs, Ys, reshape(H, size(Xs)), (z = reshape(H, size(Xs)),)); cutoff = Inf)[1]
+        ref = map([(5, 9), (9, 9), (12, 7)]) do (i0, j0)
+            s = 1.0e3 .* (xs[i0], xs[j0], H[i0, j0])
+            sum(cell_ref(s, 1.0e3 * xs[i], 1.0e3 * xs[i + 1], 1.0e3 * xs[j], 1.0e3 * xs[j + 1], (0.0, 0.0, 0.0, 0.0), 1.0e3 .* (H[i, j], H[i + 1, j], H[i, j + 1], H[i + 1, j + 1])) for j in 1:16, i in 1:16)
+        end
+        @test [te[5, 9], te[9, 9], te[12, 7]] ≈ 2670 .* ref rtol = 2.0e-4
+    end
+
     @testset "gravity corrections" begin
         # GRS80 normal gravity at the equator and the pole, and the free-air gradient (Hofmann-Wellenhof & Moritz, 2006)
         @test normal_gravity(0.0) ≈ 978032.67715
@@ -470,7 +561,7 @@ using KernelAbstractions
         X, Y, _ = xyz_grid(-100:4:100, -100:4:100, 0)
         for h in (1.0, -4.0)
             topo = fill(h, size(X))
-            te, = topographic_effect(CartData(X, Y, topo, (z = topo,)); cutoff = Inf, dz = 0.25)
+            te, = topographic_effect(CartData(X, Y, topo, (z = topo,)); cutoff = Inf)
             @test te[26, 26] ≈ bouguer_correction(h) * (1 - abs(h) / 200) rtol = 0.05
         end
         # GeoData: stations given explicitly give the same as the default stations on the topography

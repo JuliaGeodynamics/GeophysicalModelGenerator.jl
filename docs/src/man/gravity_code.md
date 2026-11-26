@@ -14,7 +14,7 @@ RHO[(abs.(X) .< 5) .& (abs.(Y) .< 5) .& (-9 .< Z .< -3)] .= 3000.0
 dg, gradX, gradY = voxel_grav(X, Y, Z, RHO; refMod = "NE", lengthUnit = "km", outName = "Bouguer")
 ```
 
-- The grid must be rectilinear: `X` varies only along the first dimension, `Y` along the second, `Z` along the third. The spacing may vary along each direction, e.g. finer cells near the surface.
+- The grid must be rectilinear: `X` varies only along the first dimension, `Y` along the second, `Z` along the third. The spacing may vary along each direction, e.g. finer cells near the surface. `CartData` and `GeoData` grids may also be curvilinear, with levels that follow the topography (see [Curvilinear grids](@ref curvilinear_gravity)).
 - `dg` [mGal] is computed at the `x`, `y` coordinates of the grid, at the height `zRef`. This is either a number (default 0) or an array with a height for every surface point, e.g. the topography. Only the part of the model below `maximum(zRef)` is used. Arbitrary stations are possible with `GeoData` and `CartData` grids (see below).
 - `gradX`, `gradY` are the horizontal gradients `∂dg/∂x`, `∂dg/∂y` [mGal/m; 1 mGal/m = 10⁴ Eötvös], computed analytically. `gradients = false` skips them, which saves time.
 - `refMod` is the reference density for every depth. It is subtracted from `RHO` before the anomaly is computed.
@@ -69,13 +69,26 @@ dg, dgdx, dgdy = voxel_grav(Grid, RHO; refMod = ρ_ref, stations = Stations, gra
 
 Heights (`Depth`, `zRef`) are used as heights above the ellipsoid. Heights relative to sea level can be used as they are: the geoid undulation (less than 100 m) shifts stations and masses together and hardly changes the modelled anomaly. `ellipsoid = (a = 6371e3, f = 0)` computes on a sphere, and other values allow other planets.
 
+## [Curvilinear grids](@id curvilinear_gravity)
+
+`CartData` and `GeoData` grids may be curvilinear, i.e. their levels follow the topography or internal interfaces, as created by [`deform_grid`](@ref) and [`curvilinear_grid`](@ref) (see [Curvilinear grids](curvilinear_grids.md)). Such a grid represents the topography without a staircase, and no air cells are needed:
+
+```julia
+Grid = curvilinear_grid(x, y, (Topo, -5.0, -20.0), (10, 15))      # 10 cells between topography and 5 km depth
+dg, = voxel_grav(Grid, RHO; refMod = "AVG")                       # stations on top of the grid
+```
+
+The cells are hexahedra with vertical edges, whose top and bottom are bilinear between the grid points. Their volume, centroid and full tensor of second moments are computed exactly, and the quadrupole term includes the mixed moments, which are not zero when the top or bottom is inclined (with only the diagonal moments, the error at 2.5 cell sizes would be 1.4%, 2.9% and 6.1% of the field of the cell for slopes of 0.25, 0.5 and 1, instead of 0.2%, 0.25% and 0.6%). Cells close to a station are subdivided in their reference coordinates. Compared with an independent reference (the cells integrated as vertical line masses), the error for a grid of three layers that follow a hill with slopes of up to 0.6 is 4e-5 of the maximum anomaly for stations 20 m above the topography and 7e-5 for stations on it.
+
+The stations are on top of the grid columns by default; `zRef` and `stations` work as for rectilinear grids. All cells are used, also above a station. The `x`, `y` (or longitude, latitude) coordinates must be those of a rectilinear grid, with any spacing (e.g. the nodes of a summation-by-parts grid), and the heights must be monotonic in every column. Densities are given at the grid points, so an interface that follows a grid level is smeared over the cells on both sides of it; give such layers their own cells (as `curvilinear_grid` does) and the density of the layer at its points.
+
 ## Gravity corrections
 
 Observed gravity is reduced to anomalies with respect to the reference ellipsoid before it is compared with models:
 
 - `normal_gravity(lat, h)` [mGal] is the normal gravity of GRS80 at geodetic latitude `lat` [°] and height `h` [km] (Somigliana's formula with the second-order height correction). `g_obs .- normal_gravity.(lat, h)` is the gravity disturbance for ellipsoidal heights, and approximately the free-air anomaly for heights above sea level.
 - `bouguer_correction(topo)` [mGal] is the simple Bouguer correction `2πGρh` (an infinite slab; for the oceans with `density_water - density`).
-- `topographic_effect(Topo)` is the complete Bouguer correction, i.e. including the terrain correction: the attraction of the topography (density 2670 kg/m³; oceans as `1040 - 2670` kg/m³) of a `GeoData` or `CartData` surface, computed with `voxel_grav` at stations on the topography or at given `stations`, up to `cutoff = 166.7` km:
+- `topographic_effect(Topo)` is the complete Bouguer correction, i.e. including the terrain correction: the attraction of the topography (density 2670 kg/m³; oceans as `1040 - 2670` kg/m³) of a `GeoData` or `CartData` surface, computed with `voxel_grav` at stations on the topography or at given `stations`, up to `cutoff = 166.7` km. The topography is a single layer of curvilinear cells between sea level and the surface:
 
 ```julia
 Topo = import_topo(lon = [14, 16], lat = [36.8, 38.8], file = "@earth_relief_30s")
@@ -83,7 +96,7 @@ TE, = topographic_effect(Topo; stations = Stations)                   # mGal
 CBA = g_obs .- normal_gravity.(lat_st, height_st) .- vec(TE)           # complete Bouguer anomaly
 ```
 
-For a 1 km high plateau, 200 km wide, `topographic_effect` gives 110 mGal at its centre (an infinite slab: 112 mGal).
+For a 1 km high plateau, 200 km wide, `topographic_effect` gives 111.44 mGal at its centre (a slab of that width: 111.41 mGal; an infinite slab: 111.97 mGal). For a hill with slopes of up to 0.43 (6561 points), it deviates by 0.008 mGal (4e-5) from the reference, and takes 0.11 s. The earlier version, which discretized the topography with horizontal layers of thickness `dz`, deviated by 9 to 11 mGal for `dz` = 100 to 25 m and took 0.24 to 0.87 s.
 
 How much the curvature matters: for a cap of 5° radius (about 550 km), 10 km thick, with a density contrast of 300 kg/m³, the anomaly 20 km above its centre is 124.66 mGal on the sphere (exact: 124.67 mGal), but 120.15 mGal with the flat-Earth approximation, 4% less; at the edge of the cap the difference is 5%. On the other hand, over an area of 0.5° × 0.5°, `GeoData` and `CartData` results agree within 0.14%.
 
@@ -135,7 +148,7 @@ SBA = FA .- 2π * 6.67408e-11 * ρ_B .* (topo .* 1e3) .* 1e5     # mGal; topo in
 
 The figure shows a section through the model and the three anomalies along it. The free-air anomaly (221 mGal at the summit) is dominated by the topography. The complete Bouguer anomaly (-3.1 mGal at the summit) shows the magma chamber only and agrees with the analytical solution for a sphere within 0.04 mGal. The simple Bouguer anomaly (-59 mGal) is far off, because a slab is a poor approximation of a volcano. `topographic_effect` computes `BC` directly from the topography.
 
-The stations lie on the topography, directly on top of the cells, which is where subdivision matters: at the summit the free-air anomaly is 188, 210, 221 and 221 mGal for grid spacings (horizontal × vertical) of 1 km × 500 m, 500 m × 250 m, 500 m × 125 m and 250 m × 125 m, compared with 179, 205, 216 and 218 mGal without subdivision (`subdivide = 0`). The remaining dependence on the vertical spacing comes from the staircase representation of the topography by the grid. The Bouguer anomaly is hardly affected (-3.1 mGal in all cases), because the discretization error of the topography is the same in `FA` and `BC` and cancels.
+The stations lie on the topography, directly on top of the cells, which is where subdivision matters: at the summit the free-air anomaly is 188, 210, 221 and 221 mGal for grid spacings (horizontal × vertical) of 1 km × 500 m, 500 m × 250 m, 500 m × 125 m and 250 m × 125 m, compared with 179, 205, 216 and 218 mGal without subdivision (`subdivide = 0`). The remaining dependence on the vertical spacing comes from the staircase representation of the topography by the grid, which a curvilinear grid avoids (see [Curvilinear grids](@ref curvilinear_gravity)). The Bouguer anomaly is hardly affected (-3.1 mGal in all cases), because the discretization error of the topography is the same in `FA` and `BC` and cancels.
 
 ## Example 2: sensitivity map
 
@@ -333,7 +346,7 @@ On one core, `voxel_grav` is 11 times faster than SimPEG and 36–80 times faste
 
 ## Tests
 
-Besides comparisons with the analytical solution for spheres, the tests (`test/test_voxel_gravity.jl`) include checks taken from other gravity codes: a large prism compared to the exact prism solution (Nagy et al., 2000) and convergence towards the infinite Bouguer slab (as in [Harmonica](https://github.com/fatiando/harmonica)), mirror symmetry and sign of the anomaly (as in [Choclo](https://github.com/fatiando/choclo)), and the consistency of forward and adjoint operators, including a finite-difference check of the misfit gradient (as in [SimPEG](https://github.com/simpeg/simpeg)). They also check stations at different heights and arbitrary stations, the analytic gradients against finite differences, the cutoff, the adaptive subdivision, normal gravity (GRS80) and the Bouguer corrections, grids with variable spacing, that ForwardDiff through `voxel_grav` gives the same gradient as the adjoint, and that the KernelAbstractions kernels give the same results as the serial code. The ellipsoidal version is compared with the exact anomaly of a spherical cap and, for a small area, with the flat-Earth version.
+Besides comparisons with the analytical solution for spheres, the tests (`test/test_voxel_gravity.jl`) include checks taken from other gravity codes: a large prism compared to the exact prism solution (Nagy et al., 2000) and convergence towards the infinite Bouguer slab (as in [Harmonica](https://github.com/fatiando/harmonica)), mirror symmetry and sign of the anomaly (as in [Choclo](https://github.com/fatiando/choclo)), and the consistency of forward and adjoint operators, including a finite-difference check of the misfit gradient (as in [SimPEG](https://github.com/simpeg/simpeg)). They also check stations at different heights and arbitrary stations, the analytic gradients against finite differences, the cutoff, the adaptive subdivision, normal gravity (GRS80) and the Bouguer corrections, grids with variable spacing, that ForwardDiff through `voxel_grav` gives the same gradient as the adjoint, and that the KernelAbstractions kernels give the same results as the serial code. The ellipsoidal version is compared with the exact anomaly of a spherical cap and, for a small area, with the flat-Earth version. Curvilinear grids and `topographic_effect` are compared with an independent reference that integrates the cells as vertical line masses, and the second moments of inclined cells with a numerical integration.
 
 ## References
 

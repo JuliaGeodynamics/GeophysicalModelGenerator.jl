@@ -82,10 +82,15 @@ function grav_adjoint_ka(backend::Backend, T, geo, R, cutoff)
     return G_grav * mGal .* geo.vol .* reshape(Float64.(Array(S)), size(geo.vol))
 end
 
+# field of cell k; with the mixed moments m12, m13, m23 (full = true) for the cells of a curvilinear grid
+@inline function cell_field(full, c, t1, t2, h, k, m1, m2, m3, m12, m13, m23)
+    return full ? box_field(c, t1, t2, h, m1[k], m2[k], m3[k], m12[k], m13[k], m23[k]) : box_field(c, t1, t2, h, m1[k], m2[k], m3[k])
+end
+
 # point masses with stations on the ellipsoid (GeoData): component along the station normal
 @kernel function points_forward_kernel!(
         dg, gx, gy, @Const(sx), @Const(sy), @Const(sz), @Const(nx), @Const(ny), @Const(nz), @Const(ex), @Const(ey), @Const(qx), @Const(qy), @Const(qz),
-        @Const(px), @Const(py), @Const(pz), @Const(c), @Const(m1), @Const(m2), @Const(m3), c2, grad
+        @Const(px), @Const(py), @Const(pz), @Const(c), @Const(m1), @Const(m2), @Const(m3), @Const(m12), @Const(m13), @Const(m23), c2, full, grad
     )
     i = @index(Global)
     s = se = sn = zero(eltype(dg))
@@ -94,7 +99,7 @@ end
         h = dx * nx[i] + dy * ny[i] + dz * nz[i]
         t1 = dx * ex[i] + dy * ey[i]
         t2 = dx * qx[i] + dy * qy[i] + dz * qz[i]
-        gz, ge, gn = box_field(ifelse(t1 * t1 + t2 * t2 <= c2, c[k], zero(c2)), t1, t2, h, m1[k], m2[k], m3[k])
+        gz, ge, gn = cell_field(full, ifelse(t1 * t1 + t2 * t2 <= c2, c[k], zero(c2)), t1, t2, h, k, m1, m2, m3, m12, m13, m23)
         s += gz
         se += ge
         sn += gn
@@ -108,7 +113,7 @@ end
 
 @kernel function points_adjoint_kernel!(
         S, @Const(sx), @Const(sy), @Const(sz), @Const(nx), @Const(ny), @Const(nz), @Const(ex), @Const(ey), @Const(qx), @Const(qy), @Const(qz),
-        @Const(R), @Const(px), @Const(py), @Const(pz), @Const(m1), @Const(m2), @Const(m3), c2
+        @Const(R), @Const(px), @Const(py), @Const(pz), @Const(m1), @Const(m2), @Const(m3), @Const(m12), @Const(m13), @Const(m23), c2, full
     )
     k = @index(Global)
     s = zero(eltype(S))
@@ -117,9 +122,18 @@ end
         h = dx * nx[i] + dy * ny[i] + dz * nz[i]
         t1 = dx * ex[i] + dy * ey[i]
         t2 = dx * qx[i] + dy * qy[i] + dz * qz[i]
-        s += box_field(ifelse(t1 * t1 + t2 * t2 <= c2, R[i], zero(c2)), t1, t2, h, m1[k], m2[k], m3[k])[1]
+        s += cell_field(full, ifelse(t1 * t1 + t2 * t2 <= c2, R[i], zero(c2)), t1, t2, h, k, m1, m2, m3, m12, m13, m23)[1]
     end
     S[k] = s
+end
+
+# the mixed moments of the cells I on the device (dummies for a rectilinear grid), and whether they are used
+function mixed_moments(backend, T, geo, I)
+    if isnothing(geo.mo)
+        dummy = device(backend, T, zeros(1))
+        return dummy, dummy, dummy, false
+    end
+    return device(backend, T, vec(geo.mo[1][I])), device(backend, T, vec(geo.mo[2][I])), device(backend, T, vec(geo.mo[3][I])), true
 end
 
 stations(backend, T, geo) = map(v -> device(backend, T, v), (geo.sx, geo.sy, geo.sz, geo.nx, geo.ny, geo.nz))
@@ -129,16 +143,18 @@ function grav_points_forward_ka(backend::Backend, T, geo, DRHO, rhoTol, cutoff, 
     I = findall(a -> abs(a) > rhoTol, DRHO)
     d(v) = device(backend, T, v)
     c = d(G_grav * mGal .* geo.vol[I] .* DRHO[I])
-    args = (stations(backend, T, geo)..., directions(backend, T, geo)..., d(geo.px[I]), d(geo.py[I]), d(geo.pz[I]), c, d(geo.m1[I]), d(geo.m2[I]), d(geo.m3[I]), cutoff2(T, cutoff))
+    m12, m13, m23, full = mixed_moments(backend, T, geo, I)
+    args = (stations(backend, T, geo)..., directions(backend, T, geo)..., d(geo.px[I]), d(geo.py[I]), d(geo.pz[I]), c, d(geo.m1[I]), d(geo.m2[I]), d(geo.m3[I]), m12, m13, m23, cutoff2(T, cutoff), full)
     return run_forward(backend, T, points_forward_kernel!, (length(geo.sx),), args, grad)
 end
 
 function grav_points_adjoint_ka(backend::Backend, T, geo, R, cutoff)
     d(v) = device(backend, T, v)
     S = KernelAbstractions.zeros(backend, T, length(geo.vol))
+    m12, m13, m23, full = mixed_moments(backend, T, geo, CartesianIndices(geo.vol))
     points_adjoint_kernel!(backend)(
         S, stations(backend, T, geo)..., directions(backend, T, geo)..., d(R), d(vec(geo.px)), d(vec(geo.py)), d(vec(geo.pz)),
-        d(vec(geo.m1)), d(vec(geo.m2)), d(vec(geo.m3)), cutoff2(T, cutoff); ndrange = length(S)
+        d(vec(geo.m1)), d(vec(geo.m2)), d(vec(geo.m3)), m12, m13, m23, cutoff2(T, cutoff), full; ndrange = length(S)
     )
     KernelAbstractions.synchronize(backend)
     return G_grav * mGal .* vec(geo.vol) .* Float64.(Array(S))

@@ -268,6 +268,29 @@ size/distance. Returns the downward component and its derivatives towards east a
     return gz, c * h * t1 * (b + 15 * m1 * i5 * q), c * h * t2 * (b + 15 * m2 * i5 * q)
 end
 
+"""
+    gz, ge, gn = box_field(c, t1, t2, h, m11, m22, m33, m12, m13, m23)
+
+As `box_field(c, t1, t2, h, m11, m22, m33)`, for a cell with the full tensor of second moments (per unit volume, about
+its centroid), e.g. a hexahedron whose top and bottom are inclined. With `m12 = m13 = m23 = 0` it equals the box version.
+"""
+@inline function box_field(c, t1, t2, h, m11, m22, m33, m12, m13, m23)
+    # quadrupole potential c (1/r + (3 r'Mr - r² tr M) / (2 r⁵)); gz = -∂/∂h and its derivatives towards t1, t2
+    d2 = t1 * t1 + t2 * t2 + h * h
+    q = 1 / d2
+    i3 = sqrt(q) * q
+    i5 = i3 * q
+    S = m11 + m22 + m33
+    P1 = m11 * t1 + m12 * t2 + m13 * h
+    P2 = m12 * t1 + m22 * t2 + m23 * h
+    P3 = m13 * t1 + m23 * t2 + m33 * h
+    T = t1 * P1 + t2 * P2 + h * P3
+    B = (15 * T * q - 3 * S) * q / 2
+    gz = c * (h * i3 * (1 + B) - 3 * P3 * i5)
+    K = i5 * (15 * P3 * q - h * (3 + 3 * B) + h * (3 * S - 30 * T * q) * q)
+    return gz, c * (t1 * K + i5 * (15 * h * P1 * q - 3 * m13)), c * (t2 * K + i5 * (15 * h * P2 * q - 3 * m23))
+end
+
 # the grid of voxel_grav (coordinates in m) as stations and cells for the general point-mass functions
 function grid_points_geometry(X, Y, Z, geo)
     x, y = X[:, 1, 1], Y[1, :, 1]

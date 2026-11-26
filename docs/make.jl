@@ -127,6 +127,7 @@ makedocs(;
             "Paraview output" => "man/paraview_output.md",
             "Paraview collection" => "man/paraview_collection.md",
             "Surfaces" => "man/surfaces.md",
+            "Curvilinear grids" => "man/curvilinear_grids.md",
             "Tools" => "man/tools.md",
             "Visualisation" => "man/visualise.md",
             "Gravity code" => "man/gravity_code.md",

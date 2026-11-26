@@ -5,7 +5,7 @@ using NCDatasets
 using NCDatasets: nc_create, NC_NETCDF4, NC_CLOBBER, NC_NOWRITE, nc_def_dim, nc_def_compound, nc_insert_compound, nc_def_var, nc_put_var, nc_close, NC_INT, nc_unsafe_put_var, libnetcdf, check, ncType, nc_open, nc_inq_vartype, nc_inq_compound_nfields, nc_inq_compound_size, nc_inq_compound_name, nc_inq_compound_fieldoffset, nc_inq_compound_fieldndims, nc_inq_compound_fielddim_sizes, nc_inq_compound_fieldname, nc_inq_compound_fieldindex, nc_inq_compound_fieldtype, nc_inq_compound, nc_inq_varid, nc_get_var!, nc_insert_array_compound, nc_def_vlen
 
 import GeophysicalModelGenerator: write_ASAGI, read_ASAGI, tomo_2_GeoData, read_topo_netcdf
-using GeophysicalModelGenerator: CartData, GeoData, lonlatdepth_grid, xyz_grid
+using GeophysicalModelGenerator: GeophysicalModelGenerator, CartData, GeoData, lonlatdepth_grid, xyz_grid
 
 function write_ASAGI(
         fname::String, Data::CartData;
@@ -13,6 +13,7 @@ function write_ASAGI(
         km_to_m::Bool = false
     )
 
+    GeophysicalModelGenerator.is_curvilinear(Data.z.val) && throw(ArgumentError("ASAGI files hold regular grids; interpolate a curvilinear grid (see deform_grid) onto a regular grid with interpolate_datafields first"))
     nx, ny, nz = size(Data.x)
     x = Data.x.val[:, 1, 1]
     y = Data.y.val[1, :, 1]

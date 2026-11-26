@@ -204,6 +204,8 @@ function cross_section_volume(V::AbstractGeneralGrid; dims = (100, 100), Interpo
 
     if !isnothing(Depth_level)    # Horizontal slice
         CheckBounds(Z, Depth_level)
+        # the levels of a curvilinear grid are not horizontal, so a slice at a given depth must be interpolated
+        Interpolate = Interpolate || is_curvilinear(Z)
         if Interpolate
             Lon, Lat, Depth = lonlatdepth_grid(
                 LinRange(minimum(X), maximum(X), dims[1]),
@@ -873,6 +875,8 @@ function extract_subvolume(
     is_cross_section = haskey(V.fields, :FlatCrossSection)
     X_level, Y_level, Z_level = to_km(X_level), to_km(Y_level), to_km(Z_level)
     is_cross_section && !isnothing(Y_level) && throw(ArgumentError("Y_level cannot be used on a cross section."))
+    !Interpolate && !isnothing(Z_level) && is_curvilinear(V.z.val) &&
+        throw(ArgumentError("the levels of a curvilinear grid are not horizontal; use Interpolate = true to extract a Z_level range"))
     if isnothing(Z_level)
         Z_level = (minimum(V.z.val), maximum(V.z.val))
     end
@@ -1075,6 +1079,12 @@ function interpolate_datafields(V::AbstractGeneralGrid, Lon, Lat, Depth)
     Lon_vec = as_range(NumValue(X[:, 1, 1]))
     Lat_vec = as_range(NumValue(Y[1, :, 1]))
     Depth_vec = as_range(Z[1, 1, :])
+    # on a grid whose levels follow surfaces (see `deform_grid`), the points are located by their vertical index
+    Zq = ustrip.(Depth)
+    if is_curvilinear(Z)
+        Zq = vertical_index.(Ref(Lon_vec), Ref(Lat_vec), Ref(Z), Lon, Lat, Zq)
+        Depth_vec = 1:size(Z, 3)
+    end
     if Depth_vec[1] > Depth_vec[end]
         ReverseData = true
     else
@@ -1083,7 +1093,7 @@ function interpolate_datafields(V::AbstractGeneralGrid, Lon, Lat, Depth)
 
     # only the block of V that encloses the target points is interpolated, so that a profile or a
     # small region does not copy every field of a large volume
-    ix, iy, iz = covering_range(Lon_vec, Lon), covering_range(Lat_vec, Lat), covering_range(Depth_vec, Depth)
+    ix, iy, iz = covering_range(Lon_vec, Lon), covering_range(Lat_vec, Lat), covering_range(Depth_vec, Zq)
     Lon_vec, Lat_vec, Depth_vec = Lon_vec[ix], Lat_vec[iy], Depth_vec[iz]
     block(A) = view(A, ix, iy, iz)
 
@@ -1102,7 +1112,7 @@ function interpolate_datafields(V::AbstractGeneralGrid, Lon, Lat, Depth)
                 else
                     interpol = linear_interpolation((Lon_vec, Lat_vec, Depth_vec), ustrip.(block(data_tuple[j])), extrapolation_bc = NaN)       # create interpolation object
                 end
-                data_array[:, :, :, j] = interpol.(Lon, Lat, ustrip.(Depth))
+                data_array[:, :, :, j] = interpol.(Lon, Lat, Zq)
             end
             data_new = tuple([data_array[:, :, :, c] for c in 1:size(data_array, 4)]...)     # transform 3D matrix to tuple
 
@@ -1118,7 +1128,7 @@ function interpolate_datafields(V::AbstractGeneralGrid, Lon, Lat, Depth)
             else
                 interpol = make_interpolation((Lon_vec, Lat_vec, Depth_vec), block(V.fields[i]), extrapolation_bc = bc)             # create interpolation object
             end
-            data_new = interpol.(Lon, Lat, ustrip.(Depth))                                                  # interpolate data field
+            data_new = interpol.(Lon, Lat, Zq)                                                  # interpolate data field
             isint && (data_new = Int64.(data_new))
         end
 
