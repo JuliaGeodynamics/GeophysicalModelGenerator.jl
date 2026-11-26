@@ -24,6 +24,7 @@ function visualise(Data::AbstractGeneralGrid; Topography = nothing, Topo_range =
     if isa(Data, GeoData)
         x = Data.lon.val[:, 1, 1];    xlab = "lon"
         y = Data.lat.val[1, :, 1];    ylab = "lat"
+        GeophysicalModelGenerator.is_curvilinear(Data.depth.val) && error("visualise needs horizontal grid levels; interpolate a curvilinear grid onto a regular grid with interpolate_datafields, or use write_paraview")
         z = Data.depth.val[1, 1, :];  zlab = "depth [km]"
     elseif isa(Data, CartData)
         # Determine
