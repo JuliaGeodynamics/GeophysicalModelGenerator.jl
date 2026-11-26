@@ -37,9 +37,14 @@ authors:
   orcid: "https://orcid.org/0009-0004-9873-9774"
 - family-names: Spang
   given-names: Arne
+  orcid: "https://orcid.org/0000-0002-6107-0403"
 - family-names: Weiler
   given-names: Tatjana
-doi: 10.5281/zenodo.13993948
+  orcid: "https://orcid.org/0009-0005-8182-0565"
+doi: 10.5281/zenodo.8074345
+license: MIT
+repository-code: "https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl"
+type: software
 message: If you use this software, please cite our article in the
   Journal of Open Source Software.
 preferred-citation:
@@ -81,8 +86,10 @@ preferred-citation:
     orcid: "https://orcid.org/0009-0004-9873-9774"
   - family-names: Spang
     given-names: Arne
+    orcid: "https://orcid.org/0000-0002-6107-0403"
   - family-names: Weiler
     given-names: Tatjana
+    orcid: "https://orcid.org/0009-0005-8182-0565"
   date-published: 2024-11-04
   doi: 10.21105/joss.06763
   issn: 2475-9066

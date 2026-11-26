@@ -1,0 +1,66 @@
+{
+  "title": "GeophysicalModelGenerator.jl: A Julia package to visualise geoscientific data and create numerical model setups",
+  "upload_type": "software",
+  "creators": [
+    {
+      "name": "Kaus, Boris J. P.",
+      "orcid": "0000-0002-0247-8660"
+    },
+    {
+      "name": "Thielmann, Marcel",
+      "orcid": "0000-0003-1185-3730"
+    },
+    {
+      "name": "Aellig, Pascal",
+      "orcid": "0009-0008-9039-5646"
+    },
+    {
+      "name": "de Montserrat, Albert",
+      "orcid": "0000-0003-1694-3735"
+    },
+    {
+      "name": "de Siena, Luca",
+      "orcid": "0000-0002-3615-5923"
+    },
+    {
+      "name": "Frasukiewicz, Jacob",
+      "orcid": "0009-0002-5049-4259"
+    },
+    {
+      "name": "Fuchs, Lukas",
+      "orcid": "0000-0002-9165-6384"
+    },
+    {
+      "name": "Piccolo, Andrea",
+      "orcid": "0000-0003-3074-6041"
+    },
+    {
+      "name": "Ranocha, Hendrik",
+      "orcid": "0000-0002-3456-2277"
+    },
+    {
+      "name": "Riel, Nicolas",
+      "orcid": "0000-0002-5037-5519"
+    },
+    {
+      "name": "Schuler, Christian",
+      "orcid": "0009-0004-9873-9774"
+    },
+    {
+      "name": "Spang, Arne",
+      "orcid": "0000-0002-6107-0403"
+    },
+    {
+      "name": "Weiler, Tatjana",
+      "orcid": "0009-0005-8182-0565"
+    }
+  ],
+  "grants": [
+    {
+      "id": "10.13039/501100000780::771143"
+    },
+    {
+      "id": "10.13039/501100000780::101093038"
+    }
+  ]
+}
