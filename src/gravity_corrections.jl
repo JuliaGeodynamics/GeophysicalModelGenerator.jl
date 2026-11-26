@@ -33,24 +33,24 @@ function bouguer_correction(topo; density = 2670.0, density_water = 1040.0)
 end
 
 """
-    te = topographic_effect(Topo; density = 2670, density_water = 1040, dz = 0.1, cutoff = 166.7, stations = nothing, kwargs...)
+    te = topographic_effect(Topo; density = 2670, density_water = 1040, cutoff = 166.7, stations = nothing, kwargs...)
 
 Complete Bouguer correction [mGal]: the attraction of the topography between sea level and the surface `Topo` with the density `density` (and of the oceans, as `density_water - density` between the sea floor and sea level), computed with [`voxel_grav`](@ref) at stations on the topography (or at sea level for the oceans), or at `stations`. Unlike [`bouguer_correction`](@ref), this includes the terrain correction. Subtract it from the free-air anomaly (or gravity disturbance) to get the complete Bouguer anomaly.
 
-`Topo` is a `GeoData` surface (computed on the ellipsoid) or a `CartData` surface (flat Earth), with the topography in km as depth/z, e.g. from `import_topo`. The masses are discretized in layers of thickness `dz` [km]. Cells beyond the horizontal distance `cutoff` [km] are ignored; 166.7 km is the standard outer radius of terrain corrections (Hayford-Bowie zone O). Further keyword arguments (e.g. `backend`, `float_type`, `gradients`) are passed on to `voxel_grav`. Returns the result of `voxel_grav`, i.e. `(te, dtedx, dtedy)`.
+`Topo` is a `GeoData` surface (computed on the ellipsoid) or a `CartData` surface (flat Earth), with the topography in km as depth/z, e.g. from `import_topo`. The masses are a single layer of cells between sea level and the topography, whose top follows the topography (bilinear between the points of `Topo`), so there is no staircase approximation; cells close to a station are subdivided. Cells beyond the horizontal distance `cutoff` [km] are ignored; 166.7 km is the standard outer radius of terrain corrections (Hayford-Bowie zone O). Further keyword arguments (e.g. `backend`, `float_type`, `gradients`, `subdivide`) are passed on to `voxel_grav`. Returns the result of `voxel_grav`, i.e. `(te, dtedx, dtedy)`.
 """
-function topographic_effect(Topo::Union{GeoData, CartData}; density = 2670.0, density_water = 1040.0, dz = 0.1, cutoff = 166.7, stations = nothing, kwargs...)
+function topographic_effect(Topo::Union{GeoData, CartData}; density = 2670.0, density_water = 1040.0, dz = nothing, cutoff = 166.7, stations = nothing, kwargs...)
+    isnothing(dz) || @warn "topographic_effect: dz is no longer used, as the cells follow the topography" maxlog = 1
     a, b, topo = topo_surface(Topo)
-    zmin, zmax = min(0.0, minimum(topo)), max(0.0, maximum(topo))
-    n = max(2, ceil(Int, (zmax - zmin) / dz) + 1)
-    A, B, Z = lonlatdepth_grid(a, b, range(zmin, zmax, n))
+    # one layer of cells between sea level and the topography (or the sea floor), with the density at its nodes
+    A, B, _ = lonlatdepth_grid(a, b, [0.0, 1.0])
+    Z = cat(min.(topo, 0.0), max.(topo, 0.0); dims = 3)
+    RHO = repeat(ifelse.(topo .>= 0, density, density_water - density), 1, 1, 2)
     Grid = Topo isa GeoData ? GeoData(A, B, Z, (z = Z,)) : CartData(A, B, Z, (z = Z,))
-    t = reshape(topo, size(topo, 1), size(topo, 2), 1)
-    RHO = @. ifelse((Z >= 0) & (Z <= t), density, ifelse((Z < 0) & (Z >= t), density_water - density, 0.0))
     if isnothing(stations)
-        return voxel_grav(Grid, RHO; refMod = zeros(n), zRef = max.(topo, 0.0), cutoff, kwargs...)
+        return voxel_grav(Grid, RHO; refMod = zeros(2), zRef = max.(topo, 0.0), cutoff, kwargs...)
     end
-    return voxel_grav(Grid, RHO; refMod = zeros(n), stations, cutoff, kwargs...)
+    return voxel_grav(Grid, RHO; refMod = zeros(2), stations, cutoff, kwargs...)
 end
 
 function topo_surface(Topo::GeoData)

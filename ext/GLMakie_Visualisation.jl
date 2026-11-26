@@ -2,7 +2,7 @@ module GLMakie_Visualisation
 # This contains visualisation widgets which are optionally made available when GLMakie is loaded along with GMG
 
 using Statistics
-using GeophysicalModelGenerator: lonlatdepth_grid, GeoData, CartData, km, AbstractGeneralGrid
+using GeophysicalModelGenerator: GeophysicalModelGenerator, lonlatdepth_grid, GeoData, CartData, km, AbstractGeneralGrid
 import GeophysicalModelGenerator: visualise, ustrip
 
 # We do not check `isdefined(Base, :get_extension)` as recommended since
@@ -24,9 +24,11 @@ function visualise(Data::AbstractGeneralGrid; Topography = nothing, Topo_range =
     if isa(Data, GeoData)
         x = Data.lon.val[:, 1, 1];    xlab = "lon"
         y = Data.lat.val[1, :, 1];    ylab = "lat"
+        GeophysicalModelGenerator.is_curvilinear(Data.depth.val) && error("visualise needs horizontal grid levels; interpolate a curvilinear grid onto a regular grid with interpolate_datafields, or use write_paraview")
         z = Data.depth.val[1, 1, :];  zlab = "depth [km]"
     elseif isa(Data, CartData)
         # Determine
+        GeophysicalModelGenerator.is_curvilinear(Data.z.val) && error("visualise needs horizontal grid levels; interpolate a curvilinear grid (see deform_grid) onto a regular grid with interpolate_datafields, or use write_paraview")
         x = Data.x.val[:, 1, 1];    xlab = "X [km]"
         y = Data.y.val[1, :, 1];    ylab = "Y [km]"
         z = Data.z.val[1, 1, :];  zlab = "Z [km]"
