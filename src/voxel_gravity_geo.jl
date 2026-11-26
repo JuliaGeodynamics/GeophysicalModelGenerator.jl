@@ -9,7 +9,7 @@ const WGS84 = (a = 6378137.0, f = 1 / 298.257223563)
     dg, dgdx, dgdy = voxel_grav(Grid::GeoData, RHO; refMod = "AVG", zRef = nothing, stations = nothing, rhoTol = 1e-9, gradients = false, cutoff = Inf,
                                subdivide = 2.5, ellipsoid = (a = 6378137.0, f = 1 / 298.257223563), backend = nothing, float_type = Float64)
 
-Gravity anomaly [mGal] of the density `RHO` [kg/m³], given at the points of the regular geographic grid `Grid` (as created by `lonlatdepth_grid`), or of a curvilinear grid whose depth levels follow surfaces such as the topography (see [`deform_grid`](@ref)).
+Gravity anomaly [mGal] of the density `RHO` [kg/m³], given at the points of the regular geographic grid `Grid` (as created by `lonlatdepth_grid`), or of a curvilinear grid whose depth levels follow surfaces such as the topography (a 3D `Depth` array with monotonic columns, as built in `topographic_effect`).
 
 The computation is done on the reference ellipsoid (WGS84 by default; `ellipsoid = (a = 6371e3, f = 0)` is a sphere). Depths and heights are heights above the ellipsoid in km; heights relative to sea level are used as such, i.e. the geoid undulation is ignored. Every cell is a point mass at its position on the ellipsoid (subdivided close to the stations), and `dg` is the component of its attraction along the ellipsoid normal at the station (downwards positive), i.e. the gravity disturbance caused by `RHO - refMod`.
 
