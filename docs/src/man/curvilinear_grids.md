@@ -81,7 +81,7 @@ Seismic velocities, for example from a tomographic model, are interpolated onto 
 
 When data are interpolated *from* a curvilinear grid, each cell is treated as a hexahedron with vertical edges, which is interpolated trilinearly (isoparametrically). This reproduces fields that vary linearly in `x`, `y` and `z` exactly.
 
-Functions that need horizontal grid levels raise an error on a curvilinear grid: `write_ASAGI`, `visualise`, and `extract_subvolume` with `Interpolate = false` and a `Z_level`. In these cases, first interpolate the data onto a regular grid with `interpolate_datafields`. LaMEM and pTatin use rectilinear grids, so their setups are not affected.
+Functions that need horizontal grid levels raise an error on a curvilinear grid: `write_ASAGI`, `visualise`, and `extract_subvolume` with `Interpolate = false` and a `Z_level` (or a `Depth_level` for `GeoData`). In these cases, first interpolate the data onto a regular grid with `interpolate_datafields`. LaMEM and pTatin use rectilinear grids, so their setups are not affected.
 
 ```@docs
 deform_grid

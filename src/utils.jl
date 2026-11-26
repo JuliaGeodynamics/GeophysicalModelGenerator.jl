@@ -764,6 +764,8 @@ function extract_subvolume(V::GeoData; Interpolate = false, Lon_level = nothing,
     if isnothing(Lat_level)
         Lat_level = (minimum(V.lat.val), maximum(V.lat.val))
     end
+    !Interpolate && !isnothing(Depth_level) && is_curvilinear(V.depth.val) &&
+        throw(ArgumentError("the levels of a curvilinear grid are not horizontal; use Interpolate = true to extract a Depth_level range"))
     if isnothing(Depth_level)
         Depth_level = (minimum(V.depth.val), maximum(V.depth.val))
     end

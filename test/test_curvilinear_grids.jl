@@ -160,6 +160,9 @@ end
     @test maximum(abs.(filter(!isnan, s.fields.F .- f.(ustrip.(s.x.val), ustrip.(s.y.val), ustrip.(s.z.val))))) < 1.0e-12
     @test_throws ArgumentError extract_subvolume(G; Interpolate = false, Z_level = (-5, 0))
     @test size(extract_subvolume(G; Interpolate = false, X_level = (-5, 5))) == (11, 31, 61)
+    Gg = GeoData(X, Y, Z, (F = G.fields.F,))                # the same grid as lon/lat/depth
+    @test_throws ArgumentError extract_subvolume(Gg; Interpolate = false, Depth_level = (-5, 0))
+    @test size(extract_subvolume(Gg; Interpolate = false, Lon_level = (-5, 5))) == (11, 31, 61)
 
     Xs2, Ys2, _ = xyz_grid(-15:1:15, -10:1:10, 0)
     S = CartData(Xs2, Ys2, fill(-1.0, size(Xs2)), (Z = Xs2,))
