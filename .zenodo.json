@@ -1,7 +1,7 @@
 {
   "title": "GeophysicalModelGenerator.jl: A Julia package to visualise geoscientific data and create numerical model setups",
   "upload_type": "software",
-  "notes": "Development was also supported by the Swiss Platform for Advanced Scientific Computing (PASC) through the projects GPU4GEO and dGPU4GEO.",
+  "notes": "Development was also supported by the Swiss Platform for Advanced Scientific Computing (PASC) through the projects GPU4GEO and ∂GPU4GEO.",
   "creators": [
     {
       "name": "Kaus, Boris J. P.",
