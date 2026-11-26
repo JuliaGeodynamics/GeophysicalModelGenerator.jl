@@ -46,6 +46,7 @@ function deform_grid(Grid::CartData, surfaces; levels = nothing, min_thickness =
     surfaces = surfaces isa Tuple || surfaces isa AbstractVector ? surfaces : (surfaces,)
     nz = size(Z, 3)
     nz > 1 || throw(ArgumentError("the grid must be 3D, with more than one level in z"))
+    all(>(0), diff(Z; dims = 3)) || throw(ArgumentError("z must increase with the third index of the grid"))
     if isnothing(levels)
         zlevel = vec(mean(Z, dims = (1, 2)))
         levels = [argmin(abs.(zlevel .- mean(surface_heights(S, X, Y)))) for S in surfaces]
