@@ -44,6 +44,7 @@ f(x, y, z) = 6 + 0.01x - 0.02y - 0.05z
     @test_throws ArgumentError deform_grid(Grid0, (Topo, -10.0); levels = (61, 61))
     @test_throws ArgumentError deform_grid(Grid0, Topo; levels = (55,))        # topography above the top of the grid
     @test_throws ArgumentError deform_grid(Grid0, -40.0; levels = (5,))        # below the bottom
+    @test_throws "z must increase" deform_grid(CartData(X0, Y0, reverse(Z0, dims = 3), (Z = Z0,)), -10.0)
     Small = CartData(xyz_grid(-5:1:5, -5:1:5, 0)..., (Z = zeros(11, 11, 1),))
     @test_throws ArgumentError deform_grid(Grid0, Small)                       # does not cover the grid
 end
