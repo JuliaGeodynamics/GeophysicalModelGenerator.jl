@@ -317,7 +317,7 @@ end
 
 # geometry, station windows and output shape for a GeoData grid, with stations at the grid columns (st = nothing) or at st
 function ellipsoid_setup(Lon, Lat, Depth, zRef, st, ell, cutoff)
-    lon, lat, z = grid_axes(Lon, Lat, Depth, "Grid must be a regular lon/lat/depth grid (see lonlatdepth_grid), with lon varying along the first, lat along the second and depth along the third dimension, or a curvilinear grid whose levels follow surfaces (see deform_grid).")
+    lon, lat, z = grid_axes(Lon, Lat, Depth, "Grid must be a regular lon/lat/depth grid (see lonlatdepth_grid), with lon varying along the first, lat along the second and depth along the third dimension, or a curvilinear grid with a 3D depth array whose columns are monotonic.")
     if isnothing(st)
         zo = column_heights(zRef, z, (length(lon), length(lat)))
         slon, slat = vec(lon .+ 0 .* lat'), vec(0 .* lon .+ lat')
