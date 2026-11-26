@@ -77,8 +77,7 @@ function deform_grid(Grid::CartData, surfaces; levels = nothing, min_thickness =
         isnothing(top) || (a = [nz; a]; h = [top[I]; h])
         isnothing(bottom) || (a = [a; 1]; h = [h; bottom[I]])
         stretch_column!(view(Znew, I, :), view(Z, I, :), a, h)
-        up = Z[I, nz] > Z[I, 1]
-        all(k -> (Znew[I, k + 1] - Znew[I, k] > 0) == up, 1:(nz - 1)) ||
+        all(>(0), diff(view(Znew, I, :))) ||
             throw(ArgumentError("the grid levels touch or cross at (x, y) = ($x, $y), where surfaces touch or cross; pass min_thickness > 0 to keep them apart"))
     end
     return CartData(X, Y, Znew, Grid.fields, Grid.atts)
