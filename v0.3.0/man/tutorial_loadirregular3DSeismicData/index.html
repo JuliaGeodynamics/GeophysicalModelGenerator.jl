@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Interpolate irregular 3D seismic tomography · GeophysicalModelGenerator.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">GeophysicalModelGenerator.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../tutorials/">Overview</a></li><li><a class="tocitem" href="../tutorial_load3DSeismicData/">3D seismic tomography from ASCII</a></li><li><a class="tocitem" href="../tutorial_loadregular3DSeismicData_netCDF/">3D seismic tomography from netCDF</a></li><li><a class="tocitem" href="../tutorial_MohoTopo/">Visualize Moho topography</a></li><li><a class="tocitem" href="../tutorial_GMT_Topography/">Create GMT-based topography</a></li><li><a class="tocitem" href="../tutorial_Coastlines/">Coastlines</a></li><li><a class="tocitem" href="../tutorial_Screenshot_To_Paraview/">Import screenshots</a></li><li class="is-active"><a class="tocitem" href>Interpolate irregular 3D seismic tomography</a><ul class="internal"><li><a class="tocitem" href="#Goal"><span>Goal</span></a></li><li><a class="tocitem" href="#Steps"><span>Steps</span></a></li></ul></li><li><a class="tocitem" href="../tutorial_GMT_Topography_GeologicalMap/">ETOPO1 Topography and geological maps</a></li><li><a class="tocitem" href="../tutorial_ISC_data/">ISC earthquake data</a></li><li><a class="tocitem" href="../tutorial_GPS/">Plot GPS vectors</a></li></ul></li><li><span class="tocitem">User Guide</span><ul><li><a class="tocitem" href="../installation/">Installation</a></li><li><a class="tocitem" href="../datastructures/">Data Structures</a></li><li><a class="tocitem" href="../dataimport/">Data Import</a></li><li><a class="tocitem" href="../paraview_output/">Paraview output</a></li><li><a class="tocitem" href="../tools/">Tools</a></li><li><a class="tocitem" href="../gravity_code/">Gravity code</a></li><li><a class="tocitem" href="../lamem/">LaMEM I/O</a></li></ul></li><li><a class="tocitem" href="../listfunctions/">List of functions</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Interpolate irregular 3D seismic tomography</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Interpolate irregular 3D seismic tomography</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/master/docs/src/man/tutorial_loadirregular3DSeismicData.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="D-tomography-model-that-is-re-interpolated-on-a-regular-grid"><a class="docs-heading-anchor" href="#D-tomography-model-that-is-re-interpolated-on-a-regular-grid">3D tomography model that is re-interpolated on a regular grid</a><a id="D-tomography-model-that-is-re-interpolated-on-a-regular-grid-1"></a><a class="docs-heading-anchor-permalink" href="#D-tomography-model-that-is-re-interpolated-on-a-regular-grid" title="Permalink"></a></h1><h2 id="Goal"><a class="docs-heading-anchor" href="#Goal">Goal</a><a id="Goal-1"></a><a class="docs-heading-anchor-permalink" href="#Goal" title="Permalink"></a></h2><p>This explains how to load a 3D seismic data set that is given in CSV format (comma separated ASCII), and plot it in paraview. The example is a shear-wave velocity model of the Alpine-Mediterranean region, described in:</p><p>El-Sharkawy et al. (2020), <em>The Slab Puzzle of the Alpine‐Mediterranean Region: Insights from a new, High‐Resolution, Shear‐Wave Velocity Model of the Upper Mantle</em>, G<span>$^3$</span> <a href="https://doi.org/10.1029/2020GC008993">https://doi.org/10.1029/2020GC008993</a></p><p>As the data is not given in a regular lon/lat grid, we first interpolate it to a different mesh.</p><h2 id="Steps"><a class="docs-heading-anchor" href="#Steps">Steps</a><a id="Steps-1"></a><a class="docs-heading-anchor-permalink" href="#Steps" title="Permalink"></a></h2><h4 id=".-Download-data"><a class="docs-heading-anchor" href="#.-Download-data">1. Download data</a><a id=".-Download-data-1"></a><a class="docs-heading-anchor-permalink" href="#.-Download-data" title="Permalink"></a></h4><p>The data is can be downloaded from <a href="https://www.seismologie.ifg.uni-kiel.de/en/research/research-data/mere2020model">https://www.seismologie.ifg.uni-kiel.de/en/research/research-data/mere2020model</a>. Do that and start julia from the directory where it was downloaded.</p><h4 id=".-Read-data-into-Julia"><a class="docs-heading-anchor" href="#.-Read-data-into-Julia">2. Read data into Julia</a><a id=".-Read-data-into-Julia-1"></a><a class="docs-heading-anchor-permalink" href="#.-Read-data-into-Julia" title="Permalink"></a></h4><p>The main data-file, <code>El-Sharkawy-etal-G3.2020_MeRE2020_Mediterranean.csv</code>, has 23 lines of comments (indicated with <code>#</code>), after which the data starts. We can use the build-in package <code>DelimitedFiles</code> to read in the data, and tell it that the data is seperated by <code>|</code>. We also want the resulting data to be stored as double precision values (<code>Float64</code>), and the end of every line is a linebreak (<code>\n</code>).</p><pre><code class="language-julia-repl">julia&gt; using DelimitedFiles
+julia&gt; data=readdlm(&quot;El-Sharkawy-etal-G3.2020_MeRE2020_Mediterranean.csv&quot;,&#39;|&#39;,Float64,&#39;\n&#39;, skipstart=23,header=false)
+3695678×4 Matrix{Float64}:
+ 32.12  -11.0    50.0  4.57
+ 36.36  -11.0    50.0  4.47
+ 38.32  -10.99   50.0  4.4
+ 49.77  -10.99   50.0  4.52
+ 29.82  -10.98   50.0  4.44
+ 34.1   -10.98   50.0  4.56
+ 40.26  -10.98   50.0  4.36
+ 42.19  -10.97   50.0  4.38
+ 44.1   -10.97   50.0  4.38
+  ⋮ </code></pre><p>Next, extract vectors from it:</p><pre><code class="language-none">julia&gt; lat  = data[:,1];
+julia&gt; lon  = data[:,2];
+julia&gt; depth=-data[:,3];
+julia&gt; Vs   = data[:,4];</code></pre><p>Note that we put a minus sign in front of depth, as that is what <code>GeophysicalModelGenerator.jl</code> expects.</p><h4 id=".-Reformat-the-data"><a class="docs-heading-anchor" href="#.-Reformat-the-data">3. Reformat the data</a><a id=".-Reformat-the-data-1"></a><a class="docs-heading-anchor-permalink" href="#.-Reformat-the-data" title="Permalink"></a></h4><h4 id=".1-Load-and-plot-the-data-layout"><a class="docs-heading-anchor" href="#.1-Load-and-plot-the-data-layout">3.1 Load and plot the data layout</a><a id=".1-Load-and-plot-the-data-layout-1"></a><a class="docs-heading-anchor-permalink" href="#.1-Load-and-plot-the-data-layout" title="Permalink"></a></h4><p>The data is now available as a bunch of data points. In principle we can plot that in Paraview, but it is better to reformat it into a 3D grid.</p><p>Let&#39;s first have a look at how the data is distributed at a given depth level. For that, extract all points at 50 km depth and plot it (make sure you have the <code>Plots.l</code> package installed)</p><pre><code class="language-julia">julia&gt; ind=findall(x -&gt; x==-50.0, depth)
+julia&gt; using Plots
+julia&gt; scatter(lon[ind],lat[ind],marker_z=Vs[ind], ylabel=&quot;latitude&quot;,xlabel=&quot;longitude&quot;,markersize=2.5, clims=(3.9, 4.8))</code></pre><p>The result looks like this:</p><p><img src="../../assets/img/Tutorial_ElSharkawy_MeRe_DataPoints.png" alt="DataPoints"/></p><p>So this is somewhat regular but not entirely and in some areas data points are missing. It is possible to create a VTK mesh that exactly respects this data, but for that we need knowledge on how the points are connected in 3D. The comments in the file do not provide this information, which is why we interpolate it on a regular lon/lat grid here which uses the same depth levels as in the data.</p><p>We extract the available depth levels with </p><pre><code class="language-julia">julia&gt; Depth_vec = unique(depth)
+301-element Vector{Float64}:
+  -50.0
+  -51.0
+  -52.0
+  -53.0
+  -54.0
+  -55.0
+  -56.0
+    ⋮
+ -345.0
+ -346.0
+ -347.0
+ -348.0
+ -349.0
+ -350.0</code></pre><p>which shows that the data set goes from <code>[-350:1:-50]</code>. Let&#39;s create a regular grid, which describes a somewhat smaller area than the data-points to ensure that we can do an interpolation without having to extrapolate</p><pre><code class="language-julia">julia&gt; using GeophysicalModelGenerator 
+julia&gt; Lon,Lat,Depth     =   LonLatDepthGrid(-10:0.5:40,32:0.25:50,Depth_vec);
+julia&gt; size(Lon)
+(101, 73, 301)</code></pre><p>The last command shows the size of our new grid.</p><p>We can plot our new Lon/Lat grid on top of the previous data:</p><pre><code class="language-julia">julia&gt; scatter!(Lon[:,:,1],Lat[:,:,1],color=:white, markersize=1.5, markertype=&quot;+&quot;,legend=:none)</code></pre><p><img src="../../assets/img/Tutorial_ElSharkawy_MeRe_DataPoints_2.png" alt="DataPoints_2"/></p><h4 id=".2-Interpolate-to-a-regular-grid"><a class="docs-heading-anchor" href="#.2-Interpolate-to-a-regular-grid">3.2 Interpolate to a regular grid</a><a id=".2-Interpolate-to-a-regular-grid-1"></a><a class="docs-heading-anchor-permalink" href="#.2-Interpolate-to-a-regular-grid" title="Permalink"></a></h4><p>Next, we need a method to interpolate the irregular datapoints @ a certain depth level to the white data points. </p><p>There are a number of ways to do this, for example by employing <a href="https://github.com/GenericMappingTools/GMT.jl">GMT.jl</a>, or by using <a href="https://juliaearth.github.io/GeoStats.jl/stable/index.html">GeoStats.jl</a>.  In this example, we will employ GeoStats. If you haven&#39;t installed it yet, do that with</p><pre><code class="language-julia">julia&gt; ]
+(@v1.6) pkg&gt; add GeoStats</code></pre><p>We will first show how to interpolate data @ 50 km depth.</p><pre><code class="language-julia">julia&gt; using GeoStats
+julia&gt; Cgrid = CartesianGrid((size(Lon,1),size(Lon,2)),(minimum(Lon),minimum(Lat)),(Lon[2,2,2]-Lon[1,1,1],Lat[2,2,2]-Lat[1,1,1]))
+101×73 CartesianGrid{2,Float64}
+  minimum: Point(-10.0, 32.0)
+  maximum: Point(40.5, 50.25)
+  spacing: (0.5, 0.25)
+julia&gt; coord = PointSet([lon[ind]&#39;; lat[ind]&#39;])
+12278 PointSet{2,Float64}
+  └─Point(-11.0, 32.12)
+  └─Point(-11.0, 36.36)
+  └─Point(-10.99, 38.32)
+  └─Point(-10.99, 49.77)
+  └─Point(-10.98, 29.82)
+  ⋮
+  └─Point(45.97, 42.91)
+  └─Point(45.98, 37.22)
+  └─Point(45.99, 42.07)
+  └─Point(45.99, 46.76)
+  └─Point(45.99, 50.52)
+julia&gt; Geo   = georef((Vs=Vs[ind],), coord)
+12278 MeshData{2,Float64}
+  variables (rank 0)
+    └─Vs (Float64)
+  domain: 12278 PointSet{2,Float64}
+julia&gt; P = EstimationProblem(Geo, Cgrid, :Vs)
+2D EstimationProblem
+  data:      12278 MeshData{2,Float64}
+  domain:    101×73 CartesianGrid{2,Float64}
+  variables: Vs (Float64)
+julia&gt; S   = IDW(:Vs =&gt; (distance=Euclidean(),neighbors=2)); 
+julia&gt; sol = solve(P, S)</code></pre><p>Here, we interpolated the data based on the Euclidean distance. Other methods, such as Kriging, can be used as well.  Next, we can extract the data</p><pre><code class="language-julia">julia&gt;  sol_Vs = values(sol).Vs
+julia&gt;  Vs_2D  = reshape(sol_Vs, size(domain(sol)))
+julia&gt;  heatmap(Lon[:,1,1],Lat[1,:,1],Vs_2D&#39;, clims=(3.9, 4.8))</code></pre><p><img src="../../assets/img/Tutorial_ElSharkawy_MeRe_DataPoints_interpolated.png" alt="DataPoints_interpolated"/></p><p>The final step is to repeat this procedure for all depth levels:</p><pre><code class="language-julia">julia&gt; Vs_3D = zeros(size(Depth));
+julia&gt; for iz=1:size(Depth,3)
+          println(&quot;Depth = $(Depth[1,1,iz])&quot;)
+          ind   = findall(x -&gt; x==Depth[1,1,iz], depth)
+          coord = PointSet([lon[ind]&#39;; lat[ind]&#39;])
+          Geo   = georef((Vs=Vs[ind],), coord)
+          P     = EstimationProblem(Geo, Cgrid, :Vs)
+          S     = IDW(:Vs =&gt; (distance=Euclidean(),neighbors=2)); 
+          sol   = solve(P, S)
+          sol_Vs= values(sol).Vs
+          Vs_2D = reshape(sol_Vs, size(domain(sol)))
+          Vs_3D[:,:,iz] = Vs_2D;
+        end</code></pre><h4 id=".-Generate-Paraview-file"><a class="docs-heading-anchor" href="#.-Generate-Paraview-file">4. Generate Paraview file</a><a id=".-Generate-Paraview-file-1"></a><a class="docs-heading-anchor-permalink" href="#.-Generate-Paraview-file" title="Permalink"></a></h4><p>Once the 3D velocity matrix has been generated, producing a Paraview file is done with the following command </p><pre><code class="language-julia">julia&gt; using GeophysicalModelGenerator
+julia&gt; Data_set    =   GeoData(Lon,Lat,Depth,(Vs_km_s=Vs_3D,))   
+GeoData 
+  size  : (101, 73, 301)
+  lon   ϵ [ -10.0 - 40.0]
+  lat   ϵ [ 32.0 - 50.0]
+  depth ϵ [ -350.0 km - -50.0 km]
+  fields: (:Vs_km_s,) 
+julia&gt; Write_Paraview(Data_set, &quot;MeRe_ElSharkawy&quot;)
+1-element Vector{String}:
+ &quot;MeRe_ElSharkawy.vts&quot;</code></pre><h4 id=".-Plotting-data-in-Paraview"><a class="docs-heading-anchor" href="#.-Plotting-data-in-Paraview">5. Plotting data in Paraview</a><a id=".-Plotting-data-in-Paraview-1"></a><a class="docs-heading-anchor-permalink" href="#.-Plotting-data-in-Paraview" title="Permalink"></a></h4><p>In paraview you can open the file and visualize it:</p><p><img src="../../assets/img/Tutorial_ElSharkawy_MeRe_DataPoints_Paraview_1.png" alt="DataPoints_Paraview"/></p><p>Note that we employ the perceptually uniform color map Barlow, which you can download <a href="https://www.fabiocrameri.ch/colourmaps/">here</a>.</p><p>If you want to clip the data set @ 200 km depth, you need to select the <code>Clip</code> tool, select <code>Sphere</code> as a clip type, set the center to <code>[0,0,0]</code> and set the radius to <code>6171</code> (=radius earth - 200 km).</p><p><img src="../../assets/img/Tutorial_ElSharkawy_MeRe_DataPoints_Paraview_2.png" alt="Tutorial_ElSharkawy_MeRe_DataPoints_Paraview_2"/></p><h4 id=".-Julia-script"><a class="docs-heading-anchor" href="#.-Julia-script">6. Julia script</a><a id=".-Julia-script-1"></a><a class="docs-heading-anchor-permalink" href="#.-Julia-script" title="Permalink"></a></h4><p>The full julia script that does it all is given <a href="https://github.com/JuliaGeodynamics/GeophysicalModelGenerator.jl/blob/main/tutorial/MeRe_ElSharkawy.jl">here</a>. You need to be in the same directory as in the data file, after which you can run it in julia with</p><pre><code class="language-julia">julia&gt; include(&quot;MeRe_ElSharkawy.jl&quot;)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../tutorial_Screenshot_To_Paraview/">« Import screenshots</a><a class="docs-footer-nextpage" href="../tutorial_GMT_Topography_GeologicalMap/">ETOPO1 Topography and geological maps »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 22 July 2021 09:10">Thursday 22 July 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

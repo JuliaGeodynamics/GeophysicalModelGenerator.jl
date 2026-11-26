@@ -1,0 +1,361 @@
+# Define number of elements in x, y, z-direction
+# Negative number implies corresponding number of mesh segments
+# Data is provided in the variables seg_x, seg_y, seg_z and includes:
+#    * coordinates of the delimiters between the segments (n-1 points)
+#    * number of cells                                    (n points)
+#    * bias coefficients                                  (n points) 
+
+
+#===============================================================================
+# Scaling
+#===============================================================================
+
+# Geometry
+units                       =	geo
+
+# Always in SI units!!
+unit_temperature = 500
+unit_length      = 1000
+unit_viscosity   = 1e19
+unit_stress      = 1e9
+
+#===============================================================================
+# Time stepping parameters
+#===============================================================================
+
+	dt        = 5e-4	# time step
+	dt_min    = 4.5e-4	# minimum time step (declare divergence if lower value is attempted)
+	dt_max    = 1e-3	# maximum time step
+	inc_dt    = 1		# time step increment per time step (fraction of unit)
+	CFL       = 0.5		# CFL (Courant-Friedrichs-Lewy) criterion
+	CFLMAX    = 0.8		# CFL criterion for elasticity
+	nstep_ini = 0		# save output for n initial steps
+	nstep_max = 20		# maximum allowed number of steps (lower bound: time_end/dt_max)
+	nstep_out = 1		# save output every n steps
+
+#===============================================================================
+# Grid & discretization parameters
+#===============================================================================
+
+# relative geometry tolerance for grid manipulations (default 1e-9)
+
+	gtol = 1e-9
+	
+# Number of cells for all segments 
+	nel_x	=   64
+	nel_y	=   64 
+	nel_z	=   32   
+
+# Coordinates of all segments (including start and end points)
+	coord_x = 	-50 	50
+	coord_y = 	-40 	40
+	coord_z = 	-80 	15
+
+#===============================================================================
+# Free surface
+#===============================================================================
+
+	surf_use           = 1              # free surface activation flag
+	surf_corr_phase    = 1              # air phase ratio correction flag (due to surface position)
+	surf_level         = 5              # initial level
+	surf_air_phase     = 0              # phase ID of sticky air layer
+	surf_max_angle     = 45.0             # maximum angle with horizon (smoothed if larger)
+	surf_topo_file     = LaPalma_Topo.topo # initial topography file (redundant)
+	erosion_model      = 0              # erosion model [0-none (default), 1-infinitely fast]
+	sediment_model     = 0              # sedimentation model [0-none (dafault), 1-prescribed rate]
+
+#===============================================================================
+# Boundary conditions
+#===============================================================================
+
+#	noslip   = 0 0 0 0 0 0
+
+	temp_top	    =   0			# Temperature @ top
+	temp_bot		=   1350     	# Temperature @ bottom; side BC's are flux-free
+
+	# Background strain rate parameters
+#	exx_num_periods  = 1      # number intervals of constant strain rate (x-axis)
+#	exx_strain_rates = -5e-16 	  # strain rates for each interval (negative=compression)
+
+	# Free surface top boundary flag
+	open_top_bound = 1
+	
+#===============================================================================
+# Jacobian & residual evaluation parameters
+#===============================================================================
+
+	gravity         = 0.0 0.0 -9.81  # gravity vector
+	act_temp_diff   = 1		 		 # temperature diffusion activation flag
+	#act_steady_temp = 0              # steady-state temperature initial guess activation flag
+	#steady_temp_t   = 0.1            # time for (quasi-)steady-state temperature initial guess
+	#nstep_steady    = 50             # number of steps for (quasi-)steady-state temperature initial guess (default = 1)
+	act_heat_rech   = 0              # heat recharge activation flag
+	init_lith_pres  = 1              # initial pressure with lithostatic pressure
+	init_guess      = 1              # initial guess flag
+	eta_min         = 1e18           # viscosity upper bound
+	eta_max         = 1e23           # viscosity lower limit
+	eta_ref         = 1e19           # reference viscosity (initial guess)
+	T_ref           = 20             # reference temperature
+
+#===============================================================================
+# Solver options
+#===============================================================================
+
+	SolverType 	=	multigrid		# solver [direct or multigrid]
+	MGLevels 	=	4			# number of MG levels [default=3]
+
+#===============================================================================
+# Model setup & advection
+#===============================================================================
+
+	msetup       	=	files
+	mark_load_file  = ./markers/mdb     # marker input file (extension is .xxxxxxxx.dat)
+
+	#poly_file	    =	../Polygons/RoundTopShort_256_128_21_09_20.bin
+	nmark_x        	=	3                 # markers per cell in x-direction
+	nmark_y        	=	3                 # ...                 y-direction
+	nmark_z        	=	3                 # ...                 z-direction
+#	rand_noise     	=	1                 # random noise flag
+	advect          =  	rk2               # advection scheme
+	interp          =  	minmod            # velocity interpolation scheme
+#	stagp_a         =  	0.7               # STAG_P velocity interpolation parameter
+	mark_ctrl       =  	basic             # marker control type
+	nmark_lim       =  	16 100            # min/max number per cell
+
+#===============================================================================
+# Output
+#===============================================================================
+
+# Grid output options (output is always active)
+	out_file_name       = LaPalma_test  # output file name
+	out_pvd             = 1         # activate writing .pvd file
+	out_phase           = 1
+	out_density         = 1
+	out_visc_total      = 1
+	out_visc_creep      = 1
+	out_visc_plast      = 1
+	out_velocity        = 1
+	out_pressure        = 1
+	out_over_press      = 1
+	out_litho_press     = 1
+	out_temperature     = 1
+#	out_dev_stress      = 1
+	out_j2_dev_stress   = 1
+#	out_strain_rate     = 1
+	out_j2_strain_rate  = 1
+	out_plast_strain    = 1
+	out_plast_dissip    = 1
+	out_tot_displ       = 1
+	out_moment_res      = 1
+	out_cont_res        = 1
+	out_yield           = 1
+
+# AVD phase viewer output options (requires activation)
+	out_avd     = 1 # activate AVD phase output
+	out_avd_pvd = 1 # activate writing .pvd file
+	out_avd_ref = 1 # AVD grid refinement factor
+	
+# free surface output
+	out_surf            = 1 # activate surface output
+	out_surf_pvd        = 1 # activate writing .pvd file
+	out_surf_velocity   = 1
+	out_surf_topography = 1
+	out_surf_amplitude  = 1
+
+
+#===============================================================================
+# ............................ Material Parameters .............................
+#===============================================================================
+
+# ------------------- Air -------------------
+	<MaterialStart>
+		Name = air
+		ID	= 0
+		rho	= 100
+		alpha   = 3e-5 
+
+	# Linear Viscosity	
+		eta	= 1e17
+
+	# Elastic parameters
+		G 	= 1e10
+		nu 	= 0.2
+		
+	# Thermal parameters	
+		k 	= 30
+		Cp 	= 1000
+		
+	# Plastic parameters
+		ch 	= 10e6
+		fr 	= 30
+	<MaterialEnd>
+
+# ------------------- Water -------------------
+	<MaterialStart>
+		Name = water
+		ID	= 1
+		rho	= 100
+		alpha   = 3e-5 
+
+	# Linear Viscosity	
+		eta	= 1e17
+
+	# Elastic parameters
+		G 	= 1e10
+		nu 	= 0.2
+		
+	# Thermal parameters	
+		k 	= 30
+		Cp 	= 1000
+		
+	# Plastic parameters
+		ch 	= 10e6
+		fr 	= 30
+	<MaterialEnd>
+
+
+# ------------------- Upper Crust -------------------
+	<MaterialStart>
+		Name    = Crust
+		ID   	= 2
+		rho 	= 2900
+		alpha   = 3e-5
+		
+	# dislocation viscosity
+		#disl_prof = Plagioclase_An75-Ranalli_1995
+		#disl_prof = Wet_Quarzite-Ranalli_1995
+		disl_prof = Mafic_Granulite-Ranalli_1995
+
+
+	# Elastic parameters
+		G 	= 3e10
+		nu 	= 0.2
+	
+	# Thermal parameters
+		k 	= 3
+		Cp 	= 1000
+		
+	# Plastic parameters
+		ch 	= 10e6
+		fr 	= 30
+	<MaterialEnd>
+	
+	
+		
+# ------------------- Mantle lithosphere-------------------
+	<MaterialStart>
+		Name 	= Mantle
+		ID   	= 3
+		rho 	= 3320
+		alpha   = 3e-5
+
+	# dislocation viscosity
+		disl_prof = Dry_Olivine-Ranalli_1995
+
+	# Elastic parameters
+		G 	= 6.5e10
+		nu 	= 0.2
+	
+	# Thermal parameters
+		k 	= 3.3
+		Cp 	= 1000
+		
+	# Plastic parameters
+		ch 	= 10e6
+		fr 	= 30
+	<MaterialEnd>
+
+# ------------------- Andesite -------------------
+        <MaterialStart>
+			Name = magma
+            ID	= 4
+                 rho     = 2700
+                alpha   = 3e-5
+
+    	# linear viscosity
+                eta	= 1e18
+
+        # Elastic parameters
+                G 	= 1.5e10
+                nu 	= 0.2
+
+        # Thermal parameters
+                k 	= 3
+                Cp 	= 1000
+		T 	= 980
+
+        # Plastic parameters
+               ch = 10e6
+               fr = 30
+        <MaterialEnd>
+
+# ------------------- Dacite -------------------
+        <MaterialStart>
+                ID      = 5
+                rho     = 2575
+                alpha   = 3e-5
+
+        # linear viscosity
+                eta	= 1e19
+
+        # Elastic parameters
+                G 	= 1.5e10
+                nu 	= 0.2
+
+        # Thermal parameters
+                k 	= 3
+                Cp 	= 1000
+                T 	= 800
+
+        # Plastic parameters
+                ch 	= 10e6
+                fr 	= 30
+        <MaterialEnd>
+# End of defining material properties for all phases ----------------------------------------
+
+
+#===============================================================================
+# PETSc options
+#===============================================================================
+<PetscOptionsStart>
+	
+# SNES
+	
+	-snes_npicard 5
+	-snes_max_it 200
+	-snes_rtol 1e-6
+	-snes_atol 1e-6
+	-snes_PicardSwitchToNewton_rtol 1e-7 #-7
+	#-snes_NewtonSwitchToPicard_it   1       # number of Newton iterations after which we switch back to Picard
+#	-snes_monitor
+#	-snes_linesearch_monitor	
+
+# Jacobian solver
+	-js_ksp_type fgmres 
+	-js_ksp_monitor	
+	-js_ksp_max_it 30
+	-js_ksp_rtol 1e-5
+	-js_ksp_atol 1e-6
+#	-js_ksp_monitor_true_residual
+
+#	-its_ksp_monitor
+#	-ts_ksp_monitor
+
+# Multigrid
+	-gmg_pc_mg_galerkin
+	-gmg_pc_mg_type multiplicative
+	-gmg_pc_mg_cycle_type v
+	
+	-gmg_mg_levels_ksp_type richardson
+    -gmg_mg_levels_ksp_richardson_scale 0.5
+    -gmg_mg_levels_ksp_max_it 5
+    -gmg_mg_levels_pc_type jacobi
+
+	-crs_pc_factor_mat_solver_package pastix
+	
+
+<PetscOptionsEnd>
+
+
+
+
